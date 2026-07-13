@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Guest Order Tracking - TinyTots</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#dcd9d9",
+                        "surface-bright": "#fcf9f8",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#1e4b67",
+                        "outline-variant": "#dcc0bb",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed": "#cae6ff",
+                        "on-secondary-fixed": "#001e30",
+                        "on-primary-fixed-variant": "#7d2c19",
+                        "secondary-fixed-dim": "#a2cbee",
+                        "on-background": "#1b1c1c",
+                        "tertiary-fixed-dim": "#88d7a2",
+                        "tertiary": "#186c40",
+                        "background": "#fcf9f8",
+                        "on-surface-variant": "#56423e",
+                        "surface-container-high": "#eae7e7",
+                        "primary-container": "#f2846b",
+                        "on-tertiary-fixed": "#00210f",
+                        "on-tertiary-container": "#004324",
+                        "tertiary-container": "#65b381",
+                        "surface-container-highest": "#e4e2e1",
+                        "tertiary-fixed": "#a3f4bd",
+                        "surface-tint": "#9c422e",
+                        "secondary-container": "#b2dcff",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f6f3f2",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#3d0600",
+                        "on-primary-container": "#6b1e0d",
+                        "outline": "#89726d",
+                        "surface-variant": "#e4e2e1",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed-variant": "#00522d",
+                        "secondary": "#396280",
+                        "inverse-on-surface": "#f3f0f0",
+                        "on-secondary-container": "#38617f",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "inverse-surface": "#303030",
+                        "inverse-primary": "#ffb4a3",
+                        "primary-fixed": "#ffdad2",
+                        "error": "#ba1a1a",
+                        "surface": "#fcf9f8",
+                        "on-surface": "#1b1c1c",
+                        "surface-container": "#f0eded",
+                        "primary": "#9c422e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "bento-gap": "20px",
+                        "stack-sm": "12px",
+                        "container-max": "1280px",
+                        "stack-md": "24px",
+                        "margin-mobile": "20px",
+                        "unit": "4px",
+                        "gutter": "24px",
+                        "stack-lg": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "button": ["Inter"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "display-md": ["Plus Jakarta Sans"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "headline-lg": ["30px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "button": ["16px", { "lineHeight": "1", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "1", "fontWeight": "500" }],
+                        "label-lg": ["14px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "display-md": ["36px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .shimmer-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .shimmer-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transform: skewX(-20deg);
+            animation: shimmer 3s infinite;
+        }
+        @keyframes shimmer {
+            100% { left: 200%; }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex flex-col pt-[80px]">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md dark:bg-surface-container/80 border-b border-outline-variant/30">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
+<div class="flex items-center gap-6 hidden md:flex">
+<!-- Navigation links from JSON. None are 'active' as this is a transactional page (Tracking) -->
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low transition-all duration-200 px-2 py-1 rounded" href="#">Shop All</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low transition-all duration-200 px-2 py-1 rounded" href="#">Newborn</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low transition-all duration-200 px-2 py-1 rounded" href="#">Toddler</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low transition-all duration-200 px-2 py-1 rounded" href="#">Sale</a>
+</div>
+<div class="font-display-md text-display-md text-primary dark:text-primary-fixed-dim tracking-tight">
+                TinyTots
+            </div>
+<div class="flex items-center gap-4">
+<button class="scale-95 active:scale-90 transition-transform hover:bg-surface-container-low p-2 rounded-full text-on-surface-variant">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="scale-95 active:scale-90 transition-transform hover:bg-surface-container-low p-2 rounded-full text-on-surface-variant">
+<span class="material-symbols-outlined">person</span>
+</button>
+<button class="scale-95 active:scale-90 transition-transform hover:bg-surface-container-low p-2 rounded-full text-on-surface-variant">
+<span class="material-symbols-outlined">shopping_bag</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col items-center justify-start px-margin-mobile md:px-margin-desktop py-stack-lg w-full max-w-container-max mx-auto">
+<!-- Header -->
+<div class="text-center mb-stack-md w-full max-w-2xl">
+<h1 class="font-display-lg text-display-lg text-on-background mb-stack-sm">Track Your Order</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Enter your order details below to see the current status of your TinyTots package.</p>
+</div>
+<!-- Tracking Form -->
+<div class="w-full max-w-lg bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-stack-md mb-stack-lg shadow-sm">
+<form class="flex flex-col gap-stack-sm">
+<div class="flex flex-col gap-unit">
+<label class="font-label-md text-label-md text-on-surface-variant" for="order-number">Order Number</label>
+<input class="border border-outline-variant/30 rounded-lg h-12 px-4 bg-surface focus:outline-none focus:border-primary transition-colors font-body-md" id="order-number" placeholder="e.g. TT-123456" type="text"/>
+</div>
+<div class="flex flex-col gap-unit">
+<label class="font-label-md text-label-md text-on-surface-variant" for="email">Email Address</label>
+<input class="border border-outline-variant/30 rounded-lg h-12 px-4 bg-surface focus:outline-none focus:border-primary transition-colors font-body-md" id="email" placeholder="Email used for purchase" type="email"/>
+</div>
+<button class="mt-stack-sm bg-primary-container text-on-primary font-button text-button h-12 rounded-lg hover:opacity-90 transition-opacity" onclick="showTrackingDetails()" type="button">
+                    Track Order
+                </button>
+</form>
+</div>
+<!-- Tracking Details (Initially Hidden) -->
+<div class="w-full max-w-3xl hidden flex flex-col gap-stack-md" id="tracking-details">
+<!-- Status Stepper -->
+<div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-stack-md shadow-sm shimmer-card">
+<h2 class="font-headline-md text-headline-md text-on-background mb-stack-md">Order Status: <span class="text-primary">Shipped</span></h2>
+<div class="relative flex justify-between items-center w-full mt-stack-md mb-stack-md px-4">
+<!-- Connecting Line -->
+<div class="absolute top-1/2 left-0 right-0 h-[2px] bg-surface-container-highest -z-10 translate-y-[-50%] px-8"></div>
+<div class="absolute top-1/2 left-0 w-[60%] h-[2px] bg-primary-container -z-10 translate-y-[-50%] px-8"></div>
+<!-- Steps -->
+<div class="flex flex-col items-center gap-unit bg-surface-container-lowest px-2">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="font-label-md text-label-md text-on-background">Placed</span>
+</div>
+<div class="flex flex-col items-center gap-unit bg-surface-container-lowest px-2">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="font-label-md text-label-md text-on-background">Processing</span>
+</div>
+<div class="flex flex-col items-center gap-unit bg-surface-container-lowest px-2">
+<div class="w-8 h-8 rounded-full border-2 border-primary-container bg-surface-container-lowest text-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">local_shipping</span>
+</div>
+<span class="font-label-md text-label-md text-primary font-bold">Shipped</span>
+</div>
+<div class="flex flex-col items-center gap-unit bg-surface-container-lowest px-2">
+<div class="w-8 h-8 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">home</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Delivered</span>
+</div>
+</div>
+</div>
+<!-- Order Snapshot Bento -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-bento-gap">
+<!-- Shipping Info -->
+<div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-stack-md flex flex-col gap-stack-sm">
+<h3 class="font-headline-md text-headline-md text-on-background border-b border-outline-variant/20 pb-2">Shipping Details</h3>
+<div class="flex items-start gap-3 mt-2">
+<span class="material-symbols-outlined text-secondary">location_on</span>
+<div>
+<p class="font-body-md text-body-md text-on-background font-medium">Sarah Jenkins</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">123 Meadow Lane<br/>Suite 4B<br/>Portland, OR 97204</p>
+</div>
+</div>
+<div class="flex items-start gap-3 mt-2">
+<span class="material-symbols-outlined text-secondary">calendar_today</span>
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Estimated Delivery</p>
+<p class="font-body-md text-body-md text-on-background font-medium">Oct 24 - Oct 26</p>
+</div>
+</div>
+</div>
+<!-- Items Summary -->
+<div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-stack-md flex flex-col gap-stack-sm">
+<h3 class="font-headline-md text-headline-md text-on-background border-b border-outline-variant/20 pb-2">Items (2)</h3>
+<div class="flex items-center gap-4 mt-2">
+<div class="w-16 h-16 rounded-lg bg-surface-variant overflow-hidden flex-shrink-0 border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="A beautifully styled flat lay of a soft organic cotton baby onesie in sage green, resting on a textured cream background with soft natural lighting, reflecting a premium modern nursery aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCstg_bgSkpO8S0hkQkS5XuEMfIQmgjJjOhhLjGGMiz5JZsusgW4-WqZrDnjiu3HTb2vq6QjJnAn8Vvk6XJRoip4LdB-zNUlOHP10_2M5k6BdrtX4-B0VW8E4nSNVuFT3FtF6aJaEXbj9QnKQZ-6ukFxpMTK9_QLdnpd92Sjnbb8I7zMbHPlSKD9LbajsSjaWDJy7WfS6AgCmAhleem31ygC9qUUWlmh3sLiAXSgLQRf68SwDvuk5tnki5t8dUrYUs9fUqvE4b-mdKw"/>
+</div>
+<div class="flex-grow">
+<p class="font-body-md text-body-md text-on-background font-medium">Organic Ribbed Onesie</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Sage Green • 3-6M • Qty 1</p>
+</div>
+</div>
+<div class="flex items-center gap-4 mt-2">
+<div class="w-16 h-16 rounded-lg bg-surface-variant overflow-hidden flex-shrink-0 border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="A beautifully styled flat lay of a soft organic cotton baby beanie in soft coral, resting on a textured cream background with soft natural lighting, reflecting a premium modern nursery aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoB-BINFnBwFaeENNAjy7Zc0MZZ7WoslAFFwmvIts0X-4_vRRUEAo_fwpC0kYPGXd9HbLjIStdbPYPWgQXTHTxnqyF-rg87v8ihQ0lvfDw6VAAwszLapkad53TRovpixJbcJvzdAYEFHPAO0IJGOIRZleUYsCdmmX0HE0y_Prb_Awb4Vu1XG6xoVDcJBLEbQRxqkOJcQToT3AGn3h_z2vUWU7emDmcDPP-Bo2eDV-9er-RTUFWHusKAg2V1OP2oX1H9gyhgXAvpON3"/>
+</div>
+<div class="flex-grow">
+<p class="font-body-md text-body-md text-on-background font-medium">Knitted Bear Beanie</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Oatmeal • 0-6M • Qty 1</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-stack-lg bg-surface-container-lowest dark:bg-surface-dim border-t border-outline-variant/20">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-bento-gap px-margin-mobile md:px-margin-desktop py-stack-lg max-w-container-max mx-auto">
+<div class="col-span-1 md:col-span-1 flex flex-col gap-4">
+<div class="font-display-lg text-display-lg text-primary">TinyTots</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">© 2024 TinyTots Premium Kids. All rights reserved.</p>
+</div>
+<div class="col-span-1 md:col-span-3 flex flex-wrap gap-x-8 gap-y-4 justify-start md:justify-end items-center">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline transition-all opacity-80 hover:opacity-100" href="#">About Us</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline transition-all opacity-80 hover:opacity-100" href="#">Shipping Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline transition-all opacity-80 hover:opacity-100" href="#">Returns</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline transition-all opacity-80 hover:opacity-100" href="#">Contact Support</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline transition-all opacity-80 hover:opacity-100" href="#">Store Locator</a>
+</div>
+</div>
+</footer>
+<script>
+        function showTrackingDetails() {
+            // Simple mockup interaction
+            document.getElementById('tracking-details').classList.remove('hidden');
+            document.getElementById('tracking-details').classList.add('animate-fade-in');
+        }
+    </script>
+<style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</body></html>

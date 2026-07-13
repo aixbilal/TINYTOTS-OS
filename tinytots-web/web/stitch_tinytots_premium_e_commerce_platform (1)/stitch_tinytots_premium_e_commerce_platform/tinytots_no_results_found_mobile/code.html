@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Empty Search - TinyTots</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#56423e",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "on-error-container": "#93000a",
+                        "background": "#fcf9f8",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#ffdad2",
+                        "surface-bright": "#fcf9f8",
+                        "on-tertiary-fixed": "#241a0e",
+                        "surface-container-low": "#f6f3f2",
+                        "secondary-container": "#cfe4e4",
+                        "surface": "#fcf9f8",
+                        "on-secondary-fixed": "#0b1e1f",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#1b1c1b",
+                        "inverse-surface": "#303030",
+                        "on-tertiary-fixed-variant": "#524436",
+                        "primary": "#9c422e",
+                        "inverse-on-surface": "#f3f0ef",
+                        "surface-variant": "#e4e2e1",
+                        "secondary-fixed": "#d2e6e7",
+                        "outline-variant": "#dcc0bb",
+                        "on-secondary-fixed-variant": "#374a4b",
+                        "on-primary-container": "#6b1e0d",
+                        "surface-container-highest": "#e4e2e1",
+                        "outline": "#89726d",
+                        "surface-tint": "#9c422e",
+                        "surface-container": "#f0edec",
+                        "on-primary": "#ffffff",
+                        "surface-container-high": "#eae7e7",
+                        "surface-dim": "#dcd9d8",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#f2846b",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#d7c3b0",
+                        "on-primary-fixed-variant": "#7d2c19",
+                        "on-tertiary-container": "#443729",
+                        "tertiary": "#6b5c4c",
+                        "secondary": "#4f6263",
+                        "on-primary-fixed": "#3d0600",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#f4dfcb",
+                        "on-secondary-container": "#536667",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#b2a08e",
+                        "secondary-fixed-dim": "#b6cacb",
+                        "inverse-primary": "#ffb4a3",
+                        "on-surface": "#1b1c1b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "1200px",
+                        "margin-mobile": "16px",
+                        "unit": "4px",
+                        "section-gap": "80px",
+                        "margin-desktop": "48px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-background flex items-center justify-between px-margin-mobile h-16 max-w-container-max mx-auto shadow-sm">
+<button aria-label="Menu" class="text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform flex items-center justify-center p-2 -ml-2">
+<span class="material-symbols-outlined text-[24px]">menu</span>
+</button>
+<h1 class="font-display-lg-mobile text-display-lg-mobile text-primary tracking-tight">TinyTots</h1>
+<button aria-label="Shopping Bag" class="text-primary hover:opacity-80 transition-opacity active:scale-95 transition-transform flex items-center justify-center p-2 -mr-2">
+<span class="material-symbols-outlined text-[24px]">shopping_bag</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full max-w-container-max mx-auto pt-[88px] pb-[100px] px-margin-mobile flex flex-col">
+<!-- Simulated Catalog Header Structure -->
+<section class="w-full mb-12">
+<div class="flex items-center gap-3 w-full">
+<!-- Search Input Simulation -->
+<div class="flex-1 bg-surface-container-lowest border border-outline-variant rounded-full h-12 flex items-center px-4 focus-within:border-tertiary transition-colors shadow-[0px_4px_20px_rgba(79,98,99,0.04)]">
+<span class="material-symbols-outlined text-on-surface-variant mr-3">search</span>
+<span class="font-body-md text-body-md text-on-surface-variant w-full bg-transparent outline-none truncate">Montessori Wood Toys</span>
+<button aria-label="Clear search" class="text-on-surface-variant p-1 ml-2 rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Filter Button Simulation -->
+<button aria-label="Filters" class="w-12 h-12 flex-shrink-0 bg-surface-container-lowest border border-outline-variant rounded-full flex items-center justify-center text-on-surface-variant shadow-[0px_4px_20px_rgba(79,98,99,0.04)] active:scale-95 transition-transform">
+<span class="material-symbols-outlined relative">
+                        tune
+                        <span class="absolute -top-1 -right-1 w-3 h-3 bg-primary-container rounded-full border-2 border-surface-container-lowest"></span>
+</span>
+</button>
+</div>
+<!-- Active Filters Row (Simulated) -->
+<div class="flex gap-2 overflow-x-auto mt-4 pb-2 snap-x hide-scrollbar">
+<div class="flex-shrink-0 bg-surface-container-low border border-outline-variant px-4 py-1.5 rounded-full flex items-center gap-2 snap-start">
+<span class="font-label-sm text-label-sm text-on-surface">Age: 1-3 Yrs</span>
+</div>
+<div class="flex-shrink-0 bg-surface-container-low border border-outline-variant px-4 py-1.5 rounded-full flex items-center gap-2 snap-start">
+<span class="font-label-sm text-label-sm text-on-surface">Material: Wood</span>
+</div>
+</div>
+</section>
+<!-- Empty State Container -->
+<section class="flex-1 flex flex-col items-center justify-center text-center mt-[-40px]">
+<!-- Soft Illustration -->
+<div class="w-64 h-64 mb-8 rounded-full bg-surface-container-low relative overflow-hidden flex items-center justify-center shadow-[0px_10px_30px_rgba(156,66,46,0.05)]">
+<img class="w-full h-full object-cover opacity-90 mix-blend-multiply" data-alt="A minimalist, high-end 3D rendering of a stylized, slightly frosted magnifying glass resting on a smooth ivory surface. The lighting is soft, airy, and diffused, casting gentle ambient shadows. Subtle coral and sage geometric shapes float in the background, reinforcing a premium nursery aesthetic. High key lighting, very clean." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4IvAKHZfNARRHGqa28scTDcw6bxnmFOwLAZLXR6Emx3Y1u2EGpGShWv9n9dNhWT38tgdvAgFH3A4XXorr8OOEW2zsDXs6RiqZ0Zg00MhoN7a9mcFpkWCIRlk4kZlb8ZSxahShOeD2Boyk3lX0l7So6yR6oyASgawWt4JJWtTxBl1_ClSP-bIpXiujYeBEOstkK2kNaTYeHgDkZ0HhixUrZlKXx_z8MBpYPobCIHvqsRpn0DDvjN6yVaO_I3l-cmRQy_c6_4C6mKJD"/>
+</div>
+<!-- Typography Hierarchy -->
+<h2 class="font-title-lg text-title-lg text-on-surface mb-3 max-w-[280px]">
+                We couldn't find a match for that search.
+            </h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-10 max-w-[300px]">
+                Try checking your spelling or using more general terms to explore our collections.
+            </p>
+<!-- Primary Action -->
+<button class="bg-primary-container text-on-primary font-label-md text-label-md rounded-full px-8 py-4 w-full max-w-[280px] hover:bg-opacity-90 transition-all active:scale-95 shadow-[0px_4px_14px_rgba(242,132,107,0.25)]">
+                Clear All Filters
+            </button>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container-lowest shadow-[0px_-4px_20px_rgba(79,98,99,0.04)] flex justify-around items-center py-3 px-4 pb-safe border-t-0">
+<!-- Shop (Active Match based on Context) -->
+<button aria-label="Shop" class="flex flex-col items-center justify-center text-primary font-semibold hover:text-primary-container transition-colors active:scale-90 transition-transform flex-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">storefront</span>
+<span class="font-label-sm text-label-sm mt-1">Shop</span>
+</button>
+<!-- Wishlist -->
+<button aria-label="Wishlist" class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors active:scale-90 transition-transform flex-1">
+<span class="material-symbols-outlined">favorite</span>
+<span class="font-label-sm text-label-sm mt-1">Wishlist</span>
+</button>
+<!-- Account -->
+<button aria-label="Account" class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors active:scale-90 transition-transform flex-1">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm mt-1">Account</span>
+</button>
+<!-- Cart -->
+<button aria-label="Cart" class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors active:scale-90 transition-transform flex-1">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-label-sm text-label-sm mt-1">Cart</span>
+</button>
+</nav>
+<style>
+        /* Utility to hide scrollbar for horizontal scrolling filter pills */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

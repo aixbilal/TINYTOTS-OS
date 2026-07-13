@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>TinyTots - Checkout</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-container": "#b2dcff",
+                      "tertiary-fixed-dim": "#88d7a2",
+                      "tertiary": "#186c40",
+                      "primary-fixed-dim": "#ffb4a3",
+                      "primary-fixed": "#ffdad2",
+                      "tertiary-container": "#65b381",
+                      "outline": "#89726d",
+                      "on-error": "#ffffff",
+                      "inverse-on-surface": "#f3f0f0",
+                      "tertiary-fixed": "#a3f4bd",
+                      "on-secondary-fixed": "#001e30",
+                      "on-primary": "#ffffff",
+                      "secondary": "#396280",
+                      "surface-dim": "#dcd9d9",
+                      "surface-container": "#f0eded",
+                      "inverse-surface": "#303030",
+                      "on-tertiary-container": "#004324",
+                      "on-surface-variant": "#56423e",
+                      "primary": "#9c422e",
+                      "on-tertiary-fixed": "#00210f",
+                      "surface": "#fcf9f8",
+                      "on-error-container": "#93000a",
+                      "on-background": "#1b1c1c",
+                      "secondary-fixed-dim": "#a2cbee",
+                      "surface-variant": "#e4e2e1",
+                      "on-secondary": "#ffffff",
+                      "inverse-primary": "#ffb4a3",
+                      "secondary-fixed": "#cae6ff",
+                      "error-container": "#ffdad6",
+                      "on-primary-container": "#6b1e0d",
+                      "primary-container": "#f2846b",
+                      "on-primary-fixed": "#3d0600",
+                      "background": "#fcf9f8",
+                      "surface-bright": "#fcf9f8",
+                      "surface-tint": "#9c422e",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-low": "#f6f3f2",
+                      "on-secondary-fixed-variant": "#1e4b67",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-high": "#eae7e7",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed-variant": "#00522d",
+                      "on-surface": "#1b1c1c",
+                      "on-primary-fixed-variant": "#7d2c19",
+                      "surface-container-highest": "#e4e2e1",
+                      "outline-variant": "#dcc0bb",
+                      "on-secondary-container": "#38617f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-sm": "12px",
+                      "stack-lg": "48px",
+                      "stack-md": "24px",
+                      "container-max": "1280px",
+                      "margin-mobile": "20px",
+                      "unit": "4px",
+                      "bento-gap": "20px",
+                      "gutter": "24px",
+                      "margin-desktop": "64px"
+              },
+              "fontFamily": {
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "headline-lg-mobile": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "button": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "display-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "display-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "label-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.5",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "button": [
+                              "16px",
+                              {
+                                      "lineHeight": "1",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "30px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.1",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "display-md": [
+                              "36px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "1",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-lg": [
+                              "14px",
+                              {
+                                      "lineHeight": "1",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: #FAF7F2;
+        }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent; /* make scrollbar transparent */
+        }
+        .hairline-border {
+            border: 1px solid rgba(43, 43, 43, 0.08);
+        }
+        
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        .collapsible-content.expanded {
+            max-height: 500px; /* Arbitrary large value */
+        }
+        
+        .arrow-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .arrow-icon.rotated {
+            transform: rotate(180deg);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md antialiased md:max-w-md md:mx-auto md:shadow-xl md:min-h-screen relative pb-28">
+<!-- TopAppBar -->
+<header class="bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md fixed top-0 w-full z-50 border-b border-outline/10 flex justify-between items-center px-margin-mobile h-14 md:max-w-md md:left-1/2 md:-translate-x-1/2">
+<button class="text-on-surface-variant dark:text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95 transition-transform duration-200 p-2 -ml-2 rounded-full">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary dark:text-primary-fixed-dim tracking-tight flex-1 text-center font-bold">TinyTots</h1>
+<button class="text-on-surface-variant dark:text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95 transition-transform duration-200 p-2 -mr-2 rounded-full">
+<span class="material-symbols-outlined">shopping_bag</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="pt-20 px-margin-mobile flex flex-col gap-bento-gap">
+<!-- Order Summary Collapsible -->
+<section class="bg-surface-container-lowest rounded-[16px] hairline-border overflow-hidden">
+<button class="w-full flex items-center justify-between p-4 bg-surface-container-low hover:bg-surface-container transition-colors" id="summary-toggle">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">receipt_long</span>
+<span class="font-headline-md text-headline-md text-on-background">Order Summary</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="font-headline-md text-headline-md text-primary">Rs. 4,550</span>
+<span class="material-symbols-outlined text-on-surface-variant arrow-icon" id="summary-arrow">expand_more</span>
+</div>
+</button>
+<div class="collapsible-content" id="summary-content">
+<div class="p-4 border-t border-outline/10 flex flex-col gap-4">
+<!-- Item 1 -->
+<div class="flex gap-4">
+<div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-surface-variant hairline-border">
+<img class="w-full h-full object-cover" data-alt="A small, soft organic cotton baby onesie in a gentle sage green tone, neatly folded. Professional e-commerce lighting, clean bright off-white background, minimalist and premium style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6NbAdZAiwjPkPFoG-hOsUjySWnDc1Hg0JOz1Cc_suOCvi0U_rGCBNf1VZiLe6rJLZKT_BpUw0Z3Cit153Ne3tN9jUEi27Ugp3cnBbwP5CsAzTLfPCSXW_7xckSMNlc_8-oX3t-rp5upCl38UZJNyY2ueaIiRRWEfJkAixMDcVSFjWMF1wWPzuCFdhKfJPnbwaRR1hcw-RN2yUnxundLN30hXpHp9Dilawiqx8tbYXlsIyi_Az0vA9J7Y78IJa3FXs4ZiZl8o25TQj"/>
+</div>
+<div class="flex-1 flex flex-col justify-center">
+<h3 class="font-body-md text-body-md font-medium">Organic Cotton Onesie</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Size: 3-6M | Qty: 1</p>
+</div>
+<div class="flex items-center">
+<span class="font-body-md text-body-md font-medium">Rs. 2,250</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex gap-4">
+<div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-surface-variant hairline-border">
+<img class="w-full h-full object-cover" data-alt="A pair of tiny, soft leather baby moccasins in a warm camel color. Professional e-commerce product photography, brightly lit against an airy #FAF7F2 off-white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJBXiLSfbdFjtQ4HDm799JfH5DD20QNZv9o_vBAQnj21aATCk_BiAFEUbokXYFo6ILTMm3gKiuUmvPmkqjEciZrrnc54RWTBp-Iws0kBzpYfIjdZvgLn5USN2mpgY2FwheaafnUtq3LEZJL2rRT2eCpfJiKXE3BAty5718zadF4ZZe_46p45fPpA5OuwPvB6PCJtlMY8mQpHQNckHk0amqYcCX1xJEsRlRtlckr18DgokyBnsZ7etWnwP3UPTsr7nu89xw5DhDj7C5"/>
+</div>
+<div class="flex-1 flex flex-col justify-center">
+<h3 class="font-body-md text-body-md font-medium">Soft Sole Moccasins</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Size: 2 | Qty: 1</p>
+</div>
+<div class="flex items-center">
+<span class="font-body-md text-body-md font-medium">Rs. 2,100</span>
+</div>
+</div>
+<div class="pt-4 border-t border-outline/10 flex flex-col gap-2">
+<div class="flex justify-between font-body-sm text-body-sm text-on-surface-variant">
+<span>Subtotal</span>
+<span>Rs. 4,350</span>
+</div>
+<div class="flex justify-between font-body-sm text-body-sm text-on-surface-variant">
+<span>Shipping</span>
+<span>Rs. 200</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Step 1: Contact Information -->
+<section class="bg-surface-container-lowest rounded-[16px] p-5 hairline-border relative">
+<div class="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-button text-button shadow-sm border border-secondary-fixed/50 z-10">1</div>
+<h2 class="font-headline-md text-headline-md mb-4 ml-2">Contact Information</h2>
+<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider ml-1">Full Name</label>
+<input class="w-full bg-background border-outline/20 rounded-lg px-4 py-3 focus:ring-1 focus:ring-primary focus:border-primary font-body-md text-body-md placeholder:text-outline-variant transition-colors" placeholder="Sarah Khan" type="text"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider ml-1">Email Address</label>
+<input class="w-full bg-background border-outline/20 rounded-lg px-4 py-3 focus:ring-1 focus:ring-primary focus:border-primary font-body-md text-body-md placeholder:text-outline-variant transition-colors" placeholder="sarah@example.com" type="email"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider ml-1">Phone Number</label>
+<div class="flex">
+<span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-outline/20 bg-surface-container-low text-on-surface-variant font-body-md text-body-md">
+                            +92
+                        </span>
+<input class="flex-1 min-w-0 block w-full bg-background border-outline/20 rounded-none rounded-r-lg px-4 py-3 focus:ring-1 focus:ring-primary focus:border-primary font-body-md text-body-md placeholder:text-outline-variant transition-colors" placeholder="300 1234567" type="tel"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Step 2: Shipping Destination -->
+<section class="bg-surface-container-lowest rounded-[16px] p-5 hairline-border relative">
+<div class="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center font-button text-button shadow-sm border border-outline/20 z-10">2</div>
+<h2 class="font-headline-md text-headline-md mb-4 ml-2">Shipping Destination</h2>
+<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider ml-1">Street Address</label>
+<textarea class="w-full bg-background border-outline/20 rounded-lg px-4 py-3 focus:ring-1 focus:ring-primary focus:border-primary font-body-md text-body-md placeholder:text-outline-variant transition-colors resize-none" placeholder="House 123, Street 4, Phase 5..." rows="2"></textarea>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider ml-1">City</label>
+<div class="relative">
+<select class="w-full bg-background border-outline/20 rounded-lg px-4 py-3 focus:ring-1 focus:ring-primary focus:border-primary font-body-md text-body-md appearance-none transition-colors">
+<option disabled="" selected="" value="">Select City</option>
+<option value="khi">Karachi</option>
+<option value="lhr">Lahore</option>
+<option value="isl">Islamabad</option>
+<option value="rwp">Rawalpindi</option>
+<option value="psh">Peshawar</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-on-surface-variant">
+<span class="material-symbols-outlined">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Step 3: Payment Method -->
+<section class="bg-surface-container-lowest rounded-[16px] p-5 hairline-border relative">
+<div class="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center font-button text-button shadow-sm border border-outline/20 z-10">3</div>
+<h2 class="font-headline-md text-headline-md mb-4 ml-2">Payment Method</h2>
+<div class="flex flex-col gap-3">
+<!-- Payment Options -->
+<label class="flex items-center p-4 border border-outline/20 rounded-xl cursor-pointer hover:bg-surface-container-low transition-colors relative has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+<input checked="" class="w-5 h-5 text-primary border-outline focus:ring-primary mr-4" name="payment" type="radio" value="cod"/>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-medium text-on-background">Cash on Delivery</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Pay when you receive</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant absolute right-4 opacity-50">payments</span>
+</label>
+<label class="flex items-center p-4 border border-outline/20 rounded-xl cursor-pointer hover:bg-surface-container-low transition-colors relative has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+<input class="w-5 h-5 text-primary border-outline focus:ring-primary mr-4" name="payment" type="radio" value="card"/>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-medium text-on-background">Credit/Debit Card</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Visa, Mastercard</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant absolute right-4 opacity-50">credit_card</span>
+</label>
+<div class="grid grid-cols-2 gap-3 mt-1">
+<label class="flex flex-col items-center justify-center p-4 border border-outline/20 rounded-xl cursor-pointer hover:bg-surface-container-low transition-colors text-center has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+<input class="sr-only" name="payment" type="radio" value="jazzcash"/>
+<div class="w-8 h-8 bg-surface-variant rounded-full mb-2 flex items-center justify-center">JC</div>
+<span class="font-body-sm text-body-sm font-medium">JazzCash</span>
+</label>
+<label class="flex flex-col items-center justify-center p-4 border border-outline/20 rounded-xl cursor-pointer hover:bg-surface-container-low transition-colors text-center has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+<input class="sr-only" name="payment" type="radio" value="easypaisa"/>
+<div class="w-8 h-8 bg-surface-variant rounded-full mb-2 flex items-center justify-center">EP</div>
+<span class="font-body-sm text-body-sm font-medium">Easypaisa</span>
+</label>
+</div>
+</div>
+</section>
+</main>
+<!-- Sticky Bottom Action -->
+<div class="fixed bottom-0 w-full z-50 p-4 bg-surface/90 backdrop-blur-md border-t border-outline/10 md:max-w-md md:left-1/2 md:-translate-x-1/2 pb-safe">
+<button class="w-full h-14 bg-primary-container text-on-primary-container rounded-[12px] font-button text-button flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all shadow-sm">
+<span>Place Order</span>
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+</button>
+</div>
+<script>
+        // Collapsible logic
+        const summaryToggle = document.getElementById('summary-toggle');
+        const summaryContent = document.getElementById('summary-content');
+        const summaryArrow = document.getElementById('summary-arrow');
+
+        summaryToggle.addEventListener('click', () => {
+            summaryContent.classList.toggle('expanded');
+            summaryArrow.classList.toggle('rotated');
+        });
+        
+        // Simple visual feedback for step numbers (mock logic)
+        const inputs = document.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            input.addEventListener('change', () => {
+                // In a real app, this would validate and update step indicators
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TinyTots - Shipping &amp; Returns</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-lowest": "#ffffff",
+                      "on-secondary-container": "#536667",
+                      "on-tertiary-container": "#443729",
+                      "on-secondary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "surface-bright": "#fcf9f8",
+                      "primary-fixed-dim": "#ffb4a3",
+                      "primary-fixed": "#ffdad2",
+                      "on-error-container": "#93000a",
+                      "on-secondary-fixed": "#0b1e1f",
+                      "surface-container": "#f0edec",
+                      "on-secondary-fixed-variant": "#374a4b",
+                      "on-surface": "#1b1c1b",
+                      "tertiary-container": "#b2a08e",
+                      "surface-container-highest": "#e4e2e1",
+                      "surface-container-low": "#f6f3f2",
+                      "primary": "#9c422e",
+                      "secondary": "#4f6263",
+                      "inverse-primary": "#ffb4a3",
+                      "on-primary-fixed-variant": "#7d2c19",
+                      "secondary-fixed-dim": "#b6cacb",
+                      "on-surface-variant": "#56423e",
+                      "on-primary-fixed": "#3d0600",
+                      "error-container": "#ffdad6",
+                      "error": "#ba1a1a",
+                      "on-tertiary-fixed-variant": "#524436",
+                      "surface": "#fcf9f8",
+                      "secondary-container": "#cfe4e4",
+                      "outline": "#89726d",
+                      "surface-dim": "#dcd9d8",
+                      "secondary-fixed": "#d2e6e7",
+                      "surface-tint": "#9c422e",
+                      "on-primary-container": "#6b1e0d",
+                      "tertiary-fixed": "#f4dfcb",
+                      "outline-variant": "#dcc0bb",
+                      "on-background": "#1b1c1b",
+                      "tertiary": "#6b5c4c",
+                      "inverse-surface": "#303030",
+                      "surface-variant": "#e4e2e1",
+                      "surface-container-high": "#eae7e7",
+                      "on-primary": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "primary-container": "#f2846b",
+                      "on-tertiary-fixed": "#241a0e",
+                      "background": "#fcf9f8",
+                      "tertiary-fixed-dim": "#d7c3b0",
+                      "inverse-on-surface": "#f3f0ef"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "48px",
+                      "section-gap": "80px",
+                      "margin-mobile": "16px",
+                      "unit": "4px",
+                      "container-max": "1200px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "title-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-sm": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-sm": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "display-lg-mobile": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "display-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-md": [
+                              "Plus Jakarta Sans"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "title-lg": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-sm": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "display-lg-mobile": [
+                              "36px",
+                              {
+                                      "lineHeight": "44px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: #FCF9F8;
+            color: #1b1c1b;
+        }
+        
+        .shimmer-card {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .shimmer-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.4) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: translateX(-100%);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+<!-- TopNavBar (Shared Component) -->
+<nav class="w-full sticky top-0 z-50 bg-surface dark:bg-surface-dim shadow-sm dark:shadow-none bg-surface dark:bg-surface-dim">
+<div class="max-w-container-max mx-auto px-margin-desktop flex justify-between items-center h-20">
+<!-- Brand -->
+<a class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim tracking-tight" href="#">
+                TinyTots
+            </a>
+<!-- Navigation Links (Desktop) -->
+<ul class="hidden md:flex space-x-8 items-center h-full">
+<li class="h-full flex items-center">
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors duration-300 cursor-pointer active:opacity-70 font-title-lg text-title-lg flex flex-col justify-center h-full" href="#">
+<span>Shop</span>
+</a>
+</li>
+<li class="h-full flex items-center">
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors duration-300 cursor-pointer active:opacity-70 font-title-lg text-title-lg flex flex-col justify-center h-full" href="#">
+<span>Consultants</span>
+</a>
+</li>
+<li class="h-full flex items-center">
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors duration-300 cursor-pointer active:opacity-70 font-title-lg text-title-lg flex flex-col justify-center h-full" href="#">
+<span>Journal</span>
+</a>
+</li>
+<li class="h-full flex items-center">
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-primary transition-colors duration-300 cursor-pointer active:opacity-70 font-title-lg text-title-lg flex flex-col justify-center h-full" href="#">
+<span>Registry</span>
+</a>
+</li>
+</ul>
+<!-- Trailing Actions -->
+<div class="flex items-center space-x-6">
+<!-- Search bar on right logic implies it should be here if implemented, but just icons requested -->
+<button class="text-primary dark:text-primary-fixed-dim hover:text-primary transition-colors duration-300 cursor-pointer active:opacity-70">
+<span class="material-symbols-outlined">shopping_bag</span>
+</button>
+<a class="text-primary dark:text-primary-fixed-dim hover:text-primary transition-colors duration-300 cursor-pointer active:opacity-70 font-title-lg text-title-lg hidden md:block" href="#">
+                    Account
+                </a>
+<!-- Mobile menu toggle (placeholder) -->
+<button class="md:hidden text-primary dark:text-primary-fixed-dim">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-grow max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-section-gap">
+<!-- Header -->
+<header class="text-center mb-16 max-w-2xl mx-auto">
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface mb-4">Logistics &amp; Care</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">
+                Transparent timelines and refined policies to ensure your journey with TinyTots is as peaceful as a sleeping nursery.
+            </p>
+</header>
+<!-- 1. Logistics Timeline Map -->
+<section class="mb-section-gap">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-8 border-b border-surface-dim pb-4">Delivery Timelines in Pakistan</h2>
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_4px_20px_rgba(79,98,99,0.04)] border border-surface-container-highest">
+<div class="flex flex-col md:flex-row relative">
+<!-- Connecting Line (Desktop) -->
+<div class="hidden md:block absolute top-1/2 left-8 right-8 h-px bg-surface-dim -translate-y-1/2 z-0"></div>
+<!-- Connecting Line (Mobile) -->
+<div class="md:hidden absolute left-[31px] top-8 bottom-8 w-px bg-surface-dim z-0"></div>
+<!-- Step 1 -->
+<div class="flex-1 flex md:flex-col items-center md:items-center relative z-10 mb-8 md:mb-0 group">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary-container mb-0 md:mb-4 shrink-0 transition-transform group-hover:scale-105 border-4 border-surface-container-lowest">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">package_2</span>
+</div>
+<div class="ml-6 md:ml-0 md:text-center">
+<h3 class="font-title-lg text-title-lg text-on-surface">Order Preparation</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">24 Hours</p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="flex-1 flex md:flex-col items-center md:items-center relative z-10 mb-8 md:mb-0 group">
+<div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center text-surface-container-lowest mb-0 md:mb-4 shrink-0 transition-transform group-hover:scale-105 border-4 border-surface-container-lowest shadow-md">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+</div>
+<div class="ml-6 md:ml-0 md:text-center">
+<h3 class="font-title-lg text-title-lg text-on-surface">Punjab &amp; Islamabad</h3>
+<p class="font-body-md text-body-md text-primary mt-1 font-semibold">2–3 Business Days</p>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="flex-1 flex md:flex-col items-center md:items-center relative z-10 group">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-secondary mb-0 md:mb-4 shrink-0 transition-transform group-hover:scale-105 border-4 border-surface-container-lowest">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">map</span>
+</div>
+<div class="ml-6 md:ml-0 md:text-center">
+<h3 class="font-title-lg text-title-lg text-on-surface">Other Provinces</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">4–7 Business Days</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter mb-section-gap">
+<!-- 2. COD Regulation Card -->
+<section class="lg:col-span-5 flex">
+<div class="bg-surface-container-low rounded-xl p-8 border border-outline-variant shimmer-card flex flex-col w-full">
+<div class="flex items-center mb-6">
+<div class="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container mr-4">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">COD Regulations</h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 flex-grow">
+                        To maintain the integrity of our premium logistics network, high-value orders require a minor commitment upfront.
+                    </p>
+<div class="bg-surface-container-lowest rounded-lg p-6 border border-surface-dim">
+<h3 class="font-title-lg text-title-lg text-primary mb-2">Orders &gt; 15,000 PKR</h3>
+<p class="font-body-md text-body-md text-on-surface">
+                            Require an advance token payment of <strong>10%</strong> before dispatch. Our concierge will contact you to process this securely.
+                        </p>
+</div>
+</div>
+</section>
+<!-- 3. Returns Lifecycle Tracker -->
+<section class="lg:col-span-7 flex">
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_4px_20px_rgba(79,98,99,0.04)] border border-surface-container-highest w-full">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-8">Exchange Lifecycle</h2>
+<div class="space-y-8">
+<!-- Step 1 -->
+<div class="flex items-start">
+<div class="flex flex-col items-center mr-6">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-secondary font-label-md text-label-md">1</div>
+<div class="w-px h-16 bg-surface-dim my-2"></div>
+</div>
+<div class="pt-1">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-2 flex items-center">
+<span class="material-symbols-outlined mr-2 text-on-surface-variant">assignment_return</span>
+                                    Request Initiation
+                                </h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Lodge a return request via your Account portal within 7 days of delivery. Ensure items are unworn and tags intact.</p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="flex items-start">
+<div class="flex flex-col items-center mr-6">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-secondary font-label-md text-label-md">2</div>
+<div class="w-px h-16 bg-surface-dim my-2"></div>
+</div>
+<div class="pt-1">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-2 flex items-center">
+<span class="material-symbols-outlined mr-2 text-on-surface-variant">airport_shuttle</span>
+                                    Secure Reverse Pick-up
+                                </h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Our logistics partner will arrive at your door to securely collect the parcel within 48 hours of approval.</p>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="flex items-start">
+<div class="flex flex-col items-center mr-6">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-surface-container-lowest font-label-md text-label-md shadow-sm">3</div>
+</div>
+<div class="pt-1">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-2 flex items-center">
+<span class="material-symbols-outlined mr-2 text-primary">verified</span>
+                                    Validation &amp; Credit
+                                </h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Upon receiving the parcel, our team validates the quality. Store credit is dispatched to your TinyTots wallet instantly.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- 4. Help Callout Alert -->
+<section>
+<div class="bg-secondary-container rounded-xl p-8 border border-secondary flex flex-col md:flex-row items-center justify-between shadow-sm">
+<div class="flex items-center mb-6 md:mb-0">
+<span class="material-symbols-outlined text-4xl text-on-secondary-container mr-6">support_agent</span>
+<div>
+<h2 class="font-title-lg text-title-lg text-on-secondary-container">Require specialized assistance?</h2>
+<p class="font-body-md text-body-md text-on-secondary-container mt-1 opacity-80">Our concierge team is available to guide you through any logistics concerns.</p>
+</div>
+</div>
+<a class="inline-flex items-center justify-center px-8 py-3 bg-surface-container-lowest text-on-surface font-label-md text-label-md rounded-full hover:bg-surface-container transition-colors border border-surface-dim shadow-sm whitespace-nowrap" href="#">
+                    Visit Help Center
+                    <span class="material-symbols-outlined ml-2 text-sm">arrow_forward</span>
+</a>
+</div>
+</section>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full mt-section-gap bg-surface-container-low dark:bg-surface-container-highest bg-surface-container-low dark:bg-surface-container-highest flat no shadows">
+<div class="max-w-container-max mx-auto px-margin-desktop py-section-gap grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<div class="col-span-1 md:col-span-1">
+<div class="font-headline-sm text-headline-sm text-primary dark:text-primary-fixed-dim mb-4">
+                    TinyTots
+                </div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">
+                    Curating refined experiences for early parenthood.
+                </p>
+<div class="font-body-md text-body-md text-on-surface-variant text-sm">
+                    © 2024 TinyTots Juvenile Services. All rights reserved.
+                </div>
+</div>
+<div class="col-span-1 md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-8">
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-4">Client Care</h4>
+<ul class="space-y-3">
+<li>
+<a class="font-body-md text-body-md text-on-secondary-container dark:text-on-secondary-fixed-variant hover:text-primary transition-colors underline-offset-4 hover:underline" href="#">Support</a>
+</li>
+<li>
+<a class="font-body-md text-body-md text-on-secondary-container dark:text-on-secondary-fixed-variant hover:text-primary transition-colors underline-offset-4 hover:underline text-primary font-semibold" href="#">Shipping &amp; Returns</a>
+</li>
+</ul>
+</div>
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-4">Legal</h4>
+<ul class="space-y-3">
+<li>
+<a class="font-body-md text-body-md text-on-secondary-container dark:text-on-secondary-fixed-variant hover:text-primary transition-colors underline-offset-4 hover:underline" href="#">Privacy Policy</a>
+</li>
+<li>
+<a class="font-body-md text-body-md text-on-secondary-container dark:text-on-secondary-fixed-variant hover:text-primary transition-colors underline-offset-4 hover:underline" href="#">Terms of Service</a>
+</li>
+</ul>
+</div>
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-4">Social</h4>
+<ul class="space-y-3">
+<li>
+<a class="font-body-md text-body-md text-on-secondary-container dark:text-on-secondary-fixed-variant hover:text-primary transition-colors underline-offset-4 hover:underline" href="#">Instagram</a>
+</li>
+<li>
+<a class="font-body-md text-body-md text-on-secondary-container dark:text-on-secondary-fixed-variant hover:text-primary transition-colors underline-offset-4 hover:underline" href="#">Pinterest</a>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

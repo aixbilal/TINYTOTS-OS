@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TinyTots - Size Guide &amp; Fit Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed-dim": "#ffb4a3",
+                        "surface-container-high": "#eae7e7",
+                        "surface-container-highest": "#e4e2e1",
+                        "secondary": "#4f6263",
+                        "primary": "#9c422e",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#f0edec",
+                        "background": "#fcf9f8",
+                        "on-primary-container": "#6b1e0d",
+                        "surface": "#fcf9f8",
+                        "on-primary-fixed": "#3d0600",
+                        "inverse-on-surface": "#f3f0ef",
+                        "on-secondary-container": "#536667",
+                        "primary-container": "#f2846b",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#d2e6e7",
+                        "outline": "#89726d",
+                        "inverse-primary": "#ffb4a3",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#b2a08e",
+                        "on-primary-fixed-variant": "#7d2c19",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#6b5c4c",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#0b1e1f",
+                        "on-background": "#1b1c1b",
+                        "on-tertiary-fixed": "#241a0e",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#fcf9f8",
+                        "surface-variant": "#e4e2e1",
+                        "surface-container-low": "#f6f3f2",
+                        "secondary-container": "#cfe4e4",
+                        "on-secondary-fixed-variant": "#374a4b",
+                        "on-tertiary-fixed-variant": "#524436",
+                        "tertiary-fixed-dim": "#d7c3b0",
+                        "on-tertiary-container": "#443729",
+                        "on-surface-variant": "#56423e",
+                        "inverse-surface": "#303030",
+                        "surface-tint": "#9c422e",
+                        "outline-variant": "#dcc0bb",
+                        "on-surface": "#1b1c1b",
+                        "tertiary-fixed": "#f4dfcb",
+                        "surface-dim": "#dcd9d8",
+                        "secondary-fixed-dim": "#b6cacb",
+                        "primary-fixed": "#ffdad2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-gap": "80px",
+                        "container-max": "1200px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "gutter": "24px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "headline-md": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex items-center justify-center relative overflow-hidden">
+<!-- Modal Backdrop -->
+<div class="absolute inset-0 bg-secondary/20 backdrop-blur-[8px] z-10 transition-opacity duration-300"></div>
+<!-- Modal Container -->
+<div class="relative z-20 w-full max-w-4xl mx-margin-mobile md:mx-auto bg-surface-container-lowest rounded-xl shadow-[0_4px_20px_rgba(79,98,99,0.08)] overflow-hidden flex flex-col max-h-[921px]">
+<!-- Header -->
+<header class="flex justify-between items-center p-6 md:p-8 border-b border-surface-container">
+<h2 class="font-headline-sm text-headline-sm text-primary">Size Guide &amp; Fit Assistant</h2>
+<button aria-label="Close modal" class="text-on-surface-variant hover:text-primary transition-colors focus:outline-none">
+<span class="material-symbols-outlined text-2xl">close</span>
+</button>
+</header>
+<!-- Main Content Scrollable -->
+<div class="overflow-y-auto flex-1 p-6 md:p-8 custom-scrollbar">
+<!-- Category Tabs -->
+<div class="flex space-x-6 border-b border-surface-container mb-8 overflow-x-auto pb-2 no-scrollbar">
+<button class="pb-2 border-b-2 border-primary text-primary font-label-md text-label-md whitespace-nowrap">Newborn (0-12m)</button>
+<button class="pb-2 border-b-2 border-transparent text-on-surface-variant hover:text-primary transition-colors font-label-md text-label-md whitespace-nowrap">Baby (12-24m)</button>
+<button class="pb-2 border-b-2 border-transparent text-on-surface-variant hover:text-primary transition-colors font-label-md text-label-md whitespace-nowrap">Toddler (2-4T)</button>
+<button class="pb-2 border-b-2 border-transparent text-on-surface-variant hover:text-primary transition-colors font-label-md text-label-md whitespace-nowrap">Kids (5-8Y)</button>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Left Column: Guide & Engine -->
+<div class="lg:col-span-4 space-y-10">
+<!-- Fit Recommendation Engine -->
+<div class="bg-surface p-6 rounded-lg shadow-sm border border-surface-variant/50">
+<h3 class="font-title-lg text-title-lg mb-4 text-on-background">Fit Recommendation</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 text-sm">Enter your child's measurements for a personalized size suggestion.</p>
+<div class="space-y-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Age (Months/Years)</label>
+<input class="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors font-body-md text-body-md text-on-background placeholder:text-on-surface-variant/50" placeholder="e.g. 18m or 2Y" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Height</label>
+<div class="relative">
+<input class="w-full pl-4 pr-10 py-2 bg-surface-container-lowest border border-outline-variant rounded focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors font-body-md text-body-md text-on-background" placeholder="0" type="number"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 font-label-sm text-label-sm text-on-surface-variant">cm</span>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Weight</label>
+<div class="relative">
+<input class="w-full pl-4 pr-10 py-2 bg-surface-container-lowest border border-outline-variant rounded focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors font-body-md text-body-md text-on-background" placeholder="0" type="number"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 font-label-sm text-label-sm text-on-surface-variant">kg</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-4 bg-primary-container text-on-primary font-label-md text-label-md py-3 rounded-full hover:opacity-90 transition-opacity flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-sm">straighten</span> Calculate Size
+                            </button>
+</div>
+</div>
+<!-- Visual Guide -->
+<div class="relative bg-surface rounded-lg p-6 flex flex-col items-center justify-center border border-surface-variant/30 min-h-[300px]">
+<img class="w-full h-auto object-contain max-h-[250px] mix-blend-multiply opacity-80" data-alt="A minimalist, elegant line drawing of a baby on an ivory background, featuring subtle measurement indicators for chest, height, and weight. The style is clean, modern, and editorial, using soft terracotta and sage green accents to match a premium nursery aesthetic. High key lighting, simple vector-like clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVdF07MgyvI0iH43GUGqOFDjqzHjotplkeOAa_aEBNOgxDmecAA_h9E6tzvOCOF0fwT9ISAHcUWJgSQyNy8qhTehfljFR5C3mgbMCfMwuSOPP__32bk6RrkLYBvdAE_z6jwmB27VjJmgYUBCJ7FKW_fGqJyWgolaFvSchcL8VeRk_PldGuzpzOB7hAGvpVs-4PRvtjBBWbQ09gx4e3qgvNFK6x9jXBB9dXq7etSlDzfuGaN08F9Keye_nIowwi28R0zbTXpNZPI7wd"/>
+<div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-4">
+<!-- Simulated Markers overlayed on image for effect if image doesn't have them explicitly clear -->
+<div class="w-full h-full relative">
+<div class="absolute top-[30%] left-[20%] flex items-center gap-2">
+<div class="w-2 h-2 bg-primary rounded-full"></div>
+<span class="font-label-sm text-label-sm bg-surface-container-lowest/80 px-2 py-0.5 rounded backdrop-blur text-primary">Chest</span>
+</div>
+<div class="absolute top-[10%] right-[15%] flex flex-col items-center gap-1">
+<span class="font-label-sm text-label-sm bg-surface-container-lowest/80 px-2 py-0.5 rounded backdrop-blur text-secondary">Height</span>
+<div class="w-[1px] h-32 bg-secondary border-dashed"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Size Table & Notes -->
+<div class="lg:col-span-8 flex flex-col">
+<div class="flex justify-between items-end mb-4">
+<h3 class="font-title-lg text-title-lg text-on-background">Newborn Measurements</h3>
+<div class="flex items-center gap-2 bg-surface-container p-1 rounded">
+<button class="px-3 py-1 bg-surface-container-lowest rounded shadow-sm font-label-sm text-label-sm text-primary">CM / KG</button>
+<button class="px-3 py-1 text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-colors">IN / LB</button>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto bg-surface-container-lowest border border-surface-variant rounded-lg mb-8 shadow-sm">
+<table class="w-full text-left border-collapse min-w-[600px]">
+<thead>
+<tr class="bg-surface-container-low border-b border-surface-variant">
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant">Size</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant">Age</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant">Height (cm)</th>
+<th class="py-4 px-6 font-label-md text-label-md text-on-surface-variant">Weight (kg)</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md text-on-background">
+<tr class="border-b border-surface-variant hover:bg-surface transition-colors">
+<td class="py-4 px-6 font-semibold">Premature</td>
+<td class="py-4 px-6 text-on-surface-variant">Preemie</td>
+<td class="py-4 px-6">Up to 43</td>
+<td class="py-4 px-6">Up to 2.2</td>
+</tr>
+<tr class="border-b border-surface-variant hover:bg-surface transition-colors">
+<td class="py-4 px-6 font-semibold">Newborn</td>
+<td class="py-4 px-6 text-on-surface-variant">0-1 month</td>
+<td class="py-4 px-6">44 - 50</td>
+<td class="py-4 px-6">2.3 - 3.2</td>
+</tr>
+<tr class="border-b border-surface-variant hover:bg-surface transition-colors bg-surface-container-low/30 relative">
+<td class="py-4 px-6 font-semibold flex items-center gap-2">
+                                        0-3M
+                                        <span class="bg-primary/10 text-primary font-label-sm text-label-sm px-2 py-0.5 rounded-sm uppercase tracking-wider hidden md:inline-block">Popular</span>
+</td>
+<td class="py-4 px-6 text-on-surface-variant">1-3 months</td>
+<td class="py-4 px-6">51 - 62</td>
+<td class="py-4 px-6">3.3 - 5.5</td>
+</tr>
+<tr class="border-b border-surface-variant hover:bg-surface transition-colors">
+<td class="py-4 px-6 font-semibold">3-6M</td>
+<td class="py-4 px-6 text-on-surface-variant">3-6 months</td>
+<td class="py-4 px-6">63 - 68</td>
+<td class="py-4 px-6">5.6 - 7.5</td>
+</tr>
+<tr class="border-b border-surface-variant hover:bg-surface transition-colors">
+<td class="py-4 px-6 font-semibold">6-9M</td>
+<td class="py-4 px-6 text-on-surface-variant">6-9 months</td>
+<td class="py-4 px-6">69 - 74</td>
+<td class="py-4 px-6">7.6 - 9.0</td>
+</tr>
+<tr class="hover:bg-surface transition-colors">
+<td class="py-4 px-6 font-semibold">9-12M</td>
+<td class="py-4 px-6 text-on-surface-variant">9-12 months</td>
+<td class="py-4 px-6">75 - 80</td>
+<td class="py-4 px-6">9.1 - 10.5</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Brand Notes -->
+<div class="mt-auto bg-surface p-6 rounded-lg border border-surface-variant/50 flex flex-col md:flex-row gap-6 items-start">
+<div class="flex-shrink-0 mt-1 text-tertiary">
+<span class="material-symbols-outlined text-3xl">info</span>
+</div>
+<div>
+<h4 class="font-title-lg text-title-lg text-on-background mb-2">Our Fit Philosophy</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">TinyTots garments are designed with comfort and longevity in mind. Understanding our styles helps ensure the perfect fit.</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-surface-container-lowest p-4 rounded border border-surface-variant">
+<h5 class="font-label-md text-label-md text-on-background mb-1">Standard Fit</h5>
+<p class="text-sm text-on-surface-variant font-body-md">True to size with standard ease for layering. Recommended for everyday essentials.</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded border border-surface-variant">
+<h5 class="font-label-md text-label-md text-on-background mb-1">Grow-with-Me</h5>
+<p class="text-sm text-on-surface-variant font-body-md">Features rolled cuffs and extended bodies. Designed to last an extra 3-6 months.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Action -->
+<div class="p-6 md:px-8 md:py-4 bg-surface-container-lowest border-t border-surface-container flex justify-end">
+<button class="bg-transparent border border-primary text-primary font-label-md text-label-md py-2 px-6 rounded-full hover:bg-primary/5 transition-colors">
+                Book Fit Consultation
+            </button>
+</div>
+</div>
+<style>
+        /* Hide scrollbar for tabs but allow scrolling */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Custom scrollbar for modal content */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #dcd9d8; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #b2a08e; 
+        }
+    </style>
+</body></html>
