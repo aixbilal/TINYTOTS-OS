@@ -106,7 +106,12 @@ export default async function Home() {
 
       {/* Trending now — real product data */}
       <section id="trending" className="mb-stack-lg">
-        <h2 className="font-headline-lg text-on-surface mb-stack-md">Trending Now</h2>
+      <div className="flex justify-between items-end mb-stack-md">
+  <h2 className="font-headline-lg text-on-surface">Trending Now</h2>
+  <Link href="/products" className="font-body-sm text-body-sm text-primary hover:underline">
+    View All
+  </Link>
+</div>
 
         {products.length === 0 && (
           <p className="text-on-surface-variant">No products available right now.</p>

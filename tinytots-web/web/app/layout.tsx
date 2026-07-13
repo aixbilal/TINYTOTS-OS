@@ -55,8 +55,8 @@ export default function RootLayout({
                 TinyTots
               </Link>
               <div className="hidden md:flex gap-6">
-                <Link href="/" className="font-body-md text-body-md text-primary font-bold border-b-2 border-primary pb-1">
-                  Shop All
+              <Link href="/products" className="font-body-md text-body-md text-primary font-bold border-b-2 border-primary pb-1">
+                Shop All
                 </Link>
                 <Link href="/track-order" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors">
                   Track Order

@@ -7,20 +7,8 @@ async function getProduct(id: string) {
     .from("products")
     .select(
       `
-      id,
-      name,
-      sku,
-      description,
-      brand,
-      category,
-      image_url,
-      variants (
-        id,
-        color,
-        size,
-        price,
-        stock
-      )
+      id, name, sku, description, brand, category, image_url,
+      variants ( id, color, size, price, stock )
     `
     )
     .eq("id", id)
@@ -41,35 +29,58 @@ export default async function ProductDetailPage({
 
   if (!product) {
     return (
-      <div className="max-w-3xl mx-auto px-6 py-12">Product not found.</div>
+      <main className="max-w-3xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+        <p className="text-on-surface-variant">Product not found.</p>
+        <Link href="/products" className="text-primary hover:underline">
+          ← Back to shop
+        </Link>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link href="/" className="text-sm text-zinc-500 hover:underline">
-          ← Back to shop
-        </Link>
+    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <nav className="text-body-sm font-body-sm text-on-surface-variant mb-stack-sm flex items-center gap-2">
+        <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        <Link href="/products" className="hover:text-primary transition-colors">Shop All</Link>
+        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        <span className="text-on-surface">{product.name}</span>
+      </nav>
 
-        <div className="mt-6 grid sm:grid-cols-2 gap-8">
-          <div className="aspect-square bg-zinc-100 dark:bg-zinc-900 rounded-lg" />
-
-          <div>
-            <h1 className="text-2xl font-semibold text-black dark:text-white">
-              {product.name}
-            </h1>
-            <p className="text-sm text-zinc-500 mt-1">{product.brand}</p>
-            <p className="text-sm text-zinc-500">{product.description}</p>
-
-            <AddToCart
-              productId={product.id}
-              productName={product.name}
-              variants={product.variants}
+      <div className="grid md:grid-cols-2 gap-gutter">
+        <div className="aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 bg-surface-container-low">
+          {product.image_url ? (
+            <img
+              className="w-full h-full object-cover"
+              src={product.image_url}
+              alt={product.name}
             />
-          </div>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-on-surface-variant">
+              No image
+            </div>
+          )}
         </div>
-      </main>
-    </div>
+
+        <div>
+          <h1 className="font-display-md text-display-md text-on-surface">{product.name}</h1>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            {product.brand} {product.category ? `· ${product.category}` : ""}
+          </p>
+          {product.description && (
+            <p className="font-body-md text-body-md text-on-surface-variant mt-4">
+              {product.description}
+            </p>
+          )}
+
+          <AddToCart
+            productId={product.id}
+            productName={product.name}
+            variants={product.variants}
+          />
+        </div>
+      </div>
+    </main>
   );
 }

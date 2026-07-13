@@ -46,30 +46,24 @@ export default function AddToCart({
   return (
     <div>
       {selected && (
-        <p className="mt-4 text-xl font-semibold text-black dark:text-white">
+        <p className="mt-2 font-headline-lg text-headline-lg text-primary">
           Rs. {selected.price.toLocaleString()}
         </p>
       )}
 
       <div className="mt-6">
-        <p className="text-sm font-medium text-black dark:text-white mb-2">
-          Size
-        </p>
+        <p className="font-label-lg text-label-lg text-on-surface mb-2">Size / Variant</p>
         <div className="flex flex-wrap gap-2">
           {variants.map((v) => (
             <button
               key={v.id}
               onClick={() => setSelected(v)}
               disabled={v.stock === 0}
-              className={`px-4 py-2 rounded border text-sm ${
+              className={`px-4 py-2 rounded-lg border font-body-sm text-body-sm transition-colors ${
                 selected?.id === v.id
-                  ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                  : "border-zinc-300 dark:border-zinc-700"
-              } ${
-                v.stock === 0
-                  ? "opacity-30 cursor-not-allowed line-through"
-                  : ""
-              }`}
+                  ? "border-primary bg-primary-container text-on-primary"
+                  : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
+              } ${v.stock === 0 ? "opacity-30 cursor-not-allowed line-through" : ""}`}
             >
               {v.size ?? "One Size"}
               {v.color ? ` / ${v.color}` : ""}
@@ -78,7 +72,7 @@ export default function AddToCart({
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-zinc-400">
+      <p className="mt-3 font-body-sm text-body-sm text-on-surface-variant">
         {selected
           ? selected.stock > 0
             ? `${selected.stock} in stock`
@@ -89,7 +83,7 @@ export default function AddToCart({
       <button
         onClick={handleAddToCart}
         disabled={!selected || selected.stock === 0}
-        className="mt-6 w-full py-3 rounded bg-black text-white dark:bg-white dark:text-black font-medium disabled:opacity-30 disabled:cursor-not-allowed"
+        className="mt-6 w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
       >
         {added ? "Added ✓" : "Add to Cart"}
       </button>
