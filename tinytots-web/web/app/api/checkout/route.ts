@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 
 // Cities where COD is currently allowed. Expand this list later
 // (e.g. add more cities, or switch to an "all Pakistan" flag) —

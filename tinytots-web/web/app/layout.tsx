@@ -36,12 +36,20 @@ export default function RootLayout({
             <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
               {/* Added the missing Link component and closing tag */}
               <Link
-                href="/"
-                className="font-semibold text-lg text-black dark:text-white"
-              >
-                TinyTots
-              </Link>
-              <HeaderCart />
+  href="/"
+  className="font-semibold text-lg text-black dark:text-white"
+>
+  TinyTots
+</Link>
+<div className="flex items-center gap-4">
+  <Link
+    href="/track-order"
+    className="text-sm font-medium text-black dark:text-white"
+  >
+    Track Order
+  </Link>
+  <HeaderCart />
+</div>
             </div>
           </header>
           <main className="flex-grow">
