@@ -856,6 +856,18 @@ app.get("/api/inventory", async (req, res) => {
 // ----------------------------------------------------
 // CREATE PRODUCT + AUTO-GENERATE VARIANT MATRIX
 // ----------------------------------------------------
+// ----------------------------------------------------
+// HELPER FUNCTION (Prevents crashes if colorCode is missing)
+// ----------------------------------------------------
+function colorCode(color) {
+  if (!color) return "GEN";
+  // Safe fallback: uses the first 3 letters of the color name safely
+  return color.toString().replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase();
+}
+
+// ----------------------------------------------------
+// CREATE PRODUCT & VARIANTS
+// ----------------------------------------------------
 app.post("/api/products", async (req, res) => {
   try {
     const {
@@ -871,11 +883,14 @@ app.post("/api/products", async (req, res) => {
     }
 
     const cleanSku = sku.trim().toUpperCase();
+    
+    // Check if base SKU exists
     const { data: existing, error: existingErr } = await supabase
       .from("products")
       .select("id")
       .eq("sku", cleanSku)
       .maybeSingle();
+      
     if (existingErr) throw existingErr;
     if (existing) {
       return res.status(409).json({
@@ -884,11 +899,13 @@ app.post("/api/products", async (req, res) => {
       });
     }
 
+    // Insert Product safely
     const { data: product, error: prodErr } = await supabase
       .from("products")
       .insert([{ name, brand, category, sku: cleanSku, hsn_code, unit: unit || "Pcs", description, image_url, status: "active" }])
       .select()
       .single();
+      
     if (prodErr) {
       if (prodErr.code === "23505") {
         return res.status(409).json({ success: false, message: `SKU "${cleanSku}" is already in use.` });
@@ -896,6 +913,7 @@ app.post("/api/products", async (req, res) => {
       throw prodErr;
     }
 
+    // Generate variant rows securely
     const variantRows = [];
     for (const color of colors) {
       for (const size of sizes) {
@@ -905,28 +923,31 @@ app.post("/api/products", async (req, res) => {
           size,
           price: Number(price) || 0,
           stock: Number(initialStock) || 0,
-          sku: `${sku}-${colorCode(color)}-${size}`.toUpperCase(),
+          sku: `${cleanSku}-${colorCode(color)}-${size}`.toUpperCase(),
           status: "active",
         });
       }
     }
 
+    // Bulk insert variants
     const { data: variants, error: varErr } = await supabase
-    .from("variants")
-    .insert(variantRows)
-    .select();
-  if (varErr) throw varErr;
+      .from("variants")
+      .insert(variantRows)
+      .select();
+      
+    if (varErr) throw varErr;
 
-  // public_code depends on the DB-assigned id, so it can only be set
-  // as a follow-up update once we know each variant's real id.
-  await Promise.all(
-    variants.map((v) =>
-      supabase.from("variants").update({ public_code: `V-${v.id}` }).eq("id", v.id)
-    )
-  );
-  variants.forEach((v) => { v.public_code = `V-${v.id}`; });
+    // Follow-up: Assign unique public codes safely
+    if (variants && variants.length > 0) {
+      await Promise.all(
+        variants.map((v) =>
+          supabase.from("variants").update({ public_code: `V-${v.id}` }).eq("id", v.id)
+        )
+      );
+      variants.forEach((v) => { v.public_code = `V-${v.id}`; });
+    }
 
-  res.json({ success: true, product, variants });
+    res.json({ success: true, product, variants });
   } catch (err) {
     console.error("Create product error:", err);
     res.status(500).json({ success: false, error: err.message });
@@ -939,26 +960,28 @@ app.post("/api/products", async (req, res) => {
 app.put("/api/products/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const fields = (({ name, brand, category, hsn_code, unit, description, image_url, status }) =>
-      ({ name, brand, category, hsn_code, unit, description, image_url, status }))(req.body);
+    const { name, brand, category, hsn_code, unit, description, image_url, status } = req.body;
+    
+    const fieldsToUpdate = { name, brand, category, hsn_code, unit, description, image_url, status };
 
     const { data, error } = await supabase
       .from("products")
-      .update(fields)
+      .update(fieldsToUpdate)
       .eq("id", id)
       .select()
       .single();
+      
     if (error) throw error;
 
     res.json({ success: true, product: data });
   } catch (err) {
+    console.error("Update product error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
 // ----------------------------------------------------
-// DELETE PRODUCT (variants cascade if your FK is ON DELETE CASCADE;
-// otherwise we clean them up manually first)
+// DELETE PRODUCT
 // ----------------------------------------------------
 app.delete("/api/products/:id", async (req, res) => {
   try {
@@ -968,6 +991,7 @@ app.delete("/api/products/:id", async (req, res) => {
     if (error) throw error;
     res.json({ success: true });
   } catch (err) {
+    console.error("Delete product error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -978,22 +1002,23 @@ app.delete("/api/products/:id", async (req, res) => {
 app.put("/api/variants/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const fields = (({ stock, price, status }) => ({ stock, price, status }))(req.body);
+    const { stock, price, status } = req.body;
 
     const { data, error } = await supabase
       .from("variants")
-      .update(fields)
+      .update({ stock, price, status })
       .eq("id", id)
       .select()
       .single();
+      
     if (error) throw error;
 
     res.json({ success: true, variant: data });
   } catch (err) {
+    console.error("Update variant error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
 // ----------------------------------------------------
 // DELETE A SINGLE VARIANT
 // ----------------------------------------------------

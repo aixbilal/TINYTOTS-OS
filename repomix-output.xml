@@ -10277,408 +10277,6 @@ export async function GET(request: NextRequest) {
 }
 </file>
 
-<file path="tinytots-web/web/app/cart/page.tsx">
-"use client";
-
-import { useCart } from "@/lib/cart-context";
-import Link from "next/link";
-
-export default function CartPage() {
-  const { items, updateQuantity, removeItem, subtotal } = useCart();
-
-  if (items.length === 0) {
-    return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-black">
-        <main className="max-w-3xl mx-auto px-6 py-12">
-          <h1 className="text-2xl font-semibold text-black dark:text-white mb-4">
-            Your Cart
-          </h1>
-          <p className="text-zinc-500">Your cart is empty.</p>
-          <a
-            href="/"
-            className="inline-block mt-6 text-sm underline text-black dark:text-white"
-          >
-            Continue shopping
-          </a>
-        </main>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <h1 className="text-2xl font-semibold text-black dark:text-white mb-6">
-          Your Cart
-        </h1>
-
-        <div className="space-y-4">
-          {items.map((item) => (
-            <div
-              key={item.variantId}
-              className="flex items-center justify-between border border-zinc-200 dark:border-zinc-800 rounded-lg p-4"
-            >
-              <div>
-                <p className="font-medium text-black dark:text-white">
-                  {item.productName}
-                </p>
-                <p className="text-sm text-zinc-500">
-                  {item.size ?? "One Size"}
-                  {item.color ? ` / ${item.color}` : ""}
-                </p>
-                <p className="text-sm text-zinc-500">
-                  Rs. {item.price.toLocaleString()} each
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex items-center border border-zinc-300 dark:border-zinc-700 rounded">
-                  <button
-                    onClick={() =>
-                      updateQuantity(item.variantId, item.quantity - 1)
-                    }
-                    className="px-3 py-1 text-black dark:text-white"
-                  >
-                    −
-                  </button>
-                  <span className="px-3 text-black dark:text-white">
-                    {item.quantity}
-                  </span>
-                  <button
-                    onClick={() =>
-                      updateQuantity(item.variantId, item.quantity + 1)
-                    }
-                    disabled={item.quantity >= item.maxStock}
-                    className="px-3 py-1 text-black dark:text-white disabled:opacity-30"
-                  >
-                    +
-                  </button>
-                </div>
-
-                <p className="w-20 text-right font-medium text-black dark:text-white">
-                  Rs. {(item.price * item.quantity).toLocaleString()}
-                </p>
-
-                <button
-                  onClick={() => removeItem(item.variantId)}
-                  className="text-xs text-red-500 hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-8 flex items-center justify-between border-t border-zinc-200 dark:border-zinc-800 pt-6">
-          <p className="text-lg font-medium text-black dark:text-white">
-            Subtotal
-          </p>
-          <p className="text-lg font-semibold text-black dark:text-white">
-            Rs. {subtotal.toLocaleString()}
-          </p>
-        </div>
-
-        <Link
-            href="/checkout"
-            className="mt-6 block text-center w-full py-3 rounded bg-black text-white dark:bg-white dark:text-black font-medium"
-         >
-           Proceed to Checkout
-          </Link>
-      </main>
-    </div>
-  );
-}
-</file>
-
-<file path="tinytots-web/web/app/checkout/page.tsx">
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useCart } from "@/lib/cart-context";
-
-export default function CheckoutPage() {
-  const router = useRouter();
-  const { items, subtotal, clearCart } = useCart();
-
-  const [guestName, setGuestName] = useState("");
-  const [guestPhone, setGuestPhone] = useState("");
-  const [shippingAddress, setShippingAddress] = useState("");
-  const [shippingCity, setShippingCity] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cod");
-  const [couponCode, setCouponCode] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  if (items.length === 0) {
-    return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-black">
-        <main className="max-w-2xl mx-auto px-6 py-12">
-          <p className="text-zinc-500">
-            Your cart is empty. Add something before checking out.
-          </p>
-          <Link href="/" className="inline-block mt-4 text-sm underline text-black dark:text-white">
-            Continue shopping
-          </Link>
-        </main>
-      </div>
-    );
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-
-    if (!guestName || !guestPhone || !shippingAddress || !shippingCity) {
-      setError("Please fill in all required fields.");
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map((i) => ({
-            variant_id: i.variantId,
-            quantity: i.quantity,
-          })),
-          shipping_address: shippingAddress,
-          shipping_city: shippingCity,
-          payment_method: paymentMethod,
-          guest_name: guestName,
-          guest_phone: guestPhone,
-          coupon_code: couponCode || undefined,
-        }),
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        setError(json.error || "Something went wrong. Please try again.");
-        setSubmitting(false);
-        return;
-      }
-
-      clearCart();
-      router.push(`/order-confirmation/${json.data.order_number}`);
-    } catch (err) {
-      setError("Network error. Please try again.");
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      <main className="max-w-2xl mx-auto px-6 py-12">
-        <h1 className="text-2xl font-semibold text-black dark:text-white mb-6">
-          Checkout
-        </h1>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <h2 className="text-sm font-medium text-black dark:text-white mb-3">
-              Contact details
-            </h2>
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="Full name"
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                className="w-full border border-zinc-300 dark:border-zinc-700 rounded px-3 py-2 bg-white dark:bg-zinc-900 text-black dark:text-white"
-                required
-              />
-              <input
-                type="tel"
-                placeholder="Phone number (e.g. 03001234567)"
-                value={guestPhone}
-                onChange={(e) => setGuestPhone(e.target.value)}
-                className="w-full border border-zinc-300 dark:border-zinc-700 rounded px-3 py-2 bg-white dark:bg-zinc-900 text-black dark:text-white"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-sm font-medium text-black dark:text-white mb-3">
-              Shipping address
-            </h2>
-            <div className="space-y-3">
-              <textarea
-                placeholder="Full address (house/street/area)"
-                value={shippingAddress}
-                onChange={(e) => setShippingAddress(e.target.value)}
-                className="w-full border border-zinc-300 dark:border-zinc-700 rounded px-3 py-2 bg-white dark:bg-zinc-900 text-black dark:text-white"
-                rows={3}
-                required
-              />
-              <input
-                type="text"
-                placeholder="City (e.g. Lahore, Islamabad, Karachi...)"
-                value={shippingCity}
-                onChange={(e) => setShippingCity(e.target.value)}
-                className="w-full border border-zinc-300 dark:border-zinc-700 rounded px-3 py-2 bg-white dark:bg-zinc-900 text-black dark:text-white"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-sm font-medium text-black dark:text-white mb-3">
-              Payment method
-            </h2>
-            <div className="space-y-2">
-              {[
-                { value: "cod", label: "Cash on Delivery (Punjab & Islamabad only, for now)" },
-                { value: "card", label: "Card" },
-                { value: "jazzcash", label: "JazzCash" },
-                { value: "easypaisa", label: "Easypaisa" },
-              ].map((option) => (
-                <label
-                  key={option.value}
-                  className="flex items-center gap-2 border border-zinc-300 dark:border-zinc-700 rounded px-3 py-2 cursor-pointer"
-                >
-                  <input
-                    type="radio"
-                    name="payment_method"
-                    value={option.value}
-                    checked={paymentMethod === option.value}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  />
-                  <span className="text-sm text-black dark:text-white">
-                    {option.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-sm font-medium text-black dark:text-white mb-3">
-              Coupon code (optional)
-            </h2>
-            <input
-              type="text"
-              placeholder="Enter coupon code"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              className="w-full border border-zinc-300 dark:border-zinc-700 rounded px-3 py-2 bg-white dark:bg-zinc-900 text-black dark:text-white"
-            />
-          </div>
-
-          <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
-            <div className="flex items-center justify-between text-sm text-zinc-500 mb-1">
-              <span>Subtotal</span>
-              <span>Rs. {subtotal.toLocaleString()}</span>
-            </div>
-            <p className="text-xs text-zinc-400">
-              Delivery fee and any COD token amount will be confirmed after you place the order.
-            </p>
-          </div>
-
-          {error && (
-            <p className="text-sm text-red-500 border border-red-200 dark:border-red-900 rounded px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-3 rounded bg-black text-white dark:bg-white dark:text-black font-medium disabled:opacity-50"
-          >
-            {submitting ? "Placing order..." : "Place Order"}
-          </button>
-        </form>
-      </main>
-    </div>
-  );
-}
-</file>
-
-<file path="tinytots-web/web/app/products/[id]/page.tsx">
-import { supabase } from "@/lib/supabase";
-import AddToCart from "@/components/AddToCart";
-import Link from "next/link";
-
-async function getProduct(id: string) {
-  const { data, error } = await supabase
-    .from("products")
-    .select(
-      `
-      id,
-      name,
-      sku,
-      description,
-      brand,
-      category,
-      image_url,
-      variants (
-        id,
-        color,
-        size,
-        price,
-        stock
-      )
-    `
-    )
-    .eq("id", id)
-    .eq("is_active", true)
-    .single();
-
-  if (error) return null;
-  return data;
-}
-
-export default async function ProductDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const product = await getProduct(id);
-
-  if (!product) {
-    return (
-      <div className="max-w-3xl mx-auto px-6 py-12">Product not found.</div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link href="/" className="text-sm text-zinc-500 hover:underline">
-          ← Back to shop
-        </Link>
-
-        <div className="mt-6 grid sm:grid-cols-2 gap-8">
-          <div className="aspect-square bg-zinc-100 dark:bg-zinc-900 rounded-lg" />
-
-          <div>
-            <h1 className="text-2xl font-semibold text-black dark:text-white">
-              {product.name}
-            </h1>
-            <p className="text-sm text-zinc-500 mt-1">{product.brand}</p>
-            <p className="text-sm text-zinc-500">{product.description}</p>
-
-            <AddToCart
-              productId={product.id}
-              productName={product.name}
-              variants={product.variants}
-            />
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
-</file>
-
 <file path="tinytots-web/web/app/track-order/page.tsx">
 "use client";
 
@@ -10878,107 +10476,6 @@ export default function TrackOrderPage() {
     <Suspense fallback={<div className="max-w-2xl mx-auto px-6 py-12">Loading...</div>}>
       <TrackOrderForm />
     </Suspense>
-  );
-}
-</file>
-
-<file path="tinytots-web/web/components/AddToCart.tsx">
-"use client";
-
-import { useState } from "react";
-import { useCart } from "@/lib/cart-context";
-
-type Variant = {
-  id: number;
-  color: string | null;
-  size: string | null;
-  price: number;
-  stock: number;
-};
-
-export default function AddToCart({
-  productId,
-  productName,
-  variants,
-}: {
-  productId: number;
-  productName: string;
-  variants: Variant[];
-}) {
-  const { addItem } = useCart();
-  const firstAvailable = variants.find((v) => v.stock > 0) ?? variants[0];
-  const [selected, setSelected] = useState<Variant | null>(firstAvailable ?? null);
-  const [added, setAdded] = useState(false);
-
-  function handleAddToCart() {
-    if (!selected || selected.stock === 0) return;
-    addItem(
-      {
-        variantId: selected.id,
-        productId,
-        productName,
-        size: selected.size,
-        color: selected.color,
-        price: selected.price,
-        maxStock: selected.stock,
-      },
-      1
-    );
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
-  }
-
-  return (
-    <div>
-      {selected && (
-        <p className="mt-4 text-xl font-semibold text-black dark:text-white">
-          Rs. {selected.price.toLocaleString()}
-        </p>
-      )}
-
-      <div className="mt-6">
-        <p className="text-sm font-medium text-black dark:text-white mb-2">
-          Size
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {variants.map((v) => (
-            <button
-              key={v.id}
-              onClick={() => setSelected(v)}
-              disabled={v.stock === 0}
-              className={`px-4 py-2 rounded border text-sm ${
-                selected?.id === v.id
-                  ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                  : "border-zinc-300 dark:border-zinc-700"
-              } ${
-                v.stock === 0
-                  ? "opacity-30 cursor-not-allowed line-through"
-                  : ""
-              }`}
-            >
-              {v.size ?? "One Size"}
-              {v.color ? ` / ${v.color}` : ""}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <p className="mt-3 text-xs text-zinc-400">
-        {selected
-          ? selected.stock > 0
-            ? `${selected.stock} in stock`
-            : "Out of stock"
-          : ""}
-      </p>
-
-      <button
-        onClick={handleAddToCart}
-        disabled={!selected || selected.stock === 0}
-        className="mt-6 w-full py-3 rounded bg-black text-white dark:bg-white dark:text-black font-medium disabled:opacity-30 disabled:cursor-not-allowed"
-      >
-        {added ? "Added ✓" : "Add to Cart"}
-      </button>
-    </div>
   );
 }
 </file>
@@ -29479,71 +28976,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 <!-- END:nextjs-agent-rules -->
 </file>
 
-<file path="tinytots-web/web/CLAUDE.md">
-@AGENTS.md
-
-# Claude Codebase & Architecture Rules (`claude.md`)
-
-This document serves as the absolute source of truth for engineering practices, security baselines, and architectural constraints within this project. As an AI assistant, you must adhere strictly to these guidelines when authoring, reviewing, or refactoring code.
-
---- 
-
-## 1. Security & Data Isolation
-
-### 🔒 User Data Isolation (Multi-Tenant Security)
-- **Rule:** Every data access layer (queries, mutations, updates, deletions) MUST explicitly scope queries to the authenticated user's unique identifier (`UUID`).
-- **Objective:** Prevent cross-tenant data leaks or unauthorized data access. Users must never be able to view, query, or mutate each other's data under any circumstance.
-- **Implementation Constraint:** Do not rely solely on front-end filters. Ensure strict backend row-level security (RLS) or session-based verification on all controller/resolver layers.
-
-### 🔑 Secure Password Reset Lifecycles
-- **Rule:** All password reset tokens and links MUST have an absolute expiration window of **30 minutes** maximum.
-- **Objective:** Neutralize token hijacking vulnerabilities and replay attacks on expired/old communication channels.
-- **Implementation Constraint:** Store a `reset_token_expires_at` timestamp in the database. Invalidate and purge tokens immediately after single use or upon expiration.
-
-### 🛡️ Input Validation & Sanitization
-- **Rule:** Treat all external inputs as hostile. Every single input field across all endpoints, forms, and webhooks MUST be strictly validated, sanitized, and escaped.
-- **Objective:** Achieve complete mitigation against SQL Injection (SQLi), Cross-Site Scripting (XSS), and Remote Code Execution (RCE).
-- **Implementation Constraint:** Use strongly-typed schemas (e.g., Zod, Joi, Pydantic) and parameterized queries/ORMs. Never concatenate raw strings into database executions or inner HTML strings.
-
-### 🌐 Strict CORS (Cross-Origin Resource Sharing) Configuration
-- **Rule:** Restrict backend API communication using an explicit CORS whitelist.
-- **Objective:** Block rogue/unauthorized external domains from executing cross-origin requests against our API infrastructure.
-- **Implementation Constraint:** Never use `Access-Control-Allow-Origin: *` in production. Wildcards are strictly forbidden. Configure specific environment-based allowed domains.
-
-### ⏳ Rate Limiting
-- **Rule:** Implement strict rate-limiting caps across all public-facing and authenticated routes.
-- **Objective:** Protect core application infrastructure against Distributed Denial of Service (DDoS) attacks, brute-force requests, and unexpected API billing spikes.
-- **Implementation Constraint:** Apply tight thresholds on resource-heavy routes (e.g., authentication, password resets, expensive search queries) using a Redis token bucket or equivalent memory store.
-
-### 🛑 Fail-Safe Error Handling
-- **Rule:** Never expose stack traces, database schemas, raw error strings, or internal system architecture details to the end-user. All unhandled errors must render a generic, clean custom error message.
-- **Objective:** Prevent malicious actors from footprinting or mapping out backend software versions, dependencies, or system vulnerabilities.
-- **Implementation Constraint:** Catch errors globally, log detailed traces internally with a unique tracking ID, and return a sanitized payload to the client (e.g., `Internal Server Error [Ref: #XYZ-123]`).
-
---- 
-
-## 2. Database Performance & Optimization
-
-### ⚡ Selective High-Traffic Indexing
-- **Rule:** Database indexes must be strategically applied *only* to fields that experience high-traffic query patterns (e.g., primary keys, foreign keys, frequently filtered/sorted dimensions).
-- **Objective:** Maximize read query performance and lookups without introducing unnecessary overhead that degrades database write, insert, and update operations.
-- **Implementation Constraint:** Analyze execution plans before adding indexes. Avoid indexing low-cardinality fields or highly fluid columns unless explicitly justified by metrics.
-
---- 
-
-## 3. DevOps, Resilience & Monitoring
-
-### 📊 Active Logging & Real-Time Monitoring
-- **Rule:** Establish proactive telemetry, structured logging, and persistent application performance monitoring (APM).
-- **Objective:** Detect anomalies, catch unexpected exceptions, and diagnose performance bottlenecks instantly so production issues can be resolved before impacting end-users.
-- **Implementation Constraint:** Output clean structured logs (JSON format) containing levels (`INFO`, `WARN`, `ERROR`) and contextual metadata. Hook critical errors into alerting systems.
-
-### 🔄 Zero-Downtime Rollback Strategy
-- **Rule:** Maintain a fully production-identical deployment environment or configuration that is primed for instant, automated, zero-downtime rollbacks.
-- **Objective:** Ensure a continuous availability baseline. If a new deployment fails smoke tests or encounters runtime crashes, immediately pivot traffic to the last known stable build.
-- **Implementation Constraint:** Implement blue-green deployments, canary releases, or robust container orchestration rollbacks. Database migrations must always be backward-compatible (non-breaking) to avoid data corruption during a rollback event.
-</file>
-
 <file path="tinytots-web/web/eslint.config.mjs">
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
@@ -30495,182 +29927,398 @@ export async function POST(request: NextRequest) {
 }
 </file>
 
-<file path="tinytots-web/web/app/order-confirmation/[order_number]/page.tsx">
-import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+<file path="tinytots-web/web/app/cart/page.tsx">
+"use client";
+
+import { useCart } from "@/lib/cart-context";
 import Link from "next/link";
 
-async function getOrder(orderNumber: string) {
-  const { data: order, error } = await supabase
-    .from("orders")
-    .select(
-      `
-      id,
-      order_number,
-      guest_name,
-      guest_phone,
-      shipping_address,
-      shipping_city,
-      status,
-      payment_method,
-      cod_tier,
-      cod_token_amount,
-      subtotal,
-      delivery_fee,
-      discount_total,
-      total,
-      created_at,
-      order_items (
-        id,
-        quantity,
-        unit_price,
-        line_total,
-        variants (
-          size,
-          color,
-          products ( name )
-        )
-      )
-    `
-    )
-    .eq("order_number", orderNumber)
-    .single();
+export default function CartPage() {
+  const { items, updateQuantity, removeItem, subtotal } = useCart();
 
-  if (error) return null;
-  return order;
-}
-
-function codTierMessage(tier: string | null, tokenAmount: number) {
-  if (!tier) return null;
-  if (tier === "full_cod") {
-    return "No advance payment needed — pay the full amount on delivery.";
-  }
-  if (tier === "token_percent") {
-    return `Please pay Rs. ${tokenAmount.toLocaleString()} (10% token) in advance to confirm this order. The rest is due on delivery.`;
-  }
-  if (tier === "token_flat") {
-    return `Please pay a Rs. ${tokenAmount.toLocaleString()} token in advance to confirm this order, or pay the full amount online instead. The rest is due on delivery.`;
-  }
-  return null;
-}
-
-export default async function OrderConfirmationPage({
-  params,
-}: {
-  params: Promise<{ order_number: string }>;
-}) {
-  const { order_number } = await params;
-  const order = await getOrder(order_number);
-
-  if (!order) {
+  if (items.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-12">
-        <p className="text-zinc-500">
-          We couldn't find that order. Please check the order number.
+      <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
+        <span className="material-symbols-outlined text-[48px] text-on-surface-variant">
+          shopping_bag
+        </span>
+        <h1 className="font-display-md text-display-md text-on-surface mt-4 mb-2">
+          Your Cart is Empty
+        </h1>
+        <p className="font-body-md text-body-md text-on-surface-variant mb-6">
+          Looks like you haven&apos;t added anything yet.
         </p>
-      </div>
+        <Link
+          href="/products"
+          className="inline-block py-3 px-8 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors"
+        >
+          Continue Shopping
+        </Link>
+      </main>
     );
   }
 
-  const codMessage =
-    order.payment_method === "cod"
-      ? codTierMessage(order.cod_tier, order.cod_token_amount)
-      : null;
-
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      <main className="max-w-2xl mx-auto px-6 py-12">
-        <div className="text-center mb-8">
-          <p className="text-3xl mb-2">✓</p>
-          <h1 className="text-2xl font-semibold text-black dark:text-white">
-            Order placed successfully
-          </h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            Order number: <span className="font-medium">{order.order_number}</span>
-          </p>
-        </div>
+    <main className="max-w-3xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Your Cart</h1>
 
-        {codMessage && (
-          <div className="mb-6 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950 rounded-lg p-4 text-sm text-amber-800 dark:text-amber-200">
-            {codMessage}
-          </div>
-        )}
+      <div className="flex flex-col gap-stack-sm">
+        {items.map((item) => (
+          <div
+            key={item.variantId}
+            className="flex items-center justify-between border border-outline-variant/30 rounded-xl p-4 bg-surface-container-lowest"
+          >
+            <div>
+              <p className="font-headline-md text-headline-md text-on-surface">
+                {item.productName}
+              </p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                {item.size ?? "One Size"}
+                {item.color ? ` / ${item.color}` : ""}
+              </p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                Rs. {item.price.toLocaleString()} each
+              </p>
+            </div>
 
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 mb-6">
-          <h2 className="font-medium text-black dark:text-white mb-3">
-            Items
-          </h2>
-          <div className="space-y-3">
-            {order.order_items.map((item: any) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <div>
-                  <p className="text-black dark:text-white">
-                    {item.variants?.products?.name}
-                  </p>
-                  <p className="text-zinc-500">
-                    {item.variants?.size ?? "One Size"}
-                    {item.variants?.color ? ` / ${item.variants.color}` : ""}
-                    {" × "}
-                    {item.quantity}
-                  </p>
-                </div>
-                <p className="text-black dark:text-white">
-                  Rs. {item.line_total.toLocaleString()}
-                </p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center border border-outline-variant rounded-lg">
+                <button
+                  onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                  className="px-3 py-1 text-on-surface hover:bg-surface-container-low"
+                >
+                  −
+                </button>
+                <span className="px-3 text-on-surface font-body-md text-body-md">
+                  {item.quantity}
+                </span>
+                <button
+                  onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                  disabled={item.quantity >= item.maxStock}
+                  className="px-3 py-1 text-on-surface hover:bg-surface-container-low disabled:opacity-30"
+                >
+                  +
+                </button>
               </div>
-            ))}
-          </div>
 
-          <div className="border-t border-zinc-200 dark:border-zinc-800 mt-4 pt-4 space-y-1 text-sm">
-            <div className="flex justify-between text-zinc-500">
-              <span>Subtotal</span>
-              <span>Rs. {order.subtotal.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-zinc-500">
-              <span>Delivery</span>
-              <span>
-                {order.delivery_fee > 0
-                  ? `Rs. ${order.delivery_fee.toLocaleString()}`
-                  : "Free"}
-              </span>
-            </div>
-            {order.discount_total > 0 && (
-              <div className="flex justify-between text-zinc-500">
-                <span>Discount</span>
-                <span>−Rs. {order.discount_total.toLocaleString()}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-semibold text-black dark:text-white pt-1">
-              <span>Total</span>
-              <span>Rs. {order.total.toLocaleString()}</span>
+              <p className="w-24 text-right font-body-md text-body-md font-semibold text-on-surface">
+                Rs. {(item.price * item.quantity).toLocaleString()}
+              </p>
+
+              <button
+                onClick={() => removeItem(item.variantId)}
+                className="text-error font-label-md text-label-md hover:underline"
+              >
+                Remove
+              </button>
             </div>
           </div>
-        </div>
+        ))}
+      </div>
 
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 mb-6 text-sm">
-          <h2 className="font-medium text-black dark:text-white mb-2">
-            Shipping to
-          </h2>
-          <p className="text-zinc-500">{order.guest_name}</p>
-          <p className="text-zinc-500">{order.guest_phone}</p>
-          <p className="text-zinc-500">
-            {order.shipping_address}, {order.shipping_city}
-          </p>
-        </div>
+      <div className="mt-stack-md flex items-center justify-between border-t border-outline-variant/30 pt-stack-sm">
+        <p className="font-headline-md text-headline-md text-on-surface">Subtotal</p>
+        <p className="font-headline-lg text-headline-lg text-primary">
+          Rs. {subtotal.toLocaleString()}
+        </p>
+      </div>
 
-        <Link
-          href={`/track-order?order_number=${order.order_number}`}
-          className="block text-center w-full py-3 rounded border border-zinc-300 dark:border-zinc-700 text-black dark:text-white font-medium mb-3"
-        >
-          Track this order
-        </Link>
-        <Link
-          href="/"
-          className="block text-center w-full py-3 rounded bg-black text-white dark:bg-white dark:text-black font-medium"
-        >
+      <Link
+        href="/checkout"
+        className="mt-stack-sm block text-center w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors"
+      >
+        Proceed to Checkout
+      </Link>
+    </main>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/checkout/page.tsx">
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useCart } from "@/lib/cart-context";
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  const { items, subtotal, clearCart } = useCart();
+
+  const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+  const [shippingAddress, setShippingAddress] = useState("");
+  const [shippingCity, setShippingCity] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [couponCode, setCouponCode] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (items.length === 0) {
+    return (
+      <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+        <p className="text-on-surface-variant font-body-md text-body-md">
+          Your cart is empty. Add something before checking out.
+        </p>
+        <Link href="/products" className="inline-block mt-4 text-primary hover:underline font-body-sm text-body-sm">
           Continue shopping
         </Link>
       </main>
-    </div>
+    );
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (!guestName || !guestPhone || !shippingAddress || !shippingCity) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity })),
+          shipping_address: shippingAddress,
+          shipping_city: shippingCity,
+          payment_method: paymentMethod,
+          guest_name: guestName,
+          guest_phone: guestPhone,
+          coupon_code: couponCode || undefined,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        setError(json.error || "Something went wrong. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+
+      clearCart();
+      router.push(`/order-confirmation/${json.data.order_number}`);
+    } catch {
+      setError("Network error. Please try again.");
+      setSubmitting(false);
+    }
+  }
+
+  const inputClass =
+    "w-full border border-outline-variant rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary transition-colors";
+
+  return (
+    <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Checkout</h1>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-stack-md">
+        <div>
+          <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Contact details</h2>
+          <div className="flex flex-col gap-3">
+            <input
+              type="text"
+              placeholder="Full name"
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              className={inputClass}
+              required
+            />
+            <input
+              type="tel"
+              placeholder="Phone number (e.g. 03001234567)"
+              value={guestPhone}
+              onChange={(e) => setGuestPhone(e.target.value)}
+              className={inputClass}
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Shipping address</h2>
+          <div className="flex flex-col gap-3">
+            <textarea
+              placeholder="Full address (house/street/area)"
+              value={shippingAddress}
+              onChange={(e) => setShippingAddress(e.target.value)}
+              className={inputClass}
+              rows={3}
+              required
+            />
+            <input
+              type="text"
+              placeholder="City (e.g. Lahore, Islamabad, Karachi...)"
+              value={shippingCity}
+              onChange={(e) => setShippingCity(e.target.value)}
+              className={inputClass}
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Payment method</h2>
+          <div className="flex flex-col gap-2">
+            {[
+              { value: "cod", label: "Cash on Delivery (Punjab & Islamabad only, for now)" },
+              { value: "card", label: "Card" },
+              { value: "jazzcash", label: "JazzCash" },
+              { value: "easypaisa", label: "Easypaisa" },
+            ].map((option) => (
+              <label
+                key={option.value}
+                className={`flex items-center gap-3 border rounded-lg px-4 py-3 cursor-pointer transition-colors ${
+                  paymentMethod === option.value
+                    ? "border-primary bg-primary-container/10"
+                    : "border-outline-variant"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment_method"
+                  value={option.value}
+                  checked={paymentMethod === option.value}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                />
+                <span className="font-body-sm text-body-sm text-on-surface">{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="font-headline-md text-headline-md text-on-surface mb-3">
+            Coupon code (optional)
+          </h2>
+          <input
+            type="text"
+            placeholder="Enter coupon code"
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="border-t border-outline-variant/30 pt-stack-sm">
+          <div className="flex items-center justify-between font-body-sm text-body-sm text-on-surface-variant mb-1">
+            <span>Subtotal</span>
+            <span>Rs. {subtotal.toLocaleString()}</span>
+          </div>
+          <p className="font-label-md text-label-md text-on-surface-variant">
+            Delivery fee and any COD token amount will be confirmed after you place the order.
+          </p>
+        </div>
+
+        {error && (
+          <p className="font-body-sm text-body-sm text-error border border-error/30 bg-error-container/20 rounded-lg px-4 py-3">
+            {error}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50"
+        >
+          {submitting ? "Placing order..." : "Place Order"}
+        </button>
+      </form>
+    </main>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/products/[id]/page.tsx">
+import { supabase } from "@/lib/supabase";
+import AddToCart from "@/components/AddToCart";
+import Link from "next/link";
+
+async function getProduct(id: string) {
+  const { data, error } = await supabase
+    .from("products")
+    .select(
+      `
+      id, name, sku, description, brand, category, image_url,
+      variants ( id, color, size, price, stock )
+    `
+    )
+    .eq("id", id)
+    .eq("is_active", true)
+    .single();
+
+  if (error) return null;
+  return data;
+}
+
+export default async function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const product = await getProduct(id);
+
+  if (!product) {
+    return (
+      <main className="max-w-3xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+        <p className="text-on-surface-variant">Product not found.</p>
+        <Link href="/products" className="text-primary hover:underline">
+          ← Back to shop
+        </Link>
+      </main>
+    );
+  }
+
+  return (
+    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <nav className="text-body-sm font-body-sm text-on-surface-variant mb-stack-sm flex items-center gap-2">
+        <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        <Link href="/products" className="hover:text-primary transition-colors">Shop All</Link>
+        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        <span className="text-on-surface">{product.name}</span>
+      </nav>
+
+      <div className="grid md:grid-cols-2 gap-gutter">
+        <div className="aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 bg-surface-container-low">
+          {product.image_url ? (
+            <img
+              className="w-full h-full object-cover"
+              src={product.image_url}
+              alt={product.name}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-on-surface-variant">
+              No image
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h1 className="font-display-md text-display-md text-on-surface">{product.name}</h1>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            {product.brand} {product.category ? `· ${product.category}` : ""}
+          </p>
+          {product.description && (
+            <p className="font-body-md text-body-md text-on-surface-variant mt-4">
+              {product.description}
+            </p>
+          )}
+
+          <AddToCart
+            productId={product.id}
+            productName={product.name}
+            variants={product.variants}
+          />
+        </div>
+      </div>
+    </main>
   );
 }
 </file>
@@ -30789,6 +30437,327 @@ body {
 }
 </file>
 
+<file path="tinytots-web/web/components/AddToCart.tsx">
+"use client";
+
+import { useState } from "react";
+import { useCart } from "@/lib/cart-context";
+
+type Variant = {
+  id: number;
+  color: string | null;
+  size: string | null;
+  price: number;
+  stock: number;
+};
+
+export default function AddToCart({
+  productId,
+  productName,
+  variants,
+}: {
+  productId: number;
+  productName: string;
+  variants: Variant[];
+}) {
+  const { addItem } = useCart();
+  const firstAvailable = variants.find((v) => v.stock > 0) ?? variants[0];
+  const [selected, setSelected] = useState<Variant | null>(firstAvailable ?? null);
+  const [added, setAdded] = useState(false);
+
+  function handleAddToCart() {
+    if (!selected || selected.stock === 0) return;
+    addItem(
+      {
+        variantId: selected.id,
+        productId,
+        productName,
+        size: selected.size,
+        color: selected.color,
+        price: selected.price,
+        maxStock: selected.stock,
+      },
+      1
+    );
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  }
+
+  return (
+    <div>
+      {selected && (
+        <p className="mt-2 font-headline-lg text-headline-lg text-primary">
+          Rs. {selected.price.toLocaleString()}
+        </p>
+      )}
+
+      <div className="mt-6">
+        <p className="font-label-lg text-label-lg text-on-surface mb-2">Size / Variant</p>
+        <div className="flex flex-wrap gap-2">
+          {variants.map((v) => (
+            <button
+              key={v.id}
+              onClick={() => setSelected(v)}
+              disabled={v.stock === 0}
+              className={`px-4 py-2 rounded-lg border font-body-sm text-body-sm transition-colors ${
+                selected?.id === v.id
+                  ? "border-primary bg-primary-container text-on-primary"
+                  : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
+              } ${v.stock === 0 ? "opacity-30 cursor-not-allowed line-through" : ""}`}
+            >
+              {v.size ?? "One Size"}
+              {v.color ? ` / ${v.color}` : ""}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <p className="mt-3 font-body-sm text-body-sm text-on-surface-variant">
+        {selected
+          ? selected.stock > 0
+            ? `${selected.stock} in stock`
+            : "Out of stock"
+          : ""}
+      </p>
+
+      <button
+        onClick={handleAddToCart}
+        disabled={!selected || selected.stock === 0}
+        className="mt-6 w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        {added ? "Added ✓" : "Add to Cart"}
+      </button>
+    </div>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/components/HeaderCart.tsx">
+"use client";
+
+import Link from "next/link";
+import { useCart } from "@/lib/cart-context";
+
+export default function HeaderCart() {
+  const { totalItems } = useCart();
+
+  return (
+    <Link
+      href="/cart"
+      className="relative text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
+    >
+      <span className="material-symbols-outlined">shopping_bag</span>
+      {totalItems > 0 && (
+        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold rounded-full bg-primary text-on-primary">
+          {totalItems}
+        </span>
+      )}
+    </Link>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/CLAUDE.md">
+@AGENTS.md
+
+# Claude Codebase & Architecture Rules (`claude.md`)
+
+This document serves as the absolute source of truth for engineering practices, security baselines, and architectural constraints within this project. As an AI assistant, you must adhere strictly to these guidelines when authoring, reviewing, or refactoring code.
+
+--- 
+
+## 1. Security & Data Isolation
+
+### 🔒 User Data Isolation (Multi-Tenant Security)
+- **Rule:** Every data access layer (queries, mutations, updates, deletions) MUST explicitly scope queries to the authenticated user's unique identifier (`UUID`).
+- **Objective:** Prevent cross-tenant data leaks or unauthorized data access. Users must never be able to view, query, or mutate each other's data under any circumstance.
+- **Implementation Constraint:** Do not rely solely on front-end filters. Ensure strict backend row-level security (RLS) or session-based verification on all controller/resolver layers.
+
+### 🔑 Secure Password Reset Lifecycles
+- **Rule:** All password reset tokens and links MUST have an absolute expiration window of **30 minutes** maximum.
+- **Objective:** Neutralize token hijacking vulnerabilities and replay attacks on expired/old communication channels.
+- **Implementation Constraint:** Store a `reset_token_expires_at` timestamp in the database. Invalidate and purge tokens immediately after single use or upon expiration.
+
+### 🛡️ Input Validation & Sanitization
+- **Rule:** Treat all external inputs as hostile. Every single input field across all endpoints, forms, and webhooks MUST be strictly validated, sanitized, and escaped.
+- **Objective:** Achieve complete mitigation against SQL Injection (SQLi), Cross-Site Scripting (XSS), and Remote Code Execution (RCE).
+- **Implementation Constraint:** Use strongly-typed schemas (e.g., Zod, Joi, Pydantic) and parameterized queries/ORMs. Never concatenate raw strings into database executions or inner HTML strings.
+
+### 🌐 Strict CORS (Cross-Origin Resource Sharing) Configuration
+- **Rule:** Restrict backend API communication using an explicit CORS whitelist.
+- **Objective:** Block rogue/unauthorized external domains from executing cross-origin requests against our API infrastructure.
+- **Implementation Constraint:** Never use `Access-Control-Allow-Origin: *` in production. Wildcards are strictly forbidden. Configure specific environment-based allowed domains.
+
+### ⏳ Rate Limiting
+- **Rule:** Implement strict rate-limiting caps across all public-facing and authenticated routes.
+- **Objective:** Protect core application infrastructure against Distributed Denial of Service (DDoS) attacks, brute-force requests, and unexpected API billing spikes.
+- **Implementation Constraint:** Apply tight thresholds on resource-heavy routes (e.g., authentication, password resets, expensive search queries) using a Redis token bucket or equivalent memory store.
+
+### 🛑 Fail-Safe Error Handling
+- **Rule:** Never expose stack traces, database schemas, raw error strings, or internal system architecture details to the end-user. All unhandled errors must render a generic, clean custom error message.
+- **Objective:** Prevent malicious actors from footprinting or mapping out backend software versions, dependencies, or system vulnerabilities.
+- **Implementation Constraint:** Catch errors globally, log detailed traces internally with a unique tracking ID, and return a sanitized payload to the client (e.g., `Internal Server Error [Ref: #XYZ-123]`).
+
+--- 
+
+## 2. Database Performance & Optimization
+
+### ⚡ Selective High-Traffic Indexing
+- **Rule:** Database indexes must be strategically applied *only* to fields that experience high-traffic query patterns (e.g., primary keys, foreign keys, frequently filtered/sorted dimensions).
+- **Objective:** Maximize read query performance and lookups without introducing unnecessary overhead that degrades database write, insert, and update operations.
+- **Implementation Constraint:** Analyze execution plans before adding indexes. Avoid indexing low-cardinality fields or highly fluid columns unless explicitly justified by metrics.
+
+--- 
+
+## 3. DevOps, Resilience & Monitoring
+
+### 📊 Active Logging & Real-Time Monitoring
+- **Rule:** Establish proactive telemetry, structured logging, and persistent application performance monitoring (APM).
+- **Objective:** Detect anomalies, catch unexpected exceptions, and diagnose performance bottlenecks instantly so production issues can be resolved before impacting end-users.
+- **Implementation Constraint:** Output clean structured logs (JSON format) containing levels (`INFO`, `WARN`, `ERROR`) and contextual metadata. Hook critical errors into alerting systems.
+
+### 🔄 Zero-Downtime Rollback Strategy
+- **Rule:** Maintain a fully production-identical deployment environment or configuration that is primed for instant, automated, zero-downtime rollbacks.
+- **Objective:** Ensure a continuous availability baseline. If a new deployment fails smoke tests or encounters runtime crashes, immediately pivot traffic to the last known stable build.
+- **Implementation Constraint:** Implement blue-green deployments, canary releases, or robust container orchestration rollbacks. Database migrations must always be backward-compatible (non-breaking) to avoid data corruption during a rollback event.
+</file>
+
+<file path="tinytots-web/web/app/order-confirmation/[order_number]/page.tsx">
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import Link from "next/link";
+
+async function getOrder(orderNumber: string) {
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select(
+      `
+      id, order_number, guest_name, guest_phone, shipping_address, shipping_city,
+      status, payment_method, cod_tier, cod_token_amount, subtotal, delivery_fee,
+      discount_total, total, created_at,
+      order_items ( id, quantity, unit_price, line_total,
+        variants ( size, color, products ( name ) )
+      )
+    `
+    )
+    .eq("order_number", orderNumber)
+    .single();
+
+  if (error) return null;
+  return order;
+}
+
+function codTierMessage(tier: string | null, tokenAmount: number) {
+  if (!tier) return null;
+  if (tier === "full_cod") return "No advance payment needed — pay the full amount on delivery.";
+  if (tier === "token_percent")
+    return `Please pay Rs. ${tokenAmount.toLocaleString()} (10% token) in advance to confirm this order. The rest is due on delivery.`;
+  if (tier === "token_flat")
+    return `Please pay a Rs. ${tokenAmount.toLocaleString()} token in advance to confirm this order, or pay the full amount online instead. The rest is due on delivery.`;
+  return null;
+}
+
+export default async function OrderConfirmationPage({
+  params,
+}: {
+  params: Promise<{ order_number: string }>;
+}) {
+  const { order_number } = await params;
+  const order = await getOrder(order_number);
+
+  if (!order) {
+    return (
+      <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+        <p className="text-on-surface-variant font-body-md text-body-md">
+          We couldn&apos;t find that order. Please check the order number.
+        </p>
+      </main>
+    );
+  }
+
+  const codMessage =
+    order.payment_method === "cod" ? codTierMessage(order.cod_tier, order.cod_token_amount) : null;
+
+  return (
+    <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <div className="text-center mb-stack-md">
+        <span className="material-symbols-outlined text-[56px] text-[#4C9A6A]">check_circle</span>
+        <h1 className="font-display-md text-display-md text-on-surface mt-2">
+          Order placed successfully
+        </h1>
+        <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+          Order number: <span className="font-semibold text-on-surface">{order.order_number}</span>
+        </p>
+      </div>
+
+      {codMessage && (
+        <div className="mb-stack-md border border-[#D9822B]/40 bg-[#D9822B]/10 rounded-xl p-4 font-body-sm text-body-sm text-[#8a5417]">
+          {codMessage}
+        </div>
+      )}
+
+      <div className="border border-outline-variant/30 rounded-xl p-5 mb-stack-sm bg-surface-container-lowest">
+        <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Items</h2>
+        <div className="flex flex-col gap-3">
+          {order.order_items.map((item: any) => (
+            <div key={item.id} className="flex justify-between font-body-sm text-body-sm">
+              <div>
+                <p className="text-on-surface">{item.variants?.products?.name}</p>
+                <p className="text-on-surface-variant">
+                  {item.variants?.size ?? "One Size"}
+                  {item.variants?.color ? ` / ${item.variants.color}` : ""} × {item.quantity}
+                </p>
+              </div>
+              <p className="text-on-surface">Rs. {item.line_total.toLocaleString()}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t border-outline-variant/30 mt-4 pt-4 flex flex-col gap-1 font-body-sm text-body-sm">
+          <div className="flex justify-between text-on-surface-variant">
+            <span>Subtotal</span>
+            <span>Rs. {order.subtotal.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between text-on-surface-variant">
+            <span>Delivery</span>
+            <span>{order.delivery_fee > 0 ? `Rs. ${order.delivery_fee.toLocaleString()}` : "Free"}</span>
+          </div>
+          {order.discount_total > 0 && (
+            <div className="flex justify-between text-on-surface-variant">
+              <span>Discount</span>
+              <span>−Rs. {order.discount_total.toLocaleString()}</span>
+            </div>
+          )}
+          <div className="flex justify-between font-semibold text-on-surface pt-1">
+            <span>Total</span>
+            <span>Rs. {order.total.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="border border-outline-variant/30 rounded-xl p-5 mb-stack-md font-body-sm text-body-sm bg-surface-container-lowest">
+        <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Shipping to</h2>
+        <p className="text-on-surface-variant">{order.guest_name}</p>
+        <p className="text-on-surface-variant">{order.guest_phone}</p>
+        <p className="text-on-surface-variant">{order.shipping_address}, {order.shipping_city}</p>
+      </div>
+
+      <Link
+        href={`/track-order?order_number=${order.order_number}`}
+        className="block text-center w-full py-3 rounded-xl border border-outline text-on-surface font-button text-button hover:bg-surface-container-low transition-colors mb-3"
+      >
+        Track this order
+      </Link>
+      <Link
+        href="/"
+        className="block text-center w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors"
+      >
+        Continue shopping
+      </Link>
+    </main>
+  );
+}
+</file>
+
 <file path="tinytots-web/web/app/page.tsx">
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
@@ -30898,7 +30867,12 @@ export default async function Home() {
 
       {/* Trending now — real product data */}
       <section id="trending" className="mb-stack-lg">
-        <h2 className="font-headline-lg text-on-surface mb-stack-md">Trending Now</h2>
+      <div className="flex justify-between items-end mb-stack-md">
+  <h2 className="font-headline-lg text-on-surface">Trending Now</h2>
+  <Link href="/products" className="font-body-sm text-body-sm text-primary hover:underline">
+    View All
+  </Link>
+</div>
 
         {products.length === 0 && (
           <p className="text-on-surface-variant">No products available right now.</p>
@@ -30945,31 +30919,6 @@ export default async function Home() {
         </div>
       </section>
     </main>
-  );
-}
-</file>
-
-<file path="tinytots-web/web/components/HeaderCart.tsx">
-"use client";
-
-import Link from "next/link";
-import { useCart } from "@/lib/cart-context";
-
-export default function HeaderCart() {
-  const { totalItems } = useCart();
-
-  return (
-    <Link
-      href="/cart"
-      className="relative text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
-    >
-      <span className="material-symbols-outlined">shopping_bag</span>
-      {totalItems > 0 && (
-        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold rounded-full bg-primary text-on-primary">
-          {totalItems}
-        </span>
-      )}
-    </Link>
   );
 }
 </file>
@@ -31032,8 +30981,8 @@ export default function RootLayout({
                 TinyTots
               </Link>
               <div className="hidden md:flex gap-6">
-                <Link href="/" className="font-body-md text-body-md text-primary font-bold border-b-2 border-primary pb-1">
-                  Shop All
+              <Link href="/products" className="font-body-md text-body-md text-primary font-bold border-b-2 border-primary pb-1">
+                Shop All
                 </Link>
                 <Link href="/track-order" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors">
                   Track Order
