@@ -9,11 +9,11 @@ export default function HeaderCart() {
   return (
     <Link
       href="/cart"
-      className="relative text-sm font-medium text-black dark:text-white"
+      className="relative text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
     >
-      Cart
+      <span className="material-symbols-outlined">shopping_bag</span>
       {totalItems > 0 && (
-        <span className="ml-1 inline-flex items-center justify-center w-5 h-5 text-xs rounded-full bg-black text-white dark:bg-white dark:text-black">
+        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold rounded-full bg-primary text-on-primary">
           {totalItems}
         </span>
       )}
