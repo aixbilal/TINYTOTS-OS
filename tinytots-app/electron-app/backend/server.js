@@ -115,6 +115,7 @@ app.get("/api/products", async (req, res) => {
         price,
         stock,
         sku,
+        public_code,
         product:products(
           id,
           name,
@@ -128,7 +129,8 @@ app.get("/api/products", async (req, res) => {
     const products = data.map((item) => ({
       variant_id: item.id,
       product_id: item.product_id,
-      sku: item.sku || item.product?.sku, // variant-level SKU — this is what gets scanned
+      sku: item.sku || item.product?.sku,
+      public_code: item.public_code,
       base_sku: item.product?.sku,
       name: item.product?.name,
       image_url: item.product?.image_url || null,
@@ -161,6 +163,12 @@ app.get("/api/products/search", async (req, res) => {
       .select(selectClause)
       .ilike("sku", `%${q}%`)
       .limit(20);
+      const byPublicCode = await supabase
+      .from("variants")
+      .select(selectClause)
+      .ilike("public_code", `%${q}%`)
+      .limit(20);
+    if (byPublicCode.error) throw byPublicCode.error;
     if (bySku.error) throw bySku.error;
 
     // Search 2: match on the parent product's name
@@ -173,7 +181,7 @@ app.get("/api/products/search", async (req, res) => {
 
     // Merge + de-duplicate by variant id
     const merged = new Map();
-    [...bySku.data, ...byName.data].forEach((item) => {
+    [...bySku.data, ...byName.data, ...byPublicCode.data].forEach((item) => {
       merged.set(item.id, item);
     });
 
@@ -812,11 +820,7 @@ const COLOR_CODE_OVERRIDES = {
   navy: "NVY", grey: "GRY", gray: "GRY", red: "RED", blue: "BLU",
   green: "GRN", yellow: "YLW", pink: "PNK", beige: "BEG", brown: "BRN",
 };
-function colorCode(color) {
-  const key = (color || "").trim().toLowerCase();
-  if (COLOR_CODE_OVERRIDES[key]) return COLOR_CODE_OVERRIDES[key];
-  return key.replace(/[^a-z]/g, "").slice(0, 3).toUpperCase() || "GEN";
-}
+
 
 // ----------------------------------------------------
 // GET FULL INVENTORY (products + nested variants)
@@ -872,7 +876,7 @@ app.post("/api/products", async (req, res) => {
   try {
     const {
       name, brand, category, sku, hsn_code, unit, description, image_url,
-      price, initialStock, colors, sizes,
+      cost_price, selling_price, initialStock, colors, sizes,
     } = req.body;
 
     if (!name || !sku) {
@@ -902,7 +906,12 @@ app.post("/api/products", async (req, res) => {
     // Insert Product safely
     const { data: product, error: prodErr } = await supabase
       .from("products")
-      .insert([{ name, brand, category, sku: cleanSku, hsn_code, unit: unit || "Pcs", description, image_url, status: "active" }])
+      .insert([{
+        name, brand, category, sku: cleanSku, hsn_code,
+        unit: unit || "Pcs", description, image_url, status: "active",
+        cost_price: Number(cost_price) || 0,
+        selling_price: Number(selling_price) || 0,
+      }])
       .select()
       .single();
       
@@ -921,7 +930,8 @@ app.post("/api/products", async (req, res) => {
           product_id: product.id,
           color,
           size,
-          price: Number(price) || 0,
+          price: Number(selling_price) || 0,
+          cost_price: Number(cost_price) || 0,
           stock: Number(initialStock) || 0,
           sku: `${cleanSku}-${colorCode(color)}-${size}`.toUpperCase(),
           status: "active",
@@ -930,12 +940,22 @@ app.post("/api/products", async (req, res) => {
     }
 
     // Bulk insert variants
-    const { data: variants, error: varErr } = await supabase
-      .from("variants")
-      .insert(variantRows)
-      .select();
-      
-    if (varErr) throw varErr;
+   // Bulk insert variants
+   const { data: variants, error: varErr } = await supabase
+   .from("variants")
+   .insert(variantRows)
+   .select();
+
+ if (varErr || !variants || variants.length !== variantRows.length) {
+   // Variant creation failed or was incomplete — don't leave an orphan
+   // product with missing/partial variants sitting in the DB.
+   await supabase.from("variants").delete().eq("product_id", product.id);
+   await supabase.from("products").delete().eq("id", product.id);
+   throw new Error(
+     varErr?.message ||
+     `Only ${variants?.length || 0} of ${variantRows.length} variants were created. Product creation rolled back — please try again.`
+   );
+ }
 
     // Follow-up: Assign unique public codes safely
     if (variants && variants.length > 0) {
@@ -960,9 +980,14 @@ app.post("/api/products", async (req, res) => {
 app.put("/api/products/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, brand, category, hsn_code, unit, description, image_url, status } = req.body;
+    const { name, brand, category, hsn_code, unit, description, image_url, status, cost_price, selling_price } = req.body;
     
-    const fieldsToUpdate = { name, brand, category, hsn_code, unit, description, image_url, status };
+    const fieldsToUpdate = {
+      name, brand, category, hsn_code, unit, description, image_url, status,
+      cost_price: cost_price !== undefined ? Number(cost_price) : undefined,
+      selling_price: selling_price !== undefined ? Number(selling_price) : undefined,
+    };
+    Object.keys(fieldsToUpdate).forEach((k) => fieldsToUpdate[k] === undefined && delete fieldsToUpdate[k]);
 
     const { data, error } = await supabase
       .from("products")

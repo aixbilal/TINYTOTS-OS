@@ -31,8 +31,9 @@ export default function ScannerListener({ products, onScan }) {
         }
         lastScan.current = { code: scannedCode, time: now };
 
-        const product = products.find((p) => p.sku === scannedCode);
-
+        const product = products.find(
+          (p) => p.sku === scannedCode || p.public_code === scannedCode
+        );
         if (product) {
           onScan(product);
         } else {

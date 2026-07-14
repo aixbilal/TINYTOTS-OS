@@ -1,3 +1,5 @@
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 import { useState } from "react";
 import { X, Plus } from "lucide-react";
 
@@ -152,10 +154,18 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
 
           <div>
             <label className="block text-sm text-ink-700 mb-1.5">Description</label>
-            <textarea
-              {...field("description")}
-              rows={2}
-              className="w-full border border-gold-300/50 rounded-lg px-3 py-2 text-sm outline-none focus:border-maroon-700"
+            <ReactQuill
+              theme="snow"
+              value={form.description}
+              onChange={(html) => setForm((f) => ({ ...f, description: html }))}
+              modules={{
+                toolbar: [
+                  ["bold", "italic", "underline"],
+                  [{ header: [2, 3, false] }],
+                  [{ list: "ordered" }, { list: "bullet" }],
+                  ["clean"],
+                ],
+              }}
             />
           </div>
 

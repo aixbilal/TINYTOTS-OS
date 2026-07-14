@@ -40,8 +40,8 @@ export default function Header() {
 
   return (
     <>
-      <div
-        className="flex items-center justify-end gap-4 rounded-2xl px-6 py-4 border border-white/40 backdrop-blur-xl"
+     <div
+        className="relative z-50 flex items-center justify-end gap-4 rounded-2xl px-6 py-4 border border-white/40 backdrop-blur-xl"
         style={{
           background:
             "linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.10) 100%)",
@@ -64,7 +64,7 @@ export default function Header() {
           </button>
 
           {profileOpen && (
-            <div className="absolute right-0 top-11 z-30 w-56 bg-white border border-gold-300/40 rounded-xl shadow-lg overflow-hidden">
+         <div className="absolute right-0 top-11 z-[60] w-56 bg-white border border-gold-300/40 rounded-xl shadow-lg overflow-hidden">
               <div className="px-4 py-3 border-b border-gold-300/30">
                 <p className="text-sm font-medium text-ink-900">{session?.name}</p>
                 <p className="text-xs text-ink-700/60 capitalize">
