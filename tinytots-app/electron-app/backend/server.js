@@ -24,7 +24,7 @@ import bwipjs from "bwip-js";
 import pdfPrinterPkg from "pdf-to-printer";
 const { getPrinters, print } = pdfPrinterPkg;
 import { createClient } from "@supabase/supabase-js";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 dotenv.config();
 
@@ -138,6 +138,7 @@ app.get("/api/products", async (req, res) => {
       size: item.size,
       price: item.price,
       stock: item.stock,
+      discount_percent: item.discount_percent || 0,
     }));
 
     res.json(products);
@@ -197,6 +198,7 @@ app.get("/api/products/search", async (req, res) => {
         size: item.size,
         price: item.price,
         stock: item.stock,
+        discount_percent: item.discount_percent || 0,
       }));
 
     res.json(results);
@@ -424,8 +426,6 @@ app.post("/api/checkout", async (req, res) => {
 
 async function generateReceiptPDF(sale_id) {
 
-  // ---------------- SALE ----------------
-
   const { data: sale, error: saleError } = await supabase
     .from("sales")
     .select("*")
@@ -433,8 +433,6 @@ async function generateReceiptPDF(sale_id) {
     .single();
 
   if (saleError) throw saleError;
-
-  // ---------------- ITEMS ----------------
 
   const { data: items, error: itemsError } = await supabase
     .from("sale_items")
@@ -453,241 +451,124 @@ async function generateReceiptPDF(sale_id) {
 
   if (itemsError) throw itemsError;
 
-  // ---------------- PDF ----------------
-
   const pdfDoc = await PDFDocument.create();
-
-  const pageWidth = 226;      // 80mm
-
+  const pageWidth = 226;
   const pageHeight = 900;
-
-  const page = pdfDoc.addPage([
-    pageWidth,
-    pageHeight
-  ]);
+  const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const black = rgb(0, 0, 0);
+  const gray = rgb(0.45, 0.45, 0.45);
 
-  let y = pageHeight - 25;
+  let y = pageHeight - 28;
+  const marginX = 14;
+  const contentWidth = pageWidth - marginX * 2;
 
-  const center = (text, size) => {
-
-    const width = font.widthOfTextAtSize(text, size);
-
-    page.drawText(text,{
-      x:(pageWidth-width)/2,
-      y,
-      size,
-      font
-    });
-
-    y-=16;
-
+  const center = (text, size, useBold = false) => {
+    const f = useBold ? fontBold : font;
+    const width = f.widthOfTextAtSize(text, size);
+    page.drawText(text, { x: (pageWidth - width) / 2, y, size, font: f, color: black });
+    y -= size + 6;
   };
 
-  // ---------------- HEADER ----------------
+  const divider = (thickness = 0.7) => {
+    page.drawLine({
+      start: { x: marginX, y },
+      end: { x: pageWidth - marginX, y },
+      thickness,
+      color: black,
+    });
+    y -= 12;
+  };
 
-  center("TINY TOTS",14);
+  const row = (left, right, size = 8, useBold = false) => {
+    const f = useBold ? fontBold : font;
+    page.drawText(left, { x: marginX, y, size, font: f, color: black });
+    const rightWidth = f.widthOfTextAtSize(right, size);
+    page.drawText(right, { x: pageWidth - marginX - rightWidth, y, size, font: f, color: black });
+    y -= size + 6;
+  };
 
-  center("Toddler-to-Tween Outfitters",8);
+  // ---- header ----
+  center("TINY TOTS", 16, true);
+  center("Toddler-to-Tween Outfitters", 8);
+  center("Shop 169, Markazi Jamia Masjid", 7);
+  center("Toba Tek Singh", 7);
+  center("0301-7278797", 7);
 
-  center("Shop No 169 Street Markazi Jamia",7);
+  y -= 4;
+  divider(1.2);
 
-  center("Masjid Toba Tek Singh",7);
+  // ---- meta ----
+  row("Receipt", sale.receipt_number, 8, true);
+  row("Cashier", sale.cashier || "—", 8);
+  row("Date", new Date(sale.created_at).toLocaleString(), 7);
 
-  center("0301-7278797",7);
+  divider();
 
-  center("www.tinytotsofficial.com",7);
+  // ---- items ----
+  let subtotal = 0;
+  for (const item of items) {
+    const qty = item.quantity;
+    const price = item.unit_price;
+    const lineTotal = qty * price;
+    subtotal += lineTotal;
+    const name = item.variants?.product?.name || "Item";
 
-  y-=8;
+    row(`${qty} x ${name}`, money(lineTotal), 8);
 
-  page.drawText("--------------------------------",{
-    x:10,
-    y,
-    size:8,
-    font
-  });
-
-  y-=15;
-
-  page.drawText(
-    `Receipt : ${sale.receipt_number}`,
-    {
-      x:10,
-      y,
-      size:8,
-      font
+    const variant = `${item.variants?.size || ""} / ${item.variants?.color || ""}`.trim();
+    if (variant && variant !== "/") {
+      page.drawText(variant, { x: marginX + 6, y: y + 4, size: 6.5, font, color: gray });
+      y -= 6;
     }
-  );
-
-  y-=12;
-
-  page.drawText(
-    `Date : ${new Date(sale.created_at).toLocaleString()}`,
-    {
-      x:10,
-      y,
-      size:8,
-      font
-    }
-  );
-
-  y-=18;
-
-  page.drawText(
-    "Qty Item",
-    {
-      x:10,
-      y,
-      size:8,
-      font
-    }
-  );
-
-  page.drawText(
-    "Total",
-    {
-      x:175,
-      y,
-      size:8,
-      font
-    }
-  );
-
-  y-=10;
-
-  page.drawText("--------------------------------",{
-    x:10,
-    y,
-    size:8,
-    font
-  });
-
-  y-=16;
-
-  let subtotal=0;
-
-  for(const item of items){
-
-    const qty=item.quantity;
-
-    const price=item.unit_price;
-
-    const total=qty*price;
-
-    subtotal+=total;
-
-    const name=item.variants?.product?.name || "Item";
-
-    page.drawText(
-      `${qty} x ${name}`,
-      {
-        x:10,
-        y,
-        size:8,
-        font
-      }
-    );
-
-    page.drawText(
-      money(total),
-      {
-        x:175,
-        y,
-        size:8,
-        font
-      }
-    );
-
-    y-=11;
-
-    const variant=`${item.variants?.size || ""} ${item.variants?.color || ""}`;
-
-    if(variant.trim()){
-
-      page.drawText(
-        variant,
-        {
-          x:20,
-          y,
-          size:7,
-          font
-        }
-      );
-
-      y-=10;
-
-    }
-
   }
 
-  y-=6;
+  divider();
 
-  page.drawText("--------------------------------",{
-    x:10,
-    y,
-    size:8,
-    font
+  // ---- totals ----
+  row("Subtotal", money(subtotal), 8);
+  row("Discount", `-${money(sale.discount || 0)}`, 8);
+  row("Tax", money(sale.tax), 8);
+
+  divider(1.2);
+
+  // ---- boxed total ----
+  const boxHeight = 26;
+  page.drawRectangle({
+    x: marginX,
+    y: y - boxHeight + 10,
+    width: contentWidth,
+    height: boxHeight,
+    borderColor: black,
+    borderWidth: 1,
   });
+  const totalLabel = "TOTAL";
+  const totalValue = `Rs. ${money(sale.total)}`;
+  page.drawText(totalLabel, { x: marginX + 8, y: y - 8, size: 11, font: fontBold, color: black });
+  const totalValueWidth = fontBold.widthOfTextAtSize(totalValue, 11);
+  page.drawText(totalValue, {
+    x: pageWidth - marginX - 8 - totalValueWidth,
+    y: y - 8,
+    size: 11,
+    font: fontBold,
+    color: black,
+  });
+  y -= boxHeight + 10;
 
-  y-=15;
+  row("Paid via", (sale.payment_method || "cash").toUpperCase(), 8);
 
-  page.drawText(
-    `Subtotal : ${money(subtotal)}`,
-    {
-      x:10,
-      y,
-      size:8,
-      font
-    }
-  );
+  y -= 6;
+  divider(1.2);
 
-  y-=12;
+  center("Thanks for coming!", 9, true);
+  center("We love watching them grow.", 8);
 
-  page.drawText(
-    `Tax : ${money(sale.tax)}`,
-    {
-      x:10,
-      y,
-      size:8,
-      font
-    }
-  );
-
-  y-=12;
-
-  page.drawText(
-    `TOTAL : ${money(sale.total)}`,
-    {
-      x:10,
-      y,
-      size:10,
-      font
-    }
-  );
-
-  y-=20;
-
-  center("Thank you for shopping!",9);
-
-  center("Tiny Tots",10);
-
-  center("We love watching them grow.",8);
-
-  const pdfBytes=await pdfDoc.save();
-
-  const pdfPath=path.join(
-    RECEIPT_FOLDER,
-    `${sale.receipt_number}.pdf`
-  );
-
-  fs.writeFileSync(
-    pdfPath,
-    pdfBytes
-  );
-
+  const pdfBytes = await pdfDoc.save();
+  const pdfPath = path.join(RECEIPT_FOLDER, `${sale.receipt_number}.pdf`);
+  fs.writeFileSync(pdfPath, pdfBytes);
   return pdfPath;
-
 }
 // ----------------------------------------------------
 // DOWNLOAD RECEIPT PDF
@@ -911,14 +792,14 @@ app.post("/api/products", async (req, res) => {
   try {
     const {
       name, brand, category, sku, hsn_code, unit, description, image_url,
-      cost_price, selling_price, initialStock, colors, sizes,
+      cost_price, selling_price, initialStock, variantGroups,
     } = req.body;
 
     if (!name || !sku) {
       return res.status(400).json({ success: false, message: "Product name and SKU are required." });
     }
-    if (!colors?.length || !sizes?.length) {
-      return res.status(400).json({ success: false, message: "At least one color and one size are required." });
+    if (!variantGroups?.length || variantGroups.every((g) => !g.sizes?.length)) {
+      return res.status(400).json({ success: false, message: "Add at least one color with at least one size." });
     }
 
     const cleanSku = sku.trim().toUpperCase();
@@ -957,22 +838,22 @@ app.post("/api/products", async (req, res) => {
       throw prodErr;
     }
 
-    // Generate variant rows securely
-    const variantRows = [];
-    for (const color of colors) {
-      for (const size of sizes) {
-        variantRows.push({
-          product_id: product.id,
-          color,
-          size,
-          price: Number(selling_price) || 0,
-          cost_price: Number(cost_price) || 0,
-          stock: Number(initialStock) || 0,
-          sku: `${cleanSku}-${colorCode(color)}-${size}`.toUpperCase(),
-          status: "active",
-        });
-      }
-    }
+   // Generate variant rows securely
+   const variantRows = [];
+   for (const group of variantGroups) {
+     for (const size of group.sizes) {
+       variantRows.push({
+         product_id: product.id,
+         color: group.color,
+         size,
+         price: Number(selling_price) || 0,
+         cost_price: Number(cost_price) || 0,
+         stock: Number(initialStock) || 0,
+         sku: `${cleanSku}-${colorCode(group.color)}-${size}`.toUpperCase(),
+         status: "active",
+       });
+     }
+   }
 
     // Bulk insert variants
    // Bulk insert variants
@@ -1062,11 +943,15 @@ app.delete("/api/products/:id", async (req, res) => {
 app.put("/api/variants/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { stock, price, status } = req.body;
+    const { stock, price, cost_price, status, discount_percent } = req.body;
+    const fieldsToUpdate = { stock, price, cost_price, status, discount_percent };
+    Object.keys(fieldsToUpdate).forEach(
+      (k) => fieldsToUpdate[k] === undefined && delete fieldsToUpdate[k]
+    );
 
     const { data, error } = await supabase
       .from("variants")
-      .update({ stock, price, status })
+      .update(fieldsToUpdate)
       .eq("id", id)
       .select()
       .single();
@@ -1132,6 +1017,7 @@ app.post("/api/print-labels", async (req, res) => {
     const {
       variantIds, codeType = "qr", printerName,
       labelWidthMm = 50, labelHeightMm = 30,
+      quantities = {},
     } = req.body;
 
     if (!variantIds?.length) {
@@ -1140,7 +1026,7 @@ app.post("/api/print-labels", async (req, res) => {
 
     const { data: variants, error } = await supabase
     .from("variants")
-    .select(`id, color, size, price, sku, public_code, product:products(name, sku)`)
+    .select(`id, color, size, price, sku, public_code, stock, product:products(name, sku)`)
     .in("id", variantIds);
     if (error) throw error;
 
@@ -1154,74 +1040,81 @@ app.post("/api/print-labels", async (req, res) => {
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
     for (const v of variants) {
-      const page = pdfDoc.addPage([pageW, pageH]);
-      const codeValue = v.public_code || `V-${v.id}`;
+      const override = quantities[v.id];
+      const copies = override != null
+        ? Math.max(0, parseInt(override, 10) || 0)
+        : Math.max(0, v.stock ?? 0);
 
-      // ---- generate the code image as PNG bytes ----
-      let codeImageBytes;
-      let codeIsSquare = codeType === "qr";
-      if (codeType === "qr") {
-        const dataUrl = await QRCode.toDataURL(codeValue, { margin: 0, width: 300 });
-        codeImageBytes = Buffer.from(dataUrl.split(",")[1], "base64");
-      } else {
-        codeImageBytes = await bwipjs.toBuffer({
-          bcid: "code128",
-          text: codeValue,
-          scale: 3,
-          height: 10,
-          includetext: false,
+      for (let i = 0; i < copies; i++) {
+        const page = pdfDoc.addPage([pageW, pageH]);
+        const codeValue = v.public_code || `V-${v.id}`;
+
+        // ---- generate the code image as PNG bytes ----
+        let codeImageBytes;
+        let codeIsSquare = codeType === "qr";
+        if (codeType === "qr") {
+          const dataUrl = await QRCode.toDataURL(codeValue, { margin: 0, width: 300 });
+          codeImageBytes = Buffer.from(dataUrl.split(",")[1], "base64");
+        } else {
+          codeImageBytes = await bwipjs.toBuffer({
+            bcid: "code128",
+            text: codeValue,
+            scale: 3,
+            height: 10,
+            includetext: false,
+          });
+        }
+
+        const codeImage = codeIsSquare
+          ? await pdfDoc.embedPng(codeImageBytes)
+          : await pdfDoc.embedPng(codeImageBytes);
+
+        const codeSize = codeIsSquare
+          ? Math.min(pageW * 0.55, pageH * 0.65)
+          : pageW * 0.8;
+        const codeH = codeIsSquare ? codeSize : pageH * 0.35;
+        const codeX = (pageW - codeSize) / 2;
+        const codeY = pageH - codeH - mmToPt(3);
+
+        page.drawImage(codeImage, {
+          x: codeX,
+          y: codeY,
+          width: codeIsSquare ? codeSize : codeSize,
+          height: codeH,
+        });
+
+        const productName = v.product?.name || "Product";
+        const nameSize = 7;
+        const nameWidth = fontBold.widthOfTextAtSize(productName, nameSize);
+        page.drawText(productName, {
+          x: (pageW - nameWidth) / 2,
+          y: codeY - 10,
+          size: nameSize,
+          font: fontBold,
+        });
+
+        const variantLine = `${v.size || ""} / ${v.color || ""}`.trim();
+        const variantWidth = font.widthOfTextAtSize(variantLine, 6);
+        page.drawText(variantLine, {
+          x: (pageW - variantWidth) / 2,
+          y: codeY - 20,
+          size: 6,
+          font,
+        });
+
+        const priceLine = `Rs. ${Number(v.price || 0).toFixed(0)}`;
+        const priceWidth = fontBold.widthOfTextAtSize(priceLine, 7);
+        page.drawText(priceLine, {
+          x: (pageW - priceWidth) / 2,
+          y: mmToPt(2),
+          size: 7,
+          font: fontBold,
         });
       }
-
-      const codeImage = codeIsSquare
-        ? await pdfDoc.embedPng(codeImageBytes)
-        : await pdfDoc.embedPng(codeImageBytes);
-
-      const codeSize = codeIsSquare
-        ? Math.min(pageW * 0.55, pageH * 0.65)
-        : pageW * 0.8;
-      const codeH = codeIsSquare ? codeSize : pageH * 0.35;
-      const codeX = (pageW - codeSize) / 2;
-      const codeY = pageH - codeH - mmToPt(3);
-
-      page.drawImage(codeImage, {
-        x: codeX,
-        y: codeY,
-        width: codeIsSquare ? codeSize : codeSize,
-        height: codeH,
-      });
-
-      // ---- text: product name, variant, price ----
-      const productName = v.product?.name || "Product";
-      const nameSize = 7;
-      const nameWidth = fontBold.widthOfTextAtSize(productName, nameSize);
-      page.drawText(productName, {
-        x: (pageW - nameWidth) / 2,
-        y: codeY - 10,
-        size: nameSize,
-        font: fontBold,
-      });
-
-      const variantLine = `${v.size || ""} / ${v.color || ""}`.trim();
-      const variantWidth = font.widthOfTextAtSize(variantLine, 6);
-      page.drawText(variantLine, {
-        x: (pageW - variantWidth) / 2,
-        y: codeY - 20,
-        size: 6,
-        font,
-      });
-
-      const priceLine = `Rs. ${Number(v.price || 0).toFixed(0)}`;
-      const priceWidth = fontBold.widthOfTextAtSize(priceLine, 7);
-      page.drawText(priceLine, {
-        x: (pageW - priceWidth) / 2,
-        y: mmToPt(2),
-        size: 7,
-        font: fontBold,
-      });
     }
+  
 
-    const pdfBytes = await pdfDoc.save();
+  const pdfBytes = await pdfDoc.save();
     const fileName = `labels-${Date.now()}.pdf`;
     const filePath = path.join(LABEL_FOLDER, fileName);
     fs.writeFileSync(filePath, pdfBytes);

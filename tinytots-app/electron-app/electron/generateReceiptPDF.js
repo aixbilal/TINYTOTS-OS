@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import fs from "node:fs";
 import path from "node:path";
 import { app } from "electron";
@@ -20,72 +20,104 @@ export async function generateReceiptPDF(sale) {
 
   const page = pdfDoc.addPage([pageWidth, pageHeight]);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const black = rgb(0, 0, 0);
+  const gray = rgb(0.45, 0.45, 0.45);
 
-  let y = pageHeight - 25;
+  let y = pageHeight - 28;
+  const marginX = 14;
+  const contentWidth = pageWidth - marginX * 2;
 
-  const center = (text, size) => {
-    const width = font.widthOfTextAtSize(text, size);
-    page.drawText(text, { x: (pageWidth - width) / 2, y, size, font });
-    y -= 16;
+  const center = (text, size, useBold = false) => {
+    const f = useBold ? fontBold : font;
+    const width = f.widthOfTextAtSize(text, size);
+    page.drawText(text, { x: (pageWidth - width) / 2, y, size, font: f, color: black });
+    y -= size + 6;
   };
 
-  const left = (text, size = 8) => {
-    page.drawText(text, { x: 10, y, size, font });
+  const divider = (thickness = 0.7) => {
+    page.drawLine({
+      start: { x: marginX, y },
+      end: { x: pageWidth - marginX, y },
+      thickness,
+      color: black,
+    });
+    y -= 12;
   };
 
-  // ---------------- HEADER ----------------
-  center("TINY TOTS", 14);
+  const row = (left, right, size = 8, useBold = false) => {
+    const f = useBold ? fontBold : font;
+    page.drawText(left, { x: marginX, y, size, font: f, color: black });
+    const rightWidth = f.widthOfTextAtSize(right, size);
+    page.drawText(right, { x: pageWidth - marginX - rightWidth, y, size, font: f, color: black });
+    y -= size + 6;
+  };
+
+  // ---- header ----
+  center("TINY TOTS", 16, true);
   center("Toddler-to-Tween Outfitters", 8);
   center("Shop No 169 Street Markazi Jamia", 7);
   center("Masjid Toba Tek Singh", 7);
   center("0301-7278797", 7);
-  center("www.tinytotsofficial.com", 7);
 
-  y -= 8;
-  left("--------------------------------");
-  y -= 15;
+  y -= 4;
+  divider(1.2);
 
-  left(`Receipt : ${sale.receiptNumber || "-"}`);
-  y -= 12;
+  // ---- meta ----
+  row("Receipt", sale.receiptNumber || "-", 8, true);
+  row("Cashier", sale.cashier || "—", 8);
+  row("Date", new Date(sale.created_at).toLocaleString(), 7);
 
-  left(`Date : ${new Date(sale.created_at).toLocaleString()}`);
-  y -= 18;
+  divider();
 
-  left("Qty Item");
-  page.drawText("Total", { x: 175, y, size: 8, font });
-  y -= 10;
-
-  left("--------------------------------");
-  y -= 16;
-
-  // ---------------- ITEMS ----------------
+  // ---- items ----
   for (const item of sale.items || []) {
-    left(`${item.qty} x ${item.name}`);
-    page.drawText(money(item.lineTotal), { x: 175, y, size: 8, font });
-    y -= 11;
+    row(`${item.qty} x ${item.name}`, money(item.lineTotal), 8);
 
     if (item.variant) {
-      page.drawText(item.variant, { x: 20, y, size: 7, font });
-      y -= 10;
+      page.drawText(item.variant, { x: marginX + 6, y: y + 4, size: 6.5, font, color: gray });
+      y -= 6;
     }
   }
 
+  divider();
+
+  // ---- totals ----
+  row("Subtotal", money(sale.subtotal), 8);
+  row("Discount", `-${money(sale.discount)}`, 8);
+  row("Tax", money(sale.tax), 8);
+
+  divider(1.2);
+
+  // ---- boxed total ----
+  const boxHeight = 26;
+  page.drawRectangle({
+    x: marginX,
+    y: y - boxHeight + 10,
+    width: contentWidth,
+    height: boxHeight,
+    borderColor: black,
+    borderWidth: 1,
+  });
+  const totalLabel = "TOTAL";
+  const totalValue = `Rs. ${money(sale.total)}`;
+  page.drawText(totalLabel, { x: marginX + 8, y: y - 8, size: 11, font: fontBold, color: black });
+  const totalValueWidth = fontBold.widthOfTextAtSize(totalValue, 11);
+  page.drawText(totalValue, {
+    x: pageWidth - marginX - 8 - totalValueWidth,
+    y: y - 8,
+    size: 11,
+    font: fontBold,
+    color: black,
+  });
+  y -= boxHeight + 10;
+
+  row("Paid via", (sale.paymentMethod || "Cash").toUpperCase(), 8);
+
   y -= 6;
-  left("--------------------------------");
-  y -= 15;
+  divider(1.2);
 
-  // ---------------- TOTALS ----------------
-  left(`Subtotal : ${money(sale.subtotal)}`);
-  y -= 12;
-
-  left(`Tax : ${money(sale.tax)}`);
-  y -= 12;
-
-  page.drawText(`TOTAL : ${money(sale.total)}`, { x: 10, y, size: 10, font });
-  y -= 20;
-
-  center("Thank you for shopping!", 9);
-  center("Tiny Tots", 10);
+  center("Thanks for coming!", 9, true);
   center("We love watching them grow.", 8);
 
   // ---------------- SAVE TO DISK ----------------

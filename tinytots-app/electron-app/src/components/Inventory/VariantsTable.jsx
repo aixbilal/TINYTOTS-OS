@@ -19,35 +19,100 @@ function publicCode(v) {
 
 export default function VariantsTable({ variants, selectedIds, onToggleSelect, onSelectAll, onChanged }) {
   const [editingId, setEditingId] = useState(null);
-  const [draft, setDraft] = useState({ stock: "", price: "" });
+  const [draft, setDraft] = useState({ stock: "", price: "", cost_price: "", discount_percent: "" });
   const [openMenuId, setOpenMenuId] = useState(null);
 
   const allSelected = variants.length > 0 && selectedIds.length === variants.length;
 
   function startEdit(v) {
     setEditingId(v.id);
-    setDraft({ stock: v.stock, price: v.price });
+    setDraft({
+      stock: v.stock,
+      price: v.price,
+      cost_price: v.cost_price ?? "",
+      discount_percent: v.discount_percent ?? "",
+    });
   }
-
   async function saveEdit(id) {
     await fetch(`http://localhost:3000/api/variants/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stock: Number(draft.stock), price: Number(draft.price) }),
+      body: JSON.stringify({
+        stock: Number(draft.stock),
+        price: Number(draft.price),
+        cost_price: Number(draft.cost_price) || 0,
+        discount_percent: Math.min(100, Math.max(0, Number(draft.discount_percent) || 0)),
+      }),
     });
     setEditingId(null);
     onChanged();
   }
 
+  async function toggleStatus(v) {
+    const newStatus = v.status === "inactive" ? "active" : "inactive";
+    await fetch(`http://localhost:3000/api/variants/${v.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    onChanged();
+  }
+
+  async function bulkSetStatus(newStatus) {
+    if (!selectedIds.length) return;
+    await Promise.all(
+      selectedIds.map((id) =>
+        fetch(`http://localhost:3000/api/variants/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        })
+      )
+    );
+    onSelectAll(false);
+    onChanged();
+  }
+  
   async function deleteVariant(id) {
     if (!confirm("Delete this variant? This can't be undone.")) return;
     await fetch(`http://localhost:3000/api/variants/${id}`, { method: "DELETE" });
     setOpenMenuId(null);
     onChanged();
   }
-
+  function discountedPrice(v) {
+    const pct = Number(v.discount_percent) || 0;
+    if (!pct) return null;
+    return (Number(v.price) * (1 - pct / 100)).toFixed(0);
+  }
   return (
     <div className="overflow-x-auto">
+      {selectedIds.length > 0 && (
+        <div className="flex items-center justify-between bg-maroon-50 border border-maroon-200 rounded-lg px-4 py-2 mb-3">
+          <span className="text-sm text-ink-900 font-medium">
+            {selectedIds.length} variant{selectedIds.length > 1 ? "s" : ""} selected
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => bulkSetStatus("active")}
+              className="text-xs px-3 py-1.5 rounded-lg bg-green-100 text-green-800 hover:bg-green-200 font-medium"
+            >
+              Activate Selected
+            </button>
+            <button
+              onClick={() => bulkSetStatus("inactive")}
+              className="text-xs px-3 py-1.5 rounded-lg bg-white/60 text-ink-900 hover:bg-white/80 font-medium"
+            >
+              Deactivate Selected
+            </button>
+            <button
+              onClick={() => onSelectAll(false)}
+              className="text-xs px-3 py-1.5 rounded-lg text-ink-700 hover:bg-white/40"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-maroon-700 text-cream-50 text-left">
@@ -58,9 +123,10 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
             <th className="p-3">Size</th>
             <th className="p-3">SKU ID</th>
             <th className="p-3">Public Code</th>
-            <th className="p-3">Display ID</th>
+            <th className="p-3">Cost Price (Rs)</th>
             <th className="p-3">Stock</th>
-            <th className="p-3">Price (₹)</th>
+            <th className="p-3">Selling Price (Rs)</th>
+            <th className="p-3">Discount</th>
             <th className="p-3">Status</th>
             <th className="p-3 rounded-r-lg w-10"></th>
           </tr>
@@ -90,7 +156,18 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
                 <td className="p-3 text-ink-900">{v.size}</td>
                 <td className="p-3 font-mono text-xs text-ink-800">{v.sku}</td>
                 <td className="p-3 font-mono text-xs text-maroon-800 font-semibold">{publicCode(v)}</td>
-                <td className="p-3 font-mono text-xs text-ink-800">{v.variant_label}</td>
+                <td className="p-3 text-ink-900">
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      value={draft.cost_price}
+                      onChange={(e) => setDraft((d) => ({ ...d, cost_price: e.target.value }))}
+                      className="w-20 border border-gold-400 rounded px-1.5 py-0.5 bg-white/60"
+                    />
+                  ) : (
+                    v.cost_price ?? "—"
+                  )}
+                </td>
                 <td className="p-3">
                   {isEditing ? (
                     <input
@@ -119,10 +196,41 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
                     v.price
                   )}
                 </td>
+                <td className="p-3 text-ink-900">
+                  {isEditing ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={draft.discount_percent}
+                        onChange={(e) => setDraft((d) => ({ ...d, discount_percent: e.target.value }))}
+                        className="w-14 border border-gold-400 rounded px-1.5 py-0.5 bg-white/60"
+                      />
+                      <span className="text-xs text-ink-700">%</span>
+                    </div>
+                  ) : Number(v.discount_percent) > 0 ? (
+                    <div>
+                      <span className="text-maroon-700 font-semibold">{v.discount_percent}% off</span>
+                      <div className="text-xs text-ink-700/60 line-through">Rs. {v.price}</div>
+                      <div className="text-xs text-ink-900 font-medium">Rs. {discountedPrice(v)}</div>
+                    </div>
+                  ) : (
+                    <span className="text-ink-700/50 text-xs">—</span>
+                  )}
+                </td>
                 <td className="p-3">
-                  <span className="text-xs px-2 py-1 rounded-full bg-white/30 text-ink-800 capitalize">
+                  <button
+                    onClick={() => toggleStatus(v)}
+                    className={`text-xs px-2 py-1 rounded-full capitalize transition-colors ${
+                      (v.status || "active") === "active"
+                        ? "bg-green-100 text-green-800 hover:bg-green-200"
+                        : "bg-white/30 text-ink-800 hover:bg-white/50"
+                    }`}
+                    title="Tap to toggle Active/Inactive"
+                  >
                     {v.status || "active"}
-                  </span>
+                  </button>
                 </td>
                 <td className="p-3 relative">
                   {isEditing ? (

@@ -16,12 +16,37 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds, onSe
     () => localStorage.getItem("preferredPrinter") || ""
   );
   const [labelPreset, setLabelPreset] = useState(0);
+  const [quantities, setQuantities] = useState({}); // { [variantId]: qty }
   const [previewUrl, setPreviewUrl] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const canvasRef = useRef(null);
 
   const effectiveIds = selectionMode === "all" ? allVariants.map((v) => v.id) : selectedIds;
+
+  useEffect(() => {
+    setQuantities((prev) => {
+      const next = {};
+      effectiveIds.forEach((id) => {
+        const v = allVariants.find((v) => v.id === id);
+        next[id] = prev[id] ?? (v?.stock ?? 0);
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveIds.join(",")]);
+
+  useEffect(() => {
+    setQuantities((prev) => {
+      const next = {};
+      effectiveIds.forEach((id) => {
+        const v = allVariants.find((v) => v.id === id);
+        next[id] = prev[id] ?? (v?.stock ?? 0);
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveIds.join(",")]);
 
   useEffect(() => {
     fetch("http://localhost:3000/api/printers")
@@ -78,6 +103,7 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds, onSe
         codeType,
         labelWidthMm: preset.w,
         labelHeightMm: preset.h,
+        quantities,
         ...(download ? {} : { printerName }),
       };
 
@@ -140,7 +166,32 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds, onSe
           Custom Selection ({selectedIds.length} checked in table)
         </label>
       </div>
-
+      <p className="text-sm font-medium text-ink-900 mb-2">
+        Label Quantities <span className="font-normal text-ink-800/70">(defaults to stock, editable)</span>
+      </p>
+      <div className="max-h-32 overflow-y-auto space-y-1 mb-2 text-xs pr-1">
+        {effectiveIds.map((id) => {
+          const v = allVariants.find((v) => v.id === id);
+          if (!v) return null;
+          return (
+            <div key={id} className="flex items-center justify-between gap-2">
+              <span className="text-ink-900 truncate">{v.color} / {v.size}</span>
+              <input
+                type="number"
+                min={0}
+                value={quantities[id] ?? 0}
+                onChange={(e) =>
+                  setQuantities((q) => ({ ...q, [id]: parseInt(e.target.value, 10) || 0 }))
+                }
+                className="w-14 border border-white/40 bg-white/20 rounded px-1 py-0.5 text-right text-ink-900"
+              />
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-xs text-ink-800/70 mb-5">
+        Total labels: {Object.values(quantities).reduce((a, b) => a + (b || 0), 0)}
+      </p>
       <p className="text-sm font-medium text-ink-900 mb-2">Choose Code Type</p>
       <div className="grid grid-cols-2 gap-2 mb-5">
         <button

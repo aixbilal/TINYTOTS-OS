@@ -74,7 +74,18 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
       : emptyForm
   );
   const [colors, setColors] = useState([]);
-  const [sizes, setSizes] = useState([]);
+  const [sizesByColor, setSizesByColor] = useState({}); // { "Navy Blue": ["8","10"], ... }
+
+  function addColor(newColors) {
+    setColors(newColors);
+    setSizesByColor((prev) => {
+      const next = { ...prev };
+      newColors.forEach((c) => { if (!next[c]) next[c] = []; });
+      Object.keys(next).forEach((c) => { if (!newColors.includes(c)) delete next[c]; });
+      return next;
+    });
+  }
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -89,8 +100,12 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
     e.preventDefault();
     setError("");
 
-    if (mode === "create" && (!colors.length || !sizes.length)) {
-      setError("Add at least one color and one size to generate variants.");
+   const variantGroups = colors
+      .filter((c) => sizesByColor[c]?.length)
+      .map((c) => ({ color: c, sizes: sizesByColor[c] }));
+
+    if (mode === "create" && !variantGroups.length) {
+      setError("Add at least one color with at least one size to generate variants.");
       return;
     }
 
@@ -102,10 +117,18 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
           : `http://localhost:3000/api/products/${initialProduct.id}`;
       const method = mode === "create" ? "POST" : "PUT";
 
-      const body =
-        mode === "create"
-          ? { ...form, colors, sizes }
-          : form;
+      <div className="grid grid-cols-2 gap-4">
+      <TagInput label="Colors" placeholder="Maroon, Black…" values={colors} onChange={setColors} />
+      <TagInput label="Sizes" placeholder="S, M, L, XL…" values={sizes} onChange={setSizes} />
+    </div>
+
+    {colors.length > 0 && sizes.length > 0 && (
+      <p className="text-sm text-maroon-700 bg-maroon-100 rounded-lg px-3 py-2">
+        This will generate <strong>{colors.length * sizes.length}</strong> variants
+        ({colors.length} colors × {sizes.length} sizes). Each variant will get its own
+        auto-generated Public Code (e.g. <code>V-246</code>) once saved.
+      </p>
+    )}
 
       const res = await fetch(url, {
         method,
@@ -214,16 +237,26 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
                 {...field("initialStock")}
               />
 
-              <div className="grid grid-cols-2 gap-4">
-                <TagInput label="Colors" placeholder="Maroon, Black…" values={colors} onChange={setColors} />
-                <TagInput label="Sizes" placeholder="S, M, L, XL…" values={sizes} onChange={setSizes} />
-              </div>
+<TagInput label="Colors" placeholder="Maroon, Black…" values={colors} onChange={addColor} />
 
-              {colors.length > 0 && sizes.length > 0 && (
+              {colors.map((color) => (
+                <TagInput
+                  key={color}
+                  label={`Sizes for ${color}`}
+                  placeholder="S, M, L, XL…"
+                  values={sizesByColor[color] || []}
+                  onChange={(newSizes) => setSizesByColor((s) => ({ ...s, [color]: newSizes }))}
+                />
+              ))}
+
+              {colors.length > 0 && (
                 <p className="text-sm text-maroon-700 bg-maroon-100 rounded-lg px-3 py-2">
-                  This will generate <strong>{colors.length * sizes.length}</strong> variants
-                  ({colors.length} colors × {sizes.length} sizes). Each variant will get its own
-                  auto-generated Public Code (e.g. <code>V-246</code>) once saved.
+                  This will generate{" "}
+                  <strong>
+                    {colors.reduce((sum, c) => sum + (sizesByColor[c]?.length || 0), 0)}
+                  </strong>{" "}
+                  variants total. Each variant will get its own auto-generated Public Code
+                  (e.g. <code>V-246</code>) once saved.
                 </p>
               )}
             </>

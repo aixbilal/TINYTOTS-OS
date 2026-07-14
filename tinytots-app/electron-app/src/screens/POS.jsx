@@ -133,8 +133,19 @@ export default function POS() {
   }
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const discountAmount =
+  
+  // 1. Calculate automatic database-driven discount per variant scanned
+  const autoDiscountAmount = cart.reduce(
+    (sum, item) => sum + item.price * item.qty * ((Number(item.discount_percent) || 0) / 100),
+    0
+  );
+  
+  // 2. Calculate any manual discount applied by the cashier on top
+  const manualDiscountAmount =
     discountType === "percent" ? (subtotal * (Number(discount) || 0)) / 100 : Number(discount) || 0;
+  
+  // 3. Combine both discounts together
+  const discountAmount = autoDiscountAmount + manualDiscountAmount;
   const taxableAmount = Math.max(subtotal - discountAmount, 0);
   const tax = taxableAmount * TAX_RATE;
   const total = taxableAmount + tax;
@@ -412,7 +423,12 @@ export default function POS() {
                       <Plus size={12} />
                     </button>
                   </div>
-                  <span className="text-sm text-ink-900">{formatPKR(item.price)}</span>
+                  <span className="text-sm text-ink-900">
+                    {formatPKR(item.price)}
+                    {Number(item.discount_percent) > 0 && (
+                      <span className="text-xs text-maroon-700 ml-1">-{item.discount_percent}%</span>
+                    )}
+                  </span>
                   <span className="text-sm font-medium text-ink-900">{formatPKR(item.price * item.qty)}</span>
                   <button
                     onClick={() => removeFromCart(item.variant_id)}
