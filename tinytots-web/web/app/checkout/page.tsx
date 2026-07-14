@@ -5,6 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 
+const MAX_LEN = { name: 80, phone: 20, address: 300, city: 50, coupon: 30 };
+
+function sanitize(v: string, max: number) {
+  // strip control chars / trim, cap length — real escaping still happens server-side via parameterized Supabase calls
+  return v.replace(/[<>]/g, "").slice(0, max);
+}
+
+function isValidPakPhone(phone: string) {
+  const digits = phone.replace(/[\s-]/g, "");
+  return /^(03\d{9}|\+923\d{9})$/.test(digits);
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, clearCart } = useCart();
@@ -16,7 +28,8 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [couponCode, setCouponCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   if (items.length === 0) {
     return (
@@ -31,36 +44,43 @@ export default function CheckoutPage() {
     );
   }
 
+  function validate() {
+    const errs: Record<string, string> = {};
+    if (!guestName.trim()) errs.guestName = "Please enter your full name.";
+    if (!guestPhone.trim()) errs.guestPhone = "Please enter your phone number.";
+    else if (!isValidPakPhone(guestPhone)) errs.guestPhone = "Enter a valid number, e.g. 03001234567.";
+    if (!shippingAddress.trim()) errs.shippingAddress = "Please enter your shipping address.";
+    if (!shippingCity.trim()) errs.shippingCity = "Please enter your city.";
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-
-    if (!guestName || !guestPhone || !shippingAddress || !shippingCity) {
-      setError("Please fill in all required fields.");
-      return;
-    }
+    setServerError(null);
+    if (!validate()) return;
 
     setSubmitting(true);
-
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity })),
-          shipping_address: shippingAddress,
-          shipping_city: shippingCity,
+          shipping_address: shippingAddress.trim(),
+          shipping_city: shippingCity.trim(),
           payment_method: paymentMethod,
-          guest_name: guestName,
-          guest_phone: guestPhone,
-          coupon_code: couponCode || undefined,
+          guest_name: guestName.trim(),
+          guest_phone: guestPhone.trim(),
+          coupon_code: couponCode.trim() || undefined,
         }),
       });
 
       const json = await res.json();
 
       if (!res.ok) {
-        setError(json.error || "Something went wrong. Please try again.");
+        // generic, non-descriptive message to the user — avoid leaking backend/query details
+        setServerError(json.error && res.status < 500 ? json.error : "We couldn't place your order. Please check your details and try again.");
         setSubmitting(false);
         return;
       }
@@ -68,60 +88,77 @@ export default function CheckoutPage() {
       clearCart();
       router.push(`/order-confirmation/${json.data.order_number}`);
     } catch {
-      setError("Network error. Please try again.");
+      setServerError("Network error. Please try again.");
       setSubmitting(false);
     }
   }
 
-  const inputClass =
-    "w-full border border-outline-variant rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary transition-colors";
+  const inputClass = (hasError: boolean) =>
+    `w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none transition-colors ${
+      hasError ? "border-error focus:border-error" : "border-outline-variant focus:border-primary"
+    }`;
+
+  const FieldError = ({ msg }: { msg?: string }) =>
+    msg ? <p className="font-label-md text-label-md text-error mt-1">{msg}</p> : null;
 
   return (
     <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
       <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Checkout</h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-stack-md">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-md">
         <div>
           <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Contact details</h2>
           <div className="flex flex-col gap-3">
-            <input
-              type="text"
-              placeholder="Full name"
-              value={guestName}
-              onChange={(e) => setGuestName(e.target.value)}
-              className={inputClass}
-              required
-            />
-            <input
-              type="tel"
-              placeholder="Phone number (e.g. 03001234567)"
-              value={guestPhone}
-              onChange={(e) => setGuestPhone(e.target.value)}
-              className={inputClass}
-              required
-            />
+            <div>
+              <input
+                type="text"
+                placeholder="Full name"
+                value={guestName}
+                onChange={(e) => setGuestName(sanitize(e.target.value, MAX_LEN.name))}
+                maxLength={MAX_LEN.name}
+                className={inputClass(!!fieldErrors.guestName)}
+              />
+              <FieldError msg={fieldErrors.guestName} />
+            </div>
+            <div>
+              <input
+                type="tel"
+                placeholder="Phone number (e.g. 03001234567)"
+                value={guestPhone}
+                onChange={(e) => setGuestPhone(sanitize(e.target.value, MAX_LEN.phone))}
+                maxLength={MAX_LEN.phone}
+                className={inputClass(!!fieldErrors.guestPhone)}
+              />
+              <FieldError msg={fieldErrors.guestPhone} />
+            </div>
           </div>
         </div>
 
         <div>
           <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Shipping address</h2>
           <div className="flex flex-col gap-3">
-            <textarea
-              placeholder="Full address (house/street/area)"
-              value={shippingAddress}
-              onChange={(e) => setShippingAddress(e.target.value)}
-              className={inputClass}
-              rows={3}
-              required
-            />
-            <input
-              type="text"
-              placeholder="City (e.g. Lahore, Islamabad, Karachi...)"
-              value={shippingCity}
-              onChange={(e) => setShippingCity(e.target.value)}
-              className={inputClass}
-              required
-            />
+            <div>
+              <textarea
+                placeholder="Full address (house/street/area)"
+                value={shippingAddress}
+                onChange={(e) => setShippingAddress(sanitize(e.target.value, MAX_LEN.address))}
+                maxLength={MAX_LEN.address}
+                rows={3}
+                className={inputClass(!!fieldErrors.shippingAddress)}
+              />
+              <FieldError msg={fieldErrors.shippingAddress} />
+            </div>
+            <div>
+              <input
+                type="text"
+                placeholder="City (e.g. Lahore, Islamabad, Karachi...)"
+                value={shippingCity}
+                onChange={(e) => setShippingCity(sanitize(e.target.value, MAX_LEN.city))}
+                maxLength={MAX_LEN.city}
+                className={inputClass(!!fieldErrors.shippingCity)}
+              />
+              <FieldError msg={fieldErrors.shippingCity} />
+            </div>
           </div>
         </div>
 
@@ -134,21 +171,12 @@ export default function CheckoutPage() {
               { value: "jazzcash", label: "JazzCash" },
               { value: "easypaisa", label: "Easypaisa" },
             ].map((option) => (
-              <label
-                key={option.value}
-                className={`flex items-center gap-3 border rounded-lg px-4 py-3 cursor-pointer transition-colors ${
-                  paymentMethod === option.value
-                    ? "border-primary bg-primary-container/10"
-                    : "border-outline-variant"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="payment_method"
-                  value={option.value}
+              <label key={option.value} className={`flex items-center gap-3 border rounded-lg px-4 py-3 cursor-pointer transition-colors ${
+                paymentMethod === option.value ? "border-primary bg-primary-container/10" : "border-outline-variant"
+              }`}>
+                <input type="radio" name="payment_method" value={option.value}
                   checked={paymentMethod === option.value}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                />
+                  onChange={(e) => setPaymentMethod(e.target.value)} />
                 <span className="font-body-sm text-body-sm text-on-surface">{option.label}</span>
               </label>
             ))}
@@ -156,15 +184,14 @@ export default function CheckoutPage() {
         </div>
 
         <div>
-          <h2 className="font-headline-md text-headline-md text-on-surface mb-3">
-            Coupon code (optional)
-          </h2>
+          <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Coupon code (optional)</h2>
           <input
             type="text"
             placeholder="Enter coupon code"
             value={couponCode}
-            onChange={(e) => setCouponCode(e.target.value)}
-            className={inputClass}
+            onChange={(e) => setCouponCode(sanitize(e.target.value.toUpperCase(), MAX_LEN.coupon))}
+            maxLength={MAX_LEN.coupon}
+            className={inputClass(false)}
           />
         </div>
 
@@ -178,19 +205,16 @@ export default function CheckoutPage() {
           </p>
         </div>
 
-        {error && (
-          <p className="font-body-sm text-body-sm text-error border border-error/30 bg-error-container/20 rounded-lg px-4 py-3">
-            {error}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50"
-        >
-          {submitting ? "Placing order..." : "Place Order"}
-        </button>
+        <div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50"
+          >
+            {submitting ? "Placing order..." : "Place Order"}
+          </button>
+          <FieldError msg={serverError ?? undefined} />
+        </div>
       </form>
     </main>
   );
