@@ -116,6 +116,7 @@ app.get("/api/products", async (req, res) => {
         stock,
         sku,
         public_code,
+        discount_percent,
         product:products(
           id,
           name,
@@ -138,15 +139,15 @@ app.get("/api/products", async (req, res) => {
       size: item.size,
       price: item.price,
       stock: item.stock,
-      discount_percent: item.discount_percent || 0,
+      discount_percent: item.discount_percent !== undefined ? item.discount_percent : 0,
     }));
 
     res.json(products);
   } catch (err) {
+    console.error("GET /api/products error:", err); // This prints the real error to your terminal!
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
 // ---------------- SEARCH PRODUCTS ----------------
 app.get("/api/products/search", async (req, res) => {
   try {
@@ -452,7 +453,9 @@ async function generateReceiptPDF(sale_id) {
   if (itemsError) throw itemsError;
 
   const pdfDoc = await PDFDocument.create();
-  const pageWidth = 226;
+  // Adjusted pageWidth to 212pt. This slightly narrower canvas acts as a 
+  // built-in hardware padding offset so thermal printer drivers don't push it off-center.
+  const pageWidth = 212; 
   const pageHeight = 900;
   const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
@@ -461,11 +464,45 @@ async function generateReceiptPDF(sale_id) {
   const black = rgb(0, 0, 0);
   const gray = rgb(0.45, 0.45, 0.45);
 
-  let y = pageHeight - 28;
-  const marginX = 14;
-  const contentWidth = pageWidth - marginX * 2;
+  let y = pageHeight - 35; // Generous top margins for tearing off paper cleanly
+  const marginX = 12;      // 12pt side margins on a 212pt canvas leaves a perfect printable gap
+  const contentWidth = pageWidth - (marginX * 2);
 
   const center = (text, size, useBold = false) => {
+    const f = useBold ? fontBold : font;
+    const width = f.widthOfTextAtSize(text, size);
+    page.drawText(text, { x: (pageWidth - width) / 2, y, size, font: f, color: black });
+    y -= size + 6;
+  };
+
+  const divider = (thickness = 0.7) => {
+    page.drawLine({
+      start: { x: marginX, y },
+      end: { x: pageWidth - marginX, y },
+      thickness,
+      color: black,
+    });
+    y -= 12;
+  };
+
+  // Improved row function that forces even spacing on left/right text boundaries
+  const row = (left, right, size = 8, useBold = false) => {
+    const f = useBold ? fontBold : font;
+    const rightWidth = f.widthOfTextAtSize(right, size);
+    const maxLeftWidth = contentWidth - rightWidth - 6; 
+    
+    let leftText = left;
+    if (f.widthOfTextAtSize(leftText, size) > maxLeftWidth) {
+      while (leftText.length > 0 && f.widthOfTextAtSize(leftText + "...", size) > maxLeftWidth) {
+        leftText = leftText.slice(0, -1);
+      }
+      leftText = leftText + "...";
+    }
+
+    page.drawText(leftText, { x: marginX, y, size, font: f, color: black });
+    page.drawText(right, { x: pageWidth - marginX - rightWidth, y, size, font: f, color: black });
+    y -= size + 6;
+  };  const center = (text, size, useBold = false) => {
     const f = useBold ? fontBold : font;
     const width = f.widthOfTextAtSize(text, size);
     page.drawText(text, { x: (pageWidth - width) / 2, y, size, font: f, color: black });
@@ -605,6 +642,10 @@ const PORT = process.env.PORT || 3000;
 // Powers the "Today's Snapshot" bar on the main menu.
 // ----------------------------------------------------
 
+// ----------------------------------------------------
+// DASHBOARD SUMMARY
+// Powers the "Today's Snapshot" bar on the main menu.
+// ----------------------------------------------------
 app.get("/api/dashboard-summary", async (req, res) => {
   try {
     const startOfDay = new Date();
@@ -633,8 +674,7 @@ app.get("/api/dashboard-summary", async (req, res) => {
 
     if (stockError) throw stockError;
 
-    // Current month goal progress (falls back to null if no goal is set yet —
-    // the Performance & Goals module owns writing to this table)
+    // Current month goal progress
     const monthStart = new Date();
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
@@ -648,8 +688,6 @@ app.get("/api/dashboard-summary", async (req, res) => {
       .limit(1)
       .maybeSingle();
 
-    // If the goals table doesn't exist yet, don't fail the whole dashboard —
-    // just report no goal set. (Table gets created in the Performance & Goals phase.)
     let goalProgressPct = null;
     if (!goalError && monthGoal?.target_amount) {
       const { data: monthSales, error: monthSalesError } = await supabase
@@ -668,12 +706,24 @@ app.get("/api/dashboard-summary", async (req, res) => {
         );
       }
     }
+
+    res.json({
+      success: true,
+      totalSalesToday: totalSales,
+      transactionsToday: transactions,
+      lowStockCount: lowStockRows?.length ?? 0,
+      goalProgressPct,
+    });
+  } catch (err) {
+    console.error("Dashboard summary error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ----------------------------------------------------
 // LOW STOCK LIST
-// Powers the dedicated Low Stock page (linked from
-// the "View Now" action on the dashboard snapshot).
+// Powers the dedicated Low Stock page
 // ----------------------------------------------------
-
 app.get("/api/low-stock", async (req, res) => {
   try {
     const LOW_STOCK_THRESHOLD = 5;
@@ -707,18 +757,6 @@ app.get("/api/low-stock", async (req, res) => {
   } catch (err) {
     console.error("GET /api/low-stock error:", err);
     res.status(500).json({ success: false, message: "Failed to load low stock items." });
-  }
-});
-    res.json({
-      success: true,
-      totalSalesToday: totalSales,
-      transactionsToday: transactions,
-      lowStockCount: lowStockRows?.length ?? 0,
-      goalProgressPct, // null if no goal configured yet
-    });
-  } catch (err) {
-    console.error("Dashboard summary error:", err);
-    res.status(500).json({ success: false, error: err.message });
   }
 });
 // ----------------------------------------------------
@@ -785,6 +823,7 @@ function colorCode(color) {
   return color.toString().replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase();
 }
 
+
 // ----------------------------------------------------
 // CREATE PRODUCT & VARIANTS
 // ----------------------------------------------------
@@ -792,7 +831,7 @@ app.post("/api/products", async (req, res) => {
   try {
     const {
       name, brand, category, sku, hsn_code, unit, description, image_url,
-      cost_price, selling_price, initialStock, variantGroups,
+      cost_price, selling_price, initialStock, stock, variantGroups,
     } = req.body;
 
     if (!name || !sku) {
@@ -838,40 +877,44 @@ app.post("/api/products", async (req, res) => {
       throw prodErr;
     }
 
-   // Generate variant rows securely
-   const variantRows = [];
-   for (const group of variantGroups) {
-     for (const size of group.sizes) {
-       variantRows.push({
-         product_id: product.id,
-         color: group.color,
-         size,
-         price: Number(selling_price) || 0,
-         cost_price: Number(cost_price) || 0,
-         stock: Number(initialStock) || 0,
-         sku: `${cleanSku}-${colorCode(group.color)}-${size}`.toUpperCase(),
-         status: "active",
-       });
-     }
-   }
+    // Determine fallback stock (supports both "stock" and "initialStock" from root body)
+    const fallbackStock = Number(stock !== undefined ? stock : initialStock) || 0;
+
+    // Generate variant rows securely
+    const variantRows = [];
+    for (const group of variantGroups) {
+      // Prioritize group-level stock if your frontend sends stock per color group, otherwise use root fallback
+      const groupStock = group.stock !== undefined ? Number(group.stock) : fallbackStock;
+
+      for (const size of group.sizes) {
+        variantRows.push({
+          product_id: product.id,
+          color: group.color,
+          size,
+          price: Number(selling_price) || 0,
+          cost_price: Number(cost_price) || 0,
+          stock: groupStock,
+          sku: `${cleanSku}-${colorCode(group.color)}-${size}`.toUpperCase(),
+          status: "active",
+        });
+      }
+    }
 
     // Bulk insert variants
-   // Bulk insert variants
-   const { data: variants, error: varErr } = await supabase
-   .from("variants")
-   .insert(variantRows)
-   .select();
+    const { data: variants, error: varErr } = await supabase
+      .from("variants")
+      .insert(variantRows)
+      .select();
 
- if (varErr || !variants || variants.length !== variantRows.length) {
-   // Variant creation failed or was incomplete — don't leave an orphan
-   // product with missing/partial variants sitting in the DB.
-   await supabase.from("variants").delete().eq("product_id", product.id);
-   await supabase.from("products").delete().eq("id", product.id);
-   throw new Error(
-     varErr?.message ||
-     `Only ${variants?.length || 0} of ${variantRows.length} variants were created. Product creation rolled back — please try again.`
-   );
- }
+    if (varErr || !variants || variants.length !== variantRows.length) {
+      // Variant creation failed or was incomplete — roll back product creation
+      await supabase.from("variants").delete().eq("product_id", product.id);
+      await supabase.from("products").delete().eq("id", product.id);
+      throw new Error(
+        varErr?.message ||
+        `Only ${variants?.length || 0} of ${variantRows.length} variants were created. Product creation rolled back — please try again.`
+      );
+    }
 
     // Follow-up: Assign unique public codes safely
     if (variants && variants.length > 0) {
@@ -1016,9 +1059,22 @@ app.post("/api/print-labels", async (req, res) => {
   try {
     const {
       variantIds, codeType = "qr", printerName,
-      labelWidthMm = 50, labelHeightMm = 30,
+      labelWidthMm = 46, // Reduced from 50 to 46 to create a safety margin for the printer alignment
+      labelHeightMm = 30,
       quantities = {},
     } = req.body;
+
+    const truncateText = (text, font, size, maxWidth) => {
+      let width = font.widthOfTextAtSize(text, size);
+      if (width <= maxWidth) return text;
+
+      let truncated = text;
+      while (truncated.length > 0 && width > maxWidth) {
+        truncated = truncated.slice(0, -1);
+        width = font.widthOfTextAtSize(truncated + "...", size);
+      }
+      return truncated + "...";
+    };
 
     if (!variantIds?.length) {
       return res.status(400).json({ success: false, message: "No variants selected." });
@@ -1049,92 +1105,110 @@ app.post("/api/print-labels", async (req, res) => {
         const page = pdfDoc.addPage([pageW, pageH]);
         const codeValue = v.public_code || `V-${v.id}`;
 
-        // ---- generate the code image as PNG bytes ----
-        let codeImageBytes;
-        let codeIsSquare = codeType === "qr";
-        if (codeType === "qr") {
-          const dataUrl = await QRCode.toDataURL(codeValue, { margin: 0, width: 300 });
-          codeImageBytes = Buffer.from(dataUrl.split(",")[1], "base64");
-        } else {
-          codeImageBytes = await bwipjs.toBuffer({
-            bcid: "code128",
-            text: codeValue,
-            scale: 3,
-            height: 10,
-            includetext: false,
-          });
-        }
+   // ---- generate the code image as PNG bytes ----
+   let codeImage;
+   let codeIsSquare = codeType === "qr";
 
-        const codeImage = codeIsSquare
-          ? await pdfDoc.embedPng(codeImageBytes)
-          : await pdfDoc.embedPng(codeImageBytes);
+   if (codeType === "qr") {
+     // Generate the base64 Data URL
+     const dataUrl = await QRCode.toDataURL(codeValue, { margin: 0, width: 300 });
+     
+     // Clean the string so it is pure Base64
+     const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
+     
+     // Let pdf-lib natively decode the Base64 string (avoids buffer corruption)
+     codeImage = await pdfDoc.embedPng(base64Data);
+   } else {
+     const barcodeBuffer = await bwipjs.toBuffer({
+       bcid: "code128",
+       text: codeValue,
+       scale: 3,
+       height: 10,
+       includetext: false,
+     });
+     
+     // Embed the raw barcode buffer
+     codeImage = await pdfDoc.embedPng(barcodeBuffer);
+   }
 
-        const codeSize = codeIsSquare
-          ? Math.min(pageW * 0.55, pageH * 0.65)
-          : pageW * 0.8;
-        const codeH = codeIsSquare ? codeSize : pageH * 0.35;
-        const codeX = (pageW - codeSize) / 2;
-        const codeY = pageH - codeH - mmToPt(3);
+   const codeSize = codeIsSquare
+     ? Math.min(pageW * 0.55, pageH * 0.65)
+     : pageW * 0.8;
+   const codeH = codeIsSquare ? codeSize : pageH * 0.35;
+   const codeX = (pageW - codeSize) / 2;
+   const codeY = pageH - codeH - mmToPt(3);
 
-        page.drawImage(codeImage, {
-          x: codeX,
-          y: codeY,
-          width: codeIsSquare ? codeSize : codeSize,
-          height: codeH,
-        });
+   // Draw the safely embedded image
+   page.drawImage(codeImage, {
+     x: codeX,
+     y: codeY,
+     width: codeIsSquare ? codeSize : codeSize,
+     height: codeH,
+   });
 
-        const productName = v.product?.name || "Product";
-        const nameSize = 7;
-        const nameWidth = fontBold.widthOfTextAtSize(productName, nameSize);
-        page.drawText(productName, {
-          x: (pageW - nameWidth) / 2,
-          y: codeY - 10,
-          size: nameSize,
-          font: fontBold,
-        });
+   const rawProductName = v.product?.name || "Product";
+   const maxTextWidth = pageW - 8; 
+   
+   // Dynamic Font Scaling: Start at size 7.5, shrink down to 5 if needed to fit the text
+   let nameSize = 7.5;
+   let nameWidth = fontBold.widthOfTextAtSize(rawProductName, nameSize);
+   
+   while (nameWidth > maxTextWidth && nameSize > 5.2) {
+     nameSize -= 0.3;
+     nameWidth = fontBold.widthOfTextAtSize(rawProductName, nameSize);
+   }
 
-        const variantLine = `${v.size || ""} / ${v.color || ""}`.trim();
-        const variantWidth = font.widthOfTextAtSize(variantLine, 6);
-        page.drawText(variantLine, {
-          x: (pageW - variantWidth) / 2,
-          y: codeY - 20,
-          size: 6,
-          font,
-        });
+   // Truncate only if it STILL doesn't fit at the smallest readable size (5.2)
+   const productName = truncateText(rawProductName, fontBold, nameSize, maxTextWidth);
+   const finalNameWidth = fontBold.widthOfTextAtSize(productName, nameSize);
 
-        const priceLine = `Rs. ${Number(v.price || 0).toFixed(0)}`;
-        const priceWidth = fontBold.widthOfTextAtSize(priceLine, 7);
-        page.drawText(priceLine, {
-          x: (pageW - priceWidth) / 2,
-          y: mmToPt(2),
-          size: 7,
-          font: fontBold,
-        });
-      }
-    }
-  
+   page.drawText(productName, {
+     x: (pageW - finalNameWidth) / 2, // Centered perfectly
+     y: codeY - 9, // Slightly adjusted height for smaller fonts
+     size: nameSize,
+     font: fontBold,
+   });
 
-  const pdfBytes = await pdfDoc.save();
-    const fileName = `labels-${Date.now()}.pdf`;
-    const filePath = path.join(LABEL_FOLDER, fileName);
-    fs.writeFileSync(filePath, pdfBytes);
+   const variantLine = `${v.size || ""} / ${v.color || ""}`.trim();
+   const variantWidth = font.widthOfTextAtSize(variantLine, 6);
+   page.drawText(variantLine, {
+     x: (pageW - variantWidth) / 2,
+     y: codeY - 20,
+     size: 6,
+     font,
+   });
 
-    if (printerName) {
-      await print(filePath, {
-        printer: printerName,
-        scale: "noscale",
-      });
-      return res.json({ success: true, printed: true, file: fileName });
-    }
+   const priceLine = `Rs. ${Number(v.price || 0).toFixed(0)}`;
+   const priceWidth = fontBold.widthOfTextAtSize(priceLine, 7);
+   page.drawText(priceLine, {
+     x: (pageW - priceWidth) / 2,
+     y: mmToPt(2),
+     size: 7,
+     font: fontBold,
+   });
+ }
+}
 
-    // No printer specified — return it for download instead
-    res.download(filePath);
-  } catch (err) {
-    console.error("Label print error:", err);
-    res.status(500).json({ success: false, error: err.message });
-  }
+const pdfBytes = await pdfDoc.save();
+const fileName = `labels-${Date.now()}.pdf`;
+const filePath = path.join(LABEL_FOLDER, fileName);
+fs.writeFileSync(filePath, pdfBytes);
+
+if (printerName) {
+ await print(filePath, {
+   printer: printerName,
+   scale: "noscale",
+ });
+ return res.json({ success: true, printed: true, file: fileName });
+}
+
+// No printer specified — return it for download instead
+res.download(filePath);
+} catch (err) {
+console.error("Label print error:", err);
+res.status(500).json({ success: false, error: err.message });
+}
 });
-
 
 // ============================================================
 // Old Receipts + Performance & Goals routes
