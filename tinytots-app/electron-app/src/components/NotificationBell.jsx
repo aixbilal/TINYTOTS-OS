@@ -145,7 +145,7 @@ export default function NotificationBell() {
   if (!session) return null;
 
   return (
-    <div className="relative" ref={panelRef}>
+    <div className="relative z-50" ref={panelRef}>
       <button
         onClick={() => setOpen((v) => !v)}
         className="relative text-ink-900 hover:text-maroon-700"
@@ -159,7 +159,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-9 z-30 w-96 max-h-[32rem] bg-white border border-gold-300/40 rounded-2xl shadow-lg flex flex-col overflow-hidden">
+    <div className="absolute right-0 top-9 z-[60] w-96 max-h-[32rem] bg-white border border-gold-300/40 rounded-2xl shadow-lg flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gold-300/30">
             <h3 className="font-medium text-ink-900">Notifications</h3>
             <div className="flex items-center gap-3 text-xs">

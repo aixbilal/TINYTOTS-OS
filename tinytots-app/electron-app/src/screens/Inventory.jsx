@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Camera, Pencil, Plus, Search, ChevronDown, Bell } from "lucide-react";
@@ -229,6 +230,7 @@ export default function Inventory() {
                     label="Description"
                     value={selectedProduct.description || "—"}
                     className="col-span-2"
+                    html
                   />
                   <Field
                     label="Created On"
@@ -302,14 +304,19 @@ export default function Inventory() {
   );
 }
 
-function Field({ label, value, mono, pill, className = "" }) {
+function Field({ label, value, mono, pill, className = "", html = false }) {
   return (
-    <div className={className}>
+    <div className={`min-w-0 ${className}`}>
       <p className="text-xs text-ink-800/70">{label}</p>
       {pill ? (
         <span className="inline-block mt-0.5 text-xs px-2 py-0.5 rounded-full bg-white/30 text-ink-900 capitalize">
           {value}
         </span>
+      ) : html ? (
+        <div
+          className="text-ink-900 font-medium prose prose-sm max-w-none break-words [overflow-wrap:anywhere]"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }}
+        />
       ) : (
         <p className={`text-ink-900 ${mono ? "font-mono text-sm" : "font-medium"}`}>{value}</p>
       )}

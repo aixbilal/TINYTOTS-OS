@@ -11,7 +11,14 @@ import SearchProductModal from "../components/pos/SearchProductModal";
 import { receiptConfig } from "../receipts/receiptConfig";
 import { buildSale } from "../receipts/buildSale";
 import { printReceipt } from "../receipts/printReceipt";
-import { queueSale, syncQueuedSales, getQueueCount } from "../services/offlineQueue";
+import {
+  queueSale,
+  syncQueuedSales,
+  getQueueCount,
+  getFailedSales,
+  removeQueuedSale,
+  retrySale,
+} from "../services/offlineQueue";
 import useNetworkStatus from "../hooks/useNetworkStatus";
 import { getSession, clearSession } from "../auth";
 import loginBg from "../assets/login-bg.png";
@@ -54,6 +61,8 @@ export default function POS() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [pendingSales, setPendingSales] = useState(getQueueCount());
   const [processing, setProcessing] = useState(false);
+  const [failedSales, setFailedSales] = useState(getFailedSales());
+  const [showPending, setShowPending] = useState(false);
 
   useEffect(() => {
     async function loadProducts() {
@@ -77,6 +86,7 @@ export default function POS() {
       if (isOnline) {
         await syncQueuedSales();
         setPendingSales(getQueueCount());
+        setFailedSales(getFailedSales());
       }
     }
     syncSales();
@@ -159,16 +169,27 @@ export default function POS() {
       return;
     }
 
+    // Generated once, before any network attempt, and reused on every
+    // retry (including offline sync later) so the server can recognize
+    // a repeated attempt instead of creating a duplicate sale.
+    const clientSaleId = crypto.randomUUID();
+
     setProcessing(true);
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+
       const res = await fetch("http://localhost:3000/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
+          client_sale_id: clientSaleId,
           cart, subtotal, discount: discountAmount, tax, total,
           cashier, paymentMethod, notes,
         }),
       });
+      clearTimeout(timeout);
 
       if (!res.ok) {
         throw new Error(`Checkout failed with status ${res.status}`);
@@ -195,14 +216,21 @@ export default function POS() {
 
       resetCart();
     } catch (err) {
-      // Offline fallback — same behavior as before, still prints locally and queues the sync.
+      // Offline fallback (or the network genuinely dropped) — still print
+      // locally and queue the sync, reusing the SAME clientSaleId. If the
+      // original request actually reached the server before the connection
+      // died, the server will recognize this id on retry and just return
+      // the existing sale instead of creating a second one.
       const offlineReceiptNumber = `OFFLINE-${Date.now()}`;
       const sale = buildSale({
         cart, subtotal, discount: discountAmount, tax, total,
         receiptNumber: offlineReceiptNumber, cashier, paymentMethod,
       });
 
-      queueSale({ cart, subtotal, discount: discountAmount, tax, total, cashier, paymentMethod, notes, offlineReceiptNumber });
+      queueSale(
+        { cart, subtotal, discount: discountAmount, tax, total, cashier, paymentMethod, notes, offlineReceiptNumber },
+        clientSaleId
+      );
       setPendingSales(getQueueCount());
 
       const printResult = await printViaElectron(sale);
@@ -271,6 +299,14 @@ export default function POS() {
             {isOnline ? "● Online" : "● Offline"}
             {pendingSales > 0 && ` — ${pendingSales} pending sync`}
           </span>
+          {(pendingSales > 0 || failedSales.length > 0) && (
+            <button
+              onClick={() => setShowPending(true)}
+              className="text-xs underline text-ink-800"
+            >
+              View queue{failedSales.length > 0 ? ` (${failedSales.length} need attention)` : ""}
+            </button>
+          )}
         </div>
       </div>
 
@@ -469,6 +505,45 @@ export default function POS() {
 
       {searchOpen && (
         <SearchProductModal onClose={() => setSearchOpen(false)} onPick={addToCart} />
+      )}
+
+      {showPending && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-lg text-maroon-800">Pending & Failed Sales</h3>
+              <button onClick={() => setShowPending(false)}><X size={18} /></button>
+            </div>
+            {failedSales.length === 0 && pendingSales === 0 && (
+              <p className="text-sm text-ink-800/60">Nothing pending — everything's synced.</p>
+            )}
+            {failedSales.map((s) => (
+              <div key={s.client_sale_id} className="border border-red-200 bg-red-50 rounded-lg p-3 mb-2 text-sm">
+                <p className="font-medium text-red-800">{s.offlineReceiptNumber} — Rs. {s.total}</p>
+                <p className="text-red-700 text-xs mt-1">{s.failReason}</p>
+                <div className="flex gap-3 mt-2">
+                  <button
+                    onClick={() => { retrySale(s.client_sale_id); setFailedSales(getFailedSales()); setPendingSales(getQueueCount()); }}
+                    className="text-xs underline text-ink-800"
+                  >
+                    Retry
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm("Discard this sale permanently? Use this only if you've confirmed it should NOT be recorded (e.g. item was actually out of stock).")) {
+                        removeQueuedSale(s.client_sale_id);
+                        setFailedSales(getFailedSales());
+                      }
+                    }}
+                    className="text-xs underline text-maroon-700"
+                  >
+                    Discard
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

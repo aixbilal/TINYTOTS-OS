@@ -165,6 +165,27 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
                   [{ list: "ordered" }, { list: "bullet" }],
                   ["clean"],
                 ],
+                clipboard: {
+                  // Strip every inline style Word/Google Docs pastes in
+                  // (font color, background-color, font-family, etc.) —
+                  // keep only real structure: bold, headings, lists.
+                  matchVisual: false,
+                  matchers: [
+                    [
+                      Node.ELEMENT_NODE,
+                      (node, delta) => {
+                        delta.ops.forEach((op) => {
+                          if (op.attributes) {
+                            delete op.attributes.color;
+                            delete op.attributes.background;
+                            delete op.attributes.font;
+                          }
+                        });
+                        return delta;
+                      },
+                    ],
+                  ],
+                },
               }}
             />
           </div>

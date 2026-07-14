@@ -229,6 +229,7 @@ app.post("/api/checkout", async (req, res) => {
       cashier,
       paymentMethod = "cash",
       notes = "",
+      client_sale_id,
     } = req.body;
 
     if (!cart || cart.length === 0) {
@@ -236,6 +237,27 @@ app.post("/api/checkout", async (req, res) => {
     }
     if (!cashier || !cashier.trim()) {
       return res.status(400).json({ success: false, message: "Cashier name is required." });
+    }
+    if (!client_sale_id) {
+      return res.status(400).json({ success: false, message: "client_sale_id is required." });
+    }
+
+    // Idempotency check — if this exact sale attempt already went through
+    // (e.g. the response got lost on a flaky connection and the client
+    // retried), return the original result instead of creating a duplicate.
+    const { data: existingSale, error: existingErr } = await supabase
+      .from("sales")
+      .select("id, receipt_number")
+      .eq("client_sale_id", client_sale_id)
+      .maybeSingle();
+    if (existingErr) throw existingErr;
+    if (existingSale) {
+      return res.json({
+        success: true,
+        sale_id: existingSale.id,
+        receipt_number: existingSale.receipt_number,
+        deduped: true,
+      });
     }
 
     // Validate stock (see original note: read-then-write race window
@@ -293,21 +315,34 @@ app.post("/api/checkout", async (req, res) => {
     const receiptNumber = `TT-${Date.now()}`;
 
     const { data: sale, error: saleError } = await supabase
-      .from("sales")
-      .insert([{
-        receipt_number: receiptNumber,
-        subtotal,
-        discount,
-        tax,
-        total,
-        status: "completed",
-        cashier: cashier.trim(),
-        payment_method: paymentMethod,
-        notes,
-      }])
-      .select()
-      .single();
+    .from("sales")
+    .insert([{
+      receipt_number: receiptNumber,
+      subtotal,
+      discount,
+      tax,
+      total,
+      status: "completed",
+      cashier: cashier.trim(),
+      payment_method: paymentMethod,
+      notes,
+      client_sale_id,
+    }])
+    .select()
+    .single();
 
+  if (saleError?.code === "23505") {
+    // Race: another request with the same client_sale_id beat us to it
+    // between our check above and this insert. Treat it the same way.
+    const { data: raceSale } = await supabase
+      .from("sales")
+      .select("id, receipt_number")
+      .eq("client_sale_id", client_sale_id)
+      .single();
+    if (raceSale) {
+      return res.json({ success: true, sale_id: raceSale.id, receipt_number: raceSale.receipt_number, deduped: true });
+    }
+  }
     if (saleError) throw saleError;
 
     const saleItems = cart.map((item) => ({
