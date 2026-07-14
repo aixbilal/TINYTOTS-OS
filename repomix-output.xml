@@ -91,6 +91,11 @@ tinytots-app/
         labels-1784014977299.pdf
         labels-1784014985972.pdf
         labels-1784015338303.pdf
+        labels-1784018540117.pdf
+        labels-1784018697856.pdf
+        labels-1784018716688.pdf
+        labels-1784018727592.pdf
+        labels-1784024756609.pdf
       receipts/
         TT-1783103922695.pdf
         TT-1783111707689.pdf
@@ -2206,115 +2211,6 @@ await clearState(phone);
 console.log("deleted");
 </file>
 
-<file path="tinytots-app/electron-app/electron/generateReceiptPDF.js">
-import { PDFDocument, StandardFonts } from "pdf-lib";
-import fs from "node:fs";
-import path from "node:path";
-import { app } from "electron";
-
-function money(value) {
-  return Number(value || 0).toFixed(2);
-}
-
-/**
- * Builds an 80mm receipt PDF from a sale object (the same shape
- * produced by src/receipts/buildSale.js) and writes it to disk.
- * Returns the file path of the generated PDF.
- */
-export async function generateReceiptPDF(sale) {
-  const pdfDoc = await PDFDocument.create();
-
-  const pageWidth = 226;   // 80mm
-  const pageHeight = 900;
-
-  const page = pdfDoc.addPage([pageWidth, pageHeight]);
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-  let y = pageHeight - 25;
-
-  const center = (text, size) => {
-    const width = font.widthOfTextAtSize(text, size);
-    page.drawText(text, { x: (pageWidth - width) / 2, y, size, font });
-    y -= 16;
-  };
-
-  const left = (text, size = 8) => {
-    page.drawText(text, { x: 10, y, size, font });
-  };
-
-  // ---------------- HEADER ----------------
-  center("TINY TOTS", 14);
-  center("Toddler-to-Tween Outfitters", 8);
-  center("Shop No 169 Street Markazi Jamia", 7);
-  center("Masjid Toba Tek Singh", 7);
-  center("0301-7278797", 7);
-  center("www.tinytotsofficial.com", 7);
-
-  y -= 8;
-  left("--------------------------------");
-  y -= 15;
-
-  left(`Receipt : ${sale.receiptNumber || "-"}`);
-  y -= 12;
-
-  left(`Date : ${new Date(sale.created_at).toLocaleString()}`);
-  y -= 18;
-
-  left("Qty Item");
-  page.drawText("Total", { x: 175, y, size: 8, font });
-  y -= 10;
-
-  left("--------------------------------");
-  y -= 16;
-
-  // ---------------- ITEMS ----------------
-  for (const item of sale.items || []) {
-    left(`${item.qty} x ${item.name}`);
-    page.drawText(money(item.lineTotal), { x: 175, y, size: 8, font });
-    y -= 11;
-
-    if (item.variant) {
-      page.drawText(item.variant, { x: 20, y, size: 7, font });
-      y -= 10;
-    }
-  }
-
-  y -= 6;
-  left("--------------------------------");
-  y -= 15;
-
-  // ---------------- TOTALS ----------------
-  left(`Subtotal : ${money(sale.subtotal)}`);
-  y -= 12;
-
-  left(`Tax : ${money(sale.tax)}`);
-  y -= 12;
-
-  page.drawText(`TOTAL : ${money(sale.total)}`, { x: 10, y, size: 10, font });
-  y -= 20;
-
-  center("Thank you for shopping!", 9);
-  center("Tiny Tots", 10);
-  center("We love watching them grow.", 8);
-
-  // ---------------- SAVE TO DISK ----------------
-  const pdfBytes = await pdfDoc.save();
-
-  const receiptsFolder = path.join(app.getPath("userData"), "receipts");
-
-  if (!fs.existsSync(receiptsFolder)) {
-    fs.mkdirSync(receiptsFolder, { recursive: true });
-  }
-
-  const safeName = String(sale.receiptNumber || Date.now()).replace(/[^a-zA-Z0-9-_]/g, "_");
-  const pdfPath = path.join(receiptsFolder, `${safeName}.pdf`);
-
-  fs.writeFileSync(pdfPath, pdfBytes);
-
-  return pdfPath;
-}
-</file>
-
 <file path="tinytots-app/electron-app/electron/main.js">
 // pos-desktop/electron/main.js
 import { app, BrowserWindow, ipcMain } from "electron";
@@ -2603,419 +2499,6 @@ contextBridge.exposeInMainWorld("electron", {
 
 <file path="tinytots-app/electron-app/src/assets/vite.svg">
 <svg xmlns="http://www.w3.org/2000/svg" width="77" height="47" fill="none" aria-labelledby="vite-logo-title" viewBox="0 0 77 47"><title id="vite-logo-title">Vite</title><style>.parenthesis{fill:#000}@media (prefers-color-scheme:dark){.parenthesis{fill:#fff}}</style><path fill="#9135ff" d="M40.151 45.71c-.663.844-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.493c-.92 0-1.457-1.04-.92-1.788l7.479-10.471c1.07-1.498 0-3.578-1.842-3.578H15.443c-.92 0-1.456-1.04-.92-1.788l9.696-13.576c.213-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.472c-1.07 1.497 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.087.89 1.83L40.153 45.712z"/><mask id="a" width="48" height="47" x="14" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M40.047 45.71c-.663.843-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.389c-.92 0-1.457-1.04-.92-1.788l7.479-10.472c1.07-1.497 0-3.578-1.842-3.578H15.34c-.92 0-1.456-1.04-.92-1.788l9.696-13.575c.213-.297.556-.474.92-.474H53.93c.92 0 1.456 1.04.92 1.788L47.37 13.03c-1.07 1.498 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.088.89 1.831L40.049 45.712z"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#eee6ff" rx="5.508" ry="14.704" transform="rotate(269.814 20.96 11.29)scale(-1 1)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#eee6ff" rx="10.399" ry="29.851" transform="rotate(89.814 -16.902 -8.275)scale(1 -1)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#8900ff" rx="5.508" ry="30.487" transform="rotate(89.814 -19.197 -7.127)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.928 4.177)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.738 5.52)scale(1 -1)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#eee6ff" rx="14.072" ry="22.078" transform="rotate(93.35 31.245 55.578)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx="14.592" cy="9.743" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(39.51 14.592 9.743)"/></g><g filter="url(#k)"><ellipse cx="61.728" cy="-5.321" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 61.728 -5.32)"/></g><g filter="url(#l)"><ellipse cx="55.618" cy="7.104" fill="#00c2ff" rx="5.971" ry="9.665" transform="rotate(37.892 55.618 7.104)"/></g><g filter="url(#m)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#n)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#o)"><ellipse cx="49.857" cy="30.678" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 49.857 30.678)"/></g><g filter="url(#p)"><ellipse cx="52.623" cy="33.171" fill="#00c2ff" rx="5.971" ry="15.297" transform="rotate(37.892 52.623 33.17)"/></g></g><path d="M6.919 0c-9.198 13.166-9.252 33.575 0 46.789h6.215c-9.25-13.214-9.196-33.623 0-46.789zm62.424 0h-6.215c9.198 13.166 9.252 33.575 0 46.789h6.215c9.25-13.214 9.196-33.623 0-46.789" class="parenthesis"/><defs><filter id="b" width="60.045" height="41.654" x="-5.564" y="16.92" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-40.407" y="-6.762" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-35.435" y="2.801" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-30.84" y="20.8" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-29.307" y="21.949" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="29.961" y="-17.13" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-13.43" y="-22.082" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="34.321" y="-37.644" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="38.847" y="-10.552" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="22.45" y="-1.645" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="32.919" y="11.36" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter></defs></svg>
-</file>
-
-<file path="tinytots-app/electron-app/src/components/Inventory/BarcodeQrPanel.jsx">
-import { useEffect, useRef, useState } from "react";
-import { Printer, Download, QrCode, Barcode as BarcodeIcon } from "lucide-react";
-import { generateQrPreview, generateBarcodePreview } from "../../utils/codeGenerators";
-
-const LABEL_PRESETS = [
-  { label: "25 × 27 mm (standard tag)", w: 25, h: 30 },
-  { label: "25 × 20 mm (small tag)", w: 20, h: 25 },
-  { label: "20 × 15 mm (x small tag)", w: 15, h: 20 },
-];
-
-export default function BarcodeQrPanel({ product, allVariants, selectedIds, onSelectAll }) {
-  const [selectionMode, setSelectionMode] = useState("all"); // "all" | "custom"
-  const [codeType, setCodeType] = useState("qr");
-  const [printers, setPrinters] = useState([]);
-  const [printerName, setPrinterName] = useState(
-    () => localStorage.getItem("preferredPrinter") || ""
-  );
-  const [labelPreset, setLabelPreset] = useState(0);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
-  const canvasRef = useRef(null);
-
-  const effectiveIds = selectionMode === "all" ? allVariants.map((v) => v.id) : selectedIds;
-
-  useEffect(() => {
-    fetch("http://localhost:3000/api/printers")
-    .then(async (response) => {
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const text = await response.text();
-      if (!text) throw new Error("Empty response from server");
-      return JSON.parse(text);
-    })
-    .then((data) => {
-      setPrinters(data.printers || data || []);
-    })
-    .catch((err) => console.error("Fetch Error:", err));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (printerName) localStorage.setItem("preferredPrinter", printerName);
-  }, [printerName]);
-
-  useEffect(() => {
-    async function buildPreview() {
-      const firstVariant = allVariants.find((v) => effectiveIds.includes(v.id)) || allVariants[0];
-      if (!firstVariant) {
-        setPreviewUrl(null);
-        return;
-      }
-      // Labels are customer-facing, so they must carry the Public Code (V-{id}),
-      // never the confidential internal SKU.
-      const code = firstVariant.public_code || `V-${firstVariant.id}`;
-      if (codeType === "qr") {
-        const url = await generateQrPreview(code);
-        setPreviewUrl(url);
-      } else if (canvasRef.current) {
-        const url = generateBarcodePreview(canvasRef.current, code);
-        setPreviewUrl(url);
-      }
-    }
-    buildPreview();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [codeType, effectiveIds.join(","), allVariants.length]);
-
-  async function handlePrint(download = false) {
-    if (!effectiveIds.length) {
-      setMessage("Select at least one variant first.");
-      return;
-    }
-    setBusy(true);
-    setMessage("");
-    try {
-      const preset = LABEL_PRESETS[labelPreset];
-      const body = {
-        variantIds: effectiveIds,
-        codeType,
-        labelWidthMm: preset.w,
-        labelHeightMm: preset.h,
-        ...(download ? {} : { printerName }),
-      };
-
-      const res = await fetch("http://localhost:5173/api/print-labels", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (download) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `labels-${product?.sku || "product"}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-        setMessage("PDF downloaded.");
-      } else {
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error || data.message);
-        setMessage(`Sent ${effectiveIds.length} label(s) to ${printerName}.`);
-      }
-    } catch (err) {
-      setMessage(`Failed: ${err.message}`);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div
-      className="rounded-2xl border border-white/40 backdrop-blur-xl p-6 sticky top-6"
-      style={{
-        background: "linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.12) 100%)",
-        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
-      }}
-    >
-      <h3 className="font-display text-xl text-maroon-800 mb-1">Generate Barcode / QR</h3>
-      <p className="text-sm text-ink-800 mb-5">
-        Select variants to generate Barcode or QR codes for easy tagging.
-      </p>
-
-      <p className="text-sm font-medium text-ink-900 mb-2">Select Variants</p>
-      <div className="space-y-2 mb-5">
-        <label className="flex items-center gap-2 text-sm cursor-pointer text-ink-900">
-          <input
-            type="radio"
-            checked={selectionMode === "all"}
-            onChange={() => setSelectionMode("all")}
-          />
-          All Variants ({allVariants.length})
-        </label>
-        <label className="flex items-center gap-2 text-sm cursor-pointer text-ink-900">
-          <input
-            type="radio"
-            checked={selectionMode === "custom"}
-            onChange={() => setSelectionMode("custom")}
-          />
-          Custom Selection ({selectedIds.length} checked in table)
-        </label>
-      </div>
-
-      <p className="text-sm font-medium text-ink-900 mb-2">Choose Code Type</p>
-      <div className="grid grid-cols-2 gap-2 mb-5">
-        <button
-          onClick={() => setCodeType("qr")}
-          className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-            codeType === "qr"
-              ? "bg-maroon-700 text-cream-50"
-              : "border border-white/40 text-ink-900 hover:bg-white/20"
-          }`}
-        >
-          <QrCode size={16} /> QR Code
-        </button>
-        <button
-          onClick={() => setCodeType("barcode")}
-          className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-            codeType === "barcode"
-              ? "bg-maroon-700 text-cream-50"
-              : "border border-white/40 text-ink-900 hover:bg-white/20"
-          }`}
-        >
-          <BarcodeIcon size={16} /> Barcode
-        </button>
-      </div>
-
-      <p className="text-sm font-medium text-ink-900 mb-2">Preview</p>
-      <div className="border border-white/40 rounded-xl h-40 flex items-center justify-center mb-5 bg-white/20 backdrop-blur-sm">
-        {previewUrl ? (
-          <img src={previewUrl} alt="Code preview" className="max-h-32" />
-        ) : (
-          <p className="text-xs text-ink-800/60">Select a variant to preview</p>
-        )}
-        <canvas ref={canvasRef} className="hidden" />
-      </div>
-
-      <p className="text-sm font-medium text-ink-900 mb-2">Label Size</p>
-      <select
-        value={labelPreset}
-        onChange={(e) => setLabelPreset(Number(e.target.value))}
-        className="w-full border border-white/40 bg-white/20 rounded-lg px-3 py-2 text-sm mb-4 text-ink-900"
-      >
-        {LABEL_PRESETS.map((p, i) => (
-          <option key={p.label} value={i}>{p.label}</option>
-        ))}
-      </select>
-
-      <p className="text-sm font-medium text-ink-900 mb-2">Printer</p>
-      <select
-        value={printerName}
-        onChange={(e) => setPrinterName(e.target.value)}
-        className="w-full border border-white/40 bg-white/20 rounded-lg px-3 py-2 text-sm mb-5 text-ink-900"
-      >
-        <option value="">Select a printer…</option>
-        {printers.map((p) => (
-          <option key={p.name} value={p.name}>
-            {p.name} {/3600/i.test(p.name) ? "(EML-200L (2inch))" : ""}{p.isDefault ? " — default" : ""}
-          </option>
-        ))}
-      </select>
-
-      <button
-        onClick={() => handlePrint(false)}
-        disabled={busy || !printerName}
-        className="w-full flex items-center justify-center gap-2 bg-maroon-700 text-cream-50 font-medium py-3 rounded-lg mb-2.5 hover:bg-maroon-800 disabled:opacity-50"
-      >
-        <Printer size={16} />
-        {busy ? "Sending…" : `Print ${codeType === "qr" ? "QR Codes" : "Barcodes"}`}
-      </button>
-      <button
-        onClick={() => handlePrint(true)}
-        disabled={busy}
-        className="w-full flex items-center justify-center gap-2 border border-white/40 text-ink-900 font-medium py-3 rounded-lg hover:bg-white/20 disabled:opacity-50"
-      >
-        <Download size={16} /> Download PDF
-      </button>
-
-      {message && <p className="text-xs text-ink-800 mt-3 text-center">{message}</p>}
-
-      {!printers.length && (
-        <p className="text-xs text-maroon-700 mt-3">
-          No printers detected. Make sure the EML-200L (2inch) driver is installed and the printer is powered on.
-        </p>
-      )}
-    </div>
-  );
-}
-</file>
-
-<file path="tinytots-app/electron-app/src/components/Inventory/VariantsTable.jsx">
-import { useState } from "react";
-import { MoreVertical, Trash2, Check, X } from "lucide-react";
-
-const COLOR_SWATCH = {
-  maroon: "#7A0F1F", black: "#111111", white: "#f5f5f5", olive: "#556B2F",
-  sand: "#C2A878", navy: "#1B2A4A", grey: "#888888", gray: "#888888",
-  red: "#c0392b", blue: "#2c3e93", green: "#2e6b3e", beige: "#d8c3a5", brown: "#5b3a29",
-};
-
-function swatch(color) {
-  return COLOR_SWATCH[(color || "").toLowerCase()] || "#B08D57";
-}
-
-// public_code is DB-derived as V-{id}. If the backend hasn't backfilled it yet,
-// fall back to computing it from the real id so the UI never shows a blank/wrong code.
-function publicCode(v) {
-  return v.public_code || (v.id != null ? `V-${v.id}` : "—");
-}
-
-export default function VariantsTable({ variants, selectedIds, onToggleSelect, onSelectAll, onChanged }) {
-  const [editingId, setEditingId] = useState(null);
-  const [draft, setDraft] = useState({ stock: "", price: "" });
-  const [openMenuId, setOpenMenuId] = useState(null);
-
-  const allSelected = variants.length > 0 && selectedIds.length === variants.length;
-
-  function startEdit(v) {
-    setEditingId(v.id);
-    setDraft({ stock: v.stock, price: v.price });
-  }
-
-  async function saveEdit(id) {
-    await fetch(`http://localhost:3000/api/variants/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stock: Number(draft.stock), price: Number(draft.price) }),
-    });
-    setEditingId(null);
-    onChanged();
-  }
-
-  async function deleteVariant(id) {
-    if (!confirm("Delete this variant? This can't be undone.")) return;
-    await fetch(`http://localhost:3000/api/variants/${id}`, { method: "DELETE" });
-    setOpenMenuId(null);
-    onChanged();
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-maroon-700 text-cream-50 text-left">
-            <th className="p-3 rounded-l-lg w-10">
-              <input type="checkbox" checked={allSelected} onChange={(e) => onSelectAll(e.target.checked)} />
-            </th>
-            <th className="p-3">Color</th>
-            <th className="p-3">Size</th>
-            <th className="p-3">SKU ID</th>
-            <th className="p-3">Public Code</th>
-            <th className="p-3">Display ID</th>
-            <th className="p-3">Stock</th>
-            <th className="p-3">Price (₹)</th>
-            <th className="p-3">Status</th>
-            <th className="p-3 rounded-r-lg w-10"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {variants.map((v) => {
-            const isEditing = editingId === v.id;
-            const lowStock = v.stock <= 5;
-            return (
-              <tr key={v.id} className="border-b border-white/30 hover:bg-white/20">
-                <td className="p-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(v.id)}
-                    onChange={() => onToggleSelect(v.id)}
-                  />
-                </td>
-                <td className="p-3">
-                  <span className="inline-flex items-center gap-2 text-ink-900">
-                    <span
-                      className="w-3 h-3 rounded-full border border-ink-900/10"
-                      style={{ backgroundColor: swatch(v.color) }}
-                    />
-                    {v.color}
-                  </span>
-                </td>
-                <td className="p-3 text-ink-900">{v.size}</td>
-                <td className="p-3 font-mono text-xs text-ink-800">{v.sku}</td>
-                <td className="p-3 font-mono text-xs text-maroon-800 font-semibold">{publicCode(v)}</td>
-                <td className="p-3 font-mono text-xs text-ink-800">{v.variant_label}</td>
-                <td className="p-3">
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      value={draft.stock}
-                      onChange={(e) => setDraft((d) => ({ ...d, stock: e.target.value }))}
-                      className="w-16 border border-gold-400 rounded px-1.5 py-0.5 bg-white/60"
-                      autoFocus
-                    />
-                  ) : (
-                    <span className={lowStock ? "text-maroon-700 font-semibold" : "text-ink-900"}>
-                      {v.stock}
-                      {lowStock && " ⚠"}
-                    </span>
-                  )}
-                </td>
-                <td className="p-3 text-ink-900">
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      value={draft.price}
-                      onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))}
-                      className="w-20 border border-gold-400 rounded px-1.5 py-0.5 bg-white/60"
-                    />
-                  ) : (
-                    v.price
-                  )}
-                </td>
-                <td className="p-3">
-                  <span className="text-xs px-2 py-1 rounded-full bg-white/30 text-ink-800 capitalize">
-                    {v.status || "active"}
-                  </span>
-                </td>
-                <td className="p-3 relative">
-                  {isEditing ? (
-                    <div className="flex gap-1">
-                      <button onClick={() => saveEdit(v.id)} className="text-green-700 hover:bg-green-50/60 p-1 rounded">
-                        <Check size={14} />
-                      </button>
-                      <button onClick={() => setEditingId(null)} className="text-ink-800 hover:bg-white/30 p-1 rounded">
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setOpenMenuId(openMenuId === v.id ? null : v.id)}
-                      className="p-1 rounded hover:bg-white/30 text-ink-800"
-                    >
-                      <MoreVertical size={16} />
-                    </button>
-                  )}
-
-                  {openMenuId === v.id && (
-                    <div className="absolute right-3 top-9 bg-white shadow-lg rounded-lg border border-cream-100 z-10 w-32 overflow-hidden">
-                      <button
-                        onClick={() => {
-                          startEdit(v);
-                          setOpenMenuId(null);
-                        }}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-cream-50"
-                      >
-                        Edit stock/price
-                      </button>
-                      <button
-                        onClick={() => deleteVariant(v.id)}
-                        className="w-full text-left px-3 py-2 text-sm text-maroon-700 hover:bg-cream-50 flex items-center gap-1.5"
-                      >
-                        <Trash2 size={13} /> Delete
-                      </button>
-                    </div>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-
-      {variants.length === 0 && (
-        <p className="text-center text-ink-800/60 py-10 text-sm">
-          No variants yet. Add a product with colors and sizes to generate them.
-        </p>
-      )}
-    </div>
-  );
-}
 </file>
 
 <file path="tinytots-app/electron-app/src/components/performance/CategoryDonut.jsx">
@@ -26160,6 +25643,719 @@ RESET ALL;
 **/node_modules
 </file>
 
+<file path="tinytots-app/electron-app/electron/generateReceiptPDF.js">
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import fs from "node:fs";
+import path from "node:path";
+import { app } from "electron";
+
+function money(value) {
+  return Number(value || 0).toFixed(2);
+}
+
+/**
+ * Builds an 80mm receipt PDF from a sale object (the same shape
+ * produced by src/receipts/buildSale.js) and writes it to disk.
+ * Returns the file path of the generated PDF.
+ */
+export async function generateReceiptPDF(sale) {
+  const pdfDoc = await PDFDocument.create();
+
+  const pageWidth = 226;   // 80mm
+  const pageHeight = 900;
+
+  const page = pdfDoc.addPage([pageWidth, pageHeight]);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const black = rgb(0, 0, 0);
+  const gray = rgb(0.45, 0.45, 0.45);
+
+  let y = pageHeight - 28;
+  const marginX = 14;
+  const contentWidth = pageWidth - marginX * 2;
+
+  const center = (text, size, useBold = false) => {
+    const f = useBold ? fontBold : font;
+    const width = f.widthOfTextAtSize(text, size);
+    page.drawText(text, { x: (pageWidth - width) / 2, y, size, font: f, color: black });
+    y -= size + 6;
+  };
+
+  const divider = (thickness = 0.7) => {
+    page.drawLine({
+      start: { x: marginX, y },
+      end: { x: pageWidth - marginX, y },
+      thickness,
+      color: black,
+    });
+    y -= 12;
+  };
+
+  const row = (left, right, size = 8, useBold = false) => {
+    const f = useBold ? fontBold : font;
+    page.drawText(left, { x: marginX, y, size, font: f, color: black });
+    const rightWidth = f.widthOfTextAtSize(right, size);
+    page.drawText(right, { x: pageWidth - marginX - rightWidth, y, size, font: f, color: black });
+    y -= size + 6;
+  };
+
+  // ---- header ----
+  center("TINY TOTS", 16, true);
+  center("Toddler-to-Tween Outfitters", 8);
+  center("Shop No 169 Street Markazi Jamia", 7);
+  center("Masjid Toba Tek Singh", 7);
+  center("0301-7278797", 7);
+
+  y -= 4;
+  divider(1.2);
+
+  // ---- meta ----
+  row("Receipt", sale.receiptNumber || "-", 8, true);
+  row("Cashier", sale.cashier || "—", 8);
+  row("Date", new Date(sale.created_at).toLocaleString(), 7);
+
+  divider();
+
+  // ---- items ----
+  for (const item of sale.items || []) {
+    row(`${item.qty} x ${item.name}`, money(item.lineTotal), 8);
+
+    if (item.variant) {
+      page.drawText(item.variant, { x: marginX + 6, y: y + 4, size: 6.5, font, color: gray });
+      y -= 6;
+    }
+  }
+
+  divider();
+
+  // ---- totals ----
+  row("Subtotal", money(sale.subtotal), 8);
+  row("Discount", `-${money(sale.discount)}`, 8);
+  row("Tax", money(sale.tax), 8);
+
+  divider(1.2);
+
+  // ---- boxed total ----
+  const boxHeight = 26;
+  page.drawRectangle({
+    x: marginX,
+    y: y - boxHeight + 10,
+    width: contentWidth,
+    height: boxHeight,
+    borderColor: black,
+    borderWidth: 1,
+  });
+  const totalLabel = "TOTAL";
+  const totalValue = `Rs. ${money(sale.total)}`;
+  page.drawText(totalLabel, { x: marginX + 8, y: y - 8, size: 11, font: fontBold, color: black });
+  const totalValueWidth = fontBold.widthOfTextAtSize(totalValue, 11);
+  page.drawText(totalValue, {
+    x: pageWidth - marginX - 8 - totalValueWidth,
+    y: y - 8,
+    size: 11,
+    font: fontBold,
+    color: black,
+  });
+  y -= boxHeight + 10;
+
+  row("Paid via", (sale.paymentMethod || "Cash").toUpperCase(), 8);
+
+  y -= 6;
+  divider(1.2);
+
+  center("Thanks for coming!", 9, true);
+  center("We love watching them grow.", 8);
+
+  // ---------------- SAVE TO DISK ----------------
+  const pdfBytes = await pdfDoc.save();
+
+  const receiptsFolder = path.join(app.getPath("userData"), "receipts");
+
+  if (!fs.existsSync(receiptsFolder)) {
+    fs.mkdirSync(receiptsFolder, { recursive: true });
+  }
+
+  const safeName = String(sale.receiptNumber || Date.now()).replace(/[^a-zA-Z0-9-_]/g, "_");
+  const pdfPath = path.join(receiptsFolder, `${safeName}.pdf`);
+
+  fs.writeFileSync(pdfPath, pdfBytes);
+
+  return pdfPath;
+}
+</file>
+
+<file path="tinytots-app/electron-app/src/components/Inventory/BarcodeQrPanel.jsx">
+import { useEffect, useRef, useState } from "react";
+import { Printer, Download, QrCode, Barcode as BarcodeIcon } from "lucide-react";
+import { generateQrPreview, generateBarcodePreview } from "../../utils/codeGenerators";
+
+const LABEL_PRESETS = [
+  { label: "25 × 27 mm (standard tag)", w: 25, h: 30 },
+  { label: "25 × 20 mm (small tag)", w: 20, h: 25 },
+  { label: "20 × 15 mm (x small tag)", w: 15, h: 20 },
+];
+
+export default function BarcodeQrPanel({ product, allVariants, selectedIds, onSelectAll }) {
+  const [selectionMode, setSelectionMode] = useState("all"); // "all" | "custom"
+  const [codeType, setCodeType] = useState("qr");
+  const [printers, setPrinters] = useState([]);
+  const [printerName, setPrinterName] = useState(
+    () => localStorage.getItem("preferredPrinter") || ""
+  );
+  const [labelPreset, setLabelPreset] = useState(0);
+  const [quantities, setQuantities] = useState({}); // { [variantId]: qty }
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const canvasRef = useRef(null);
+
+  const effectiveIds = selectionMode === "all" ? allVariants.map((v) => v.id) : selectedIds;
+
+  useEffect(() => {
+    setQuantities((prev) => {
+      const next = {};
+      effectiveIds.forEach((id) => {
+        const v = allVariants.find((v) => v.id === id);
+        next[id] = prev[id] ?? (v?.stock ?? 0);
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveIds.join(",")]);
+
+  useEffect(() => {
+    setQuantities((prev) => {
+      const next = {};
+      effectiveIds.forEach((id) => {
+        const v = allVariants.find((v) => v.id === id);
+        next[id] = prev[id] ?? (v?.stock ?? 0);
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveIds.join(",")]);
+
+  useEffect(() => {
+    fetch("http://localhost:3000/api/printers")
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const text = await response.text();
+      if (!text) throw new Error("Empty response from server");
+      return JSON.parse(text);
+    })
+    .then((data) => {
+      setPrinters(data.printers || data || []);
+    })
+    .catch((err) => console.error("Fetch Error:", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (printerName) localStorage.setItem("preferredPrinter", printerName);
+  }, [printerName]);
+
+  useEffect(() => {
+    async function buildPreview() {
+      const firstVariant = allVariants.find((v) => effectiveIds.includes(v.id)) || allVariants[0];
+      if (!firstVariant) {
+        setPreviewUrl(null);
+        return;
+      }
+      // Labels are customer-facing, so they must carry the Public Code (V-{id}),
+      // never the confidential internal SKU.
+      const code = firstVariant.public_code || `V-${firstVariant.id}`;
+      if (codeType === "qr") {
+        const url = await generateQrPreview(code);
+        setPreviewUrl(url);
+      } else if (canvasRef.current) {
+        const url = generateBarcodePreview(canvasRef.current, code);
+        setPreviewUrl(url);
+      }
+    }
+    buildPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [codeType, effectiveIds.join(","), allVariants.length]);
+
+  async function handlePrint(download = false) {
+    if (!effectiveIds.length) {
+      setMessage("Select at least one variant first.");
+      return;
+    }
+    setBusy(true);
+    setMessage("");
+    try {
+      const preset = LABEL_PRESETS[labelPreset];
+      const body = {
+        variantIds: effectiveIds,
+        codeType,
+        labelWidthMm: preset.w,
+        labelHeightMm: preset.h,
+        quantities,
+        ...(download ? {} : { printerName }),
+      };
+
+      const res = await fetch("http://localhost:5173/api/print-labels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (download) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `labels-${product?.sku || "product"}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        setMessage("PDF downloaded.");
+      } else {
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || data.message);
+        setMessage(`Sent ${effectiveIds.length} label(s) to ${printerName}.`);
+      }
+    } catch (err) {
+      setMessage(`Failed: ${err.message}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div
+      className="rounded-2xl border border-white/40 backdrop-blur-xl p-6 sticky top-6"
+      style={{
+        background: "linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.12) 100%)",
+        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
+      }}
+    >
+      <h3 className="font-display text-xl text-maroon-800 mb-1">Generate Barcode / QR</h3>
+      <p className="text-sm text-ink-800 mb-5">
+        Select variants to generate Barcode or QR codes for easy tagging.
+      </p>
+
+      <p className="text-sm font-medium text-ink-900 mb-2">Select Variants</p>
+      <div className="space-y-2 mb-5">
+        <label className="flex items-center gap-2 text-sm cursor-pointer text-ink-900">
+          <input
+            type="radio"
+            checked={selectionMode === "all"}
+            onChange={() => setSelectionMode("all")}
+          />
+          All Variants ({allVariants.length})
+        </label>
+        <label className="flex items-center gap-2 text-sm cursor-pointer text-ink-900">
+          <input
+            type="radio"
+            checked={selectionMode === "custom"}
+            onChange={() => setSelectionMode("custom")}
+          />
+          Custom Selection ({selectedIds.length} checked in table)
+        </label>
+      </div>
+      <p className="text-sm font-medium text-ink-900 mb-2">
+        Label Quantities <span className="font-normal text-ink-800/70">(defaults to stock, editable)</span>
+      </p>
+      <div className="max-h-32 overflow-y-auto space-y-1 mb-2 text-xs pr-1">
+        {effectiveIds.map((id) => {
+          const v = allVariants.find((v) => v.id === id);
+          if (!v) return null;
+          return (
+            <div key={id} className="flex items-center justify-between gap-2">
+              <span className="text-ink-900 truncate">{v.color} / {v.size}</span>
+              <input
+                type="number"
+                min={0}
+                value={quantities[id] ?? 0}
+                onChange={(e) =>
+                  setQuantities((q) => ({ ...q, [id]: parseInt(e.target.value, 10) || 0 }))
+                }
+                className="w-14 border border-white/40 bg-white/20 rounded px-1 py-0.5 text-right text-ink-900"
+              />
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-xs text-ink-800/70 mb-5">
+        Total labels: {Object.values(quantities).reduce((a, b) => a + (b || 0), 0)}
+      </p>
+      <p className="text-sm font-medium text-ink-900 mb-2">Choose Code Type</p>
+      <div className="grid grid-cols-2 gap-2 mb-5">
+        <button
+          onClick={() => setCodeType("qr")}
+          className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            codeType === "qr"
+              ? "bg-maroon-700 text-cream-50"
+              : "border border-white/40 text-ink-900 hover:bg-white/20"
+          }`}
+        >
+          <QrCode size={16} /> QR Code
+        </button>
+        <button
+          onClick={() => setCodeType("barcode")}
+          className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            codeType === "barcode"
+              ? "bg-maroon-700 text-cream-50"
+              : "border border-white/40 text-ink-900 hover:bg-white/20"
+          }`}
+        >
+          <BarcodeIcon size={16} /> Barcode
+        </button>
+      </div>
+
+      <p className="text-sm font-medium text-ink-900 mb-2">Preview</p>
+      <div className="border border-white/40 rounded-xl h-40 flex items-center justify-center mb-5 bg-white/20 backdrop-blur-sm">
+        {previewUrl ? (
+          <img src={previewUrl} alt="Code preview" className="max-h-32" />
+        ) : (
+          <p className="text-xs text-ink-800/60">Select a variant to preview</p>
+        )}
+        <canvas ref={canvasRef} className="hidden" />
+      </div>
+
+      <p className="text-sm font-medium text-ink-900 mb-2">Label Size</p>
+      <select
+        value={labelPreset}
+        onChange={(e) => setLabelPreset(Number(e.target.value))}
+        className="w-full border border-white/40 bg-white/20 rounded-lg px-3 py-2 text-sm mb-4 text-ink-900"
+      >
+        {LABEL_PRESETS.map((p, i) => (
+          <option key={p.label} value={i}>{p.label}</option>
+        ))}
+      </select>
+
+      <p className="text-sm font-medium text-ink-900 mb-2">Printer</p>
+      <select
+        value={printerName}
+        onChange={(e) => setPrinterName(e.target.value)}
+        className="w-full border border-white/40 bg-white/20 rounded-lg px-3 py-2 text-sm mb-5 text-ink-900"
+      >
+        <option value="">Select a printer…</option>
+        {printers.map((p) => (
+          <option key={p.name} value={p.name}>
+            {p.name} {/3600/i.test(p.name) ? "(EML-200L (2inch))" : ""}{p.isDefault ? " — default" : ""}
+          </option>
+        ))}
+      </select>
+
+      <button
+        onClick={() => handlePrint(false)}
+        disabled={busy || !printerName}
+        className="w-full flex items-center justify-center gap-2 bg-maroon-700 text-cream-50 font-medium py-3 rounded-lg mb-2.5 hover:bg-maroon-800 disabled:opacity-50"
+      >
+        <Printer size={16} />
+        {busy ? "Sending…" : `Print ${codeType === "qr" ? "QR Codes" : "Barcodes"}`}
+      </button>
+      <button
+        onClick={() => handlePrint(true)}
+        disabled={busy}
+        className="w-full flex items-center justify-center gap-2 border border-white/40 text-ink-900 font-medium py-3 rounded-lg hover:bg-white/20 disabled:opacity-50"
+      >
+        <Download size={16} /> Download PDF
+      </button>
+
+      {message && <p className="text-xs text-ink-800 mt-3 text-center">{message}</p>}
+
+      {!printers.length && (
+        <p className="text-xs text-maroon-700 mt-3">
+          No printers detected. Make sure the EML-200L (2inch) driver is installed and the printer is powered on.
+        </p>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="tinytots-app/electron-app/src/components/Inventory/VariantsTable.jsx">
+import { useState } from "react";
+import { MoreVertical, Trash2, Check, X } from "lucide-react";
+
+const COLOR_SWATCH = {
+  maroon: "#7A0F1F", black: "#111111", white: "#f5f5f5", olive: "#556B2F",
+  sand: "#C2A878", navy: "#1B2A4A", grey: "#888888", gray: "#888888",
+  red: "#c0392b", blue: "#2c3e93", green: "#2e6b3e", beige: "#d8c3a5", brown: "#5b3a29",
+};
+
+function swatch(color) {
+  return COLOR_SWATCH[(color || "").toLowerCase()] || "#B08D57";
+}
+
+// public_code is DB-derived as V-{id}. If the backend hasn't backfilled it yet,
+// fall back to computing it from the real id so the UI never shows a blank/wrong code.
+function publicCode(v) {
+  return v.public_code || (v.id != null ? `V-${v.id}` : "—");
+}
+
+export default function VariantsTable({ variants, selectedIds, onToggleSelect, onSelectAll, onChanged }) {
+  const [editingId, setEditingId] = useState(null);
+  const [draft, setDraft] = useState({ stock: "", price: "", cost_price: "", discount_percent: "" });
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+  const allSelected = variants.length > 0 && selectedIds.length === variants.length;
+
+  function startEdit(v) {
+    setEditingId(v.id);
+    setDraft({
+      stock: v.stock,
+      price: v.price,
+      cost_price: v.cost_price ?? "",
+      discount_percent: v.discount_percent ?? "",
+    });
+  }
+  async function saveEdit(id) {
+    await fetch(`http://localhost:3000/api/variants/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stock: Number(draft.stock),
+        price: Number(draft.price),
+        cost_price: Number(draft.cost_price) || 0,
+        discount_percent: Math.min(100, Math.max(0, Number(draft.discount_percent) || 0)),
+      }),
+    });
+    setEditingId(null);
+    onChanged();
+  }
+
+  async function toggleStatus(v) {
+    const newStatus = v.status === "inactive" ? "active" : "inactive";
+    await fetch(`http://localhost:3000/api/variants/${v.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    onChanged();
+  }
+
+  async function bulkSetStatus(newStatus) {
+    if (!selectedIds.length) return;
+    await Promise.all(
+      selectedIds.map((id) =>
+        fetch(`http://localhost:3000/api/variants/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        })
+      )
+    );
+    onSelectAll(false);
+    onChanged();
+  }
+  
+  async function deleteVariant(id) {
+    if (!confirm("Delete this variant? This can't be undone.")) return;
+    await fetch(`http://localhost:3000/api/variants/${id}`, { method: "DELETE" });
+    setOpenMenuId(null);
+    onChanged();
+  }
+  function discountedPrice(v) {
+    const pct = Number(v.discount_percent) || 0;
+    if (!pct) return null;
+    return (Number(v.price) * (1 - pct / 100)).toFixed(0);
+  }
+  return (
+    <div className="overflow-x-auto">
+      {selectedIds.length > 0 && (
+        <div className="flex items-center justify-between bg-maroon-50 border border-maroon-200 rounded-lg px-4 py-2 mb-3">
+          <span className="text-sm text-ink-900 font-medium">
+            {selectedIds.length} variant{selectedIds.length > 1 ? "s" : ""} selected
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => bulkSetStatus("active")}
+              className="text-xs px-3 py-1.5 rounded-lg bg-green-100 text-green-800 hover:bg-green-200 font-medium"
+            >
+              Activate Selected
+            </button>
+            <button
+              onClick={() => bulkSetStatus("inactive")}
+              className="text-xs px-3 py-1.5 rounded-lg bg-white/60 text-ink-900 hover:bg-white/80 font-medium"
+            >
+              Deactivate Selected
+            </button>
+            <button
+              onClick={() => onSelectAll(false)}
+              className="text-xs px-3 py-1.5 rounded-lg text-ink-700 hover:bg-white/40"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-maroon-700 text-cream-50 text-left">
+            <th className="p-3 rounded-l-lg w-10">
+              <input type="checkbox" checked={allSelected} onChange={(e) => onSelectAll(e.target.checked)} />
+            </th>
+            <th className="p-3">Color</th>
+            <th className="p-3">Size</th>
+            <th className="p-3">SKU ID</th>
+            <th className="p-3">Public Code</th>
+            <th className="p-3">Cost Price (Rs)</th>
+            <th className="p-3">Stock</th>
+            <th className="p-3">Selling Price (Rs)</th>
+            <th className="p-3">Discount</th>
+            <th className="p-3">Status</th>
+            <th className="p-3 rounded-r-lg w-10"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {variants.map((v) => {
+            const isEditing = editingId === v.id;
+            const lowStock = v.stock <= 5;
+            return (
+              <tr key={v.id} className="border-b border-white/30 hover:bg-white/20">
+                <td className="p-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(v.id)}
+                    onChange={() => onToggleSelect(v.id)}
+                  />
+                </td>
+                <td className="p-3">
+                  <span className="inline-flex items-center gap-2 text-ink-900">
+                    <span
+                      className="w-3 h-3 rounded-full border border-ink-900/10"
+                      style={{ backgroundColor: swatch(v.color) }}
+                    />
+                    {v.color}
+                  </span>
+                </td>
+                <td className="p-3 text-ink-900">{v.size}</td>
+                <td className="p-3 font-mono text-xs text-ink-800">{v.sku}</td>
+                <td className="p-3 font-mono text-xs text-maroon-800 font-semibold">{publicCode(v)}</td>
+                <td className="p-3 text-ink-900">
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      value={draft.cost_price}
+                      onChange={(e) => setDraft((d) => ({ ...d, cost_price: e.target.value }))}
+                      className="w-20 border border-gold-400 rounded px-1.5 py-0.5 bg-white/60"
+                    />
+                  ) : (
+                    v.cost_price ?? "—"
+                  )}
+                </td>
+                <td className="p-3">
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      value={draft.stock}
+                      onChange={(e) => setDraft((d) => ({ ...d, stock: e.target.value }))}
+                      className="w-16 border border-gold-400 rounded px-1.5 py-0.5 bg-white/60"
+                      autoFocus
+                    />
+                  ) : (
+                    <span className={lowStock ? "text-maroon-700 font-semibold" : "text-ink-900"}>
+                      {v.stock}
+                      {lowStock && " ⚠"}
+                    </span>
+                  )}
+                </td>
+                <td className="p-3 text-ink-900">
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      value={draft.price}
+                      onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))}
+                      className="w-20 border border-gold-400 rounded px-1.5 py-0.5 bg-white/60"
+                    />
+                  ) : (
+                    v.price
+                  )}
+                </td>
+                <td className="p-3 text-ink-900">
+                  {isEditing ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={draft.discount_percent}
+                        onChange={(e) => setDraft((d) => ({ ...d, discount_percent: e.target.value }))}
+                        className="w-14 border border-gold-400 rounded px-1.5 py-0.5 bg-white/60"
+                      />
+                      <span className="text-xs text-ink-700">%</span>
+                    </div>
+                  ) : Number(v.discount_percent) > 0 ? (
+                    <div>
+                      <span className="text-maroon-700 font-semibold">{v.discount_percent}% off</span>
+                      <div className="text-xs text-ink-700/60 line-through">Rs. {v.price}</div>
+                      <div className="text-xs text-ink-900 font-medium">Rs. {discountedPrice(v)}</div>
+                    </div>
+                  ) : (
+                    <span className="text-ink-700/50 text-xs">—</span>
+                  )}
+                </td>
+                <td className="p-3">
+                  <button
+                    onClick={() => toggleStatus(v)}
+                    className={`text-xs px-2 py-1 rounded-full capitalize transition-colors ${
+                      (v.status || "active") === "active"
+                        ? "bg-green-100 text-green-800 hover:bg-green-200"
+                        : "bg-white/30 text-ink-800 hover:bg-white/50"
+                    }`}
+                    title="Tap to toggle Active/Inactive"
+                  >
+                    {v.status || "active"}
+                  </button>
+                </td>
+                <td className="p-3 relative">
+                  {isEditing ? (
+                    <div className="flex gap-1">
+                      <button onClick={() => saveEdit(v.id)} className="text-green-700 hover:bg-green-50/60 p-1 rounded">
+                        <Check size={14} />
+                      </button>
+                      <button onClick={() => setEditingId(null)} className="text-ink-800 hover:bg-white/30 p-1 rounded">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === v.id ? null : v.id)}
+                      className="p-1 rounded hover:bg-white/30 text-ink-800"
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+                  )}
+
+                  {openMenuId === v.id && (
+                    <div className="absolute right-3 top-9 bg-white shadow-lg rounded-lg border border-cream-100 z-10 w-32 overflow-hidden">
+                      <button
+                        onClick={() => {
+                          startEdit(v);
+                          setOpenMenuId(null);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-cream-50"
+                      >
+                        Edit stock/price
+                      </button>
+                      <button
+                        onClick={() => deleteVariant(v.id)}
+                        className="w-full text-left px-3 py-2 text-sm text-maroon-700 hover:bg-cream-50 flex items-center gap-1.5"
+                      >
+                        <Trash2 size={13} /> Delete
+                      </button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {variants.length === 0 && (
+        <p className="text-center text-ink-800/60 py-10 text-sm">
+          No variants yet. Add a product with colors and sizes to generate them.
+        </p>
+      )}
+    </div>
+  );
+}
+</file>
+
 <file path="tinytots-app/electron-app/src/components/header.jsx">
 // src/components/Header.jsx
 import { useState, useRef, useEffect } from "react";
@@ -26917,577 +27113,6 @@ function StockOverview({ variants }) {
       {variants.length === 0 && (
         <p className="text-center text-ink-800/60 py-8 text-sm">No stock data yet.</p>
       )}
-    </div>
-  );
-}
-</file>
-
-<file path="tinytots-app/electron-app/src/screens/POS.jsx">
-// POS.jsx
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft, LogOut, ScanBarcode, Search, Trash2, X, Minus, Plus,
-  Wallet, CreditCard, Smartphone, MoreHorizontal, Lock, Printer as PrinterIcon,
-} from "lucide-react";
-import FloralFlourish from "../components/FloralFlourish";
-import ScannerListener from "../components/ScannerListener";
-import SearchProductModal from "../components/pos/SearchProductModal";
-import { receiptConfig } from "../receipts/receiptConfig";
-import { buildSale } from "../receipts/buildSale";
-import { printReceipt } from "../receipts/printReceipt";
-import {
-  queueSale,
-  syncQueuedSales,
-  getQueueCount,
-  getFailedSales,
-  removeQueuedSale,
-  retrySale,
-} from "../services/offlineQueue";
-import useNetworkStatus from "../hooks/useNetworkStatus";
-import { getSession, clearSession } from "../auth";
-import loginBg from "../assets/login-bg.png";
-
-const PAYMENT_METHODS = [
-  { key: "cash", label: "Cash", icon: Wallet },
-  { key: "card", label: "Card", icon: CreditCard },
-  { key: "upi", label: "UPI", icon: Smartphone },
-  { key: "wallet", label: "Wallet", icon: Wallet },
-  { key: "other", label: "Other", icon: MoreHorizontal },
-];
-
-const TAX_RATE = receiptConfig.taxRatePercent / 100;
-
-const glassCard =
-  "rounded-2xl border border-white/40 backdrop-blur-xl transition-transform duration-300";
-const glassCardStyle = {
-  background: "linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.12) 100%)",
-  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
-};
-
-export default function POS() {
-  const navigate = useNavigate();
-  const isOnline = useNetworkStatus();
-  const session = getSession();
-  const isAdmin = session?.role === "admin";
-
-  function handleLogout() {
-    clearSession();
-    navigate("/login");
-  }
-
-  const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState([]);
-  const [cashier, setCashier] = useState("");
-  const [notes, setNotes] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [discount, setDiscount] = useState(0);
-  const [discountType, setDiscountType] = useState("flat"); // "flat" | "percent"
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [pendingSales, setPendingSales] = useState(getQueueCount());
-  const [processing, setProcessing] = useState(false);
-  const [failedSales, setFailedSales] = useState(getFailedSales());
-  const [showPending, setShowPending] = useState(false);
-
-  useEffect(() => {
-    async function loadProducts() {
-      try {
-        const res = await fetch("http://localhost:3000/api/products");
-        if (!res.ok) throw new Error("fetch failed");
-        const data = await res.json();
-        setProducts(data);
-        localStorage.setItem("tiny_tots_products_cache", JSON.stringify(data));
-      } catch (err) {
-        console.error("Failed to load products, using cache:", err);
-        const cached = localStorage.getItem("tiny_tots_products_cache");
-        setProducts(cached ? JSON.parse(cached) : []);
-      }
-    }
-    loadProducts();
-  }, []);
-
-  useEffect(() => {
-    async function syncSales() {
-      if (isOnline) {
-        await syncQueuedSales();
-        setPendingSales(getQueueCount());
-        setFailedSales(getFailedSales());
-      }
-    }
-    syncSales();
-  }, [isOnline]);
-
-  function addToCart(product) {
-    if (product.stock <= 0) {
-      alert(`${product.name}\n\n${product.color} / ${product.size}\n\nThis item is out of stock.`);
-      return;
-    }
-    setCart((prev) => {
-      const existing = prev.find((item) => item.variant_id === product.variant_id);
-      if (existing) {
-        if (existing.qty >= product.stock) {
-          alert(`Only ${product.stock} item(s) available for:\n\n${product.name}\n${product.color} / ${product.size}`);
-          return prev;
-        }
-        return prev.map((item) =>
-          item.variant_id === product.variant_id ? { ...item, qty: item.qty + 1 } : item
-        );
-      }
-      return [...prev, { ...product, qty: 1 }];
-    });
-  }
-
-  function changeQty(variantId, delta) {
-    setCart((prev) =>
-      prev
-        .map((item) => {
-          if (item.variant_id !== variantId) return item;
-          const next = item.qty + delta;
-          if (next > item.stock) {
-            alert(`Only ${item.stock} item(s) available.`);
-            return item;
-          }
-          return { ...item, qty: next };
-        })
-        .filter((item) => item.qty > 0)
-    );
-  }
-
-  function removeFromCart(variantId) {
-    setCart((prev) => prev.filter((item) => item.variant_id !== variantId));
-  }
-
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const discountAmount =
-    discountType === "percent" ? (subtotal * (Number(discount) || 0)) / 100 : Number(discount) || 0;
-  const taxableAmount = Math.max(subtotal - discountAmount, 0);
-  const tax = taxableAmount * TAX_RATE;
-  const total = taxableAmount + tax;
-
-  async function printViaElectron(sale) {
-    try {
-      await printReceipt(sale);
-      return { printed: true };
-    } catch (err) {
-      return { printed: false, error: err.message };
-    }
-  }
-
-  async function handleOpenDrawer() {
-    if (!window.electron?.openCashDrawer) {
-      alert("Cash drawer control isn't available in this build.");
-      return;
-    }
-    const result = await window.electron.openCashDrawer();
-    if (!result.success) {
-      alert(`Couldn't open the drawer automatically: ${result.error}\n\nMany printers also auto-open on receipt print — check your printer's settings.`);
-    }
-  }
-
-  async function checkout() {
-    if (cart.length === 0) {
-      alert("Cart is empty.");
-      return;
-    }
-    if (!cashier.trim()) {
-      alert("Enter the cashier's name before checking out.");
-      return;
-    }
-
-    // Generated once, before any network attempt, and reused on every
-    // retry (including offline sync later) so the server can recognize
-    // a repeated attempt instead of creating a duplicate sale.
-    const clientSaleId = crypto.randomUUID();
-
-    setProcessing(true);
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
-
-      const res = await fetch("http://localhost:3000/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          client_sale_id: clientSaleId,
-          cart, subtotal, discount: discountAmount, tax, total,
-          cashier, paymentMethod, notes,
-        }),
-      });
-      clearTimeout(timeout);
-
-      if (!res.ok) {
-        throw new Error(`Checkout failed with status ${res.status}`);
-      }
-
-      const result = await res.json();
-
-      if (!result.success) {
-        alert(result.error || result.message);
-        return;
-      }
-
-      const sale = buildSale({
-        cart, subtotal, discount: discountAmount, tax, total,
-        receiptNumber: result.receipt_number, cashier, paymentMethod,
-      });
-
-      const printResult = await printViaElectron(sale);
-      alert(
-        printResult.printed
-          ? `Sale Completed!\nReceipt: ${result.receipt_number}`
-          : `Sale completed, but printing failed:\n${printResult.error}\n\nReceipt: ${result.receipt_number}`
-      );
-
-      resetCart();
-    } catch (err) {
-      // Offline fallback (or the network genuinely dropped) — still print
-      // locally and queue the sync, reusing the SAME clientSaleId. If the
-      // original request actually reached the server before the connection
-      // died, the server will recognize this id on retry and just return
-      // the existing sale instead of creating a second one.
-      const offlineReceiptNumber = `OFFLINE-${Date.now()}`;
-      const sale = buildSale({
-        cart, subtotal, discount: discountAmount, tax, total,
-        receiptNumber: offlineReceiptNumber, cashier, paymentMethod,
-      });
-
-      queueSale(
-        { cart, subtotal, discount: discountAmount, tax, total, cashier, paymentMethod, notes, offlineReceiptNumber },
-        clientSaleId
-      );
-      setPendingSales(getQueueCount());
-
-      const printResult = await printViaElectron(sale);
-      alert(
-        printResult.printed
-          ? `No internet connection.\n\nSale saved locally and receipt printed.\nTemporary Receipt: ${offlineReceiptNumber}\n\nIt will sync automatically once you're back online.`
-          : `No internet connection.\n\nSale saved locally, but printing failed:\n${printResult.error}`
-      );
-
-      resetCart();
-    } finally {
-      setProcessing(false);
-    }
-  }
-
-  function resetCart() {
-    setCart([]);
-    setNotes("");
-    setDiscount(0);
-  }
-
-  const now = new Date();
-  const formatPKR = (v) => `Rs. ${Number(v || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 })}`;
-
-  return (
-    <div
-      className="min-h-screen px-10 py-6 bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${loginBg})` }}
-    >
-      <ScannerListener products={products} onScan={addToCart} />
-
-      {isAdmin ? (
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-maroon-700 mb-4"
-        >
-          <ArrowLeft size={15} /> Dashboard
-        </button>
-      ) : (
-        <button
-          onClick={handleLogout}
-          className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-maroon-700 mb-4"
-        >
-          <LogOut size={15} /> Logout
-        </button>
-      )}
-
-      {/* Header */}
-      <div className="relative flex items-start justify-between mb-6">
-        <FloralFlourish className="absolute -top-4 right-24 w-80 h-40 pointer-events-none hidden md:block" />
-        <div className="relative">
-          <h1 className="font-display text-4xl text-maroon-800 flex items-baseline gap-3">
-            POS <span className="text-base font-sans font-normal text-ink-800">| Point of Sale</span>
-          </h1>
-          <p className="text-ink-800 mt-1">Scan product barcode or search to add to cart</p>
-        </div>
-
-        <div className="flex flex-col items-end gap-2">
-          <button
-            onClick={handleOpenDrawer}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-white/40 text-ink-900 text-sm font-medium hover:bg-white/20 backdrop-blur-sm"
-          >
-            <PrinterIcon size={16} /> Open Cash Drawer
-          </button>
-          <span className={`text-xs font-medium ${isOnline ? "text-green-700" : "text-maroon-700"}`}>
-            {isOnline ? "● Online" : "● Offline"}
-            {pendingSales > 0 && ` — ${pendingSales} pending sync`}
-          </span>
-          {(pendingSales > 0 || failedSales.length > 0) && (
-            <button
-              onClick={() => setShowPending(true)}
-              className="text-xs underline text-ink-800"
-            >
-              View queue{failedSales.length > 0 ? ` (${failedSales.length} need attention)` : ""}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Info bar */}
-      <div className={`px-6 py-4 flex flex-wrap gap-x-10 gap-y-3 mb-6 ${glassCard}`} style={glassCardStyle}>
-        <InfoField label="Cashier">
-          <input
-            value={cashier}
-            onChange={(e) => setCashier(e.target.value)}
-            placeholder="Enter cashier name"
-            className="font-semibold text-ink-900 bg-transparent outline-none border-b border-dashed border-ink-900/30 focus:border-maroon-700 w-40"
-          />
-        </InfoField>
-        <InfoField label="Shop" value={receiptConfig.store.name} />
-        <InfoField
-          label="Date"
-          value={now.toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" })}
-        />
-        <InfoField label="Day" value={now.toLocaleDateString(undefined, { weekday: "long" })} />
-        <InfoField label="Address" value={receiptConfig.store.address} wide />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Scan panel */}
-        <div className={`flex flex-col items-center justify-center py-16 px-6 text-center ${glassCard}`} style={glassCardStyle}>
-          <div className="w-24 h-24 rounded-full bg-white/25 border border-white/40 flex items-center justify-center mb-6">
-            <ScanBarcode size={34} className="text-maroon-800" strokeWidth={1.4} />
-          </div>
-          <h2 className="font-display text-xl text-maroon-800 mb-2">Scan Barcode / QR Code</h2>
-          <p className="text-sm text-ink-800 mb-6 max-w-[220px]">
-            Scan a product barcode or QR code to add it to the cart
-          </p>
-          <div className="flex items-center gap-3 w-full max-w-[220px] mb-6">
-            <span className="flex-1 h-px bg-white/40" />
-            <span className="text-xs text-ink-800/60">or</span>
-            <span className="flex-1 h-px bg-white/40" />
-          </div>
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-white/40 text-ink-900 text-sm font-medium hover:bg-white/20 backdrop-blur-sm"
-          >
-            <Search size={15} /> Search Product
-          </button>
-        </div>
-
-        {/* Cart */}
-        <div className={`lg:col-span-2 p-6 ${glassCard}`} style={glassCardStyle}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl text-maroon-800">Cart ({cart.length})</h2>
-            {cart.length > 0 && (
-              <button
-                onClick={() => setCart([])}
-                className="text-sm text-maroon-700 hover:underline inline-flex items-center gap-1.5"
-              >
-                <Trash2 size={14} /> Clear Cart
-              </button>
-            )}
-          </div>
-
-          {cart.length === 0 ? (
-            <p className="text-center text-ink-800/60 py-16 text-sm">
-              Cart is empty — scan an item or search to add one.
-            </p>
-          ) : (
-            <div className="space-y-1">
-              <div className="grid grid-cols-[2fr_0.6fr_0.8fr_1fr_0.6fr_0.7fr_auto] gap-2 text-xs text-ink-800/70 px-2 pb-2 border-b border-white/30">
-                <span>Product</span>
-                <span>Size</span>
-                <span>Color</span>
-                <span>Qty</span>
-                <span>Price</span>
-                <span>Total</span>
-                <span></span>
-              </div>
-              {cart.map((item) => (
-                <div
-                  key={item.variant_id}
-                  className="grid grid-cols-[2fr_0.6fr_0.8fr_1fr_0.6fr_0.7fr_auto] gap-2 items-center px-2 py-2.5 border-b border-white/30 last:border-0"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-white/20 border border-white/30 flex-shrink-0 overflow-hidden">
-                      {item.image_url && <img src={item.image_url} alt="" className="w-full h-full object-cover" />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-ink-900 truncate">{item.name}</p>
-                      <p className="text-xs text-ink-800/60 font-mono truncate">{item.sku}</p>
-                    </div>
-                  </div>
-                  <span className="text-sm text-ink-900">{item.size || "—"}</span>
-                  <span className="text-sm text-ink-900">{item.color || "—"}</span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => changeQty(item.variant_id, -1)}
-                      className="w-6 h-6 rounded-md border border-white/40 flex items-center justify-center hover:bg-white/20"
-                    >
-                      <Minus size={12} />
-                    </button>
-                    <span className="w-5 text-center text-sm">{item.qty}</span>
-                    <button
-                      onClick={() => changeQty(item.variant_id, 1)}
-                      className="w-6 h-6 rounded-md border border-white/40 flex items-center justify-center hover:bg-white/20"
-                    >
-                      <Plus size={12} />
-                    </button>
-                  </div>
-                  <span className="text-sm text-ink-900">{formatPKR(item.price)}</span>
-                  <span className="text-sm font-medium text-ink-900">{formatPKR(item.price * item.qty)}</span>
-                  <button
-                    onClick={() => removeFromCart(item.variant_id)}
-                    className="text-ink-800/50 hover:text-maroon-700"
-                  >
-                    <X size={15} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Bottom row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        <div className={`p-5 ${glassCard}`} style={glassCardStyle}>
-          <h3 className="font-medium text-maroon-800 mb-3">Notes</h3>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add order notes…"
-            rows={4}
-            className="w-full bg-transparent outline-none text-sm resize-none placeholder:text-ink-800/40 text-ink-900"
-          />
-        </div>
-
-        <div className={`p-5 ${glassCard}`} style={glassCardStyle}>
-          <h3 className="font-medium text-maroon-800 mb-3">Payment Method</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {PAYMENT_METHODS.map((m) => {
-              const Icon = m.icon;
-              const active = paymentMethod === m.key;
-              return (
-                <button
-                  key={m.key}
-                  onClick={() => setPaymentMethod(m.key)}
-                  className={`flex flex-col items-center gap-1 py-3 rounded-lg border text-xs font-medium transition-colors ${
-                    active
-                      ? "bg-maroon-700 border-maroon-700 text-cream-50"
-                      : "border-white/40 text-ink-900 hover:bg-white/20"
-                  }`}
-                >
-                  <Icon size={15} />
-                  {m.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className={`p-5 ${glassCard}`} style={glassCardStyle}>
-          <Row label="Subtotal" value={formatPKR(subtotal)} />
-          <div className="flex items-center justify-between py-1.5 text-sm">
-            <span className="text-ink-800">Discount</span>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
-                className="w-16 border border-white/40 bg-white/20 rounded px-2 py-1 text-right text-sm text-ink-900"
-              />
-              <select
-                value={discountType}
-                onChange={(e) => setDiscountType(e.target.value)}
-                className="border border-white/40 bg-white/20 rounded px-1.5 py-1 text-sm text-ink-900"
-              >
-                <option value="flat">Rs.</option>
-                <option value="percent">%</option>
-              </select>
-              <span className="text-ink-900 w-16 text-right">-{formatPKR(discountAmount)}</span>
-            </div>
-          </div>
-          <Row label="Tax" value={formatPKR(tax)} />
-          <div className="border-t border-white/40 my-2" />
-          <div className="flex items-center justify-between mb-4">
-            <span className="font-semibold text-ink-900">Total</span>
-            <span className="font-display text-2xl text-maroon-800">{formatPKR(total)}</span>
-          </div>
-          <button
-            onClick={checkout}
-            disabled={processing || cart.length === 0}
-            className="w-full flex items-center justify-center gap-2 bg-maroon-700 text-cream-50 font-medium py-3 rounded-lg hover:bg-maroon-800 disabled:opacity-50"
-          >
-            <Lock size={15} /> {processing ? "Processing…" : "Checkout"}
-          </button>
-        </div>
-      </div>
-
-      {searchOpen && (
-        <SearchProductModal onClose={() => setSearchOpen(false)} onPick={addToCart} />
-      )}
-
-      {showPending && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display text-lg text-maroon-800">Pending & Failed Sales</h3>
-              <button onClick={() => setShowPending(false)}><X size={18} /></button>
-            </div>
-            {failedSales.length === 0 && pendingSales === 0 && (
-              <p className="text-sm text-ink-800/60">Nothing pending — everything's synced.</p>
-            )}
-            {failedSales.map((s) => (
-              <div key={s.client_sale_id} className="border border-red-200 bg-red-50 rounded-lg p-3 mb-2 text-sm">
-                <p className="font-medium text-red-800">{s.offlineReceiptNumber} — Rs. {s.total}</p>
-                <p className="text-red-700 text-xs mt-1">{s.failReason}</p>
-                <div className="flex gap-3 mt-2">
-                  <button
-                    onClick={() => { retrySale(s.client_sale_id); setFailedSales(getFailedSales()); setPendingSales(getQueueCount()); }}
-                    className="text-xs underline text-ink-800"
-                  >
-                    Retry
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm("Discard this sale permanently? Use this only if you've confirmed it should NOT be recorded (e.g. item was actually out of stock).")) {
-                        removeQueuedSale(s.client_sale_id);
-                        setFailedSales(getFailedSales());
-                      }
-                    }}
-                    className="text-xs underline text-maroon-700"
-                  >
-                    Discard
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function InfoField({ label, value, children, wide }) {
-  return (
-    <div className={wide ? "min-w-[220px]" : ""}>
-      <p className="text-xs text-ink-800/70">{label}</p>
-      {children || <p className="font-semibold text-ink-900">{value}</p>}
-    </div>
-  );
-}
-
-function Row({ label, value }) {
-  return (
-    <div className="flex items-center justify-between py-1.5 text-sm">
-      <span className="text-ink-800">{label}</span>
-      <span className="text-ink-900">{value}</span>
     </div>
   );
 }
@@ -28563,274 +28188,588 @@ This document serves as the absolute source of truth for engineering practices, 
 - **Implementation Constraint:** Implement blue-green deployments, canary releases, or robust container orchestration rollbacks. Database migrations must always be backward-compatible (non-breaking) to avoid data corruption during a rollback event.
 </file>
 
-<file path="tinytots-app/electron-app/src/components/Inventory/ProductFormModal.jsx">
-import ReactQuill from "react-quill-new";
-import "react-quill-new/dist/quill.snow.css";
-import { useState } from "react";
-import { X, Plus } from "lucide-react";
+<file path="tinytots-app/electron-app/src/screens/POS.jsx">
+// POS.jsx
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  ArrowLeft, LogOut, ScanBarcode, Search, Trash2, X, Minus, Plus,
+  Wallet, CreditCard, Smartphone, MoreHorizontal, Lock, Printer as PrinterIcon,
+} from "lucide-react";
+import FloralFlourish from "../components/FloralFlourish";
+import ScannerListener from "../components/ScannerListener";
+import SearchProductModal from "../components/pos/SearchProductModal";
+import { receiptConfig } from "../receipts/receiptConfig";
+import { buildSale } from "../receipts/buildSale";
+import { printReceipt } from "../receipts/printReceipt";
+import {
+  queueSale,
+  syncQueuedSales,
+  getQueueCount,
+  getFailedSales,
+  removeQueuedSale,
+  retrySale,
+} from "../services/offlineQueue";
+import useNetworkStatus from "../hooks/useNetworkStatus";
+import { getSession, clearSession } from "../auth";
+import loginBg from "../assets/login-bg.png";
 
-function TagInput({ label, placeholder, values, onChange }) {
-  const [draft, setDraft] = useState("");
+const PAYMENT_METHODS = [
+  { key: "cash", label: "Cash", icon: Wallet },
+  { key: "card", label: "Card", icon: CreditCard },
+  { key: "upi", label: "UPI", icon: Smartphone },
+  { key: "wallet", label: "Wallet", icon: Wallet },
+  { key: "other", label: "Other", icon: MoreHorizontal },
+];
 
-  function commit() {
-    const cleaned = draft.trim();
-    if (cleaned && !values.includes(cleaned)) {
-      onChange([...values, cleaned]);
-    }
-    setDraft("");
-  }
+const TAX_RATE = receiptConfig.taxRatePercent / 100;
 
-  return (
-    <div>
-      <label className="block text-sm text-ink-700 mb-1.5">{label}</label>
-      <div className="flex flex-wrap gap-1.5 p-2 border border-gold-300/50 rounded-lg min-h-[42px]">
-        {values.map((v) => (
-          <span
-            key={v}
-            className="inline-flex items-center gap-1 bg-cream-100 text-ink-900 text-xs px-2 py-1 rounded-full"
-          >
-            {v}
-            <button
-              type="button"
-              onClick={() => onChange(values.filter((x) => x !== v))}
-              className="text-ink-700 hover:text-maroon-700"
-            >
-              <X size={12} />
-            </button>
-          </span>
-        ))}
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === ",") {
-              e.preventDefault();
-              commit();
-            }
-          }}
-          onBlur={commit}
-          placeholder={values.length ? "" : placeholder}
-          className="flex-1 min-w-[80px] text-sm outline-none bg-transparent"
-        />
-      </div>
-      <p className="text-xs text-ink-700/60 mt-1">Press Enter or comma to add</p>
-    </div>
-  );
-}
-
-// NOTE: public_code lives on `variants`, not `products` — it's DB-derived as
-// V-{variant id} after each variant row is inserted, so it is never a form field.
-const emptyForm = {
-  name: "", brand: "", category: "", sku: "", hsn_code: "",
-  unit: "Pcs", description: "", cost_price: "", selling_price: "", initialStock: "",
+const glassCard =
+  "rounded-2xl border border-white/40 backdrop-blur-xl transition-transform duration-300";
+const glassCardStyle = {
+  background: "linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.12) 100%)",
+  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
 };
 
-export default function ProductFormModal({ mode = "create", initialProduct, onClose, onSaved }) {
-  const [form, setForm] = useState(
-    mode === "edit" && initialProduct
-      ? {
-          name: initialProduct.name || "", brand: initialProduct.brand || "",
-          category: initialProduct.category || "", sku: initialProduct.sku || "",
-          hsn_code: initialProduct.hsn_code || "", unit: initialProduct.unit || "Pcs",
-          description: initialProduct.description || "",
-          cost_price: initialProduct.cost_price ?? "",
-          selling_price: initialProduct.selling_price ?? "",
-          initialStock: "",
-        }
-      : emptyForm
-  );
-  const [colors, setColors] = useState([]);
-  const [sizes, setSizes] = useState([]);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+export default function POS() {
+  const navigate = useNavigate();
+  const isOnline = useNetworkStatus();
+  const session = getSession();
+  const isAdmin = session?.role === "admin";
 
-  function field(key) {
-    return {
-      value: form[key],
-      onChange: (e) => setForm((f) => ({ ...f, [key]: e.target.value })),
-    };
+  function handleLogout() {
+    clearSession();
+    navigate("/login");
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
+  const [products, setProducts] = useState([]);
+  const [cart, setCart] = useState([]);
+  const [cashier, setCashier] = useState("");
+  const [notes, setNotes] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [discount, setDiscount] = useState(0);
+  const [discountType, setDiscountType] = useState("flat"); // "flat" | "percent"
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [pendingSales, setPendingSales] = useState(getQueueCount());
+  const [processing, setProcessing] = useState(false);
+  const [failedSales, setFailedSales] = useState(getFailedSales());
+  const [showPending, setShowPending] = useState(false);
 
-    if (mode === "create" && (!colors.length || !sizes.length)) {
-      setError("Add at least one color and one size to generate variants.");
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const res = await fetch("http://localhost:3000/api/products");
+        if (!res.ok) throw new Error("fetch failed");
+        const data = await res.json();
+        setProducts(data);
+        localStorage.setItem("tiny_tots_products_cache", JSON.stringify(data));
+      } catch (err) {
+        console.error("Failed to load products, using cache:", err);
+        const cached = localStorage.getItem("tiny_tots_products_cache");
+        setProducts(cached ? JSON.parse(cached) : []);
+      }
+    }
+    loadProducts();
+  }, []);
+
+  useEffect(() => {
+    async function syncSales() {
+      if (isOnline) {
+        await syncQueuedSales();
+        setPendingSales(getQueueCount());
+        setFailedSales(getFailedSales());
+      }
+    }
+    syncSales();
+  }, [isOnline]);
+
+  function addToCart(product) {
+    if (product.stock <= 0) {
+      alert(`${product.name}\n\n${product.color} / ${product.size}\n\nThis item is out of stock.`);
+      return;
+    }
+    setCart((prev) => {
+      const existing = prev.find((item) => item.variant_id === product.variant_id);
+      if (existing) {
+        if (existing.qty >= product.stock) {
+          alert(`Only ${product.stock} item(s) available for:\n\n${product.name}\n${product.color} / ${product.size}`);
+          return prev;
+        }
+        return prev.map((item) =>
+          item.variant_id === product.variant_id ? { ...item, qty: item.qty + 1 } : item
+        );
+      }
+      return [...prev, { ...product, qty: 1 }];
+    });
+  }
+
+  function changeQty(variantId, delta) {
+    setCart((prev) =>
+      prev
+        .map((item) => {
+          if (item.variant_id !== variantId) return item;
+          const next = item.qty + delta;
+          if (next > item.stock) {
+            alert(`Only ${item.stock} item(s) available.`);
+            return item;
+          }
+          return { ...item, qty: next };
+        })
+        .filter((item) => item.qty > 0)
+    );
+  }
+
+  function removeFromCart(variantId) {
+    setCart((prev) => prev.filter((item) => item.variant_id !== variantId));
+  }
+
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  
+  // 1. Calculate automatic database-driven discount per variant scanned
+  const autoDiscountAmount = cart.reduce(
+    (sum, item) => sum + item.price * item.qty * ((Number(item.discount_percent) || 0) / 100),
+    0
+  );
+  
+  // 2. Calculate any manual discount applied by the cashier on top
+  const manualDiscountAmount =
+    discountType === "percent" ? (subtotal * (Number(discount) || 0)) / 100 : Number(discount) || 0;
+  
+  // 3. Combine both discounts together
+  const discountAmount = autoDiscountAmount + manualDiscountAmount;
+  const taxableAmount = Math.max(subtotal - discountAmount, 0);
+  const tax = taxableAmount * TAX_RATE;
+  const total = taxableAmount + tax;
+
+  async function printViaElectron(sale) {
+    try {
+      await printReceipt(sale);
+      return { printed: true };
+    } catch (err) {
+      return { printed: false, error: err.message };
+    }
+  }
+
+  async function handleOpenDrawer() {
+    if (!window.electron?.openCashDrawer) {
+      alert("Cash drawer control isn't available in this build.");
+      return;
+    }
+    const result = await window.electron.openCashDrawer();
+    if (!result.success) {
+      alert(`Couldn't open the drawer automatically: ${result.error}\n\nMany printers also auto-open on receipt print — check your printer's settings.`);
+    }
+  }
+
+  async function checkout() {
+    if (cart.length === 0) {
+      alert("Cart is empty.");
+      return;
+    }
+    if (!cashier.trim()) {
+      alert("Enter the cashier's name before checking out.");
       return;
     }
 
-    setSaving(true);
+    // Generated once, before any network attempt, and reused on every
+    // retry (including offline sync later) so the server can recognize
+    // a repeated attempt instead of creating a duplicate sale.
+    const clientSaleId = crypto.randomUUID();
+
+    setProcessing(true);
     try {
-      const url =
-        mode === "create"
-          ? "http://localhost:3000/api/products"
-          : `http://localhost:3000/api/products/${initialProduct.id}`;
-      const method = mode === "create" ? "POST" : "PUT";
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
 
-      const body =
-        mode === "create"
-          ? { ...form, colors, sizes }
-          : form;
-
-      const res = await fetch(url, {
-        method,
+      const res = await fetch("http://localhost:3000/api/checkout", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        signal: controller.signal,
+        body: JSON.stringify({
+          client_sale_id: clientSaleId,
+          cart, subtotal, discount: discountAmount, tax, total,
+          cashier, paymentMethod, notes,
+        }),
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message || data.error);
+      clearTimeout(timeout);
 
-      onSaved();
-      onClose();
+      if (!res.ok) {
+        throw new Error(`Checkout failed with status ${res.status}`);
+      }
+
+      const result = await res.json();
+
+      if (!result.success) {
+        alert(result.error || result.message);
+        return;
+      }
+
+      const sale = buildSale({
+        cart, subtotal, discount: discountAmount, tax, total,
+        receiptNumber: result.receipt_number, cashier, paymentMethod,
+      });
+
+      const printResult = await printViaElectron(sale);
+      alert(
+        printResult.printed
+          ? `Sale Completed!\nReceipt: ${result.receipt_number}`
+          : `Sale completed, but printing failed:\n${printResult.error}\n\nReceipt: ${result.receipt_number}`
+      );
+
+      resetCart();
     } catch (err) {
-      setError(err.message);
+      // Offline fallback (or the network genuinely dropped) — still print
+      // locally and queue the sync, reusing the SAME clientSaleId. If the
+      // original request actually reached the server before the connection
+      // died, the server will recognize this id on retry and just return
+      // the existing sale instead of creating a second one.
+      const offlineReceiptNumber = `OFFLINE-${Date.now()}`;
+      const sale = buildSale({
+        cart, subtotal, discount: discountAmount, tax, total,
+        receiptNumber: offlineReceiptNumber, cashier, paymentMethod,
+      });
+
+      queueSale(
+        { cart, subtotal, discount: discountAmount, tax, total, cashier, paymentMethod, notes, offlineReceiptNumber },
+        clientSaleId
+      );
+      setPendingSales(getQueueCount());
+
+      const printResult = await printViaElectron(sale);
+      alert(
+        printResult.printed
+          ? `No internet connection.\n\nSale saved locally and receipt printed.\nTemporary Receipt: ${offlineReceiptNumber}\n\nIt will sync automatically once you're back online.`
+          : `No internet connection.\n\nSale saved locally, but printing failed:\n${printResult.error}`
+      );
+
+      resetCart();
     } finally {
-      setSaving(false);
+      setProcessing(false);
     }
   }
 
+  function resetCart() {
+    setCart([]);
+    setNotes("");
+    setDiscount(0);
+  }
+
+  const now = new Date();
+  const formatPKR = (v) => `Rs. ${Number(v || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 })}`;
+
   return (
-    <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-cream-50 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-7">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display text-2xl text-ink-900">
-            {mode === "create" ? "Add New Product" : "Edit Product"}
-          </h2>
-          <button onClick={onClose} className="text-ink-700 hover:text-maroon-700">
-            <X size={20} />
+    <div
+      className="min-h-screen px-10 py-6 bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${loginBg})` }}
+    >
+      <ScannerListener products={products} onScan={addToCart} />
+
+      {isAdmin ? (
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-maroon-700 mb-4"
+        >
+          <ArrowLeft size={15} /> Dashboard
+        </button>
+      ) : (
+        <button
+          onClick={handleLogout}
+          className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-maroon-700 mb-4"
+        >
+          <LogOut size={15} /> Logout
+        </button>
+      )}
+
+      {/* Header */}
+      <div className="relative flex items-start justify-between mb-6">
+        <FloralFlourish className="absolute -top-4 right-24 w-80 h-40 pointer-events-none hidden md:block" />
+        <div className="relative">
+          <h1 className="font-display text-4xl text-maroon-800 flex items-baseline gap-3">
+            POS <span className="text-base font-sans font-normal text-ink-800">| Point of Sale</span>
+          </h1>
+          <p className="text-ink-800 mt-1">Scan product barcode or search to add to cart</p>
+        </div>
+
+        <div className="flex flex-col items-end gap-2">
+          <button
+            onClick={handleOpenDrawer}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-white/40 text-ink-900 text-sm font-medium hover:bg-white/20 backdrop-blur-sm"
+          >
+            <PrinterIcon size={16} /> Open Cash Drawer
+          </button>
+          <span className={`text-xs font-medium ${isOnline ? "text-green-700" : "text-maroon-700"}`}>
+            {isOnline ? "● Online" : "● Offline"}
+            {pendingSales > 0 && ` — ${pendingSales} pending sync`}
+          </span>
+          {(pendingSales > 0 || failedSales.length > 0) && (
+            <button
+              onClick={() => setShowPending(true)}
+              className="text-xs underline text-ink-800"
+            >
+              View queue{failedSales.length > 0 ? ` (${failedSales.length} need attention)` : ""}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Info bar */}
+      <div className={`px-6 py-4 flex flex-wrap gap-x-10 gap-y-3 mb-6 ${glassCard}`} style={glassCardStyle}>
+        <InfoField label="Cashier">
+          <input
+            value={cashier}
+            onChange={(e) => setCashier(e.target.value)}
+            placeholder="Enter cashier name"
+            className="font-semibold text-ink-900 bg-transparent outline-none border-b border-dashed border-ink-900/30 focus:border-maroon-700 w-40"
+          />
+        </InfoField>
+        <InfoField label="Shop" value={receiptConfig.store.name} />
+        <InfoField
+          label="Date"
+          value={now.toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" })}
+        />
+        <InfoField label="Day" value={now.toLocaleDateString(undefined, { weekday: "long" })} />
+        <InfoField label="Address" value={receiptConfig.store.address} wide />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Scan panel */}
+        <div className={`flex flex-col items-center justify-center py-16 px-6 text-center ${glassCard}`} style={glassCardStyle}>
+          <div className="w-24 h-24 rounded-full bg-white/25 border border-white/40 flex items-center justify-center mb-6">
+            <ScanBarcode size={34} className="text-maroon-800" strokeWidth={1.4} />
+          </div>
+          <h2 className="font-display text-xl text-maroon-800 mb-2">Scan Barcode / QR Code</h2>
+          <p className="text-sm text-ink-800 mb-6 max-w-[220px]">
+            Scan a product barcode or QR code to add it to the cart
+          </p>
+          <div className="flex items-center gap-3 w-full max-w-[220px] mb-6">
+            <span className="flex-1 h-px bg-white/40" />
+            <span className="text-xs text-ink-800/60">or</span>
+            <span className="flex-1 h-px bg-white/40" />
+          </div>
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-white/40 text-ink-900 text-sm font-medium hover:bg-white/20 backdrop-blur-sm"
+          >
+            <Search size={15} /> Search Product
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <LabeledInput label="Product Name" required {...field("name")} />
-            <LabeledInput label="Brand" {...field("brand")} />
-            <LabeledInput label="Category" {...field("category")} placeholder="Shirts, Pants…" />
-            <LabeledInput
-              label="Base SKU"
-              required
-              disabled={mode === "edit"}
-              {...field("sku")}
-              placeholder="EGSHIRT"
-            />
-            <LabeledInput label="HSN Code" {...field("hsn_code")} />
-            <LabeledInput label="Unit" {...field("unit")} />
+        {/* Cart */}
+        <div className={`lg:col-span-2 p-6 ${glassCard}`} style={glassCardStyle}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl text-maroon-800">Cart ({cart.length})</h2>
+            {cart.length > 0 && (
+              <button
+                onClick={() => setCart([])}
+                className="text-sm text-maroon-700 hover:underline inline-flex items-center gap-1.5"
+              >
+                <Trash2 size={14} /> Clear Cart
+              </button>
+            )}
           </div>
 
-          <div>
-            <label className="block text-sm text-ink-700 mb-1.5">Description</label>
-            <ReactQuill
-              theme="snow"
-              value={form.description}
-              onChange={(html) => setForm((f) => ({ ...f, description: html }))}
-              modules={{
-                toolbar: [
-                  ["bold", "italic", "underline"],
-                  [{ header: [2, 3, false] }],
-                  [{ list: "ordered" }, { list: "bullet" }],
-                  ["clean"],
-                ],
-                clipboard: {
-                  // Strip every inline style Word/Google Docs pastes in
-                  // (font color, background-color, font-family, etc.) —
-                  // keep only real structure: bold, headings, lists.
-                  matchVisual: false,
-                  matchers: [
-                    [
-                      Node.ELEMENT_NODE,
-                      (node, delta) => {
-                        delta.ops.forEach((op) => {
-                          if (op.attributes) {
-                            delete op.attributes.color;
-                            delete op.attributes.background;
-                            delete op.attributes.font;
-                          }
-                        });
-                        return delta;
-                      },
-                    ],
-                  ],
-                },
-              }}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <LabeledInput
-              label="Cost Price (Rs)"
-              type="number"
-              required
-              {...field("cost_price")}
-            />
-            <LabeledInput
-              label="Selling Price (Rs)"
-              type="number"
-              required
-              {...field("selling_price")}
-            />
-          </div>
-
-          {mode === "create" && (
-            <>
-              <LabeledInput
-                label="Initial Stock (per variant)"
-                type="number"
-                required
-                {...field("initialStock")}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <TagInput label="Colors" placeholder="Maroon, Black…" values={colors} onChange={setColors} />
-                <TagInput label="Sizes" placeholder="S, M, L, XL…" values={sizes} onChange={setSizes} />
+          {cart.length === 0 ? (
+            <p className="text-center text-ink-800/60 py-16 text-sm">
+              Cart is empty — scan an item or search to add one.
+            </p>
+          ) : (
+            <div className="space-y-1">
+              <div className="grid grid-cols-[2fr_0.6fr_0.8fr_1fr_0.6fr_0.7fr_auto] gap-2 text-xs text-ink-800/70 px-2 pb-2 border-b border-white/30">
+                <span>Product</span>
+                <span>Size</span>
+                <span>Color</span>
+                <span>Qty</span>
+                <span>Price</span>
+                <span>Total</span>
+                <span></span>
               </div>
-
-              {colors.length > 0 && sizes.length > 0 && (
-                <p className="text-sm text-maroon-700 bg-maroon-100 rounded-lg px-3 py-2">
-                  This will generate <strong>{colors.length * sizes.length}</strong> variants
-                  ({colors.length} colors × {sizes.length} sizes). Each variant will get its own
-                  auto-generated Public Code (e.g. <code>V-246</code>) once saved.
-                </p>
-              )}
-            </>
+              {cart.map((item) => (
+                <div
+                  key={item.variant_id}
+                  className="grid grid-cols-[2fr_0.6fr_0.8fr_1fr_0.6fr_0.7fr_auto] gap-2 items-center px-2 py-2.5 border-b border-white/30 last:border-0"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-white/20 border border-white/30 flex-shrink-0 overflow-hidden">
+                      {item.image_url && <img src={item.image_url} alt="" className="w-full h-full object-cover" />}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-ink-900 truncate">{item.name}</p>
+                      <p className="text-xs text-ink-800/60 font-mono truncate">{item.sku}</p>
+                    </div>
+                  </div>
+                  <span className="text-sm text-ink-900">{item.size || "—"}</span>
+                  <span className="text-sm text-ink-900">{item.color || "—"}</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => changeQty(item.variant_id, -1)}
+                      className="w-6 h-6 rounded-md border border-white/40 flex items-center justify-center hover:bg-white/20"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="w-5 text-center text-sm">{item.qty}</span>
+                    <button
+                      onClick={() => changeQty(item.variant_id, 1)}
+                      className="w-6 h-6 rounded-md border border-white/40 flex items-center justify-center hover:bg-white/20"
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
+                  <span className="text-sm text-ink-900">
+                    {formatPKR(item.price)}
+                    {Number(item.discount_percent) > 0 && (
+                      <span className="text-xs text-maroon-700 ml-1">-{item.discount_percent}%</span>
+                    )}
+                  </span>
+                  <span className="text-sm font-medium text-ink-900">{formatPKR(item.price * item.qty)}</span>
+                  <button
+                    onClick={() => removeFromCart(item.variant_id)}
+                    className="text-ink-800/50 hover:text-maroon-700"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
-
-          {error && <p className="text-sm text-maroon-700">{error}</p>}
-
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg text-ink-900 hover:bg-cream-100"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-5 py-2 rounded-lg bg-maroon-700 text-cream-50 font-medium hover:bg-maroon-800 disabled:opacity-60 inline-flex items-center gap-2"
-            >
-              <Plus size={16} />
-              {saving ? "Saving…" : mode === "create" ? "Create Product" : "Save Changes"}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
+
+      {/* Bottom row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div className={`p-5 ${glassCard}`} style={glassCardStyle}>
+          <h3 className="font-medium text-maroon-800 mb-3">Notes</h3>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Add order notes…"
+            rows={4}
+            className="w-full bg-transparent outline-none text-sm resize-none placeholder:text-ink-800/40 text-ink-900"
+          />
+        </div>
+
+        <div className={`p-5 ${glassCard}`} style={glassCardStyle}>
+          <h3 className="font-medium text-maroon-800 mb-3">Payment Method</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {PAYMENT_METHODS.map((m) => {
+              const Icon = m.icon;
+              const active = paymentMethod === m.key;
+              return (
+                <button
+                  key={m.key}
+                  onClick={() => setPaymentMethod(m.key)}
+                  className={`flex flex-col items-center gap-1 py-3 rounded-lg border text-xs font-medium transition-colors ${
+                    active
+                      ? "bg-maroon-700 border-maroon-700 text-cream-50"
+                      : "border-white/40 text-ink-900 hover:bg-white/20"
+                  }`}
+                >
+                  <Icon size={15} />
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className={`p-5 ${glassCard}`} style={glassCardStyle}>
+          <Row label="Subtotal" value={formatPKR(subtotal)} />
+          <div className="flex items-center justify-between py-1.5 text-sm">
+            <span className="text-ink-800">Discount</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={0}
+                value={discount}
+                onChange={(e) => setDiscount(e.target.value)}
+                className="w-16 border border-white/40 bg-white/20 rounded px-2 py-1 text-right text-sm text-ink-900"
+              />
+              <select
+                value={discountType}
+                onChange={(e) => setDiscountType(e.target.value)}
+                className="border border-white/40 bg-white/20 rounded px-1.5 py-1 text-sm text-ink-900"
+              >
+                <option value="flat">Rs.</option>
+                <option value="percent">%</option>
+              </select>
+              <span className="text-ink-900 w-16 text-right">-{formatPKR(discountAmount)}</span>
+            </div>
+          </div>
+          <Row label="Tax" value={formatPKR(tax)} />
+          <div className="border-t border-white/40 my-2" />
+          <div className="flex items-center justify-between mb-4">
+            <span className="font-semibold text-ink-900">Total</span>
+            <span className="font-display text-2xl text-maroon-800">{formatPKR(total)}</span>
+          </div>
+          <button
+            onClick={checkout}
+            disabled={processing || cart.length === 0}
+            className="w-full flex items-center justify-center gap-2 bg-maroon-700 text-cream-50 font-medium py-3 rounded-lg hover:bg-maroon-800 disabled:opacity-50"
+          >
+            <Lock size={15} /> {processing ? "Processing…" : "Checkout"}
+          </button>
+        </div>
+      </div>
+
+      {searchOpen && (
+        <SearchProductModal onClose={() => setSearchOpen(false)} onPick={addToCart} />
+      )}
+
+      {showPending && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-lg text-maroon-800">Pending & Failed Sales</h3>
+              <button onClick={() => setShowPending(false)}><X size={18} /></button>
+            </div>
+            {failedSales.length === 0 && pendingSales === 0 && (
+              <p className="text-sm text-ink-800/60">Nothing pending — everything's synced.</p>
+            )}
+            {failedSales.map((s) => (
+              <div key={s.client_sale_id} className="border border-red-200 bg-red-50 rounded-lg p-3 mb-2 text-sm">
+                <p className="font-medium text-red-800">{s.offlineReceiptNumber} — Rs. {s.total}</p>
+                <p className="text-red-700 text-xs mt-1">{s.failReason}</p>
+                <div className="flex gap-3 mt-2">
+                  <button
+                    onClick={() => { retrySale(s.client_sale_id); setFailedSales(getFailedSales()); setPendingSales(getQueueCount()); }}
+                    className="text-xs underline text-ink-800"
+                  >
+                    Retry
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm("Discard this sale permanently? Use this only if you've confirmed it should NOT be recorded (e.g. item was actually out of stock).")) {
+                        removeQueuedSale(s.client_sale_id);
+                        setFailedSales(getFailedSales());
+                      }
+                    }}
+                    className="text-xs underline text-maroon-700"
+                  >
+                    Discard
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function LabeledInput({ label, required, ...props }) {
+function InfoField({ label, value, children, wide }) {
   return (
-    <div>
-      <label className="block text-sm text-ink-700 mb-1.5">
-        {label} {required && <span className="text-maroon-700">*</span>}
-      </label>
-      <input
-        {...props}
-        required={required}
-        className="w-full border border-gold-300/50 rounded-lg px-3 py-2 text-sm outline-none focus:border-maroon-700 disabled:bg-cream-100 disabled:text-ink-700"
-      />
+    <div className={wide ? "min-w-[220px]" : ""}>
+      <p className="text-xs text-ink-800/70">{label}</p>
+      {children || <p className="font-semibold text-ink-900">{value}</p>}
+    </div>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div className="flex items-center justify-between py-1.5 text-sm">
+      <span className="text-ink-800">{label}</span>
+      <span className="text-ink-900">{value}</span>
     </div>
   );
 }
@@ -29410,6 +29349,312 @@ export default async function Home() {
 }
 </file>
 
+<file path="tinytots-app/electron-app/src/components/Inventory/ProductFormModal.jsx">
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
+import { useState } from "react";
+import { X, Plus } from "lucide-react";
+
+function TagInput({ label, placeholder, values, onChange }) {
+  const [draft, setDraft] = useState("");
+
+  function commit() {
+    const cleaned = draft.trim();
+    if (cleaned && !values.includes(cleaned)) {
+      onChange([...values, cleaned]);
+    }
+    setDraft("");
+  }
+
+  return (
+    <div>
+      <label className="block text-sm text-ink-700 mb-1.5">{label}</label>
+      <div className="flex flex-wrap gap-1.5 p-2 border border-gold-300/50 rounded-lg min-h-[42px]">
+        {values.map((v) => (
+          <span
+            key={v}
+            className="inline-flex items-center gap-1 bg-cream-100 text-ink-900 text-xs px-2 py-1 rounded-full"
+          >
+            {v}
+            <button
+              type="button"
+              onClick={() => onChange(values.filter((x) => x !== v))}
+              className="text-ink-700 hover:text-maroon-700"
+            >
+              <X size={12} />
+            </button>
+          </span>
+        ))}
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === ",") {
+              e.preventDefault();
+              commit();
+            }
+          }}
+          onBlur={commit}
+          placeholder={values.length ? "" : placeholder}
+          className="flex-1 min-w-[80px] text-sm outline-none bg-transparent"
+        />
+      </div>
+      <p className="text-xs text-ink-700/60 mt-1">Press Enter or comma to add</p>
+    </div>
+  );
+}
+
+// NOTE: public_code lives on `variants`, not `products` — it's DB-derived as
+// V-{variant id} after each variant row is inserted, so it is never a form field.
+const emptyForm = {
+  name: "", brand: "", category: "", sku: "", hsn_code: "",
+  unit: "Pcs", description: "", cost_price: "", selling_price: "", initialStock: "",
+};
+
+export default function ProductFormModal({ mode = "create", initialProduct, onClose, onSaved }) {
+  const [form, setForm] = useState(
+    mode === "edit" && initialProduct
+      ? {
+          name: initialProduct.name || "", brand: initialProduct.brand || "",
+          category: initialProduct.category || "", sku: initialProduct.sku || "",
+          hsn_code: initialProduct.hsn_code || "", unit: initialProduct.unit || "Pcs",
+          description: initialProduct.description || "",
+          cost_price: initialProduct.cost_price ?? "",
+          selling_price: initialProduct.selling_price ?? "",
+          initialStock: "",
+        }
+      : emptyForm
+  );
+  const [colors, setColors] = useState([]);
+  const [sizesByColor, setSizesByColor] = useState({}); // { "Navy Blue": ["8","10"], ... }
+
+  function addColor(newColors) {
+    setColors(newColors);
+    setSizesByColor((prev) => {
+      const next = { ...prev };
+      newColors.forEach((c) => { if (!next[c]) next[c] = []; });
+      Object.keys(next).forEach((c) => { if (!newColors.includes(c)) delete next[c]; });
+      return next;
+    });
+  }
+
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  function field(key) {
+    return {
+      value: form[key],
+      onChange: (e) => setForm((f) => ({ ...f, [key]: e.target.value })),
+    };
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+
+   const variantGroups = colors
+      .filter((c) => sizesByColor[c]?.length)
+      .map((c) => ({ color: c, sizes: sizesByColor[c] }));
+
+    if (mode === "create" && !variantGroups.length) {
+      setError("Add at least one color with at least one size to generate variants.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const url =
+        mode === "create"
+          ? "http://localhost:3000/api/products"
+          : `http://localhost:3000/api/products/${initialProduct.id}`;
+      const method = mode === "create" ? "POST" : "PUT";
+
+      <div className="grid grid-cols-2 gap-4">
+      <TagInput label="Colors" placeholder="Maroon, Black…" values={colors} onChange={setColors} />
+      <TagInput label="Sizes" placeholder="S, M, L, XL…" values={sizes} onChange={setSizes} />
+    </div>
+
+    {colors.length > 0 && sizes.length > 0 && (
+      <p className="text-sm text-maroon-700 bg-maroon-100 rounded-lg px-3 py-2">
+        This will generate <strong>{colors.length * sizes.length}</strong> variants
+        ({colors.length} colors × {sizes.length} sizes). Each variant will get its own
+        auto-generated Public Code (e.g. <code>V-246</code>) once saved.
+      </p>
+    )}
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || data.error);
+
+      onSaved();
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-cream-50 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-7">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-display text-2xl text-ink-900">
+            {mode === "create" ? "Add New Product" : "Edit Product"}
+          </h2>
+          <button onClick={onClose} className="text-ink-700 hover:text-maroon-700">
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <LabeledInput label="Product Name" required {...field("name")} />
+            <LabeledInput label="Brand" {...field("brand")} />
+            <LabeledInput label="Category" {...field("category")} placeholder="Shirts, Pants…" />
+            <LabeledInput
+              label="Base SKU"
+              required
+              disabled={mode === "edit"}
+              {...field("sku")}
+              placeholder="EGSHIRT"
+            />
+            <LabeledInput label="HSN Code" {...field("hsn_code")} />
+            <LabeledInput label="Unit" {...field("unit")} />
+          </div>
+
+          <div>
+            <label className="block text-sm text-ink-700 mb-1.5">Description</label>
+            <ReactQuill
+              theme="snow"
+              value={form.description}
+              onChange={(html) => setForm((f) => ({ ...f, description: html }))}
+              modules={{
+                toolbar: [
+                  ["bold", "italic", "underline"],
+                  [{ header: [2, 3, false] }],
+                  [{ list: "ordered" }, { list: "bullet" }],
+                  ["clean"],
+                ],
+                clipboard: {
+                  // Strip every inline style Word/Google Docs pastes in
+                  // (font color, background-color, font-family, etc.) —
+                  // keep only real structure: bold, headings, lists.
+                  matchVisual: false,
+                  matchers: [
+                    [
+                      Node.ELEMENT_NODE,
+                      (node, delta) => {
+                        delta.ops.forEach((op) => {
+                          if (op.attributes) {
+                            delete op.attributes.color;
+                            delete op.attributes.background;
+                            delete op.attributes.font;
+                          }
+                        });
+                        return delta;
+                      },
+                    ],
+                  ],
+                },
+              }}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <LabeledInput
+              label="Cost Price (Rs)"
+              type="number"
+              required
+              {...field("cost_price")}
+            />
+            <LabeledInput
+              label="Selling Price (Rs)"
+              type="number"
+              required
+              {...field("selling_price")}
+            />
+          </div>
+
+          {mode === "create" && (
+            <>
+              <LabeledInput
+                label="Initial Stock (per variant)"
+                type="number"
+                required
+                {...field("initialStock")}
+              />
+
+<TagInput label="Colors" placeholder="Maroon, Black…" values={colors} onChange={addColor} />
+
+              {colors.map((color) => (
+                <TagInput
+                  key={color}
+                  label={`Sizes for ${color}`}
+                  placeholder="S, M, L, XL…"
+                  values={sizesByColor[color] || []}
+                  onChange={(newSizes) => setSizesByColor((s) => ({ ...s, [color]: newSizes }))}
+                />
+              ))}
+
+              {colors.length > 0 && (
+                <p className="text-sm text-maroon-700 bg-maroon-100 rounded-lg px-3 py-2">
+                  This will generate{" "}
+                  <strong>
+                    {colors.reduce((sum, c) => sum + (sizesByColor[c]?.length || 0), 0)}
+                  </strong>{" "}
+                  variants total. Each variant will get its own auto-generated Public Code
+                  (e.g. <code>V-246</code>) once saved.
+                </p>
+              )}
+            </>
+          )}
+
+          {error && <p className="text-sm text-maroon-700">{error}</p>}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg text-ink-900 hover:bg-cream-100"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-5 py-2 rounded-lg bg-maroon-700 text-cream-50 font-medium hover:bg-maroon-800 disabled:opacity-60 inline-flex items-center gap-2"
+            >
+              <Plus size={16} />
+              {saving ? "Saving…" : mode === "create" ? "Create Product" : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function LabeledInput({ label, required, ...props }) {
+  return (
+    <div>
+      <label className="block text-sm text-ink-700 mb-1.5">
+        {label} {required && <span className="text-maroon-700">*</span>}
+      </label>
+      <input
+        {...props}
+        required={required}
+        className="w-full border border-gold-300/50 rounded-lg px-3 py-2 text-sm outline-none focus:border-maroon-700 disabled:bg-cream-100 disabled:text-ink-700"
+      />
+    </div>
+  );
+}
+</file>
+
 <file path="tinytots-app/electron-app/backend/server.js">
 import { createNotification } from "./services/notifications.js";
 import whatsappWebhook from "./routes/whatsappWebhook.js";
@@ -29437,7 +29682,7 @@ import bwipjs from "bwip-js";
 import pdfPrinterPkg from "pdf-to-printer";
 const { getPrinters, print } = pdfPrinterPkg;
 import { createClient } from "@supabase/supabase-js";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 dotenv.config();
 
@@ -29551,6 +29796,7 @@ app.get("/api/products", async (req, res) => {
       size: item.size,
       price: item.price,
       stock: item.stock,
+      discount_percent: item.discount_percent || 0,
     }));
 
     res.json(products);
@@ -29610,6 +29856,7 @@ app.get("/api/products/search", async (req, res) => {
         size: item.size,
         price: item.price,
         stock: item.stock,
+        discount_percent: item.discount_percent || 0,
       }));
 
     res.json(results);
@@ -29837,8 +30084,6 @@ app.post("/api/checkout", async (req, res) => {
 
 async function generateReceiptPDF(sale_id) {
 
-  // ---------------- SALE ----------------
-
   const { data: sale, error: saleError } = await supabase
     .from("sales")
     .select("*")
@@ -29846,8 +30091,6 @@ async function generateReceiptPDF(sale_id) {
     .single();
 
   if (saleError) throw saleError;
-
-  // ---------------- ITEMS ----------------
 
   const { data: items, error: itemsError } = await supabase
     .from("sale_items")
@@ -29866,241 +30109,124 @@ async function generateReceiptPDF(sale_id) {
 
   if (itemsError) throw itemsError;
 
-  // ---------------- PDF ----------------
-
   const pdfDoc = await PDFDocument.create();
-
-  const pageWidth = 226;      // 80mm
-
+  const pageWidth = 226;
   const pageHeight = 900;
-
-  const page = pdfDoc.addPage([
-    pageWidth,
-    pageHeight
-  ]);
+  const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const black = rgb(0, 0, 0);
+  const gray = rgb(0.45, 0.45, 0.45);
 
-  let y = pageHeight - 25;
+  let y = pageHeight - 28;
+  const marginX = 14;
+  const contentWidth = pageWidth - marginX * 2;
 
-  const center = (text, size) => {
-
-    const width = font.widthOfTextAtSize(text, size);
-
-    page.drawText(text,{
-      x:(pageWidth-width)/2,
-      y,
-      size,
-      font
-    });
-
-    y-=16;
-
+  const center = (text, size, useBold = false) => {
+    const f = useBold ? fontBold : font;
+    const width = f.widthOfTextAtSize(text, size);
+    page.drawText(text, { x: (pageWidth - width) / 2, y, size, font: f, color: black });
+    y -= size + 6;
   };
 
-  // ---------------- HEADER ----------------
+  const divider = (thickness = 0.7) => {
+    page.drawLine({
+      start: { x: marginX, y },
+      end: { x: pageWidth - marginX, y },
+      thickness,
+      color: black,
+    });
+    y -= 12;
+  };
 
-  center("TINY TOTS",14);
+  const row = (left, right, size = 8, useBold = false) => {
+    const f = useBold ? fontBold : font;
+    page.drawText(left, { x: marginX, y, size, font: f, color: black });
+    const rightWidth = f.widthOfTextAtSize(right, size);
+    page.drawText(right, { x: pageWidth - marginX - rightWidth, y, size, font: f, color: black });
+    y -= size + 6;
+  };
 
-  center("Toddler-to-Tween Outfitters",8);
+  // ---- header ----
+  center("TINY TOTS", 16, true);
+  center("Toddler-to-Tween Outfitters", 8);
+  center("Shop 169, Markazi Jamia Masjid", 7);
+  center("Toba Tek Singh", 7);
+  center("0301-7278797", 7);
 
-  center("Shop No 169 Street Markazi Jamia",7);
+  y -= 4;
+  divider(1.2);
 
-  center("Masjid Toba Tek Singh",7);
+  // ---- meta ----
+  row("Receipt", sale.receipt_number, 8, true);
+  row("Cashier", sale.cashier || "—", 8);
+  row("Date", new Date(sale.created_at).toLocaleString(), 7);
 
-  center("0301-7278797",7);
+  divider();
 
-  center("www.tinytotsofficial.com",7);
+  // ---- items ----
+  let subtotal = 0;
+  for (const item of items) {
+    const qty = item.quantity;
+    const price = item.unit_price;
+    const lineTotal = qty * price;
+    subtotal += lineTotal;
+    const name = item.variants?.product?.name || "Item";
 
-  y-=8;
+    row(`${qty} x ${name}`, money(lineTotal), 8);
 
-  page.drawText("--------------------------------",{
-    x:10,
-    y,
-    size:8,
-    font
-  });
-
-  y-=15;
-
-  page.drawText(
-    `Receipt : ${sale.receipt_number}`,
-    {
-      x:10,
-      y,
-      size:8,
-      font
+    const variant = `${item.variants?.size || ""} / ${item.variants?.color || ""}`.trim();
+    if (variant && variant !== "/") {
+      page.drawText(variant, { x: marginX + 6, y: y + 4, size: 6.5, font, color: gray });
+      y -= 6;
     }
-  );
-
-  y-=12;
-
-  page.drawText(
-    `Date : ${new Date(sale.created_at).toLocaleString()}`,
-    {
-      x:10,
-      y,
-      size:8,
-      font
-    }
-  );
-
-  y-=18;
-
-  page.drawText(
-    "Qty Item",
-    {
-      x:10,
-      y,
-      size:8,
-      font
-    }
-  );
-
-  page.drawText(
-    "Total",
-    {
-      x:175,
-      y,
-      size:8,
-      font
-    }
-  );
-
-  y-=10;
-
-  page.drawText("--------------------------------",{
-    x:10,
-    y,
-    size:8,
-    font
-  });
-
-  y-=16;
-
-  let subtotal=0;
-
-  for(const item of items){
-
-    const qty=item.quantity;
-
-    const price=item.unit_price;
-
-    const total=qty*price;
-
-    subtotal+=total;
-
-    const name=item.variants?.product?.name || "Item";
-
-    page.drawText(
-      `${qty} x ${name}`,
-      {
-        x:10,
-        y,
-        size:8,
-        font
-      }
-    );
-
-    page.drawText(
-      money(total),
-      {
-        x:175,
-        y,
-        size:8,
-        font
-      }
-    );
-
-    y-=11;
-
-    const variant=`${item.variants?.size || ""} ${item.variants?.color || ""}`;
-
-    if(variant.trim()){
-
-      page.drawText(
-        variant,
-        {
-          x:20,
-          y,
-          size:7,
-          font
-        }
-      );
-
-      y-=10;
-
-    }
-
   }
 
-  y-=6;
+  divider();
 
-  page.drawText("--------------------------------",{
-    x:10,
-    y,
-    size:8,
-    font
+  // ---- totals ----
+  row("Subtotal", money(subtotal), 8);
+  row("Discount", `-${money(sale.discount || 0)}`, 8);
+  row("Tax", money(sale.tax), 8);
+
+  divider(1.2);
+
+  // ---- boxed total ----
+  const boxHeight = 26;
+  page.drawRectangle({
+    x: marginX,
+    y: y - boxHeight + 10,
+    width: contentWidth,
+    height: boxHeight,
+    borderColor: black,
+    borderWidth: 1,
   });
+  const totalLabel = "TOTAL";
+  const totalValue = `Rs. ${money(sale.total)}`;
+  page.drawText(totalLabel, { x: marginX + 8, y: y - 8, size: 11, font: fontBold, color: black });
+  const totalValueWidth = fontBold.widthOfTextAtSize(totalValue, 11);
+  page.drawText(totalValue, {
+    x: pageWidth - marginX - 8 - totalValueWidth,
+    y: y - 8,
+    size: 11,
+    font: fontBold,
+    color: black,
+  });
+  y -= boxHeight + 10;
 
-  y-=15;
+  row("Paid via", (sale.payment_method || "cash").toUpperCase(), 8);
 
-  page.drawText(
-    `Subtotal : ${money(subtotal)}`,
-    {
-      x:10,
-      y,
-      size:8,
-      font
-    }
-  );
+  y -= 6;
+  divider(1.2);
 
-  y-=12;
+  center("Thanks for coming!", 9, true);
+  center("We love watching them grow.", 8);
 
-  page.drawText(
-    `Tax : ${money(sale.tax)}`,
-    {
-      x:10,
-      y,
-      size:8,
-      font
-    }
-  );
-
-  y-=12;
-
-  page.drawText(
-    `TOTAL : ${money(sale.total)}`,
-    {
-      x:10,
-      y,
-      size:10,
-      font
-    }
-  );
-
-  y-=20;
-
-  center("Thank you for shopping!",9);
-
-  center("Tiny Tots",10);
-
-  center("We love watching them grow.",8);
-
-  const pdfBytes=await pdfDoc.save();
-
-  const pdfPath=path.join(
-    RECEIPT_FOLDER,
-    `${sale.receipt_number}.pdf`
-  );
-
-  fs.writeFileSync(
-    pdfPath,
-    pdfBytes
-  );
-
+  const pdfBytes = await pdfDoc.save();
+  const pdfPath = path.join(RECEIPT_FOLDER, `${sale.receipt_number}.pdf`);
+  fs.writeFileSync(pdfPath, pdfBytes);
   return pdfPath;
-
 }
 // ----------------------------------------------------
 // DOWNLOAD RECEIPT PDF
@@ -30324,14 +30450,14 @@ app.post("/api/products", async (req, res) => {
   try {
     const {
       name, brand, category, sku, hsn_code, unit, description, image_url,
-      cost_price, selling_price, initialStock, colors, sizes,
+      cost_price, selling_price, initialStock, variantGroups,
     } = req.body;
 
     if (!name || !sku) {
       return res.status(400).json({ success: false, message: "Product name and SKU are required." });
     }
-    if (!colors?.length || !sizes?.length) {
-      return res.status(400).json({ success: false, message: "At least one color and one size are required." });
+    if (!variantGroups?.length || variantGroups.every((g) => !g.sizes?.length)) {
+      return res.status(400).json({ success: false, message: "Add at least one color with at least one size." });
     }
 
     const cleanSku = sku.trim().toUpperCase();
@@ -30370,22 +30496,22 @@ app.post("/api/products", async (req, res) => {
       throw prodErr;
     }
 
-    // Generate variant rows securely
-    const variantRows = [];
-    for (const color of colors) {
-      for (const size of sizes) {
-        variantRows.push({
-          product_id: product.id,
-          color,
-          size,
-          price: Number(selling_price) || 0,
-          cost_price: Number(cost_price) || 0,
-          stock: Number(initialStock) || 0,
-          sku: `${cleanSku}-${colorCode(color)}-${size}`.toUpperCase(),
-          status: "active",
-        });
-      }
-    }
+   // Generate variant rows securely
+   const variantRows = [];
+   for (const group of variantGroups) {
+     for (const size of group.sizes) {
+       variantRows.push({
+         product_id: product.id,
+         color: group.color,
+         size,
+         price: Number(selling_price) || 0,
+         cost_price: Number(cost_price) || 0,
+         stock: Number(initialStock) || 0,
+         sku: `${cleanSku}-${colorCode(group.color)}-${size}`.toUpperCase(),
+         status: "active",
+       });
+     }
+   }
 
     // Bulk insert variants
    // Bulk insert variants
@@ -30475,11 +30601,15 @@ app.delete("/api/products/:id", async (req, res) => {
 app.put("/api/variants/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { stock, price, status } = req.body;
+    const { stock, price, cost_price, status, discount_percent } = req.body;
+    const fieldsToUpdate = { stock, price, cost_price, status, discount_percent };
+    Object.keys(fieldsToUpdate).forEach(
+      (k) => fieldsToUpdate[k] === undefined && delete fieldsToUpdate[k]
+    );
 
     const { data, error } = await supabase
       .from("variants")
-      .update({ stock, price, status })
+      .update(fieldsToUpdate)
       .eq("id", id)
       .select()
       .single();
@@ -30545,6 +30675,7 @@ app.post("/api/print-labels", async (req, res) => {
     const {
       variantIds, codeType = "qr", printerName,
       labelWidthMm = 50, labelHeightMm = 30,
+      quantities = {},
     } = req.body;
 
     if (!variantIds?.length) {
@@ -30553,7 +30684,7 @@ app.post("/api/print-labels", async (req, res) => {
 
     const { data: variants, error } = await supabase
     .from("variants")
-    .select(`id, color, size, price, sku, public_code, product:products(name, sku)`)
+    .select(`id, color, size, price, sku, public_code, stock, product:products(name, sku)`)
     .in("id", variantIds);
     if (error) throw error;
 
@@ -30567,74 +30698,81 @@ app.post("/api/print-labels", async (req, res) => {
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
     for (const v of variants) {
-      const page = pdfDoc.addPage([pageW, pageH]);
-      const codeValue = v.public_code || `V-${v.id}`;
+      const override = quantities[v.id];
+      const copies = override != null
+        ? Math.max(0, parseInt(override, 10) || 0)
+        : Math.max(0, v.stock ?? 0);
 
-      // ---- generate the code image as PNG bytes ----
-      let codeImageBytes;
-      let codeIsSquare = codeType === "qr";
-      if (codeType === "qr") {
-        const dataUrl = await QRCode.toDataURL(codeValue, { margin: 0, width: 300 });
-        codeImageBytes = Buffer.from(dataUrl.split(",")[1], "base64");
-      } else {
-        codeImageBytes = await bwipjs.toBuffer({
-          bcid: "code128",
-          text: codeValue,
-          scale: 3,
-          height: 10,
-          includetext: false,
+      for (let i = 0; i < copies; i++) {
+        const page = pdfDoc.addPage([pageW, pageH]);
+        const codeValue = v.public_code || `V-${v.id}`;
+
+        // ---- generate the code image as PNG bytes ----
+        let codeImageBytes;
+        let codeIsSquare = codeType === "qr";
+        if (codeType === "qr") {
+          const dataUrl = await QRCode.toDataURL(codeValue, { margin: 0, width: 300 });
+          codeImageBytes = Buffer.from(dataUrl.split(",")[1], "base64");
+        } else {
+          codeImageBytes = await bwipjs.toBuffer({
+            bcid: "code128",
+            text: codeValue,
+            scale: 3,
+            height: 10,
+            includetext: false,
+          });
+        }
+
+        const codeImage = codeIsSquare
+          ? await pdfDoc.embedPng(codeImageBytes)
+          : await pdfDoc.embedPng(codeImageBytes);
+
+        const codeSize = codeIsSquare
+          ? Math.min(pageW * 0.55, pageH * 0.65)
+          : pageW * 0.8;
+        const codeH = codeIsSquare ? codeSize : pageH * 0.35;
+        const codeX = (pageW - codeSize) / 2;
+        const codeY = pageH - codeH - mmToPt(3);
+
+        page.drawImage(codeImage, {
+          x: codeX,
+          y: codeY,
+          width: codeIsSquare ? codeSize : codeSize,
+          height: codeH,
+        });
+
+        const productName = v.product?.name || "Product";
+        const nameSize = 7;
+        const nameWidth = fontBold.widthOfTextAtSize(productName, nameSize);
+        page.drawText(productName, {
+          x: (pageW - nameWidth) / 2,
+          y: codeY - 10,
+          size: nameSize,
+          font: fontBold,
+        });
+
+        const variantLine = `${v.size || ""} / ${v.color || ""}`.trim();
+        const variantWidth = font.widthOfTextAtSize(variantLine, 6);
+        page.drawText(variantLine, {
+          x: (pageW - variantWidth) / 2,
+          y: codeY - 20,
+          size: 6,
+          font,
+        });
+
+        const priceLine = `Rs. ${Number(v.price || 0).toFixed(0)}`;
+        const priceWidth = fontBold.widthOfTextAtSize(priceLine, 7);
+        page.drawText(priceLine, {
+          x: (pageW - priceWidth) / 2,
+          y: mmToPt(2),
+          size: 7,
+          font: fontBold,
         });
       }
-
-      const codeImage = codeIsSquare
-        ? await pdfDoc.embedPng(codeImageBytes)
-        : await pdfDoc.embedPng(codeImageBytes);
-
-      const codeSize = codeIsSquare
-        ? Math.min(pageW * 0.55, pageH * 0.65)
-        : pageW * 0.8;
-      const codeH = codeIsSquare ? codeSize : pageH * 0.35;
-      const codeX = (pageW - codeSize) / 2;
-      const codeY = pageH - codeH - mmToPt(3);
-
-      page.drawImage(codeImage, {
-        x: codeX,
-        y: codeY,
-        width: codeIsSquare ? codeSize : codeSize,
-        height: codeH,
-      });
-
-      // ---- text: product name, variant, price ----
-      const productName = v.product?.name || "Product";
-      const nameSize = 7;
-      const nameWidth = fontBold.widthOfTextAtSize(productName, nameSize);
-      page.drawText(productName, {
-        x: (pageW - nameWidth) / 2,
-        y: codeY - 10,
-        size: nameSize,
-        font: fontBold,
-      });
-
-      const variantLine = `${v.size || ""} / ${v.color || ""}`.trim();
-      const variantWidth = font.widthOfTextAtSize(variantLine, 6);
-      page.drawText(variantLine, {
-        x: (pageW - variantWidth) / 2,
-        y: codeY - 20,
-        size: 6,
-        font,
-      });
-
-      const priceLine = `Rs. ${Number(v.price || 0).toFixed(0)}`;
-      const priceWidth = fontBold.widthOfTextAtSize(priceLine, 7);
-      page.drawText(priceLine, {
-        x: (pageW - priceWidth) / 2,
-        y: mmToPt(2),
-        size: 7,
-        font: fontBold,
-      });
     }
+  
 
-    const pdfBytes = await pdfDoc.save();
+  const pdfBytes = await pdfDoc.save();
     const fileName = `labels-${Date.now()}.pdf`;
     const filePath = path.join(LABEL_FOLDER, fileName);
     fs.writeFileSync(filePath, pdfBytes);
