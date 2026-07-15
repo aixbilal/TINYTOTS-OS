@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 
 const MAX_LEN = { name: 80, phone: 20, address: 300, city: 50, coupon: 30 };
 
@@ -20,6 +22,7 @@ function isValidPakPhone(phone: string) {
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, clearCart } = useCart();
+  const { user } = useAuth();
 
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
@@ -30,6 +33,19 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [customerId, setCustomerId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("customers")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) setCustomerId(data.id);
+      });
+}, [user]);
 
   if (items.length === 0) {
     return (
@@ -46,14 +62,17 @@ export default function CheckoutPage() {
 
   function validate() {
     const errs: Record<string, string> = {};
-    if (!guestName.trim()) errs.guestName = "Please enter your full name.";
-    if (!guestPhone.trim()) errs.guestPhone = "Please enter your phone number.";
-    else if (!isValidPakPhone(guestPhone)) errs.guestPhone = "Enter a valid number, e.g. 03001234567.";
+    // Guest name/phone only required when NOT logged in
+    if (!user) {
+      if (!guestName.trim()) errs.guestName = "Please enter your full name.";
+      if (!guestPhone.trim()) errs.guestPhone = "Please enter your phone number.";
+      else if (!isValidPakPhone(guestPhone)) errs.guestPhone = "Enter a valid number, e.g. 03001234567.";
+    }
     if (!shippingAddress.trim()) errs.shippingAddress = "Please enter your shipping address.";
     if (!shippingCity.trim()) errs.shippingCity = "Please enter your city.";
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
-  }
+}
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,8 +89,9 @@ export default function CheckoutPage() {
           shipping_address: shippingAddress.trim(),
           shipping_city: shippingCity.trim(),
           payment_method: paymentMethod,
-          guest_name: guestName.trim(),
-          guest_phone: guestPhone.trim(),
+          customer_id: user ? customerId : undefined,
+          guest_name: user ? undefined : guestName.trim(),
+          guest_phone: user ? undefined : guestPhone.trim(),
           coupon_code: couponCode.trim() || undefined,
         }),
       });
@@ -106,6 +126,7 @@ export default function CheckoutPage() {
       <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Checkout</h1>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-md">
+      {!user && (       
         <div>
           <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Contact details</h2>
           <div className="flex flex-col gap-3">
@@ -120,6 +141,7 @@ export default function CheckoutPage() {
               />
               <FieldError msg={fieldErrors.guestName} />
             </div>
+            
             <div>
               <input
                 type="tel"
@@ -133,7 +155,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
-
+)}
         <div>
           <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Shipping address</h2>
           <div className="flex flex-col gap-3">
