@@ -9,7 +9,7 @@ import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
 import HeaderCart from "@/components/HeaderCart";
-
+import { useAuth } from "@/lib/auth-context";
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], weight: ["400", "500", "600"] });
 const plusJakarta = Plus_Jakarta_Sans({ variable: "--font-plus-jakarta", subsets: ["latin"], weight: ["600", "700"] });
@@ -79,6 +79,63 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
   );
 }
 
+function AccountMenu() {
+  const { user, loading, signOut } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="p-2 rounded-full flex items-center justify-center opacity-50">
+        <span className="material-symbols-outlined">person</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Link
+        href="/login"
+        className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
+        title="Log in"
+      >
+        <span className="material-symbols-outlined">person</span>
+      </Link>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="text-primary hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
+        title="Account"
+      >
+        <span className="material-symbols-outlined">account_circle</span>
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 bg-surface border border-outline-variant/30 rounded-xl shadow-lg py-2 z-50">
+          <Link
+            href="/account"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2 font-body-sm text-body-sm text-on-surface hover:bg-surface-container-low"
+          >
+            My Account
+          </Link>
+          <button
+            onClick={async () => {
+              setOpen(false);
+              await signOut();
+            }}
+            className="block w-full text-left px-4 py-2 font-body-sm text-body-sm text-error hover:bg-surface-container-low"
+          >
+            Log out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const [searchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
@@ -121,9 +178,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <button onClick={() => setSearchOpen(true)} className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Search">
                 <span className="material-symbols-outlined">search</span>
               </button>
-              <button className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Account (coming soon)">
-                <span className="material-symbols-outlined">person</span>
-              </button>
+              <AccountMenu />
               <HeaderCart />
             </div>
           </nav>
