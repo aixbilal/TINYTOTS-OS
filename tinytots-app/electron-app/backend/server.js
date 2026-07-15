@@ -485,40 +485,6 @@ async function generateReceiptPDF(sale_id) {
     y -= 12;
   };
 
-  // Improved row function that forces even spacing on left/right text boundaries
-  const row = (left, right, size = 8, useBold = false) => {
-    const f = useBold ? fontBold : font;
-    const rightWidth = f.widthOfTextAtSize(right, size);
-    const maxLeftWidth = contentWidth - rightWidth - 6; 
-    
-    let leftText = left;
-    if (f.widthOfTextAtSize(leftText, size) > maxLeftWidth) {
-      while (leftText.length > 0 && f.widthOfTextAtSize(leftText + "...", size) > maxLeftWidth) {
-        leftText = leftText.slice(0, -1);
-      }
-      leftText = leftText + "...";
-    }
-
-    page.drawText(leftText, { x: marginX, y, size, font: f, color: black });
-    page.drawText(right, { x: pageWidth - marginX - rightWidth, y, size, font: f, color: black });
-    y -= size + 6;
-  };  const center = (text, size, useBold = false) => {
-    const f = useBold ? fontBold : font;
-    const width = f.widthOfTextAtSize(text, size);
-    page.drawText(text, { x: (pageWidth - width) / 2, y, size, font: f, color: black });
-    y -= size + 6;
-  };
-
-  const divider = (thickness = 0.7) => {
-    page.drawLine({
-      start: { x: marginX, y },
-      end: { x: pageWidth - marginX, y },
-      thickness,
-      color: black,
-    });
-    y -= 12;
-  };
-
   const row = (left, right, size = 8, useBold = false) => {
     const f = useBold ? fontBold : font;
     page.drawText(left, { x: marginX, y, size, font: f, color: black });
@@ -823,7 +789,6 @@ function colorCode(color) {
   return color.toString().replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase();
 }
 
-
 // ----------------------------------------------------
 // CREATE PRODUCT & VARIANTS
 // ----------------------------------------------------
@@ -831,19 +796,21 @@ app.post("/api/products", async (req, res) => {
   try {
     const {
       name, brand, category, sku, hsn_code, unit, description, image_url,
-      cost_price, selling_price, initialStock, stock, variantGroups,
+      cost_price, selling_price, discount_percent, initialStock, stock, colors = [], sizes = [],
+      variantStocks = {},
     } = req.body;
 
+    // 1. Strict validation (No variantGroups references allowed here!)
     if (!name || !sku) {
       return res.status(400).json({ success: false, message: "Product name and SKU are required." });
     }
-    if (!variantGroups?.length || variantGroups.every((g) => !g.sizes?.length)) {
-      return res.status(400).json({ success: false, message: "Add at least one color with at least one size." });
+    if (!colors || !colors.length || !sizes || !sizes.length) {
+      return res.status(400).json({ success: false, message: "Add at least one color and one size." });
     }
 
     const cleanSku = sku.trim().toUpperCase();
     
-    // Check if base SKU exists
+    // 2. Check if base SKU exists
     const { data: existing, error: existingErr } = await supabase
       .from("products")
       .select("id")
@@ -858,7 +825,7 @@ app.post("/api/products", async (req, res) => {
       });
     }
 
-    // Insert Product safely
+    // 3. Insert Product safely
     const { data: product, error: prodErr } = await supabase
       .from("products")
       .insert([{
@@ -877,58 +844,165 @@ app.post("/api/products", async (req, res) => {
       throw prodErr;
     }
 
-    // Determine fallback stock (supports both "stock" and "initialStock" from root body)
-    const fallbackStock = Number(stock !== undefined ? stock : initialStock) || 0;
+    // Determine fallback stock
+    const fallbackStock = Number(stock !== undefined ? stock : (initialStock !== undefined ? initialStock : 0));
 
     // Generate variant rows securely
-    const variantRows = [];
-    for (const group of variantGroups) {
-      // Prioritize group-level stock if your frontend sends stock per color group, otherwise use root fallback
-      const groupStock = group.stock !== undefined ? Number(group.stock) : fallbackStock;
+    const basePrice = Number(selling_price) || 0;
+    const discountPct = Number(discount_percent) || 0;
+    const discountedPrice = Math.round(basePrice * (1 - discountPct / 100) * 100) / 100;
 
-      for (const size of group.sizes) {
+    const variantRows = [];
+    for (const color of colors) {
+      for (const size of sizes) {
+        const key = `${color}__${size}`;
+        // Safe check for variant stock
+        const stockForThis = variantStocks?.[key] !== undefined ? variantStocks[key] : fallbackStock;
+        
         variantRows.push({
           product_id: product.id,
-          color: group.color,
+          color,
           size,
-          price: Number(selling_price) || 0,
+          base_price: basePrice,
+          discount_percent: discountPct,
+          price: discountedPrice,
           cost_price: Number(cost_price) || 0,
-          stock: groupStock,
-          sku: `${cleanSku}-${colorCode(group.color)}-${size}`.toUpperCase(),
+          stock: Number(stockForThis) || 0,
+          sku: `${cleanSku}-${colorCode(color)}-${size}`.toUpperCase(),
           status: "active",
         });
       }
     }
 
-    // Bulk insert variants
+    // 4. Bulk insert variants
     const { data: variants, error: varErr } = await supabase
       .from("variants")
       .insert(variantRows)
       .select();
 
     if (varErr || !variants || variants.length !== variantRows.length) {
-      // Variant creation failed or was incomplete — roll back product creation
-      await supabase.from("variants").delete().eq("product_id", product.id);
+      // Rollback on failure
+      if (variants?.length) {
+        await supabase.from("variants").delete().in("id", variants.map(v => v.id));
+      }
       await supabase.from("products").delete().eq("id", product.id);
-      throw new Error(
-        varErr?.message ||
-        `Only ${variants?.length || 0} of ${variantRows.length} variants were created. Product creation rolled back — please try again.`
-      );
+      throw new Error(varErr?.message || "Failed to save all variants. Action rolled back.");
     }
 
-    // Follow-up: Assign unique public codes safely
-    if (variants && variants.length > 0) {
-      await Promise.all(
-        variants.map((v) =>
-          supabase.from("variants").update({ public_code: `V-${v.id}` }).eq("id", v.id)
-        )
-      );
-      variants.forEach((v) => { v.public_code = `V-${v.id}`; });
-    }
+    // 5. Assign unique public codes safely
+    await Promise.all(
+      variants.map((v) =>
+        supabase.from("variants").update({ public_code: `V-${v.id}` }).eq("id", v.id)
+      )
+    );
+    variants.forEach((v) => { v.public_code = `V-${v.id}`; });
 
     res.json({ success: true, product, variants });
   } catch (err) {
     console.error("Create product error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+// ----------------------------------------------------
+// ADD VARIANTS TO AN EXISTING PRODUCT
+// ----------------------------------------------------
+app.post("/api/products/:id/variants", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { colors, sizes, cost_price, price, discount_percent, initialStock, variantStocks } = req.body;
+
+    if (!colors?.length || !sizes?.length) {
+      return res.status(400).json({ success: false, message: "At least one color and one size are required." });
+    }
+
+    const { data: product, error: prodErr } = await supabase
+      .from("products")
+      .select("id, sku")
+      .eq("id", id)
+      .single();
+    if (prodErr || !product) {
+      return res.status(404).json({ success: false, message: "Product not found." });
+    }
+
+    const basePrice = Number(price) || 0;
+    const discountPct = Number(discount_percent) || 0;
+    const discountedPrice = Math.round(basePrice * (1 - discountPct / 100) * 100) / 100;
+
+    const variantRows = [];
+    for (const color of colors) {
+      for (const size of sizes) {
+        const key = `${color}__${size}`;
+        const stockForThis = variantStocks?.[key] ?? initialStock;
+        variantRows.push({
+          product_id: product.id,
+          color,
+          size,
+          base_price: basePrice,
+          discount_percent: discountPct,
+          price: discountedPrice,
+          cost_price: Number(cost_price) || 0,
+          stock: Number(stockForThis) || 0,
+          sku: `${product.sku}-${colorCode(color)}-${size}`.toUpperCase(),
+          status: "active",
+        });
+      }
+    }
+
+    const { data: variants, error: varErr } = await supabase
+      .from("variants")
+      .insert(variantRows)
+      .select();
+
+    if (varErr || !variants || variants.length !== variantRows.length) {
+      if (variants?.length) {
+        await supabase.from("variants").delete().in("id", variants.map((v) => v.id));
+      }
+      throw new Error(varErr?.message || "Failed to add all variants. Nothing was saved — please try again.");
+    }
+
+    await Promise.all(
+      variants.map((v) => supabase.from("variants").update({ public_code: `V-${v.id}` }).eq("id", v.id))
+    );
+    variants.forEach((v) => { v.public_code = `V-${v.id}`; });
+
+    res.json({ success: true, variants });
+  } catch (err) {
+    console.error("Add variants error:", err);
+    if (err.code === "23505" || /duplicate key/i.test(err.message || "")) {
+      return res.status(409).json({ success: false, message: "One of those color/size combinations already exists for this product." });
+    }
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ----------------------------------------------------
+// APPLY DISCOUNT TO ALL VARIANTS OF A PRODUCT
+// ----------------------------------------------------
+app.put("/api/products/:id/discount", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { discount_percent } = req.body;
+    const discountPct = Number(discount_percent) || 0;
+
+    const { data: variants, error: fetchErr } = await supabase
+      .from("variants")
+      .select("id, base_price")
+      .eq("product_id", id);
+    if (fetchErr) throw fetchErr;
+
+    await Promise.all(
+      variants.map((v) => {
+        const newPrice = Math.round((v.base_price || 0) * (1 - discountPct / 100) * 100) / 100;
+        return supabase
+          .from("variants")
+          .update({ discount_percent: discountPct, price: newPrice })
+          .eq("id", v.id);
+      })
+    );
+
+    res.json({ success: true, updated: variants.length });
+  } catch (err) {
+    console.error("Bulk discount error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -986,15 +1060,37 @@ app.delete("/api/products/:id", async (req, res) => {
 app.put("/api/variants/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { stock, price, cost_price, status, discount_percent } = req.body;
-    const fieldsToUpdate = { stock, price, cost_price, status, discount_percent };
-    Object.keys(fieldsToUpdate).forEach(
-      (k) => fieldsToUpdate[k] === undefined && delete fieldsToUpdate[k]
-    );
+    const { stock, price, cost_price, status, base_price, discount_percent } = req.body;
+
+    const update = { stock, status };
+
+    // Include cost_price if it's explicitly passed in the request body
+    if (cost_price !== undefined) {
+      update.cost_price = Number(cost_price);
+    }
+
+    if (base_price !== undefined || discount_percent !== undefined) {
+      // Discount-driven edit: recompute price from base_price + discount%.
+      const { data: current } = await supabase.from("variants").select("base_price").eq("id", id).single();
+      const bp = base_price !== undefined ? Number(base_price) : Number(current?.base_price || 0);
+      const dp = discount_percent !== undefined ? Number(discount_percent) : 0;
+      update.base_price = bp;
+      update.discount_percent = dp;
+      update.price = Math.round(bp * (1 - dp / 100) * 100) / 100;
+    } else if (price !== undefined) {
+      // Plain price edit (no discount involved) — keep base_price in sync
+      // so a later discount edit still computes from the right number.
+      update.price = Number(price);
+      update.base_price = Number(price);
+      update.discount_percent = 0;
+    }
+
+    // Strip out undefined properties just in case
+    Object.keys(update).forEach((k) => update[k] === undefined && delete update[k]);
 
     const { data, error } = await supabase
       .from("variants")
-      .update(fieldsToUpdate)
+      .update(update)
       .eq("id", id)
       .select()
       .single();

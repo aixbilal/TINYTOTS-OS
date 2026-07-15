@@ -274,6 +274,7 @@ export default function Inventory() {
                   onToggleSelect={toggleSelect}
                   onSelectAll={selectAll}
                   onChanged={loadInventory}
+                  productId={selectedProduct.id}
                 />
               ) : (
                 <StockOverview variants={selectedProduct.variants} />

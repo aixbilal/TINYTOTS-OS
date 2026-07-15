@@ -1,7 +1,7 @@
+import { useMemo, useState } from "react";
+import { X, Plus } from "lucide-react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
-import { useState } from "react";
-import { X, Plus } from "lucide-react";
 
 function TagInput({ label, placeholder, values, onChange }) {
   const [draft, setDraft] = useState("");
@@ -52,11 +52,10 @@ function TagInput({ label, placeholder, values, onChange }) {
   );
 }
 
-// NOTE: public_code lives on `variants`, not `products` — it's DB-derived as
-// V-{variant id} after each variant row is inserted, so it is never a form field.
 const emptyForm = {
   name: "", brand: "", category: "", sku: "", hsn_code: "",
-  unit: "Pcs", description: "", cost_price: "", selling_price: "", initialStock: "",
+  unit: "Pcs", description: "", cost_price: "", selling_price: "",
+  discount_percent: "", initialStock: "",
 };
 
 export default function ProductFormModal({ mode = "create", initialProduct, onClose, onSaved }) {
@@ -69,23 +68,16 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
           description: initialProduct.description || "",
           cost_price: initialProduct.cost_price ?? "",
           selling_price: initialProduct.selling_price ?? "",
+          discount_percent: "",
           initialStock: "",
         }
       : emptyForm
   );
   const [colors, setColors] = useState([]);
-  const [sizesByColor, setSizesByColor] = useState({}); // { "Navy Blue": ["8","10"], ... }
-
-  function addColor(newColors) {
-    setColors(newColors);
-    setSizesByColor((prev) => {
-      const next = { ...prev };
-      newColors.forEach((c) => { if (!next[c]) next[c] = []; });
-      Object.keys(next).forEach((c) => { if (!newColors.includes(c)) delete next[c]; });
-      return next;
-    });
-  }
-
+  const [sizes, setSizes] = useState([]);
+  // Per-variant stock overrides, keyed as "color__size" — lets the admin
+  // adjust one specific combo's stock without changing the default for others.
+  const [stockOverrides, setStockOverrides] = useState({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -95,19 +87,41 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
       onChange: (e) => setForm((f) => ({ ...f, [key]: e.target.value })),
     };
   }
+
+  const variantCombos = useMemo(() => {
+    const combos = [];
+    for (const color of colors) {
+      for (const size of sizes) {
+        combos.push({ key: `${color}__${size}`, color, size });
+      }
+    }
+    return combos;
+  }, [colors, sizes]);
+
+  const discountedPreviewPrice = useMemo(() => {
+    const base = Number(form.selling_price) || 0;
+    const pct = Number(form.discount_percent) || 0;
+    if (!pct) return null;
+    return Math.round(base * (1 - pct / 100) * 100) / 100;
+  }, [form.selling_price, form.discount_percent]);
+
+  function stockFor(key) {
+    return stockOverrides[key] ?? form.initialStock ?? "";
+  }
+
+  function setStockFor(key, value) {
+    setStockOverrides((prev) => ({ ...prev, [key]: value }));
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
-  
-    const variantGroups = colors
-      .filter((c) => sizesByColor[c]?.length)
-      .map((c) => ({ color: c, sizes: sizesByColor[c] }));
-  
-    if (mode === "create" && !variantGroups.length) {
-      setError("Add at least one color with at least one size to generate variants.");
+
+    if (mode === "create" && (!colors.length || !sizes.length)) {
+      setError("Add at least one color and one size to generate variants.");
       return;
     }
-  
+
     setSaving(true);
     try {
       const url =
@@ -115,15 +129,12 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
           ? "http://localhost:3000/api/products"
           : `http://localhost:3000/api/products/${initialProduct.id}`;
       const method = mode === "create" ? "POST" : "PUT";
-  
-      const body = {
-        ...form,
-        cost_price: Number(form.cost_price),
-        selling_price: Number(form.selling_price),
-        initialStock: Number(form.initialStock),
-        variantGroups,
-      };
-  
+
+      const body =
+        mode === "create"
+          ? { ...form, colors, sizes, variantStocks: stockOverrides }
+          : form;
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -131,7 +142,7 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || data.error);
-  
+
       onSaved();
       onClose();
     } catch (err) {
@@ -140,6 +151,7 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
       setSaving(false);
     }
   }
+
   return (
     <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
       <div className="bg-cream-50 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-7">
@@ -182,9 +194,6 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
                   ["clean"],
                 ],
                 clipboard: {
-                  // Strip every inline style Word/Google Docs pastes in
-                  // (font color, background-color, font-family, etc.) —
-                  // keep only real structure: bold, headings, lists.
                   matchVisual: false,
                   matchers: [
                     [
@@ -206,7 +215,7 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <LabeledInput
               label="Cost Price (Rs)"
               type="number"
@@ -219,38 +228,72 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
               required
               {...field("selling_price")}
             />
+            <LabeledInput
+              label="Discount (%)"
+              type="number"
+              min="0"
+              max="100"
+              placeholder="0"
+              {...field("discount_percent")}
+            />
           </div>
+
+          {discountedPreviewPrice !== null && (
+            <p className="text-sm text-maroon-700 bg-maroon-100 rounded-lg px-3 py-2">
+              With a {form.discount_percent}% discount, each variant will sell at{" "}
+              <strong>Rs. {discountedPreviewPrice}</strong> instead of Rs. {form.selling_price}.
+            </p>
+          )}
 
           {mode === "create" && (
             <>
               <LabeledInput
-                label="Initial Stock (per variant)"
+                label="Initial Stock (default for all variants)"
                 type="number"
                 required
                 {...field("initialStock")}
               />
 
-<TagInput label="Colors" placeholder="Maroon, Black…" values={colors} onChange={addColor} />
+              <div className="grid grid-cols-2 gap-4">
+                <TagInput label="Colors" placeholder="Maroon, Black…" values={colors} onChange={setColors} />
+                <TagInput label="Sizes" placeholder="S, M, L, XL…" values={sizes} onChange={setSizes} />
+              </div>
 
-              {colors.map((color) => (
-                <TagInput
-                  key={color}
-                  label={`Sizes for ${color}`}
-                  placeholder="S, M, L, XL…"
-                  values={sizesByColor[color] || []}
-                  onChange={(newSizes) => setSizesByColor((s) => ({ ...s, [color]: newSizes }))}
-                />
-              ))}
-
-              {colors.length > 0 && (
-                <p className="text-sm text-maroon-700 bg-maroon-100 rounded-lg px-3 py-2">
-                  This will generate{" "}
-                  <strong>
-                    {colors.reduce((sum, c) => sum + (sizesByColor[c]?.length || 0), 0)}
-                  </strong>{" "}
-                  variants total. Each variant will get its own auto-generated Public Code
-                  (e.g. <code>V-246</code>) once saved.
-                </p>
+              {variantCombos.length > 0 && (
+                <div>
+                  <p className="text-sm text-maroon-700 bg-maroon-100 rounded-lg px-3 py-2 mb-2">
+                    This will generate <strong>{variantCombos.length}</strong> variants
+                    ({colors.length} colors × {sizes.length} sizes). Adjust stock per
+                    variant below if any combo needs a different starting count.
+                  </p>
+                  <div className="border border-gold-300/50 rounded-lg max-h-56 overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-cream-100 sticky top-0">
+                        <tr>
+                          <th className="text-left px-3 py-2 font-medium text-ink-700">Color</th>
+                          <th className="text-left px-3 py-2 font-medium text-ink-700">Size</th>
+                          <th className="text-left px-3 py-2 font-medium text-ink-700">Stock</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {variantCombos.map(({ key, color, size }) => (
+                          <tr key={key} className="border-t border-gold-300/30">
+                            <td className="px-3 py-1.5">{color}</td>
+                            <td className="px-3 py-1.5">{size}</td>
+                            <td className="px-3 py-1.5">
+                              <input
+                                type="number"
+                                value={stockFor(key)}
+                                onChange={(e) => setStockFor(key, e.target.value)}
+                                className="w-20 border border-gold-300/50 rounded px-2 py-1 text-sm"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
             </>
           )}
