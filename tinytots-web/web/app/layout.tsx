@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
+import { AuthProvider } from "@/lib/auth-context";
 import HeaderCart from "@/components/HeaderCart";
 
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -104,7 +105,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" precedence="default" />
       </head>
       <body className="bg-surface font-body-md text-on-surface antialiased pt-[80px] min-h-screen flex flex-col">
-        <CartProvider>
+      <AuthProvider>
+      <CartProvider>
           {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
 
           <nav className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
@@ -152,7 +154,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </div>
             </div>
           </footer>
-        </CartProvider>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );
