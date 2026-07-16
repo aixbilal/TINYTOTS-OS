@@ -40,7 +40,7 @@ export default function ProductsPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-bento-gap">
         {products.map((p) => {
           const inStock = p.variants?.some((v: any) => v.stock > 0);
-          const price = p.variants?.[0]?.price;
+          const price = p.variants?.[0]?.web_price ?? p.variants?.[0]?.price;
           return (
             <Link
               key={p.id}

@@ -52,6 +52,7 @@ tinytots-app/
         report-2026-07-12.csv
         report-2026-07-13.csv
         report-2026-07-14.csv
+        report-2026-07-15.csv
       routes/
         whatsappWebhook.js
       services/
@@ -158,12 +159,31 @@ tinytots-web/
     app/
       account/
         page.tsx
+      admin/
+        login/
+          page.tsx
+        products/
+          [id]/
+            page.tsx
+          new/
+            page.tsx
+          page.tsx
+        layout.tsx
+        page.tsx
       api/
+        admin/
+          inventory/
+            route.ts
+          products/
+            [id]/
+              route.ts
         checkout/
           route.ts
         health/
           route.ts
         inventory/
+          [id]/
+            route.ts
           route.ts
         products/
           [id]/
@@ -198,9 +218,14 @@ tinytots-web/
       layout.tsx
       page.tsx
     components/
+      admin/
+        MarkupCalculator.tsx
+        RichTextEditor.tsx
+        TagInput.tsx
       AddToCart.tsx
       HeaderCart.tsx
     lib/
+      admin-auth-context.tsx
       auth-context.tsx
       cart-context.tsx
       supabase-admin.ts
@@ -340,6 +365,8 @@ tinytots-web/
         20260714130000_add_phase2_tables.sql
         20260714140000_rls_policies.sql
         20260715090000_customer_signup_trigger.sql
+        20260716090000_admin_users_rls.sql
+        20260718090000_add_web_pricing.sql
       snippets/
         Untitled query 131.sql
         Untitled query 174.sql
@@ -415,6 +442,11 @@ This section contains the contents of the repository's files.
 <file path="tinytots-app/electron-app/backend/reports/report-2026-07-14.csv">
 "report_date","gross_revenue","net_profit","atv","total_items_sold","total_transactions"
 "2026-07-14",1649,899,1649,1,1
+</file>
+
+<file path="tinytots-app/electron-app/backend/reports/report-2026-07-15.csv">
+"report_date","gross_revenue","net_profit","atv","total_items_sold","total_transactions"
+"2026-07-15",0,0,0,0,0
 </file>
 
 <file path="tinytots-app/electron-app/backend/routes/whatsappWebhook.js">
@@ -10758,6 +10790,755 @@ export default function AccountPage() {
 }
 </file>
 
+<file path="tinytots-web/web/app/admin/login/page.tsx">
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+
+export default function AdminLoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setServerError(null);
+
+    if (!email.trim() || !password) {
+      setServerError("Please enter your email and password.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error || !data.session) {
+        setServerError("Incorrect email or password.");
+        setSubmitting(false);
+        return;
+      }
+
+      // Confirm this user is actually an active admin before letting them in
+      const { data: adminRow } = await supabase
+        .from("admin_users")
+        .select("id, is_active")
+        .eq("auth_user_id", data.session.user.id)
+        .maybeSingle();
+
+      if (!adminRow || !adminRow.is_active) {
+        await supabase.auth.signOut();
+        setServerError("This account does not have admin access.");
+        setSubmitting(false);
+        return;
+      }
+
+      router.push("/admin");
+      router.refresh();
+    } catch {
+      setServerError("Network error. Please try again.");
+      setSubmitting(false);
+    }
+  }
+
+  const inputClass =
+    "w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors";
+
+  return (
+    <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Admin Login</h1>
+
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
+        <input
+          type="email"
+          placeholder="Admin email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={inputClass}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={inputClass}
+        />
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
+        >
+          {submitting ? "Logging in..." : "Log in"}
+        </button>
+
+        {serverError && (
+          <p className="font-label-md text-label-md text-error mt-1">{serverError}</p>
+        )}
+      </form>
+    </main>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/admin/products/[id]/page.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import RichTextEditor from "@/components/admin/RichTextEditor";
+
+type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number; reorder_level: number };
+type Product = {
+  id: number; name: string; sku: string; description: string | null; brand: string | null;
+  category: string | null; image_url: string | null; gender: string | null; age_bracket: string | null;
+  is_active: boolean; variants: Variant[];
+};
+
+function AddVariantForm({ productId, onAdded }: { productId: number; onAdded: (v: Variant) => void }) {
+  const [color, setColor] = useState("");
+  const [size, setSize] = useState("");
+  const [price, setPrice] = useState("");
+  const [stock, setStock] = useState("");
+  const [saving, setSaving] = useState(false);
+  const inputClass =
+    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+
+  async function handleAdd() {
+    if (!price) return;
+    setSaving(true);
+    const res = await fetch("/api/inventory", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        product_id: productId,
+        color: color || null,
+        size: size || null,
+        price: parseFloat(price),
+        stock: parseInt(stock || "0", 10),
+      }),
+    });
+    const json = await res.json();
+    setSaving(false);
+    if (res.ok && json.data?.[0]) {
+      onAdded(json.data[0]);
+      setColor(""); setSize(""); setPrice(""); setStock("");
+    }
+  }
+
+  return (
+    <div className="grid grid-cols-5 gap-2 mt-3 pt-3 border-t border-outline-variant/10 items-center">
+      <input value={color} onChange={(e) => setColor(e.target.value)} className={inputClass} placeholder="New color" />
+      <input value={size} onChange={(e) => setSize(e.target.value)} className={inputClass} placeholder="New size" />
+      <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} placeholder="Price" />
+      <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} className={inputClass} placeholder="Stock" />
+      <button onClick={handleAdd} disabled={saving} className="font-label-md text-label-md text-primary hover:underline disabled:opacity-50">
+        {saving ? "Adding..." : "+ Add variant"}
+      </button>
+    </div>
+  );
+}
+
+export default function EditProductPage() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/admin/products/${id}`)
+      .then((r) => r.json())
+      .then((json) => setProduct(json.data))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  function updateField<K extends keyof Product>(field: K, value: Product[K]) {
+    setProduct((prev) => (prev ? { ...prev, [field]: value } : prev));
+  }
+
+  function updateVariant(vid: number, field: keyof Variant, value: string) {
+    setProduct((prev) =>
+      prev
+        ? {
+            ...prev,
+            variants: prev.variants.map((v) =>
+              v.id === vid ? { ...v, [field]: field === "color" || field === "size" ? value : Number(value) } : v
+            ),
+          }
+        : prev
+    );
+  }
+
+  async function saveProduct() {
+    if (!product) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: product.name,
+          sku: product.sku,
+          description: product.description,
+          brand: product.brand,
+          category: product.category,
+          image_url: product.image_url,
+          gender: product.gender,
+          age_bracket: product.age_bracket,
+        }),
+      });
+      if (!res.ok) {
+        const json = await res.json();
+        setError(json.error || "Failed to save product.");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveVariant(v: Variant) {
+    setError(null);
+    const res = await fetch(`/api/inventory/${v.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ price: v.price, stock: v.stock, reorder_level: v.reorder_level, color: v.color, size: v.size }),
+    });
+    if (!res.ok) {
+      const json = await res.json();
+      setError(json.error || "Failed to save variant.");
+    }
+  }
+
+  async function deleteProduct() {
+    if (!confirm("Deactivate this product? It will disappear from the storefront but stay in past orders.")) return;
+    await fetch(`/api/products/${id}`, { method: "DELETE" });
+    router.push("/admin/products");
+  }
+
+  const inputClass =
+    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+
+  if (loading) return <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>;
+  if (!product) return <p className="font-body-md text-body-md text-error">Product not found.</p>;
+
+  return (
+    <div className="max-w-2xl">
+      <div className="flex justify-between items-center mb-stack-md">
+        <h1 className="font-display-md text-display-md text-on-surface">Edit Product</h1>
+        <button
+  onClick={async () => {
+    const res = await fetch(`/api/products/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...product, is_active: !product.is_active }),
+    });
+    if (res.ok) updateField("is_active", !product.is_active);
+  }}
+  className={`font-label-md text-label-md hover:underline ${product.is_active ? "text-error" : "text-primary"}`}
+>
+  {product.is_active ? "Deactivate product" : "Reactivate product"}
+</button>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <input value={product.name} onChange={(e) => updateField("name", e.target.value)} className={inputClass} placeholder="Name" />
+        <input value={product.sku} onChange={(e) => updateField("sku", e.target.value)} className={inputClass} placeholder="SKU" />
+        <div>
+  <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Description</label>
+  <RichTextEditor value={product.description ?? ""} onChange={(html) => updateField("description", html)} />
+</div>
+        <div className="grid grid-cols-2 gap-4">
+          <input value={product.brand ?? ""} onChange={(e) => updateField("brand", e.target.value)} className={inputClass} placeholder="Brand" />
+          <input value={product.category ?? ""} onChange={(e) => updateField("category", e.target.value)} className={inputClass} placeholder="Category" />
+        </div>
+        <input value={product.image_url ?? ""} onChange={(e) => updateField("image_url", e.target.value)} className={inputClass} placeholder="Image URL" />
+
+        <button
+          onClick={saveProduct}
+          disabled={saving}
+          className="self-start px-5 py-2 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save product details"}
+        </button>
+      </div>
+
+      <div className="border-t border-outline-variant/20 pt-4 mt-6">
+        <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Variants</h2>
+        {product.variants.map((v) => (
+          <div key={v.id} className="grid grid-cols-6 gap-2 mb-2 items-center">
+            <input value={v.color ?? ""} onChange={(e) => updateVariant(v.id, "color", e.target.value)} className={inputClass} placeholder="Color" />
+            <input value={v.size ?? ""} onChange={(e) => updateVariant(v.id, "size", e.target.value)} className={inputClass} placeholder="Size" />
+            <input type="number" value={v.price} onChange={(e) => updateVariant(v.id, "price", e.target.value)} className={inputClass} placeholder="Price" />
+            <input type="number" value={v.stock} onChange={(e) => updateVariant(v.id, "stock", e.target.value)} className={inputClass} placeholder="Stock" />
+            <button onClick={() => saveVariant(v)} className="font-label-md text-label-md text-primary hover:underline">
+              Save
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm("Delete this variant permanently?")) return;
+                const res = await fetch(`/api/inventory/${v.id}`, { method: "DELETE" });
+                if (res.ok) {
+                  setProduct((prev) => prev ? { ...prev, variants: prev.variants.filter((x) => x.id !== v.id) } : prev);
+                }
+              }}
+              className="font-label-md text-label-md text-error hover:underline"
+            >
+              Delete
+            </button>
+          </div>
+        ))}
+
+        <AddVariantForm productId={product.id} onAdded={(newVariant) =>
+          setProduct((prev) => prev ? { ...prev, variants: [...prev.variants, newVariant] } : prev)
+        } />
+      </div>
+
+      {error && <p className="font-label-md text-label-md text-error mt-4">{error}</p>}
+    </div>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/admin/products/new/page.tsx">
+"use client";
+
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import RichTextEditor from "@/components/admin/RichTextEditor";
+import TagInput from "@/components/admin/TagInput";
+import MarkupCalculator from "@/components/admin/MarkupCalculator";
+
+export default function NewProductPage() {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [sku, setSku] = useState("");
+  const [description, setDescription] = useState("");
+  const [brand, setBrand] = useState("");
+  const [category, setCategory] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [gender, setGender] = useState("");
+  const [ageBracket, setAgeBracket] = useState("");
+
+  const [costPrice, setCostPrice] = useState("");
+  const [shopBasePrice, setShopBasePrice] = useState("");
+  const [shopDiscountPercent, setShopDiscountPercent] = useState("0");
+  const [shopFinalPrice, setShopFinalPrice] = useState("");
+  const [webBasePrice, setWebBasePrice] = useState("");
+  const [webDiscountPercent, setWebDiscountPercent] = useState("0");
+  const [webFinalPrice, setWebFinalPrice] = useState("");
+
+  const [initialStock, setInitialStock] = useState("");
+  const [colors, setColors] = useState<string[]>([]);
+  const [sizes, setSizes] = useState<string[]>([]);
+  const [stockOverrides, setStockOverrides] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const variantCombos = useMemo(() => {
+    const combos: { key: string; color: string; size: string }[] = [];
+    for (const color of colors) for (const size of sizes) combos.push({ key: `${color}__${size}`, color, size });
+    return combos;
+  }, [colors, sizes]);
+
+  function stockFor(key: string) {
+    return stockOverrides[key] ?? initialStock ?? "";
+  }
+  function setStockFor(key: string, value: string) {
+    setStockOverrides((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (!name.trim() || !sku.trim()) return setError("Name and SKU are required.");
+    if (!shopFinalPrice || !webFinalPrice) return setError("Fill in cost price and shop selling price so both prices can be calculated.");
+    if (!colors.length || !sizes.length) return setError("Add at least one color and one size to generate variants.");
+
+    setSubmitting(true);
+    try {
+      const variants = variantCombos.map((c) => ({
+        color: c.color,
+        size: c.size,
+        cost_price: costPrice ? parseFloat(costPrice) : 0,
+        base_price: shopBasePrice ? parseFloat(shopBasePrice) : null,
+        discount_percent: shopDiscountPercent ? parseFloat(shopDiscountPercent) : 0,
+        price: parseFloat(shopFinalPrice),
+        web_base_price: webBasePrice ? parseFloat(webBasePrice) : null,
+        web_discount_percent: webDiscountPercent ? parseFloat(webDiscountPercent) : 0,
+        web_price: parseFloat(webFinalPrice),
+        stock: parseInt(stockFor(c.key) || "0", 10),
+        reorder_level: 5,
+      }));
+
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name, sku, description, brand, category,
+          image_url: imageUrl || null,
+          gender: gender || null,
+          age_bracket: ageBracket || null,
+          cost_price: costPrice ? parseFloat(costPrice) : 0,
+          selling_price: shopFinalPrice ? parseFloat(shopFinalPrice) : 0,
+          variants,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.error || "Failed to create product."); setSubmitting(false); return; }
+      router.push("/admin/products");
+    } catch {
+      setError("Network error. Please try again.");
+      setSubmitting(false);
+    }
+  }
+
+  const inputClass =
+    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+
+  return (
+    <div className="max-w-2xl">
+      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Add Product</h1>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <input placeholder="Product name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+          <input placeholder="SKU" value={sku} onChange={(e) => setSku(e.target.value)} className={inputClass} />
+          <input placeholder="Brand" value={brand} onChange={(e) => setBrand(e.target.value)} className={inputClass} />
+          <input placeholder="Category (Shirts, Pants...)" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} />
+        </div>
+
+        <div>
+          <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Description</label>
+          <RichTextEditor value={description} onChange={setDescription} />
+        </div>
+
+        <input placeholder="Image URL" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className={inputClass} />
+
+        <div className="grid grid-cols-2 gap-4">
+          <input placeholder="Gender (boy/girl/unisex) — optional" value={gender} onChange={(e) => setGender(e.target.value)} className={inputClass} />
+          <input placeholder="Age bracket — optional" value={ageBracket} onChange={(e) => setAgeBracket(e.target.value)} className={inputClass} />
+        </div>
+
+        <MarkupCalculator
+          costPrice={costPrice}
+          shopBasePrice={shopBasePrice} shopDiscountPercent={shopDiscountPercent} shopFinalPrice={shopFinalPrice}
+          webBasePrice={webBasePrice} webDiscountPercent={webDiscountPercent} webFinalPrice={webFinalPrice}
+          onCostChange={setCostPrice}
+          onShopBaseChange={setShopBasePrice} onShopDiscountChange={setShopDiscountPercent} onShopFinalChange={setShopFinalPrice}
+          onWebBaseChange={setWebBasePrice} onWebDiscountChange={setWebDiscountPercent} onWebFinalChange={setWebFinalPrice}
+        />
+
+        <input placeholder="Default stock per variant" type="number" value={initialStock} onChange={(e) => setInitialStock(e.target.value)} className={inputClass} />
+
+        <div className="border-t border-outline-variant/20 pt-4 mt-2">
+          <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Variants</h2>
+          <div className="grid grid-cols-2 gap-4 mb-3">
+            <TagInput label="Colors" placeholder="Maroon, Black..." values={colors} onChange={setColors} />
+            <TagInput label="Sizes" placeholder="S, M, L, XL..." values={sizes} onChange={setSizes} />
+          </div>
+
+          {variantCombos.length > 0 && (
+            <div>
+              <p className="font-body-sm text-body-sm text-primary bg-primary-container/20 rounded-lg px-3 py-2 mb-2">
+                This will generate <strong>{variantCombos.length}</strong> variants ({colors.length} colors × {sizes.length} sizes). Adjust stock per combo below if needed.
+              </p>
+              <div className="border border-outline-variant/30 rounded-lg max-h-56 overflow-y-auto">
+                <table className="w-full font-body-sm text-body-sm">
+                  <thead className="bg-surface-container-low sticky top-0">
+                    <tr>
+                      <th className="text-left px-3 py-2 text-on-surface-variant">Color</th>
+                      <th className="text-left px-3 py-2 text-on-surface-variant">Size</th>
+                      <th className="text-left px-3 py-2 text-on-surface-variant">Stock</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {variantCombos.map(({ key, color, size }) => (
+                      <tr key={key} className="border-t border-outline-variant/10">
+                        <td className="px-3 py-1.5">{color}</td>
+                        <td className="px-3 py-1.5">{size}</td>
+                        <td className="px-3 py-1.5">
+                          <input type="number" value={stockFor(key)} onChange={(e) => setStockFor(key, e.target.value)} className="w-20 border border-outline-variant/50 rounded px-2 py-1" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button type="submit" disabled={submitting} className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-4">
+          {submitting ? "Saving..." : "Create Product"}
+        </button>
+
+        {error && <p className="font-label-md text-label-md text-error">{error}</p>}
+      </form>
+    </div>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/admin/products/page.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
+type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number };
+type Product = { id: number; name: string; sku: string; brand: string; category: string; is_active: boolean; variants: Variant[] };
+
+export default function AdminProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/inventory")
+      .then((r) => r.json())
+      .then((json) => {
+        // /api/inventory returns one row per variant; group into products client-side
+        const grouped: Record<number, Product> = {};
+        for (const row of json.data || []) {
+          const pid = row.product_id;
+          if (!grouped[pid]) {
+            grouped[pid] = {
+              id: pid,
+              name: row.products?.name ?? "Unknown",
+              sku: row.products?.sku ?? "",
+              brand: "",
+              category: "",
+              is_active: true,
+              variants: [],
+            };
+          }
+          grouped[pid].variants.push(row);
+        }
+        setProducts(Object.values(grouped));
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = products.filter(
+    (p) => p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-stack-md">
+        <h1 className="font-display-md text-display-md text-on-surface">Products</h1>
+        <Link
+          href="/admin/products/new"
+          className="px-5 py-3 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors"
+        >
+          + Add Product
+        </Link>
+      </div>
+
+      <input
+        placeholder="Search by name or SKU..."
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        className="w-full max-w-sm border rounded-lg px-4 py-2 mb-4 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none"
+      />
+
+      {loading ? (
+        <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+      ) : (
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="text-left border-b border-outline-variant/30">
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Name</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">SKU</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Variants</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Total Stock</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Low Stock?</th>
+              <th className="py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((p) => {
+              const totalStock = p.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+              const anyLow = p.variants.some((v: any) => v.stock <= (v.reorder_level ?? 5));
+              return (
+                <tr key={p.id} className="border-b border-outline-variant/10">
+                  <td className="py-3 font-body-md text-body-md text-on-surface">{p.name}</td>
+                  <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{p.sku}</td>
+                  <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{p.variants.length}</td>
+                  <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{totalStock}</td>
+                  <td className="py-3">
+                    {anyLow && (
+                      <span className="font-label-md text-label-md text-error">Low stock</span>
+                    )}
+                  </td>
+                  <td className="py-3 text-right">
+                    <Link href={`/admin/products/${p.id}`} className="font-label-md text-label-md text-primary hover:underline">
+                      Edit
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/admin/layout.tsx">
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import Link from "next/link";
+import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth-context";
+
+function AdminShell({ children }: { children: React.ReactNode }) {
+  const { admin, loading, signOut } = useAdminAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+  const isLoginPage = pathname === "/admin/login";
+
+  useEffect(() => {
+    if (!loading && !admin && !isLoginPage) {
+      router.replace("/admin/login");
+    }
+  }, [loading, admin, isLoginPage, router]);
+
+  if (isLoginPage) return <>{children}</>;
+
+  if (loading) {
+    return (
+      <main className="p-8 font-body-md text-body-md text-on-surface-variant">
+        Checking admin access...
+      </main>
+    );
+  }
+
+  if (!admin) {
+    // Redirect effect above will fire; render nothing meanwhile
+    return null;
+  }
+
+  const navItem = (href: string, label: string) => {
+    const active = pathname === href || (href !== "/admin" && pathname?.startsWith(href));
+    return (
+      <Link
+        href={href}
+        className={`block px-4 py-2 rounded-lg font-body-sm text-body-sm ${
+          active
+            ? "bg-primary-container text-on-primary"
+            : "text-on-surface-variant hover:bg-surface-container-low"
+        }`}
+      >
+        {label}
+      </Link>
+    );
+  };
+
+  return (
+    <div className="flex min-h-screen">
+      <aside className="w-60 shrink-0 border-r border-outline-variant/30 bg-surface-container-lowest p-4 flex flex-col gap-1">
+        <div className="font-display-sm text-display-sm text-primary mb-4 px-2">TinyTots Admin</div>
+        {navItem("/admin", "Dashboard")}
+        {navItem("/admin/products", "Products")}
+        {navItem("/admin/orders", "Orders")}
+        {navItem("/admin/discounts", "Discounts")}
+        {navItem("/admin/coupons", "Coupons")}
+        {navItem("/admin/complaints", "Complaints")}
+        {navItem("/admin/team", "Team")}
+
+        <div className="mt-auto pt-4 border-t border-outline-variant/20">
+          <p className="font-body-sm text-body-sm text-on-surface px-2 mb-1">{admin.name}</p>
+          <p className="font-label-md text-label-md text-on-surface-variant px-2 mb-3 capitalize">{admin.role.replace("_", " ")}</p>
+          <button
+            onClick={signOut}
+            className="w-full text-left px-4 py-2 rounded-lg font-body-sm text-body-sm text-error hover:bg-surface-container-low"
+          >
+            Log out
+          </button>
+        </div>
+      </aside>
+      <main className="flex-1 p-8">{children}</main>
+    </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminAuthProvider>
+      <AdminShell>{children}</AdminShell>
+    </AdminAuthProvider>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/admin/page.tsx">
+export default function AdminDashboardPage() {
+    return (
+      <div>
+        <h1 className="font-display-md text-display-md text-on-surface mb-stack-sm">Dashboard</h1>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          Welcome to the admin panel. Product, order, and other management tools will appear in the sidebar as we build them.
+        </p>
+      </div>
+    );
+  }
+</file>
+
+<file path="tinytots-web/web/app/api/admin/inventory/route.ts">
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+export async function GET() {
+  const { data, error } = await supabaseAdmin
+    .from("variants")
+    .select("*, products(name, sku, cost_price, selling_price, is_active)");
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ data }, { status: 200 });
+}
+</file>
+
+<file path="tinytots-web/web/app/api/admin/products/[id]/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  const { data, error } = await supabaseAdmin
+  .from("products")
+  .select(`
+    id, name, sku, description, brand, category, image_url, gender, age_bracket, is_active,
+    variants ( id, color, size, price, stock, reorder_level )
+  `)
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 404 });
+  }
+  return NextResponse.json({ data }, { status: 200 });
+}
+</file>
+
 <file path="tinytots-web/web/app/api/checkout/route.ts">
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
@@ -10877,9 +11658,9 @@ export async function POST(request: NextRequest) {
     // (never trust prices sent from the client)
     const variantIds = items.map((i: any) => i.variant_id);
     const { data: variants, error: variantError } = await supabase
-      .from("variants")
-      .select("id, price, stock, product_id, cost_price")
-      .in("id", variantIds);
+    .from("variants")
+    .select("id, price, web_price, stock, product_id, cost_price")
+    .in("id", variantIds);
 
     if (variantError) {
       return NextResponse.json({ error: variantError.message }, { status: 500 });
@@ -10913,13 +11694,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const lineTotal = variant.price * cartItem.quantity;
+      const authoritativePrice = variant.web_price ?? variant.price;
+      const lineTotal = authoritativePrice * cartItem.quantity;
       subtotal += lineTotal;
 
       orderItems.push({
         variant_id: variant.id,
         quantity: cartItem.quantity,
-        unit_price: variant.price,
+        unit_price: authoritativePrice,
         unit_cost_price: variant.cost_price ?? null,
         line_total: lineTotal,
       });
@@ -11053,6 +11835,59 @@ export async function GET() {
 }
 </file>
 
+<file path="tinytots-web/web/app/api/inventory/[id]/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+// PUT /api/inventory/[id] — update a single variant's price/stock/reorder_level (admin only)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  try {
+    const body = await request.json();
+    const { price, stock, reorder_level, color, size } = body;
+
+    const updates: Record<string, unknown> = {};
+    if (price !== undefined) updates.price = price;
+    if (stock !== undefined) {
+        updates.stock = stock;
+      }
+    if (reorder_level !== undefined) updates.reorder_level = reorder_level;
+    if (color !== undefined) updates.color = color;
+    if (size !== undefined) updates.size = size;
+
+    const { data, error } = await supabaseAdmin
+      .from("variants")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, data }, { status: 200 });
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+}
+
+// DELETE /api/inventory/[id] — remove a variant entirely
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const { error } = await supabaseAdmin.from("variants").delete().eq("id", id);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ success: true }, { status: 200 });
+}
+</file>
+
 <file path="tinytots-web/web/app/api/inventory/route.ts">
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
@@ -11102,6 +11937,7 @@ export async function POST(request: NextRequest) {
 <file path="tinytots-web/web/app/api/products/[id]/route.ts">
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 // GET /api/products/[id]
 // Returns one product with all its variants.
@@ -11144,11 +11980,56 @@ export async function GET(
 
   return NextResponse.json({ data: product }, { status: 200 });
 }
+
+// PUT /api/products/[id] — update product core fields (admin only)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  try {
+    const body = await request.json();
+    const { name, sku, description, brand, category, image_url, gender, age_bracket, is_active } = body;
+
+    const { data, error } = await supabaseAdmin
+      .from("products")
+      .update({ name, sku, description, brand, category, image_url, gender, age_bracket, is_active })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, data }, { status: 200 });
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+}
+
+// DELETE /api/products/[id] — soft delete (sets is_active = false, keeps order history intact)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  const { error } = await supabaseAdmin
+    .from("products")
+    .update({ is_active: false })
+    .eq("id", id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ success: true }, { status: 200 });
+}
 </file>
 
 <file path="tinytots-web/web/app/api/products/route.ts">
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET() {
   const { data: products, error } = await supabase
@@ -11162,13 +12043,7 @@ export async function GET() {
       brand,
       category,
       image_url,
-      variants (
-        id,
-        color,
-        size,
-        price,
-        stock
-      )
+      variants ( id, color, size, price, web_price, stock ) 
     `
     )
     .eq("is_active", true)
@@ -11179,6 +12054,60 @@ export async function GET() {
   }
 
   return NextResponse.json({ data: products }, { status: 200 });
+}
+
+// POST /api/products — creates a product + its variants together (admin only, called from /admin/products/new)
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const {
+      name, sku, description, brand, category, image_url, gender, age_bracket,
+      variants, cost_price, selling_price,
+    } = body;
+
+    if (!name || !sku) {
+      return NextResponse.json({ error: "name and sku are required" }, { status: 400 });
+    }
+    if (!Array.isArray(variants) || variants.length === 0) {
+      return NextResponse.json({ error: "At least one variant is required" }, { status: 400 });
+    }
+
+    const { data: product, error: productError } = await supabaseAdmin
+      .from("products")
+      .insert([{ name, sku, description, brand, category, image_url, gender, age_bracket, cost_price, selling_price, is_active: true }])
+      .select()
+      .single();
+
+    if (productError) {
+      return NextResponse.json({ error: productError.message }, { status: 500 });
+    }
+
+    const variantRows = variants.map((v: any) => ({
+      product_id: product.id,
+      color: v.color || null,
+      size: v.size || null,
+      price: v.price,
+      base_price: v.base_price ?? null,
+      discount_percent: v.discount_percent ?? 0,
+      cost_price: v.cost_price ?? 0,
+      web_base_price: v.web_base_price ?? null,
+      web_discount_percent: v.web_discount_percent ?? 0,
+      web_price: v.web_price,
+      stock: v.stock ?? 0,
+      reorder_level: v.reorder_level ?? 5,
+    }));
+
+    const { error: variantError } = await supabaseAdmin.from("variants").insert(variantRows);
+
+    if (variantError) {
+      await supabaseAdmin.from("products").delete().eq("id", product.id);
+      return NextResponse.json({ error: variantError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, data: product }, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 }
 </file>
 
@@ -11982,6 +12911,7 @@ export default async function OrderConfirmationPage({
 import { supabase } from "@/lib/supabase";
 import AddToCart from "@/components/AddToCart";
 import Link from "next/link";
+import DOMPurify from "isomorphic-dompurify";
 
 async function getProduct(id: string) {
   const { data, error } = await supabase
@@ -11989,7 +12919,7 @@ async function getProduct(id: string) {
     .select(
       `
       id, name, sku, description, brand, category, image_url,
-      variants ( id, color, size, price, stock )
+      variants ( id, color, size, price, web_price, stock )
     `
     )
     .eq("id", id)
@@ -12050,9 +12980,10 @@ export default async function ProductDetailPage({
             {product.brand} {product.category ? `· ${product.category}` : ""}
           </p>
           {product.description && (
-            <p className="font-body-md text-body-md text-on-surface-variant mt-4">
-              {product.description}
-            </p>
+            <div
+              className="font-body-md text-body-md text-on-surface-variant mt-4 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
+            />
           )}
 
           <AddToCart
@@ -12599,7 +13530,7 @@ export default function TrackOrderPage() {
 
 <file path="tinytots-web/web/app/globals.css">
 @import "tailwindcss";
-
+@plugin "@tailwindcss/typography";
 :root {
   --background: #fcf9f8;
   --foreground: #1b1c1c;
@@ -13096,6 +14027,201 @@ export default async function Home() {
 }
 </file>
 
+<file path="tinytots-web/web/components/admin/MarkupCalculator.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+
+type Props = {
+  costPrice: string;
+  shopBasePrice: string; shopDiscountPercent: string; shopFinalPrice: string;
+  webBasePrice: string; webDiscountPercent: string; webFinalPrice: string;
+  onCostChange: (v: string) => void;
+  onShopBaseChange: (v: string) => void; onShopDiscountChange: (v: string) => void; onShopFinalChange: (v: string) => void;
+  onWebBaseChange: (v: string) => void; onWebDiscountChange: (v: string) => void; onWebFinalChange: (v: string) => void;
+};
+
+export default function MarkupCalculator({
+  costPrice,
+  shopBasePrice, shopDiscountPercent, shopFinalPrice,
+  webBasePrice, webDiscountPercent, webFinalPrice,
+  onCostChange,
+  onShopBaseChange, onShopDiscountChange, onShopFinalChange,
+  onWebBaseChange, onWebDiscountChange, onWebFinalChange,
+}: Props) {
+  const [webMarkupPercent, setWebMarkupPercent] = useState("25");
+  const [webBaseManual, setWebBaseManual] = useState(false);
+
+  // Shop final = shop base minus shop discount
+  useEffect(() => {
+    const base = parseFloat(shopBasePrice);
+    const disc = parseFloat(shopDiscountPercent || "0");
+    if (isNaN(base)) return;
+    onShopFinalChange(Math.round(base * (1 - disc / 100) * 100) / 100 + "");
+  }, [shopBasePrice, shopDiscountPercent]);
+
+  // Web base = shop base + web markup% (auto, unless manually overridden)
+  useEffect(() => {
+    if (webBaseManual) return;
+    const base = parseFloat(shopBasePrice);
+    if (isNaN(base)) return;
+    const computed = base * (1 + parseFloat(webMarkupPercent || "0") / 100);
+    onWebBaseChange(Math.round(computed * 100) / 100 + "");
+  }, [shopBasePrice, webMarkupPercent, webBaseManual]);
+
+  // Web final = web base minus web discount
+  useEffect(() => {
+    const base = parseFloat(webBasePrice);
+    const disc = parseFloat(webDiscountPercent || "0");
+    if (isNaN(base)) return;
+    onWebFinalChange(Math.round(base * (1 - disc / 100) * 100) / 100 + "");
+  }, [webBasePrice, webDiscountPercent]);
+
+  const inputClass =
+    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+
+  const shopMargin = costPrice && shopFinalPrice ? Math.round((parseFloat(shopFinalPrice) - parseFloat(costPrice)) * 100) / 100 : null;
+  const webMargin = costPrice && webFinalPrice ? Math.round((parseFloat(webFinalPrice) - parseFloat(costPrice)) * 100) / 100 : null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Cost Price (Rs) — from supplier</label>
+        <input type="number" value={costPrice} onChange={(e) => onCostChange(e.target.value)} className={inputClass} />
+      </div>
+
+      {/* SHOP PRICING */}
+      <div className="border border-outline-variant/30 rounded-lg p-4 flex flex-col gap-3">
+        <h3 className="font-headline-md text-headline-md text-on-surface">In-Store (Electron / receipt)</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Shop Selling Price (Rs)</label>
+            <input type="number" value={shopBasePrice} onChange={(e) => onShopBaseChange(e.target.value)} className={inputClass} />
+          </div>
+          <div>
+            <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Shop Discount %</label>
+            <input type="number" min="0" max="100" value={shopDiscountPercent} onChange={(e) => onShopDiscountChange(e.target.value)} className={inputClass} placeholder="0" />
+          </div>
+        </div>
+        <p className="font-body-sm text-body-sm text-on-surface-variant">
+          Bill price in-store: <strong className="text-on-surface">Rs. {shopFinalPrice || "—"}</strong>
+          {shopMargin !== null && <> · Margin: <strong className={shopMargin >= 0 ? "text-primary" : "text-error"}>Rs. {shopMargin}</strong></>}
+        </p>
+      </div>
+
+      {/* WEB PRICING */}
+      <div className="border border-outline-variant/30 rounded-lg p-4 flex flex-col gap-3">
+        <h3 className="font-headline-md text-headline-md text-on-surface">On the Website (funds free delivery + packaging)</h3>
+        <div className="flex items-center gap-3">
+          <label className="font-label-md text-label-md text-on-surface-variant whitespace-nowrap">Web Markup %</label>
+          <input
+            type="number"
+            value={webMarkupPercent}
+            onChange={(e) => { setWebBaseManual(false); setWebMarkupPercent(e.target.value); }}
+            className={inputClass}
+            placeholder="e.g. 25"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Web Base Price (Rs)</label>
+            <input
+              type="number"
+              value={webBasePrice}
+              onChange={(e) => { setWebBaseManual(true); onWebBaseChange(e.target.value); }}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Web Discount %</label>
+            <input type="number" min="0" max="100" value={webDiscountPercent} onChange={(e) => onWebDiscountChange(e.target.value)} className={inputClass} placeholder="0" />
+          </div>
+        </div>
+        {webBaseManual && (
+          <button type="button" onClick={() => setWebBaseManual(false)} className="self-start font-label-md text-label-md text-primary hover:underline">
+            Reset web base to auto (shop price + markup)
+          </button>
+        )}
+        <p className="font-body-sm text-body-sm text-on-surface-variant">
+          Price shown on website: <strong className="text-on-surface">Rs. {webFinalPrice || "—"}</strong>
+          {webMargin !== null && <> · Margin: <strong className={webMargin >= 0 ? "text-primary" : "text-error"}>Rs. {webMargin}</strong></>}
+        </p>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/components/admin/RichTextEditor.tsx">
+"use client";
+
+import dynamic from "next/dynamic";
+import "react-quill-new/dist/quill.snow.css";
+
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
+
+export default function RichTextEditor({ value, onChange }: { value: string; onChange: (html: string) => void }) {
+  return (
+    <ReactQuill
+      theme="snow"
+      value={value}
+      onChange={onChange}
+      modules={{
+        toolbar: [
+          ["bold", "italic", "underline"],
+          [{ header: [2, 3, false] }],
+          [{ list: "ordered" }, { list: "bullet" }],
+          ["clean"],
+        ],
+      }}
+    />
+  );
+}
+</file>
+
+<file path="tinytots-web/web/components/admin/TagInput.tsx">
+"use client";
+
+import { useState } from "react";
+
+export default function TagInput({
+  label, placeholder, values, onChange,
+}: { label: string; placeholder: string; values: string[]; onChange: (v: string[]) => void }) {
+  const [draft, setDraft] = useState("");
+
+  function commit() {
+    const cleaned = draft.trim();
+    if (cleaned && !values.includes(cleaned)) onChange([...values, cleaned]);
+    setDraft("");
+  }
+
+  return (
+    <div>
+      <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">{label}</label>
+      <div className="flex flex-wrap gap-1.5 p-2 border border-outline-variant/50 rounded-lg min-h-[42px] bg-surface-container-lowest">
+        {values.map((v) => (
+          <span key={v} className="inline-flex items-center gap-1 bg-surface-container-low text-on-surface font-body-sm text-body-sm px-2 py-1 rounded-full">
+            {v}
+            <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="text-on-surface-variant hover:text-error">
+              ✕
+            </button>
+          </span>
+        ))}
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); commit(); } }}
+          onBlur={commit}
+          placeholder={values.length ? "" : placeholder}
+          className="flex-1 min-w-[80px] font-body-sm text-body-sm bg-transparent outline-none"
+        />
+      </div>
+      <p className="font-label-md text-label-md text-on-surface-variant/60 mt-1">Press Enter or comma to add</p>
+    </div>
+  );
+}
+</file>
+
 <file path="tinytots-web/web/components/AddToCart.tsx">
 "use client";
 
@@ -13107,6 +14233,7 @@ type Variant = {
   color: string | null;
   size: string | null;
   price: number;
+  web_price: number | null;
   stock: number;
 };
 
@@ -13124,6 +14251,10 @@ export default function AddToCart({
   const [selected, setSelected] = useState<Variant | null>(firstAvailable ?? null);
   const [added, setAdded] = useState(false);
 
+  function displayPrice(v: Variant) {
+    return v.web_price ?? v.price;
+  }
+
   function handleAddToCart() {
     if (!selected || selected.stock === 0) return;
     addItem(
@@ -13133,7 +14264,7 @@ export default function AddToCart({
         productName,
         size: selected.size,
         color: selected.color,
-        price: selected.price,
+        price: displayPrice(selected),
         maxStock: selected.stock,
       },
       1
@@ -13146,7 +14277,7 @@ export default function AddToCart({
     <div>
       {selected && (
         <p className="mt-2 font-headline-lg text-headline-lg text-primary">
-          Rs. {selected.price.toLocaleString()}
+          Rs. {displayPrice(selected).toLocaleString()}
         </p>
       )}
 
@@ -13213,6 +14344,91 @@ export default function HeaderCart() {
       )}
     </Link>
   );
+}
+</file>
+
+<file path="tinytots-web/web/lib/admin-auth-context.tsx">
+"use client";
+
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { supabase } from "@/lib/supabase";
+import type { Session } from "@supabase/supabase-js";
+
+type AdminRole = "admin" | "order_manager" | "support" | "inventory_only";
+
+type AdminProfile = {
+  id: string;
+  name: string;
+  email: string;
+  role: AdminRole;
+  is_active: boolean;
+};
+
+type AdminAuthContextType = {
+  session: Session | null;
+  admin: AdminProfile | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+};
+
+const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
+
+export function AdminAuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [admin, setAdmin] = useState<AdminProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  async function loadAdminProfile(currentSession: Session | null) {
+    if (!currentSession) {
+      setAdmin(null);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("admin_users")
+      .select("id, name, email, role, is_active")
+      .eq("auth_user_id", currentSession.user.id)
+      .maybeSingle();
+
+    if (error || !data || !data.is_active) {
+      setAdmin(null);
+      return;
+    }
+    setAdmin(data as AdminProfile);
+  }
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      await loadAdminProfile(session);
+      setLoading(false);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      await loadAdminProfile(session);
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    setAdmin(null);
+  }
+
+  return (
+    <AdminAuthContext.Provider value={{ session, admin, loading, signOut }}>
+      {children}
+    </AdminAuthContext.Provider>
+  );
+}
+
+export function useAdminAuth() {
+  const ctx = useContext(AdminAuthContext);
+  if (!ctx) throw new Error("useAdminAuth must be used within AdminAuthProvider");
+  return ctx;
 }
 </file>
 
@@ -31352,6 +32568,19 @@ FOR EACH ROW
 EXECUTE FUNCTION public.handle_new_user();
 </file>
 
+<file path="tinytots-web/web/supabase/migrations/20260716090000_admin_users_rls.sql">
+-- Admins can view their own admin_users record (needed to check their role client-side)
+CREATE POLICY "Admins can view own record" ON public.admin_users
+FOR SELECT USING (auth.uid() = auth_user_id);
+</file>
+
+<file path="tinytots-web/web/supabase/migrations/20260718090000_add_web_pricing.sql">
+-- tinytots-web/web/supabase/migrations/20260718090000_add_web_pricing.sql
+ALTER TABLE public.variants ADD COLUMN web_base_price numeric(10,2);
+ALTER TABLE public.variants ADD COLUMN web_discount_percent numeric(5,2) NOT NULL DEFAULT 0;
+ALTER TABLE public.variants ADD COLUMN web_price numeric(10,2);
+</file>
+
 <file path="tinytots-web/web/supabase/snippets/Untitled query 131.sql">
 CREATE TABLE sales (
     id BIGSERIAL PRIMARY KEY,
@@ -32082,22 +33311,25 @@ export default nextConfig;
   "name": "tinytots",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
+ "scripts": {
+  "dev": "next dev -p 3001",
+  "build": "next build",
+  "start": "next start -p 3001",
+  "lint": "eslint"
+},
   "dependencies": {
     "@supabase/ssr": "^0.12.2",
     "@supabase/supabase-js": "^2.110.5",
     "express": "^5.2.1",
+    "isomorphic-dompurify": "^3.18.0",
     "next": "16.2.9",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-quill-new": "^3.8.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.20",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

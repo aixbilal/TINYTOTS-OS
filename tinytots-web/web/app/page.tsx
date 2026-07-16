@@ -11,11 +11,12 @@ async function getProducts() {
       sku,
       brand,
       image_url,
-      variants (
-        id,
-        price,
-        stock
-      )
+    variants (
+  id,
+  price,
+  web_price,
+  stock
+)
     `
     )
     .eq("is_active", true)
@@ -119,7 +120,7 @@ export default async function Home() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
           {products.map((product: any) => {
-            const prices = product.variants.map((v: any) => v.price);
+          const prices = product.variants.map((v: any) => v.web_price ?? v.price);
             const minPrice = prices.length ? Math.min(...prices) : 0;
             const totalStock = product.variants.reduce(
               (sum: number, v: any) => sum + v.stock,

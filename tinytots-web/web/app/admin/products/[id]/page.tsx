@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 
-type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number; reorder_level: number };
+type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number; reorder_level: number; web_price_locked: boolean; web_round_to: number };
 type Product = {
   id: number; name: string; sku: string; description: string | null; brand: string | null;
   category: string | null; image_url: string | null; gender: string | null; age_bracket: string | null;
@@ -74,19 +74,22 @@ export default function EditProductPage() {
     setProduct((prev) => (prev ? { ...prev, [field]: value } : prev));
   }
 
-  function updateVariant(vid: number, field: keyof Variant, value: string) {
+  function updateVariant(vid: number, field: keyof Variant, value: string | boolean | number) {
     setProduct((prev) =>
       prev
         ? {
             ...prev,
-            variants: prev.variants.map((v) =>
-              v.id === vid ? { ...v, [field]: field === "color" || field === "size" ? value : Number(value) } : v
-            ),
+            variants: prev.variants.map((v) => {
+              if (v.id !== vid) return v;
+              if (field === "web_price_locked") return { ...v, web_price_locked: value as boolean };
+              if (field === "web_round_to") return { ...v, web_round_to: value as number };
+              if (field === "color" || field === "size") return { ...v, [field]: value as string };
+              return { ...v, [field]: Number(value) };
+            }),
           }
         : prev
     );
   }
-
   async function saveProduct() {
     if (!product) return;
     setSaving(true);
@@ -120,7 +123,7 @@ export default function EditProductPage() {
     const res = await fetch(`/api/inventory/${v.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ price: v.price, stock: v.stock, reorder_level: v.reorder_level, color: v.color, size: v.size }),
+      body: JSON.stringify({ price: v.price, stock: v.stock, reorder_level: v.reorder_level, color: v.color, size: v.size, web_price_locked: v.web_price_locked, web_round_to: v.web_round_to }),
     });
     if (!res.ok) {
       const json = await res.json();
@@ -184,27 +187,35 @@ export default function EditProductPage() {
       <div className="border-t border-outline-variant/20 pt-4 mt-6">
         <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Variants</h2>
         {product.variants.map((v) => (
-          <div key={v.id} className="grid grid-cols-6 gap-2 mb-2 items-center">
-            <input value={v.color ?? ""} onChange={(e) => updateVariant(v.id, "color", e.target.value)} className={inputClass} placeholder="Color" />
-            <input value={v.size ?? ""} onChange={(e) => updateVariant(v.id, "size", e.target.value)} className={inputClass} placeholder="Size" />
-            <input type="number" value={v.price} onChange={(e) => updateVariant(v.id, "price", e.target.value)} className={inputClass} placeholder="Price" />
-            <input type="number" value={v.stock} onChange={(e) => updateVariant(v.id, "stock", e.target.value)} className={inputClass} placeholder="Stock" />
-            <button onClick={() => saveVariant(v)} className="font-label-md text-label-md text-primary hover:underline">
-              Save
-            </button>
-            <button
-              onClick={async () => {
-                if (!confirm("Delete this variant permanently?")) return;
-                const res = await fetch(`/api/inventory/${v.id}`, { method: "DELETE" });
-                if (res.ok) {
-                  setProduct((prev) => prev ? { ...prev, variants: prev.variants.filter((x) => x.id !== v.id) } : prev);
-                }
-              }}
-              className="font-label-md text-label-md text-error hover:underline"
-            >
-              Delete
-            </button>
-          </div>
+        <div key={v.id} className="grid grid-cols-6 gap-2 mb-2 items-center">
+        <input value={v.color ?? ""} onChange={(e) => updateVariant(v.id, "color", e.target.value)} className={inputClass} placeholder="Color" />
+        <input value={v.size ?? ""} onChange={(e) => updateVariant(v.id, "size", e.target.value)} className={inputClass} placeholder="Size" />
+        <input type="number" value={v.price} onChange={(e) => updateVariant(v.id, "price", e.target.value)} className={inputClass} placeholder="Price" />
+        <input type="number" value={v.stock} onChange={(e) => updateVariant(v.id, "stock", e.target.value)} className={inputClass} placeholder="Stock" />
+        <button onClick={() => saveVariant(v)} className="font-label-md text-label-md text-primary hover:underline">
+          Save
+        </button>
+        <button
+          onClick={async () => {
+            if (!confirm("Delete this variant permanently?")) return;
+            const res = await fetch(`/api/inventory/${v.id}`, { method: "DELETE" });
+            if (res.ok) {
+              setProduct((prev) => prev ? { ...prev, variants: prev.variants.filter((x) => x.id !== v.id) } : prev);
+            }
+          }}
+          className="font-label-md text-label-md text-error hover:underline"
+        >
+          Delete
+        </button>
+        <label className="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant col-span-6 mt-1">
+          <input
+            type="checkbox"
+            checked={v.web_price_locked}
+            onChange={(e) => updateVariant(v.id, "web_price_locked", e.target.checked)}
+          />
+          Lock web price (shop price changes won't affect this variant's web price)
+        </label>
+      </div>
         ))}
 
         <AddVariantForm productId={product.id} onAdded={(newVariant) =>
