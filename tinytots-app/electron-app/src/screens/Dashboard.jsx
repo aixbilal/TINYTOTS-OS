@@ -220,7 +220,7 @@ export default function Dashboard() {
           icon={ShoppingBag}
           label="Total Sales"
           value={
-            snapshot ? `₹${snapshot.totalSalesToday.toLocaleString()}` : loadError ? "—" : "…"
+            snapshot ? `Rs ${snapshot.totalSalesToday.toLocaleString()}` : loadError ? "—" : "…"
           }
         />
         <SnapshotStat

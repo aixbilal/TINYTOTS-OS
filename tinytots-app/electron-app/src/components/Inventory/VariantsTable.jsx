@@ -77,7 +77,7 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
               <th className="p-3">Public Code</th>
               <th className="p-3">Stock</th>
               <th className="p-3">Discount %</th>
-              <th className="p-3">Price (₹)</th>
+              <th className="p-3">Price (Rs)</th>
               <th className="p-3">Status</th>
               <th className="p-3 rounded-r-lg w-10"></th>
             </tr>
