@@ -14,7 +14,7 @@ export async function GET() {
       brand,
       category,
       image_url,
-      variants ( id, color, size, price, web_price, stock )
+      variants ( id, color, size, price, web_price, stock ) 
     `
     )
     .eq("is_active", true)

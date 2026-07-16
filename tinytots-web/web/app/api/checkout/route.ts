@@ -116,9 +116,9 @@ export async function POST(request: NextRequest) {
     // (never trust prices sent from the client)
     const variantIds = items.map((i: any) => i.variant_id);
     const { data: variants, error: variantError } = await supabase
-      .from("variants")
-      .select("id, price, stock, product_id, cost_price")
-      .in("id", variantIds);
+    .from("variants")
+    .select("id, price, web_price, stock, product_id, cost_price")
+    .in("id", variantIds);
 
     if (variantError) {
       return NextResponse.json({ error: variantError.message }, { status: 500 });
@@ -152,13 +152,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const lineTotal = variant.price * cartItem.quantity;
+      const authoritativePrice = variant.web_price ?? variant.price;
+      const lineTotal = authoritativePrice * cartItem.quantity;
       subtotal += lineTotal;
 
       orderItems.push({
         variant_id: variant.id,
         quantity: cartItem.quantity,
-        unit_price: variant.price,
+        unit_price: authoritativePrice,
         unit_cost_price: variant.cost_price ?? null,
         line_total: lineTotal,
       });
