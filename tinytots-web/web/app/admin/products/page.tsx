@@ -12,7 +12,7 @@ export default function AdminProductsPage() {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    fetch("/api/inventory")
+    fetch("/api/admin/inventory")
       .then((r) => r.json())
       .then((json) => {
         // /api/inventory returns one row per variant; group into products client-side

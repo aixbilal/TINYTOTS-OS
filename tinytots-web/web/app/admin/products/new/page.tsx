@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-
-type VariantInput = { color: string; size: string; price: string; stock: string; reorder_level: string };
+import RichTextEditor from "@/components/admin/RichTextEditor";
+import TagInput from "@/components/admin/TagInput";
+import MarkupCalculator from "@/components/admin/MarkupCalculator";
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -15,66 +16,74 @@ export default function NewProductPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [gender, setGender] = useState("");
   const [ageBracket, setAgeBracket] = useState("");
-  const [variants, setVariants] = useState<VariantInput[]>([
-    { color: "", size: "", price: "", stock: "", reorder_level: "5" },
-  ]);
+
+  const [costPrice, setCostPrice] = useState("");
+  const [shopBasePrice, setShopBasePrice] = useState("");
+  const [shopDiscountPercent, setShopDiscountPercent] = useState("0");
+  const [shopFinalPrice, setShopFinalPrice] = useState("");
+  const [webBasePrice, setWebBasePrice] = useState("");
+  const [webDiscountPercent, setWebDiscountPercent] = useState("0");
+  const [webFinalPrice, setWebFinalPrice] = useState("");
+
+  const [initialStock, setInitialStock] = useState("");
+  const [colors, setColors] = useState<string[]>([]);
+  const [sizes, setSizes] = useState<string[]>([]);
+  const [stockOverrides, setStockOverrides] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function updateVariant(index: number, field: keyof VariantInput, value: string) {
-    setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, [field]: value } : v)));
-  }
+  const variantCombos = useMemo(() => {
+    const combos: { key: string; color: string; size: string }[] = [];
+    for (const color of colors) for (const size of sizes) combos.push({ key: `${color}__${size}`, color, size });
+    return combos;
+  }, [colors, sizes]);
 
-  function addVariant() {
-    setVariants((prev) => [...prev, { color: "", size: "", price: "", stock: "", reorder_level: "5" }]);
+  function stockFor(key: string) {
+    return stockOverrides[key] ?? initialStock ?? "";
   }
-
-  function removeVariant(index: number) {
-    setVariants((prev) => prev.filter((_, i) => i !== index));
+  function setStockFor(key: string, value: string) {
+    setStockOverrides((prev) => ({ ...prev, [key]: value }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (!name.trim() || !sku.trim()) {
-      setError("Name and SKU are required.");
-      return;
-    }
-    if (variants.some((v) => !v.price)) {
-      setError("Every variant needs a price.");
-      return;
-    }
+    if (!name.trim() || !sku.trim()) return setError("Name and SKU are required.");
+    if (!shopFinalPrice || !webFinalPrice) return setError("Fill in cost price and shop selling price so both prices can be calculated.");
+    if (!colors.length || !sizes.length) return setError("Add at least one color and one size to generate variants.");
 
     setSubmitting(true);
     try {
+      const variants = variantCombos.map((c) => ({
+        color: c.color,
+        size: c.size,
+        cost_price: costPrice ? parseFloat(costPrice) : 0,
+        base_price: shopBasePrice ? parseFloat(shopBasePrice) : null,
+        discount_percent: shopDiscountPercent ? parseFloat(shopDiscountPercent) : 0,
+        price: parseFloat(shopFinalPrice),
+        web_base_price: webBasePrice ? parseFloat(webBasePrice) : null,
+        web_discount_percent: webDiscountPercent ? parseFloat(webDiscountPercent) : 0,
+        web_price: parseFloat(webFinalPrice),
+        stock: parseInt(stockFor(c.key) || "0", 10),
+        reorder_level: 5,
+      }));
+
       const res = await fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          sku,
-          description,
-          brand,
-          category,
+          name, sku, description, brand, category,
           image_url: imageUrl || null,
           gender: gender || null,
           age_bracket: ageBracket || null,
-          variants: variants.map((v) => ({
-            color: v.color || null,
-            size: v.size || null,
-            price: parseFloat(v.price),
-            stock: parseInt(v.stock || "0", 10),
-            reorder_level: parseInt(v.reorder_level || "5", 10),
-          })),
+          cost_price: costPrice ? parseFloat(costPrice) : 0,
+          selling_price: shopFinalPrice ? parseFloat(shopFinalPrice) : 0,
+          variants,
         }),
       });
       const json = await res.json();
-      if (!res.ok) {
-        setError(json.error || "Failed to create product.");
-        setSubmitting(false);
-        return;
-      }
+      if (!res.ok) { setError(json.error || "Failed to create product."); setSubmitting(false); return; }
       router.push("/admin/products");
     } catch {
       setError("Network error. Please try again.");
@@ -90,42 +99,75 @@ export default function NewProductPage() {
       <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Add Product</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input placeholder="Product name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
-        <input placeholder="SKU" value={sku} onChange={(e) => setSku(e.target.value)} className={inputClass} />
-        <textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} rows={3} />
         <div className="grid grid-cols-2 gap-4">
+          <input placeholder="Product name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+          <input placeholder="SKU" value={sku} onChange={(e) => setSku(e.target.value)} className={inputClass} />
           <input placeholder="Brand" value={brand} onChange={(e) => setBrand(e.target.value)} className={inputClass} />
-          <input placeholder="Category" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} />
+          <input placeholder="Category (Shirts, Pants...)" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} />
         </div>
+
+        <div>
+          <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Description</label>
+          <RichTextEditor value={description} onChange={setDescription} />
+        </div>
+
         <input placeholder="Image URL" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className={inputClass} />
+
         <div className="grid grid-cols-2 gap-4">
-          <input placeholder="Gender (boy/girl/unisex)" value={gender} onChange={(e) => setGender(e.target.value)} className={inputClass} />
-          <input placeholder="Age bracket" value={ageBracket} onChange={(e) => setAgeBracket(e.target.value)} className={inputClass} />
+          <input placeholder="Gender (boy/girl/unisex) — optional" value={gender} onChange={(e) => setGender(e.target.value)} className={inputClass} />
+          <input placeholder="Age bracket — optional" value={ageBracket} onChange={(e) => setAgeBracket(e.target.value)} className={inputClass} />
         </div>
+
+        <MarkupCalculator
+          costPrice={costPrice}
+          shopBasePrice={shopBasePrice} shopDiscountPercent={shopDiscountPercent} shopFinalPrice={shopFinalPrice}
+          webBasePrice={webBasePrice} webDiscountPercent={webDiscountPercent} webFinalPrice={webFinalPrice}
+          onCostChange={setCostPrice}
+          onShopBaseChange={setShopBasePrice} onShopDiscountChange={setShopDiscountPercent} onShopFinalChange={setShopFinalPrice}
+          onWebBaseChange={setWebBasePrice} onWebDiscountChange={setWebDiscountPercent} onWebFinalChange={setWebFinalPrice}
+        />
+
+        <input placeholder="Default stock per variant" type="number" value={initialStock} onChange={(e) => setInitialStock(e.target.value)} className={inputClass} />
 
         <div className="border-t border-outline-variant/20 pt-4 mt-2">
           <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Variants</h2>
-          {variants.map((v, i) => (
-            <div key={i} className="grid grid-cols-5 gap-2 mb-2 items-center">
-              <input placeholder="Color" value={v.color} onChange={(e) => updateVariant(i, "color", e.target.value)} className={inputClass} />
-              <input placeholder="Size" value={v.size} onChange={(e) => updateVariant(i, "size", e.target.value)} className={inputClass} />
-              <input placeholder="Price" type="number" value={v.price} onChange={(e) => updateVariant(i, "price", e.target.value)} className={inputClass} />
-              <input placeholder="Stock" type="number" value={v.stock} onChange={(e) => updateVariant(i, "stock", e.target.value)} className={inputClass} />
-              <button type="button" onClick={() => removeVariant(i)} className="text-error font-label-md text-label-md">
-                Remove
-              </button>
+          <div className="grid grid-cols-2 gap-4 mb-3">
+            <TagInput label="Colors" placeholder="Maroon, Black..." values={colors} onChange={setColors} />
+            <TagInput label="Sizes" placeholder="S, M, L, XL..." values={sizes} onChange={setSizes} />
+          </div>
+
+          {variantCombos.length > 0 && (
+            <div>
+              <p className="font-body-sm text-body-sm text-primary bg-primary-container/20 rounded-lg px-3 py-2 mb-2">
+                This will generate <strong>{variantCombos.length}</strong> variants ({colors.length} colors × {sizes.length} sizes). Adjust stock per combo below if needed.
+              </p>
+              <div className="border border-outline-variant/30 rounded-lg max-h-56 overflow-y-auto">
+                <table className="w-full font-body-sm text-body-sm">
+                  <thead className="bg-surface-container-low sticky top-0">
+                    <tr>
+                      <th className="text-left px-3 py-2 text-on-surface-variant">Color</th>
+                      <th className="text-left px-3 py-2 text-on-surface-variant">Size</th>
+                      <th className="text-left px-3 py-2 text-on-surface-variant">Stock</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {variantCombos.map(({ key, color, size }) => (
+                      <tr key={key} className="border-t border-outline-variant/10">
+                        <td className="px-3 py-1.5">{color}</td>
+                        <td className="px-3 py-1.5">{size}</td>
+                        <td className="px-3 py-1.5">
+                          <input type="number" value={stockFor(key)} onChange={(e) => setStockFor(key, e.target.value)} className="w-20 border border-outline-variant/50 rounded px-2 py-1" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          ))}
-          <button type="button" onClick={addVariant} className="font-label-md text-label-md text-primary hover:underline mt-1">
-            + Add another variant
-          </button>
+          )}
         </div>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-4"
-        >
+        <button type="submit" disabled={submitting} className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-4">
           {submitting ? "Saving..." : "Create Product"}
         </button>
 

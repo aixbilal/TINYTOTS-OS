@@ -8,6 +8,7 @@ type Variant = {
   color: string | null;
   size: string | null;
   price: number;
+  web_price: number | null;
   stock: number;
 };
 
@@ -25,6 +26,10 @@ export default function AddToCart({
   const [selected, setSelected] = useState<Variant | null>(firstAvailable ?? null);
   const [added, setAdded] = useState(false);
 
+  function displayPrice(v: Variant) {
+    return v.web_price ?? v.price;
+  }
+
   function handleAddToCart() {
     if (!selected || selected.stock === 0) return;
     addItem(
@@ -34,7 +39,7 @@ export default function AddToCart({
         productName,
         size: selected.size,
         color: selected.color,
-        price: selected.price,
+        price: displayPrice(selected),
         maxStock: selected.stock,
       },
       1
@@ -47,7 +52,7 @@ export default function AddToCart({
     <div>
       {selected && (
         <p className="mt-2 font-headline-lg text-headline-lg text-primary">
-          Rs. {selected.price.toLocaleString()}
+          Rs. {displayPrice(selected).toLocaleString()}
         </p>
       )}
 

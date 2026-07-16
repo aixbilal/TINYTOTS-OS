@@ -52,11 +52,11 @@ export async function PUT(
   const { id } = await params;
   try {
     const body = await request.json();
-    const { name, sku, description, brand, category, image_url, gender, age_bracket } = body;
+    const { name, sku, description, brand, category, image_url, gender, age_bracket, is_active } = body;
 
     const { data, error } = await supabaseAdmin
       .from("products")
-      .update({ name, sku, description, brand, category, image_url, gender, age_bracket })
+      .update({ name, sku, description, brand, category, image_url, gender, age_bracket, is_active })
       .eq("id", id)
       .select()
       .single();

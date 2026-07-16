@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import AddToCart from "@/components/AddToCart";
 import Link from "next/link";
+import DOMPurify from "isomorphic-dompurify";
 
 async function getProduct(id: string) {
   const { data, error } = await supabase
@@ -8,7 +9,7 @@ async function getProduct(id: string) {
     .select(
       `
       id, name, sku, description, brand, category, image_url,
-      variants ( id, color, size, price, stock )
+      variants ( id, color, size, price, web_price, stock )
     `
     )
     .eq("id", id)
@@ -69,9 +70,10 @@ export default async function ProductDetailPage({
             {product.brand} {product.category ? `· ${product.category}` : ""}
           </p>
           {product.description && (
-            <p className="font-body-md text-body-md text-on-surface-variant mt-4">
-              {product.description}
-            </p>
+            <div
+              className="font-body-md text-body-md text-on-surface-variant mt-4 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
+            />
           )}
 
           <AddToCart
