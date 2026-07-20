@@ -6,3 +6,7 @@
 .env.keys
 .env.local
 .env.*.local
+
+reset-password.mjs
+test-post.mjs
+test-fetch.mjs
