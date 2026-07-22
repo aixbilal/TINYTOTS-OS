@@ -22,3 +22,12 @@
 # OS / Editor files
 .DS_Store
 Thumbs.db
+# Generated runtime files
+tinytots-app/electron-app/backend/labels/
+tinytots-app/electron-app/backend/receipts/
+tinytots-app/electron-app/backend/reports/
+
+# Generated runtime files
+tinytots-app/electron-app/backend/labels/
+tinytots-app/electron-app/backend/receipts/
+tinytots-app/electron-app/backend/reports/

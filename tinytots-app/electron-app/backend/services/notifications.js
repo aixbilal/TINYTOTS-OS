@@ -6,31 +6,48 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Shared notification writer — used by both in-store checkout (server.js)
-// and WhatsApp fast-lane checkout (fastLaneHandler.js) so low/out-of-stock
-// alerts fire the same way regardless of sale channel.
 export async function createNotification({
   category,
   priority,
   title,
   description,
   target_role = "admin",
+  target_username = null,
   action_label = null,
   action_type = null,
   action_payload = null,
 }) {
-  const { error } = await supabase.from("notifications").insert([{
-    category,
-    priority,
-    title,
-    description,
-    target_role,
-    action_label,
-    action_type,
-    action_payload,
-  }]);
+  try {
+    const payload = {
+      category,
+      priority,
+      title,
+      description,
+      target_role,
+      target_username,
+      action_label,
+      action_type,
+      action_payload,
+    };
 
-  if (error) {
-    console.error("createNotification insert error:", error);
+    // Remove null keys that aren't strictly needed
+    Object.keys(payload).forEach(
+      (key) => payload[key] === null && delete payload[key]
+    );
+
+    const { data, error } = await supabase
+      .from("notifications")
+      .insert([payload])
+      .select();
+
+    if (error) {
+      console.error(`❌ [Notification Insert Error] (${category}):`, error.message);
+      return { success: false, error };
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error("❌ [Notification Unexpected Error]:", err.message);
+    return { success: false, error: err };
   }
 }

@@ -5,8 +5,8 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
-  },
+  "start": "node --import dotenv/config server.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { createNotification } from "./services/notifications.js";
 import whatsappWebhook from "./routes/whatsappWebhook.js";
 import { recoverMissedReport } from "./services/recoveryService.js";
