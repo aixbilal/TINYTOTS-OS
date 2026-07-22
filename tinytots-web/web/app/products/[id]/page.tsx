@@ -9,7 +9,7 @@ async function getProduct(id: string) {
     .select(
       `
       id, name, sku, description, brand, category, image_url,
-      variants ( id, color, size, price, web_price, stock )
+variants ( id, color, size, price, web_price, stock, web_base_price, web_discount_percent )
     `
     )
     .eq("id", id)

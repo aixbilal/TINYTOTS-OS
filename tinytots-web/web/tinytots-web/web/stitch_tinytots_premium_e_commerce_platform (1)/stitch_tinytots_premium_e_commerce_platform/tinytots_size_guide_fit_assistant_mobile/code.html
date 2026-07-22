@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TinyTots Size Guide</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config injected from system prompt -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed-dim": "#ffb4a3",
+                        "surface-container-high": "#eae7e7",
+                        "surface-container-highest": "#e4e2e1",
+                        "secondary": "#4f6263",
+                        "primary": "#9c422e",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#f0edec",
+                        "background": "#fcf9f8",
+                        "on-primary-container": "#6b1e0d",
+                        "surface": "#fcf9f8",
+                        "on-primary-fixed": "#3d0600",
+                        "inverse-on-surface": "#f3f0ef",
+                        "on-secondary-container": "#536667",
+                        "primary-container": "#f2846b",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#d2e6e7",
+                        "outline": "#89726d",
+                        "inverse-primary": "#ffb4a3",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#b2a08e",
+                        "on-primary-fixed-variant": "#7d2c19",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#6b5c4c",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#0b1e1f",
+                        "on-background": "#1b1c1b",
+                        "on-tertiary-fixed": "#241a0e",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#fcf9f8",
+                        "surface-variant": "#e4e2e1",
+                        "surface-container-low": "#f6f3f2",
+                        "secondary-container": "#cfe4e4",
+                        "on-secondary-fixed-variant": "#374a4b",
+                        "on-tertiary-fixed-variant": "#524436",
+                        "tertiary-fixed-dim": "#d7c3b0",
+                        "on-tertiary-container": "#443729",
+                        "on-surface-variant": "#56423e",
+                        "inverse-surface": "#303030",
+                        "surface-tint": "#9c422e",
+                        "outline-variant": "#dcc0bb",
+                        "on-surface": "#1b1c1b",
+                        "tertiary-fixed": "#f4dfcb",
+                        "surface-dim": "#dcd9d8",
+                        "secondary-fixed-dim": "#b6cacb",
+                        "primary-fixed": "#ffdad2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-gap": "80px",
+                        "container-max": "1200px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "48px",
+                        "gutter": "24px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "display-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "title-lg": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "headline-md": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom styles for animations or overrides not covered by Tailwind config */
+        .bottom-sheet-overlay {
+            background-color: rgba(79, 98, 99, 0.4); /* Based on Secondary color with opacity */
+            backdrop-filter: blur(8px);
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Smooth transition for collapsible */
+        .collapsible-content {
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .collapsible-content.expanded {
+            max-height: 500px; /* arbitrary max height larger than content */
+            opacity: 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen relative md:hidden">
+<!-- TopNavBar (Mandatory Shell - Mobile version) -->
+<header class="bg-background fixed top-0 w-full z-50 shadow-sm">
+<div class="flex justify-between items-center px-margin-mobile h-16 w-full max-w-container-max mx-auto">
+<!-- Navigation intent fallback - Not a primary destination, but we render shell for context -->
+<button aria-label="Menu" class="text-on-surface-variant hover:text-primary transition-colors duration-300 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">menu</span>
+</button>
+<div class="font-display-lg-mobile text-display-lg-mobile text-primary tracking-tight">
+                TinyTots
+            </div>
+<div class="flex gap-4">
+<button aria-label="Search" class="text-on-surface-variant hover:text-primary transition-colors duration-300 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">search</span>
+</button>
+<button aria-label="shopping_bag" class="text-on-surface-variant hover:text-primary transition-colors duration-300 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">shopping_bag</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas (Background behind the bottom sheet) -->
+<main class="flex-grow pt-16 pb-safe relative z-0 flex flex-col justify-center items-center px-margin-mobile">
+<!-- Background placeholder content simulating a product page -->
+<div class="w-full max-w-sm mx-auto space-y-6 opacity-30 pointer-events-none">
+<div class="aspect-[3/4] bg-surface-variant rounded-lg w-full flex items-center justify-center">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant">image</span>
+</div>
+<div class="space-y-2">
+<h1 class="font-headline-sm text-headline-sm text-on-surface">Organic Cotton Romper</h1>
+<p class="font-title-lg text-title-lg text-primary">$45.00</p>
+</div>
+</div>
+</main>
+<!-- Bottom Sheet Overlay -->
+<div aria-hidden="true" class="fixed inset-0 z-40 bottom-sheet-overlay transition-opacity duration-300 opacity-100" id="sheet-overlay"></div>
+<!-- Bottom Sheet Container -->
+<div class="fixed bottom-0 left-0 w-full z-50 bg-surface rounded-t-[32px] shadow-[0_-8px_30px_rgba(79,98,99,0.12)] transform transition-transform duration-300 translate-y-0 flex flex-col max-h-[751px]" id="bottom-sheet">
+<!-- Drag Handle Area -->
+<div class="w-full pt-4 pb-2 flex justify-center items-center flex-shrink-0 cursor-grab active:cursor-grabbing" id="sheet-handle">
+<div class="w-12 h-1.5 bg-surface-variant rounded-full"></div>
+</div>
+<!-- Sheet Header -->
+<div class="px-margin-mobile pb-4 flex justify-between items-center flex-shrink-0 border-b border-surface-variant">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Size Guide &amp; Fit</h2>
+<button aria-label="Close" class="text-on-surface-variant hover:text-primary active:scale-90 transition-all p-2 rounded-full" onclick="closeSheet()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Scrollable Content Area -->
+<div class="flex-grow overflow-y-auto overflow-x-hidden hide-scrollbar pb-24">
+<!-- 1. Category Selector (Horizontal Pills) -->
+<div class="px-margin-mobile py-6 overflow-x-auto hide-scrollbar">
+<div class="flex gap-3 w-max">
+<button class="px-6 py-2 rounded-full bg-primary-container text-on-primary font-label-md text-label-md transition-colors whitespace-nowrap">
+                        Newborn
+                    </button>
+<button class="px-6 py-2 rounded-full border border-outline-variant bg-transparent text-on-surface-variant font-label-md text-label-md hover:border-primary transition-colors whitespace-nowrap">
+                        Baby
+                    </button>
+<button class="px-6 py-2 rounded-full border border-outline-variant bg-transparent text-on-surface-variant font-label-md text-label-md hover:border-primary transition-colors whitespace-nowrap">
+                        Toddler
+                    </button>
+<button class="px-6 py-2 rounded-full border border-outline-variant bg-transparent text-on-surface-variant font-label-md text-label-md hover:border-primary transition-colors whitespace-nowrap">
+                        Kids
+                    </button>
+</div>
+</div>
+<!-- 2. Fit Assistant Widget -->
+<div class="px-margin-mobile mb-section-gap">
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_20px_rgba(79,98,99,0.04)] border border-surface-variant flex flex-col gap-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<h3 class="font-title-lg text-title-lg text-on-surface">Fit Assistant</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-2">Enter your child's details for an instant size recommendation.</p>
+<div class="flex gap-4">
+<div class="flex-1 relative">
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1 ml-1 uppercase">Age (Months)</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3 font-body-md text-on-surface focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors" placeholder="e.g. 6" type="number"/>
+</div>
+<div class="flex-1 relative">
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1 ml-1 uppercase">Weight (lbs)</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3 font-body-md text-on-surface focus:outline-none focus:border-tertiary focus:ring-1 focus:ring-tertiary transition-colors" placeholder="e.g. 15" type="number"/>
+</div>
+</div>
+<button class="w-full mt-2 bg-primary-container text-on-primary font-label-md text-label-md py-4 rounded-full active:scale-[0.98] transition-transform shadow-sm">
+                        Find My Size
+                    </button>
+</div>
+</div>
+<!-- 3. Collapsible Measurement Guide -->
+<div class="px-margin-mobile mb-8">
+<button class="w-full flex justify-between items-center py-4 border-b border-surface-variant focus:outline-none group" onclick="toggleGuide()">
+<span class="font-title-lg text-title-lg text-on-surface">How to Measure</span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors transform duration-300" id="guide-chevron">expand_more</span>
+</button>
+<div class="collapsible-content" id="measurement-guide-content">
+<div class="pt-6 pb-4 flex flex-col gap-6">
+<div class="bg-surface-variant rounded-lg aspect-video flex items-center justify-center relative overflow-hidden">
+<!-- Image placeholder with required prompt -->
+<div class="bg-cover bg-center w-full h-full absolute inset-0 opacity-50 mix-blend-multiply" data-alt="A delicate, editorial-style line illustration of a newborn baby in a soft ivory room, demonstrating how to measure length. The drawing uses thin, precise lines in a warm brown or gray tone against a bright white background, typical of high-end minimal lifestyle branding. The mood is calm, professional, and instructional." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDkuWZIepkpz0h-NVL2pLRubAusEz-ojM9-XjdyMvMjJNEm5PNFHPzQ0cgK761w-uiRfq_GIzCkTR2vpFLWpdn69wcaC34hUu5N9wWVMq4u7e-_AN8hMmdhblowRSrHeNyHyqHFUnylsT6nNIa7huH9SoQafaBiI66eklZTiPrsBOxwi5-1ttD0PbEF4Lupn4_xBRfv3FBSSdcpgJmepbBvh-3P55Zon7GunCCeX_0oSEWX-KpUyfpFwB9QdO67-oLGjGQHKMkri7am')"></div>
+<span class="material-symbols-outlined text-3xl text-secondary relative z-10">straighten</span>
+</div>
+<ul class="space-y-4 font-body-md text-body-md text-on-surface-variant">
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-primary-container text-sm mt-1" style="font-variation-settings: 'FILL' 1;">circle</span>
+<div><strong class="text-on-surface font-semibold">Length:</strong> Measure from the top of the head to the heel of the foot while laying flat.</div>
+</li>
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-primary-container text-sm mt-1" style="font-variation-settings: 'FILL' 1;">circle</span>
+<div><strong class="text-on-surface font-semibold">Weight:</strong> Best taken without bulky clothing or diapers for accuracy.</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- 4. Simplified Size Chart (Vertical Table) -->
+<div class="px-margin-mobile mb-section-gap">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-6">Newborn Size Chart</h3>
+<div class="border border-surface-variant rounded-xl overflow-hidden bg-surface-container-lowest">
+<!-- Table Header -->
+<div class="grid grid-cols-3 bg-surface-container-low py-3 px-4 border-b border-surface-variant">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Size</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-center">Weight</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Length</div>
+</div>
+<!-- Table Rows -->
+<div class="grid grid-cols-3 py-4 px-4 border-b border-surface-variant items-center">
+<div class="font-label-md text-label-md text-on-surface">Premie</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-center">Up to 5 lbs</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-right">Up to 17"</div>
+</div>
+<div class="grid grid-cols-3 py-4 px-4 border-b border-surface-variant items-center bg-surface-container-low/30">
+<div class="font-label-md text-label-md text-on-surface">Newborn</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-center">5 - 8 lbs</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-right">17 - 21"</div>
+</div>
+<div class="grid grid-cols-3 py-4 px-4 border-b border-surface-variant items-center">
+<div class="font-label-md text-label-md text-on-surface">0-3 Months</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-center">8 - 12 lbs</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-right">21 - 24"</div>
+</div>
+<div class="grid grid-cols-3 py-4 px-4 items-center bg-surface-container-low/30">
+<div class="font-label-md text-label-md text-on-surface">3-6 Months</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-center">12 - 16 lbs</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-right">24 - 26"</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- BottomNavBar (Mandatory Shell - Mobile version) -->
+<!-- Applying Active State Logic: 'Shop' is the closest fit for a sizing guide context, though generic browsing -->
+<nav class="fixed bottom-0 left-0 w-full z-40 bg-surface shadow-[0_-4px_20px_rgba(79,98,99,0.04)] rounded-t-xl md:hidden pb-safe">
+<div class="flex justify-around items-center py-2 px-margin-mobile">
+<!-- Active Item: Shop -->
+<button class="flex flex-col items-center justify-center text-primary font-bold hover:bg-surface-container-low transition-colors active:scale-90 duration-200 p-2 rounded-lg w-16">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">storefront</span>
+<span class="font-label-sm text-label-sm">Shop</span>
+</button>
+<!-- Inactive Items -->
+<button class="flex flex-col items-center justify-center text-secondary hover:bg-surface-container-low transition-colors active:scale-90 duration-200 p-2 rounded-lg w-16">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">auto_awesome</span>
+<span class="font-label-sm text-label-sm">Curated</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary hover:bg-surface-container-low transition-colors active:scale-90 duration-200 p-2 rounded-lg w-16">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">favorite</span>
+<span class="font-label-sm text-label-sm">Favorites</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary hover:bg-surface-container-low transition-colors active:scale-90 duration-200 p-2 rounded-lg w-16">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">person</span>
+<span class="font-label-sm text-label-sm">Account</span>
+</button>
+</div>
+</nav>
+<!-- Interactive Scripts -->
+<script>
+        // Collapsible logic
+        function toggleGuide() {
+            const content = document.getElementById('measurement-guide-content');
+            const chevron = document.getElementById('guide-chevron');
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                chevron.style.transform = 'rotate(0deg)';
+            } else {
+                content.classList.add('expanded');
+                chevron.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        // Fake bottom sheet close logic
+        function closeSheet() {
+            const sheet = document.getElementById('bottom-sheet');
+            const overlay = document.getElementById('sheet-overlay');
+            
+            sheet.style.transform = 'translateY(100%)';
+            overlay.style.opacity = '0';
+            
+            // Re-enable interactions on main content if this were a real app
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 300);
+        }
+    </script>
+</body></html>

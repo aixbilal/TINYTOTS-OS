@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TinyTots - Account Settings</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#a3f4bd",
+                        "surface-dim": "#dcd9d9",
+                        "primary-container": "#f2846b",
+                        "primary-fixed": "#ffdad2",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#fcf9f8",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#cae6ff",
+                        "outline": "#89726d",
+                        "surface-container-highest": "#e4e2e1",
+                        "on-background": "#1b1c1c",
+                        "surface-container-low": "#f6f3f2",
+                        "error-container": "#ffdad6",
+                        "secondary": "#396280",
+                        "on-surface-variant": "#56423e",
+                        "surface": "#fcf9f8",
+                        "inverse-primary": "#ffb4a3",
+                        "secondary-container": "#b2dcff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#f3f0f0",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "primary": "#9c422e",
+                        "on-primary-fixed": "#3d0600",
+                        "tertiary-container": "#65b381",
+                        "surface-container-high": "#eae7e7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#f0eded",
+                        "surface-variant": "#e4e2e1",
+                        "outline-variant": "#dcc0bb",
+                        "on-tertiary-fixed": "#00210f",
+                        "on-secondary-fixed-variant": "#1e4b67",
+                        "on-primary-container": "#6b1e0d",
+                        "tertiary": "#186c40",
+                        "on-surface": "#1b1c1c",
+                        "on-tertiary-fixed-variant": "#00522d",
+                        "on-secondary-container": "#38617f",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#a2cbee",
+                        "on-primary-fixed-variant": "#7d2c19",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#004324",
+                        "inverse-surface": "#303030",
+                        "surface-tint": "#9c422e",
+                        "background": "#fcf9f8",
+                        "tertiary-fixed-dim": "#88d7a2",
+                        "on-secondary-fixed": "#001e30"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "12px",
+                        "stack-md": "24px",
+                        "margin-mobile": "20px",
+                        "container-max": "1280px",
+                        "unit": "4px",
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "bento-gap": "20px",
+                        "stack-lg": "48px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-lg": ["Inter"],
+                        "display-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-sm": ["Inter"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "button": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", { "lineHeight": "1", "fontWeight": "500" }],
+                        "headline-lg": ["30px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "label-lg": ["14px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "display-md": ["36px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "button": ["16px", { "lineHeight": "1", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen font-body-md antialiased pb-[100px]">
+<!-- TopAppBar -->
+<header class="bg-surface/80 dark:bg-surface/80 backdrop-blur-md fixed top-0 w-full z-50 border-b border-outline-variant/10">
+<div class="flex justify-between items-center px-margin-mobile h-16 w-full">
+<button aria-label="Menu" class="text-primary dark:text-primary-fixed-dim hover:opacity-80 transition-opacity active:scale-95 transition-transform flex items-center justify-center w-10 h-10 rounded-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'wght' 300;">menu</span>
+</button>
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-primary dark:text-primary-fixed-dim tracking-tight">TinyTots</span>
+<button aria-label="Shopping Bag" class="text-primary dark:text-primary-fixed-dim hover:opacity-80 transition-opacity active:scale-95 transition-transform flex items-center justify-center w-10 h-10 rounded-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'wght' 300;">shopping_bag</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-[88px] px-margin-mobile flex flex-col gap-stack-lg max-w-container-max mx-auto md:px-margin-desktop">
+<!-- Header Section -->
+<section class="flex flex-col gap-stack-sm mt-4">
+<h1 class="font-display-md text-display-md text-on-surface">Account</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage your premium style profile</p>
+</section>
+<!-- Profile Snapshot Bento -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-stack-md flex items-center gap-gutter active:scale-[0.98] transition-transform cursor-pointer hover:bg-surface-bright">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-primary-fixed shrink-0">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A beautifully soft, well-lit studio portrait of a young mother smiling gently, wearing elegant minimal clothing. The aesthetic is high-end editorial, bright, airy, with warm ivory and subtle coral tones in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0BnnVAWtyUtHfsFdSp76ita4GX_YS46q86-ORqwMpPa4kPgqVmBv1yDsRfosvOMsZCwbZ8m7w0fECxElVq6KX1aWXJ2T87BvodnqwLka0vKHbutfoeYDNorUt9fdv87O-2krR2Fsubr5FMd5LwG76NnmrBujN3WXGBF7rCGfXgUjquUmUXWMWYVLglzStDJ4iQrijHkPhwbWaqM8CKMfMjq4UEhJQYQSlIRVrIjV2jUzbglDhGzyiJsyUW6rCN6DY877mUTSVzNeM"/>
+</div>
+<div class="flex flex-col flex-1">
+<h2 class="font-headline-md text-headline-md text-on-surface">Eleanor Vance</h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant">eleanor.v@example.com</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'wght' 300;">chevron_right</span>
+</section>
+<!-- Personal Information List -->
+<section class="flex flex-col gap-stack-sm">
+<h3 class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider pl-unit">Settings</h3>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 overflow-hidden flex flex-col">
+<!-- Item: Profile Details -->
+<a class="flex items-center gap-stack-sm p-stack-sm border-b border-outline-variant/10 hover:bg-surface-bright transition-colors active:bg-surface-container" href="#">
+<div class="w-10 h-10 rounded-full bg-secondary-container/20 flex items-center justify-center text-on-secondary-container shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'wght' 300;">person</span>
+</div>
+<div class="flex-1 font-body-md text-body-md text-on-surface">Personal Details</div>
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'wght' 300;">chevron_right</span>
+</a>
+<!-- Item: Password -->
+<a class="flex items-center gap-stack-sm p-stack-sm border-b border-outline-variant/10 hover:bg-surface-bright transition-colors active:bg-surface-container" href="#">
+<div class="w-10 h-10 rounded-full bg-secondary-container/20 flex items-center justify-center text-on-secondary-container shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'wght' 300;">lock</span>
+</div>
+<div class="flex-1 font-body-md text-body-md text-on-surface">Security &amp; Password</div>
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'wght' 300;">chevron_right</span>
+</a>
+<!-- Item: Payment Methods -->
+<a class="flex items-center gap-stack-sm p-stack-sm hover:bg-surface-bright transition-colors active:bg-surface-container" href="#">
+<div class="w-10 h-10 rounded-full bg-secondary-container/20 flex items-center justify-center text-on-secondary-container shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'wght' 300;">credit_card</span>
+</div>
+<div class="flex-1 font-body-md text-body-md text-on-surface">Payment Methods</div>
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'wght' 300;">chevron_right</span>
+</a>
+</div>
+</section>
+<!-- Preferences List -->
+<section class="flex flex-col gap-stack-sm">
+<h3 class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider pl-unit">Preferences</h3>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 overflow-hidden flex flex-col">
+<!-- Item: Notifications (Toggle) -->
+<div class="flex items-center gap-stack-sm p-stack-sm border-b border-outline-variant/10">
+<div class="w-10 h-10 rounded-full bg-primary-container/10 flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'wght' 300;">notifications</span>
+</div>
+<div class="flex-1 flex flex-col">
+<span class="font-body-md text-body-md text-on-surface">Push Notifications</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Order updates &amp; exclusive offers</span>
+</div>
+<!-- Toggle Switch Active -->
+<button aria-label="Toggle notifications" class="w-12 h-6 rounded-full bg-primary relative transition-colors duration-300 focus:outline-none">
+<div class="w-5 h-5 rounded-full bg-on-primary absolute top-0.5 right-0.5 shadow-sm transition-transform duration-300"></div>
+</button>
+</div>
+<!-- Item: Newsletter (Toggle) -->
+<div class="flex items-center gap-stack-sm p-stack-sm border-b border-outline-variant/10">
+<div class="w-10 h-10 rounded-full bg-primary-container/10 flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'wght' 300;">mail</span>
+</div>
+<div class="flex-1 flex flex-col">
+<span class="font-body-md text-body-md text-on-surface">Newsletter</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Weekly style inspiration</span>
+</div>
+<!-- Toggle Switch Inactive -->
+<button aria-label="Toggle newsletter" class="w-12 h-6 rounded-full bg-surface-variant relative transition-colors duration-300 focus:outline-none">
+<div class="w-5 h-5 rounded-full bg-surface absolute top-0.5 left-0.5 shadow-sm transition-transform duration-300"></div>
+</button>
+</div>
+</div>
+</section>
+<!-- Logout Action -->
+<section class="mt-4 mb-stack-lg flex justify-center">
+<button class="font-button text-button text-error border border-error/30 rounded-xl px-8 py-4 w-full md:w-auto hover:bg-error/5 active:bg-error/10 transition-colors">
+                Log Out
+            </button>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden bg-surface dark:bg-surface-container-low fixed bottom-0 w-full z-50 pb-safe border-t border-outline-variant/10">
+<div class="flex justify-around items-center h-20 px-4">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'wght' 300;">storefront</span>
+<span class="font-label-md text-label-md mt-1">Shop</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'wght' 300;">favorite</span>
+<span class="font-label-md text-label-md mt-1">Wishlist</span>
+</a>
+<!-- Active Tab: Account -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim bg-primary-container/10 rounded-xl px-3 py-1 hover:text-primary transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1, 'wght' 300;">person</span>
+<span class="font-label-md text-label-md mt-1 font-bold">Account</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'wght' 300;">shopping_cart</span>
+<span class="font-label-md text-label-md mt-1">Cart</span>
+</a>
+</div>
+</nav>
+<script>
+        // Simple toggle interaction logic for demonstration
+        document.querySelectorAll('button[aria-label^="Toggle"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const knob = this.querySelector('div');
+                if (this.classList.contains('bg-primary')) {
+                    // Turn off
+                    this.classList.remove('bg-primary');
+                    this.classList.add('bg-surface-variant');
+                    knob.classList.remove('right-0.5', 'bg-on-primary');
+                    knob.classList.add('left-0.5', 'bg-surface');
+                } else {
+                    // Turn on
+                    this.classList.remove('bg-surface-variant');
+                    this.classList.add('bg-primary');
+                    knob.classList.remove('left-0.5', 'bg-surface');
+                    knob.classList.add('right-0.5', 'bg-on-primary');
+                }
+            });
+        });
+    </script>
+</body></html>

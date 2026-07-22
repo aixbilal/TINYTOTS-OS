@@ -9,6 +9,8 @@ type Variant = {
   size: string | null;
   price: number;
   web_price: number | null;
+  web_base_price: number | null;
+  web_discount_percent: number | null;
   stock: number;
 };
 
@@ -50,10 +52,22 @@ export default function AddToCart({
 
   return (
     <div>
-      {selected && (
-        <p className="mt-2 font-headline-lg text-headline-lg text-primary">
-          Rs. {displayPrice(selected).toLocaleString()}
-        </p>
+    {selected && (
+        <div className="mt-2 flex items-baseline gap-3">
+          <p className="font-headline-lg text-headline-lg text-primary">
+            Rs. {displayPrice(selected).toLocaleString()}
+          </p>
+          {selected.web_discount_percent && selected.web_discount_percent > 0 && selected.web_base_price && (
+            <>
+              <p className="font-body-md text-body-md text-on-surface-variant line-through">
+                Rs. {selected.web_base_price.toLocaleString()}
+              </p>
+              <span className="font-label-md text-label-md text-white bg-primary px-2 py-0.5 rounded-full">
+                -{selected.web_discount_percent}%
+              </span>
+            </>
+          )}
+        </div>
       )}
 
       <div className="mt-6">

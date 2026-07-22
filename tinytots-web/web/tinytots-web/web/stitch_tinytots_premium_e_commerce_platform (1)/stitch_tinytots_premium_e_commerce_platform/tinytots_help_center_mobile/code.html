@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TinyTots Help Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-primary": "#ffb4a3",
+                      "on-error-container": "#93000a",
+                      "error": "#ba1a1a",
+                      "tertiary-container": "#b2a08e",
+                      "on-primary-fixed-variant": "#7d2c19",
+                      "error-container": "#ffdad6",
+                      "tertiary": "#6b5c4c",
+                      "on-error": "#ffffff",
+                      "on-secondary-fixed": "#0b1e1f",
+                      "on-background": "#1b1c1b",
+                      "on-tertiary-fixed": "#241a0e",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-bright": "#fcf9f8",
+                      "surface-variant": "#e4e2e1",
+                      "surface-container-low": "#f6f3f2",
+                      "secondary-container": "#cfe4e4",
+                      "on-secondary-fixed-variant": "#374a4b",
+                      "on-tertiary-fixed-variant": "#524436",
+                      "tertiary-fixed-dim": "#d7c3b0",
+                      "on-tertiary-container": "#443729",
+                      "on-surface-variant": "#56423e",
+                      "inverse-surface": "#303030",
+                      "surface-tint": "#9c422e",
+                      "outline-variant": "#dcc0bb",
+                      "on-surface": "#1b1c1b",
+                      "tertiary-fixed": "#f4dfcb",
+                      "surface-dim": "#dcd9d8",
+                      "secondary-fixed-dim": "#b6cacb",
+                      "primary-fixed": "#ffdad2",
+                      "primary-fixed-dim": "#ffb4a3",
+                      "surface-container-high": "#eae7e7",
+                      "surface-container-highest": "#e4e2e1",
+                      "secondary": "#4f6263",
+                      "primary": "#9c422e",
+                      "on-primary": "#ffffff",
+                      "surface-container": "#f0edec",
+                      "background": "#fcf9f8",
+                      "on-primary-container": "#6b1e0d",
+                      "surface": "#fcf9f8",
+                      "on-primary-fixed": "#3d0600",
+                      "inverse-on-surface": "#f3f0ef",
+                      "on-secondary-container": "#536667",
+                      "primary-container": "#f2846b",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "secondary-fixed": "#d2e6e7",
+                      "outline": "#89726d",
+                      "whatsapp": "#4C9A6A",
+                      "hero-bg": "#FAF7F2"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-mobile": "16px",
+                      "section-gap": "80px",
+                      "container-max": "1200px",
+                      "gutter": "24px",
+                      "unit": "4px",
+                      "margin-desktop": "48px"
+              },
+              "fontFamily": {
+                      "label-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-sm": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "display-lg-mobile": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "title-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "display-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-sm": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-md": [
+                              "Plus Jakarta Sans"
+                      ]
+              },
+              "fontSize": {
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-sm": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg-mobile": [
+                              "36px",
+                              {
+                                      "lineHeight": "44px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "title-lg": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        /* Smooth transitions for accordion */
+        .accordion-content {
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .accordion-item.active .accordion-content {
+            max-height: 500px; /* Arbitrary large number */
+            opacity: 1;
+            padding-top: 1rem; /* pt-4 */
+            padding-bottom: 1rem; /* pb-4 */
+        }
+        .accordion-item.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+        .accordion-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        /* Ambient shadow for cards */
+        .ambient-shadow {
+            box-shadow: 0px 4px 20px rgba(79, 98, 99, 0.04);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen flex flex-col pt-20 md:hidden">
+<!-- Top Navigation App Bar -->
+<nav class="bg-surface dark:bg-surface-dim shadow-sm fixed top-0 w-full z-50 transition-colors">
+<div class="flex justify-between items-center px-margin-mobile h-16 max-w-container-max mx-auto">
+<div class="flex items-center gap-4">
+<a class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed" href="#">TinyTots</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Support Search Hero -->
+<section class="bg-hero-bg px-margin-mobile py-12 rounded-b-3xl">
+<div class="text-center mb-6">
+<h1 class="font-display-lg-mobile text-display-lg-mobile text-on-surface mb-2">How can we help?</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Search for answers or explore topics below.</p>
+</div>
+<div class="relative max-w-md mx-auto">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">search</span>
+</div>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border border-outline-variant rounded-full font-body-md text-body-md text-on-surface focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all ambient-shadow placeholder-outline" placeholder="Try 'shipping' or 'returns'" type="text"/>
+</div>
+</section>
+<main class="flex-grow px-margin-mobile py-8 space-y-12">
+<!-- Quick Utility Matrix -->
+<section>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-6">Quick Links</h2>
+<div class="grid grid-cols-2 gap-4">
+<!-- Card 1 -->
+<a class="bg-surface-container-lowest p-6 rounded-2xl ambient-shadow flex flex-col items-center text-center hover:-translate-y-1 transition-transform active:scale-95" href="#">
+<div class="w-12 h-12 bg-secondary-container text-on-secondary-container rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined">local_shipping</span>
+</div>
+<span class="font-title-lg text-title-lg text-on-surface leading-tight">Track Shipments</span>
+</a>
+<!-- Card 2 -->
+<a class="bg-surface-container-lowest p-6 rounded-2xl ambient-shadow flex flex-col items-center text-center hover:-translate-y-1 transition-transform active:scale-95" href="#">
+<div class="w-12 h-12 bg-primary-fixed text-on-primary-fixed-variant rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined">assignment_return</span>
+</div>
+<span class="font-title-lg text-title-lg text-on-surface leading-tight">Initiate Returns</span>
+</a>
+<!-- Card 3 -->
+<a class="bg-surface-container-lowest p-6 rounded-2xl ambient-shadow flex flex-col items-center text-center hover:-translate-y-1 transition-transform active:scale-95" href="#">
+<div class="w-12 h-12 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined">straighten</span>
+</div>
+<span class="font-title-lg text-title-lg text-on-surface leading-tight">Size Charts</span>
+</a>
+<!-- Card 4 -->
+<a class="bg-surface-container-lowest p-6 rounded-2xl ambient-shadow flex flex-col items-center text-center hover:-translate-y-1 transition-transform active:scale-95" href="#">
+<div class="w-12 h-12 bg-surface-variant text-on-surface-variant rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined">policy</span>
+</div>
+<span class="font-title-lg text-title-lg text-on-surface leading-tight">Shipping Policies</span>
+</a>
+</div>
+</section>
+<!-- Categorized FAQ Accordions -->
+<section>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-6">Frequently Asked</h2>
+<div class="space-y-4">
+<!-- Category 1 -->
+<div class="accordion-item bg-surface-container-lowest rounded-2xl ambient-shadow border border-outline-variant overflow-hidden">
+<button class="w-full px-6 py-5 flex justify-between items-center text-left focus:outline-none" onclick="toggleAccordion(this)">
+<span class="font-title-lg text-title-lg text-on-surface">Delivery &amp; COD</span>
+<span class="material-symbols-outlined text-outline accordion-icon">expand_more</span>
+</button>
+<div class="accordion-content px-6 bg-surface-container-low border-t border-outline-variant">
+<div class="space-y-4">
+<div>
+<h4 class="font-label-md text-label-md text-on-surface mb-1">How long does delivery take?</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Standard delivery typically takes 3-5 business days. Express options are available at checkout.</p>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface mb-1">Is Cash on Delivery available?</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Yes, COD is available for orders under $200 in select zip codes.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Category 2 -->
+<div class="accordion-item bg-surface-container-lowest rounded-2xl ambient-shadow border border-outline-variant overflow-hidden">
+<button class="w-full px-6 py-5 flex justify-between items-center text-left focus:outline-none" onclick="toggleAccordion(this)">
+<span class="font-title-lg text-title-lg text-on-surface">Returns &amp; Exchanges</span>
+<span class="material-symbols-outlined text-outline accordion-icon">expand_more</span>
+</button>
+<div class="accordion-content px-6 bg-surface-container-low border-t border-outline-variant">
+<div class="space-y-4">
+<div>
+<h4 class="font-label-md text-label-md text-on-surface mb-1">What is your return policy?</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">We accept returns within 30 days of purchase for unused items in original packaging.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Category 3 -->
+<div class="accordion-item bg-surface-container-lowest rounded-2xl ambient-shadow border border-outline-variant overflow-hidden">
+<button class="w-full px-6 py-5 flex justify-between items-center text-left focus:outline-none" onclick="toggleAccordion(this)">
+<span class="font-title-lg text-title-lg text-on-surface">Materials &amp; Fabrics</span>
+<span class="material-symbols-outlined text-outline accordion-icon">expand_more</span>
+</button>
+<div class="accordion-content px-6 bg-surface-container-low border-t border-outline-variant">
+<div class="space-y-4">
+<div>
+<h4 class="font-label-md text-label-md text-on-surface mb-1">Are your fabrics organic?</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Most of our newborn collection is made from GOTS certified organic cotton. Please check individual product descriptions.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Spacing for bottom strip -->
+<div class="h-24"></div>
+</main>
+<!-- Escalation Contact Strip (Sticky Bottom) -->
+<div class="fixed bottom-0 w-full bg-surface-container-lowest border-t border-outline-variant px-margin-mobile py-4 z-40 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Still need help?</span>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<a class="flex items-center justify-center gap-2 bg-whatsapp text-white py-3 px-4 rounded-full font-label-md text-label-md active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+                WhatsApp
+            </a>
+<a class="flex items-center justify-center gap-2 bg-transparent border border-primary-container text-primary py-3 px-4 rounded-full font-label-md text-label-md active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">mail</span>
+                Email Us
+            </a>
+</div>
+</div>
+<!-- Footer Component (Rendered as requested, though may be partially obscured by sticky strip, kept for completeness of Shared Components) -->
+<footer class="bg-surface-container-low dark:bg-surface-container-lowest w-full mt-section-gap border-t border-outline-variant dark:border-outline pb-32">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter px-margin-mobile py-12 max-w-container-max mx-auto text-center md:text-left">
+<div class="mb-8 md:mb-0">
+<h3 class="font-headline-sm text-headline-sm text-primary dark:text-primary-fixed mb-4">TinyTots</h3>
+<p class="font-body-md text-body-md text-secondary dark:text-secondary-fixed">© 2024 TinyTots. All rights reserved.</p>
+</div>
+<div class="flex flex-col space-y-4">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors opacity-80 hover:opacity-100" href="#">Privacy Policy</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors opacity-80 hover:opacity-100" href="#">Terms of Service</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors opacity-80 hover:opacity-100" href="#">Sustainability Report</a>
+<a class="font-body-md text-body-md text-primary font-bold hover:text-primary dark:hover:text-primary-fixed-dim transition-colors opacity-80 hover:opacity-100" href="#">Contact Us</a>
+</div>
+<div class="hidden md:block">
+<!-- Desktop only extra col -->
+</div>
+</div>
+</footer>
+<script>
+        // Simple accordion logic
+        function toggleAccordion(button) {
+            const item = button.parentElement;
+            
+            // Close all others
+            const allItems = document.querySelectorAll('.accordion-item');
+            allItems.forEach(otherItem => {
+                if (otherItem !== item && otherItem.classList.contains('active')) {
+                    otherItem.classList.remove('active');
+                }
+            });
+
+            // Toggle current
+            item.classList.toggle('active');
+        }
+    </script>
+</body></html>

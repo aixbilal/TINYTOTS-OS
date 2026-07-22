@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Address Book - TinyTots</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#a3f4bd",
+                        "surface-dim": "#dcd9d9",
+                        "primary-container": "#f2846b",
+                        "primary-fixed": "#ffdad2",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#fcf9f8",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#cae6ff",
+                        "outline": "#89726d",
+                        "surface-container-highest": "#e4e2e1",
+                        "on-background": "#1b1c1c",
+                        "surface-container-low": "#f6f3f2",
+                        "error-container": "#ffdad6",
+                        "secondary": "#396280",
+                        "on-surface-variant": "#56423e",
+                        "surface": "#fcf9f8",
+                        "inverse-primary": "#ffb4a3",
+                        "secondary-container": "#b2dcff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#f3f0f0",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "primary": "#9c422e",
+                        "on-primary-fixed": "#3d0600",
+                        "tertiary-container": "#65b381",
+                        "surface-container-high": "#eae7e7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#f0eded",
+                        "surface-variant": "#e4e2e1",
+                        "outline-variant": "#dcc0bb",
+                        "on-tertiary-fixed": "#00210f",
+                        "on-secondary-fixed-variant": "#1e4b67",
+                        "on-primary-container": "#6b1e0d",
+                        "tertiary": "#186c40",
+                        "on-surface": "#1b1c1c",
+                        "on-tertiary-fixed-variant": "#00522d",
+                        "on-secondary-container": "#38617f",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#a2cbee",
+                        "on-primary-fixed-variant": "#7d2c19",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#004324",
+                        "inverse-surface": "#303030",
+                        "surface-tint": "#9c422e",
+                        "background": "#fcf9f8",
+                        "tertiary-fixed-dim": "#88d7a2",
+                        "on-secondary-fixed": "#001e30"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "12px",
+                        "stack-md": "24px",
+                        "margin-mobile": "20px",
+                        "container-max": "1280px",
+                        "unit": "4px",
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "bento-gap": "20px",
+                        "stack-lg": "48px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-lg": ["Inter"],
+                        "display-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-sm": ["Inter"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "button": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", { "lineHeight": "1", "fontWeight": "500" }],
+                        "headline-lg": ["30px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "label-lg": ["14px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "display-md": ["36px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "button": ["16px", { "lineHeight": "1", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased min-h-screen flex flex-col">
+<!-- TopAppBar Component -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-md border-b border-outline-variant/10">
+<div class="flex justify-between items-center px-margin-mobile h-16 w-full">
+<button aria-label="Menu" class="text-primary dark:text-primary-fixed-dim hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">menu</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary dark:text-primary-fixed-dim tracking-tight font-bold">TinyTots</h1>
+<button aria-label="Shopping Bag" class="text-primary dark:text-primary-fixed-dim hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">shopping_bag</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow pt-[80px] pb-[100px] px-margin-mobile">
+<div class="flex items-center justify-between mb-stack-md">
+<h2 class="font-headline-md text-headline-md text-on-background">Address Book</h2>
+</div>
+<div class="flex flex-col gap-bento-gap">
+<!-- Address Card 1 (Default/Home) -->
+<div class="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-4 flex flex-col gap-3 relative">
+<div class="absolute top-4 right-4 flex gap-2">
+<button aria-label="Edit Home Address" class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button aria-label="Delete Home Address" class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-[20px]">home</span>
+<h3 class="font-label-lg text-label-lg text-on-background">Home</h3>
+<span class="bg-primary-container/20 text-primary px-2 py-0.5 rounded-full font-label-md text-[10px] ml-2">Default</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex flex-col">
+<span class="font-medium text-on-background">Jane Doe</span>
+<span>123 Blossom Lane</span>
+<span>Apt 4B</span>
+<span>Seattle, WA 98101</span>
+<span class="mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">phone</span> (555) 123-4567</span>
+</div>
+</div>
+<!-- Address Card 2 (Work) -->
+<div class="bg-surface border border-outline-variant/10 rounded-xl p-4 flex flex-col gap-3 relative opacity-90">
+<div class="absolute top-4 right-4 flex gap-2">
+<button aria-label="Edit Work Address" class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button aria-label="Delete Work Address" class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-secondary text-[20px]">work</span>
+<h3 class="font-label-lg text-label-lg text-on-background">Work</h3>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant flex flex-col">
+<span class="font-medium text-on-background">Jane Doe (Design Dept)</span>
+<span>456 Corporate Blvd</span>
+<span>Suite 200</span>
+<span>Seattle, WA 98104</span>
+<span class="mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">phone</span> (555) 987-6543</span>
+</div>
+<button class="mt-2 text-primary font-label-md text-label-md flex items-center gap-1 self-start hover:opacity-80">
+                    Set as default
+                </button>
+</div>
+</div>
+<!-- Add New Address CTA -->
+<button class="w-full mt-stack-md bg-primary-container text-on-primary-container font-button text-button h-[56px] rounded-xl flex items-center justify-center gap-2 shadow-sm hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined">add_location</span>
+            Add New Address
+        </button>
+</main>
+<!-- BottomNavBar Component (Navigation Shell suppressed as per intent logic - this is a focused task page, but keeping it visible as per prompt "Maintain consistency with the mobile account experience" assuming user navigated from Account tab) -->
+<!-- However, strictly following "The UX Goal: If the user is in a focused journey or a "dead end" relative to the global nav, hide the shell to prioritize the Canvas." - Address Book is typically a sub-page of Account. But the JSON explicitly lists "Address Book" in the Drawer. For Mobile, Bottom Nav is the primary. The JSON specifies labels: ["Shop", "Wishlist", "Account", "Cart"]. Address Book falls under Account. -->
+<!-- Assuming this is a top-level view within the Account section for mobile -->
+<nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface dark:bg-surface-container-low border-t border-outline-variant/10 md:hidden">
+<div class="flex justify-around items-center h-20 px-4">
+<!-- Shop -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">storefront</span>
+<span class="font-label-md text-label-md mt-1">Shop</span>
+</button>
+<!-- Wishlist -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">favorite</span>
+<span class="font-label-md text-label-md mt-1">Wishlist</span>
+</button>
+<!-- Account (Active) -->
+<button class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim bg-primary-container/10 rounded-xl px-3 py-1 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label-md text-label-md mt-1">Account</span>
+</button>
+<!-- Cart -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors active:scale-90 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">shopping_cart</span>
+<span class="font-label-md text-label-md mt-1">Cart</span>
+</button>
+</div>
+</nav>
+</body></html>

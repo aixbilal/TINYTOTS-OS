@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { adminFetch } from "@/lib/admin-fetch";
 
 type OrderItem = {
   id: number; quantity: number; unit_price: number; line_total: number;
@@ -27,7 +28,7 @@ export default function AdminOrderDetailPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/admin/orders/${id}`)
+    adminFetch(`/api/admin/orders/${id}`)
       .then((r) => r.json())
       .then((json) => setOrder(json.data))
       .finally(() => setLoading(false));
@@ -35,7 +36,7 @@ export default function AdminOrderDetailPage() {
 
   async function updateStatus(status: string) {
     setSaving(true);
-    const res = await fetch(`/api/admin/orders/${id}`, {
+    const res = await adminFetch(`/api/admin/orders/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
@@ -48,7 +49,7 @@ export default function AdminOrderDetailPage() {
     if (!order) return;
     setSaving(true);
     const newValue = !order.cod_token_paid;
-    const res = await fetch(`/api/admin/orders/${id}`, {
+    const res = await adminFetch(`/api/admin/orders/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cod_token_paid: newValue }),
@@ -60,8 +61,8 @@ export default function AdminOrderDetailPage() {
   const inputClass =
     "border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
 
-  if (loading) return <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>;
-  if (!order) return <p className="font-body-md text-body-md text-error">Order not found.</p>;
+    if (loading) return <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>;
+    if (!order) return <p className="font-body-md text-body-md text-error">Order not found.</p>;
 
   return (
     <div className="max-w-3xl">

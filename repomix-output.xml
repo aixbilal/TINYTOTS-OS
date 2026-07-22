@@ -162,21 +162,37 @@ tinytots-web/
       admin/
         login/
           page.tsx
+        orders/
+          [id]/
+            page.tsx
+          page.tsx
         products/
           [id]/
             page.tsx
           new/
             page.tsx
           page.tsx
+        team/
+          page.tsx
         layout.tsx
         page.tsx
       api/
         admin/
           inventory/
+            [id]/
+              route.ts
+            route.ts
+          orders/
+            [id]/
+              route.ts
             route.ts
           products/
             [id]/
               route.ts
+          team/
+            [id]/
+              route.ts
+            route.ts
         checkout/
           route.ts
         health/
@@ -367,6 +383,10 @@ tinytots-web/
         20260715090000_customer_signup_trigger.sql
         20260716090000_admin_users_rls.sql
         20260718090000_add_web_pricing.sql
+        20260718100000_auto_web_pricing.sql
+        20260718110000_web_price_lock.sql
+        20260718120000_web_price_rounding.sql
+        20260720_handle_new_user_skip_admin.sql
       snippets/
         Untitled query 131.sql
         Untitled query 174.sql
@@ -5183,7 +5203,7 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
               <th className="p-3">Public Code</th>
               <th className="p-3">Stock</th>
               <th className="p-3">Discount %</th>
-              <th className="p-3">Price (₹)</th>
+              <th className="p-3">Price (Rs)</th>
               <th className="p-3">Status</th>
               <th className="p-3 rounded-r-lg w-10"></th>
             </tr>
@@ -7802,7 +7822,7 @@ export default function Dashboard() {
           icon={ShoppingBag}
           label="Total Sales"
           value={
-            snapshot ? `₹${snapshot.totalSalesToday.toLocaleString()}` : loadError ? "—" : "…"
+            snapshot ? `Rs ${snapshot.totalSalesToday.toLocaleString()}` : loadError ? "—" : "…"
           }
         />
         <SnapshotStat
@@ -10888,6 +10908,257 @@ export default function AdminLoginPage() {
 }
 </file>
 
+<file path="tinytots-web/web/app/admin/orders/[id]/page.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+
+type OrderItem = {
+  id: number; quantity: number; unit_price: number; line_total: number;
+  variants: { id: number; color: string | null; size: string | null; products: { name: string; sku: string } };
+};
+
+type Order = {
+  id: number; order_number: string; guest_name: string | null; guest_phone: string | null;
+  shipping_address: string; shipping_city: string; status: string; payment_method: string;
+  cod_tier: string | null; cod_token_amount: number; cod_token_paid: boolean;
+  subtotal: number; delivery_fee: number; discount_total: number; total: number;
+  coupon_code: string | null; created_at: string;
+  customers: { full_name: string; phone: string; email: string } | null;
+  items: OrderItem[];
+};
+
+const STATUS_OPTIONS = ["new", "processing", "shipped", "delivered", "cancelled"];
+
+export default function AdminOrderDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/admin/orders/${id}`)
+      .then((r) => r.json())
+      .then((json) => setOrder(json.data))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  async function updateStatus(status: string) {
+    setSaving(true);
+    const res = await fetch(`/api/admin/orders/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) setOrder((prev) => (prev ? { ...prev, status } : prev));
+    setSaving(false);
+  }
+
+  async function toggleCodTokenPaid() {
+    if (!order) return;
+    setSaving(true);
+    const newValue = !order.cod_token_paid;
+    const res = await fetch(`/api/admin/orders/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cod_token_paid: newValue }),
+    });
+    if (res.ok) setOrder((prev) => (prev ? { ...prev, cod_token_paid: newValue } : prev));
+    setSaving(false);
+  }
+
+  const inputClass =
+    "border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+
+  if (loading) return <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>;
+  if (!order) return <p className="font-body-md text-body-md text-error">Order not found.</p>;
+
+  return (
+    <div className="max-w-3xl">
+      <div className="flex justify-between items-center mb-stack-md">
+        <h1 className="font-display-md text-display-md text-on-surface">{order.order_number}</h1>
+        <select value={order.status} onChange={(e) => updateStatus(e.target.value)} disabled={saving} className={`${inputClass} capitalize`}>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s} className="capitalize">{s}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6 mb-6">
+        <div>
+          <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Customer</h2>
+          <p className="font-body-sm text-body-sm text-on-surface-variant">
+            {order.customers?.full_name ?? order.guest_name} <br />
+            {order.customers?.phone ?? order.guest_phone} <br />
+            {order.customers?.email ?? "Guest checkout"}
+          </p>
+        </div>
+        <div>
+          <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Shipping</h2>
+          <p className="font-body-sm text-body-sm text-on-surface-variant">
+            {order.shipping_address} <br /> {order.shipping_city}
+          </p>
+        </div>
+      </div>
+
+      {order.cod_tier && order.cod_tier !== "full_cod" && (
+        <div className="border border-outline-variant/30 rounded-lg p-4 mb-6 flex justify-between items-center">
+          <p className="font-body-md text-body-md text-on-surface">
+            COD Token Required: <strong>Rs. {order.cod_token_amount}</strong>
+          </p>
+          <button
+            onClick={toggleCodTokenPaid}
+            disabled={saving}
+            className={`px-4 py-2 rounded-lg font-button text-button ${
+              order.cod_token_paid ? "bg-surface-container-low text-on-surface-variant" : "bg-primary-container text-on-primary"
+            }`}
+          >
+            {order.cod_token_paid ? "Mark as unpaid" : "Mark token as paid"}
+          </button>
+        </div>
+      )}
+
+      <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Items</h2>
+      <table className="w-full border-collapse mb-6">
+        <thead>
+          <tr className="text-left border-b border-outline-variant/30">
+            <th className="py-2 font-label-md text-label-md text-on-surface-variant">Product</th>
+            <th className="py-2 font-label-md text-label-md text-on-surface-variant">Variant</th>
+            <th className="py-2 font-label-md text-label-md text-on-surface-variant">Qty</th>
+            <th className="py-2 font-label-md text-label-md text-on-surface-variant">Unit Price</th>
+            <th className="py-2 font-label-md text-label-md text-on-surface-variant">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {order.items.map((item) => (
+            <tr key={item.id} className="border-b border-outline-variant/10">
+              <td className="py-3 font-body-sm text-body-sm text-on-surface">{item.variants.products.name}</td>
+              <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{item.variants.color} / {item.variants.size}</td>
+              <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{item.quantity}</td>
+              <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">Rs. {item.unit_price}</td>
+              <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">Rs. {item.line_total}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="flex flex-col items-end gap-1 font-body-sm text-body-sm text-on-surface-variant">
+        <p>Subtotal: Rs. {order.subtotal}</p>
+        <p>Delivery: Rs. {order.delivery_fee}</p>
+        {order.discount_total > 0 && <p>Discount: -Rs. {order.discount_total}</p>}
+        <p className="font-headline-md text-headline-md text-on-surface mt-1">Total: Rs. {order.total}</p>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/admin/orders/page.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
+type Order = {
+  id: number; order_number: string; guest_name: string | null; guest_phone: string | null;
+  shipping_city: string; status: string; payment_method: string;
+  cod_tier: string | null; cod_token_amount: number; cod_token_paid: boolean;
+  total: number; created_at: string;
+};
+
+const STATUS_TABS = ["all", "new", "processing", "shipped", "delivered", "cancelled"];
+
+export default function AdminOrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/admin/orders?status=${statusFilter}`)
+      .then((r) => r.json())
+      .then((json) => setOrders(json.data || []))
+      .finally(() => setLoading(false));
+  }, [statusFilter]);
+
+  const statusColor: Record<string, string> = {
+    new: "text-primary",
+    processing: "text-primary",
+    shipped: "text-primary",
+    delivered: "text-primary",
+    cancelled: "text-error",
+  };
+
+  return (
+    <div>
+      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Orders</h1>
+
+      <div className="flex gap-2 mb-4">
+        {STATUS_TABS.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setStatusFilter(tab)}
+            className={`px-4 py-1.5 rounded-full font-label-md text-label-md capitalize ${
+              statusFilter === tab ? "bg-primary-container text-on-primary" : "bg-surface-container-low text-on-surface-variant"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+      ) : orders.length === 0 ? (
+        <p className="font-body-md text-body-md text-on-surface-variant">No orders here.</p>
+      ) : (
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="text-left border-b border-outline-variant/30">
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Order #</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Customer</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">City</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Payment</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">COD Token</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Total</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Status</th>
+              <th className="py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((o) => (
+              <tr key={o.id} className="border-b border-outline-variant/10">
+                <td className="py-3 font-body-sm text-body-sm text-on-surface">{o.order_number}</td>
+                <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{o.guest_name ?? "Account"} · {o.guest_phone ?? ""}</td>
+                <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{o.shipping_city}</td>
+                <td className="py-3 font-body-sm text-body-sm text-on-surface-variant capitalize">{o.payment_method}</td>
+                <td className="py-3 font-body-sm text-body-sm">
+                  {o.cod_tier && o.cod_tier !== "full_cod" ? (
+                    <span className={o.cod_token_paid ? "text-primary" : "text-error"}>
+                      Rs. {o.cod_token_amount} {o.cod_token_paid ? "✓ paid" : "unpaid"}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">Rs. {o.total.toLocaleString()}</td>
+                <td className={`py-3 font-label-md text-label-md capitalize ${statusColor[o.status] ?? ""}`}>{o.status}</td>
+                <td className="py-3 text-right">
+                  <Link href={`/admin/orders/${o.id}`} className="font-label-md text-label-md text-primary hover:underline">
+                    View
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+</file>
+
 <file path="tinytots-web/web/app/admin/products/[id]/page.tsx">
 "use client";
 
@@ -10895,7 +11166,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 
-type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number; reorder_level: number };
+type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number; reorder_level: number; web_price_locked: boolean; web_round_to: number };
 type Product = {
   id: number; name: string; sku: string; description: string | null; brand: string | null;
   category: string | null; image_url: string | null; gender: string | null; age_bracket: string | null;
@@ -10965,19 +11236,22 @@ export default function EditProductPage() {
     setProduct((prev) => (prev ? { ...prev, [field]: value } : prev));
   }
 
-  function updateVariant(vid: number, field: keyof Variant, value: string) {
+  function updateVariant(vid: number, field: keyof Variant, value: string | boolean | number) {
     setProduct((prev) =>
       prev
         ? {
             ...prev,
-            variants: prev.variants.map((v) =>
-              v.id === vid ? { ...v, [field]: field === "color" || field === "size" ? value : Number(value) } : v
-            ),
+            variants: prev.variants.map((v) => {
+              if (v.id !== vid) return v;
+              if (field === "web_price_locked") return { ...v, web_price_locked: value as boolean };
+              if (field === "web_round_to") return { ...v, web_round_to: value as number };
+              if (field === "color" || field === "size") return { ...v, [field]: value as string };
+              return { ...v, [field]: Number(value) };
+            }),
           }
         : prev
     );
   }
-
   async function saveProduct() {
     if (!product) return;
     setSaving(true);
@@ -11011,7 +11285,7 @@ export default function EditProductPage() {
     const res = await fetch(`/api/inventory/${v.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ price: v.price, stock: v.stock, reorder_level: v.reorder_level, color: v.color, size: v.size }),
+      body: JSON.stringify({ price: v.price, stock: v.stock, reorder_level: v.reorder_level, color: v.color, size: v.size, web_price_locked: v.web_price_locked, web_round_to: v.web_round_to }),
     });
     if (!res.ok) {
       const json = await res.json();
@@ -11075,27 +11349,35 @@ export default function EditProductPage() {
       <div className="border-t border-outline-variant/20 pt-4 mt-6">
         <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Variants</h2>
         {product.variants.map((v) => (
-          <div key={v.id} className="grid grid-cols-6 gap-2 mb-2 items-center">
-            <input value={v.color ?? ""} onChange={(e) => updateVariant(v.id, "color", e.target.value)} className={inputClass} placeholder="Color" />
-            <input value={v.size ?? ""} onChange={(e) => updateVariant(v.id, "size", e.target.value)} className={inputClass} placeholder="Size" />
-            <input type="number" value={v.price} onChange={(e) => updateVariant(v.id, "price", e.target.value)} className={inputClass} placeholder="Price" />
-            <input type="number" value={v.stock} onChange={(e) => updateVariant(v.id, "stock", e.target.value)} className={inputClass} placeholder="Stock" />
-            <button onClick={() => saveVariant(v)} className="font-label-md text-label-md text-primary hover:underline">
-              Save
-            </button>
-            <button
-              onClick={async () => {
-                if (!confirm("Delete this variant permanently?")) return;
-                const res = await fetch(`/api/inventory/${v.id}`, { method: "DELETE" });
-                if (res.ok) {
-                  setProduct((prev) => prev ? { ...prev, variants: prev.variants.filter((x) => x.id !== v.id) } : prev);
-                }
-              }}
-              className="font-label-md text-label-md text-error hover:underline"
-            >
-              Delete
-            </button>
-          </div>
+        <div key={v.id} className="grid grid-cols-6 gap-2 mb-2 items-center">
+        <input value={v.color ?? ""} onChange={(e) => updateVariant(v.id, "color", e.target.value)} className={inputClass} placeholder="Color" />
+        <input value={v.size ?? ""} onChange={(e) => updateVariant(v.id, "size", e.target.value)} className={inputClass} placeholder="Size" />
+        <input type="number" value={v.price} onChange={(e) => updateVariant(v.id, "price", e.target.value)} className={inputClass} placeholder="Price" />
+        <input type="number" value={v.stock} onChange={(e) => updateVariant(v.id, "stock", e.target.value)} className={inputClass} placeholder="Stock" />
+        <button onClick={() => saveVariant(v)} className="font-label-md text-label-md text-primary hover:underline">
+          Save
+        </button>
+        <button
+          onClick={async () => {
+            if (!confirm("Delete this variant permanently?")) return;
+            const res = await fetch(`/api/inventory/${v.id}`, { method: "DELETE" });
+            if (res.ok) {
+              setProduct((prev) => prev ? { ...prev, variants: prev.variants.filter((x) => x.id !== v.id) } : prev);
+            }
+          }}
+          className="font-label-md text-label-md text-error hover:underline"
+        >
+          Delete
+        </button>
+        <label className="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant col-span-6 mt-1">
+          <input
+            type="checkbox"
+            checked={v.web_price_locked}
+            onChange={(e) => updateVariant(v.id, "web_price_locked", e.target.checked)}
+          />
+          Lock web price (shop price changes won't affect this variant's web price)
+        </label>
+      </div>
         ))}
 
         <AddVariantForm productId={product.id} onAdded={(newVariant) =>
@@ -11398,6 +11680,147 @@ export default function AdminProductsPage() {
 }
 </file>
 
+<file path="tinytots-web/web/app/admin/team/page.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import { useAdminAuth } from "@/lib/admin-auth-context";
+
+type TeamMember = { id: string; name: string; email: string; role: string; is_active: boolean };
+
+const ROLES = ["admin", "order_manager", "support", "inventory_only"];
+
+export default function TeamPage() {
+  const { admin } = useAdminAuth();
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("support");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastTempPassword, setLastTempPassword] = useState<string | null>(null);
+
+  function loadTeam() {
+    setLoading(true);
+    fetch("/api/admin/team")
+      .then((r) => r.json())
+      .then((json) => setTeam(json.data || []))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => { loadTeam(); }, []);
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!name.trim() || !email.trim()) return setError("Name and email are required.");
+
+    setSubmitting(true);
+    const res = await fetch("/api/admin/team", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, role }),
+    });
+    const json = await res.json();
+    setSubmitting(false);
+    if (!res.ok) { setError(json.error); return; }
+
+    setLastTempPassword(json.temp_password);
+    setName(""); setEmail(""); setRole("support");
+    loadTeam();
+  }
+
+  async function toggleActive(member: TeamMember) {
+    await fetch(`/api/admin/team/${member.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active: !member.is_active }),
+    });
+    loadTeam();
+  }
+
+  async function changeRole(member: TeamMember, newRole: string) {
+    await fetch(`/api/admin/team/${member.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: newRole }),
+    });
+    loadTeam();
+  }
+
+  const inputClass =
+    "border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+
+  if (admin && admin.role !== "admin") {
+    return <p className="font-body-md text-body-md text-error">Only Admins can manage the team.</p>;
+  }
+
+  return (
+    <div className="max-w-2xl">
+      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Team</h1>
+
+      <form onSubmit={handleAdd} className="border border-outline-variant/30 rounded-lg p-4 flex flex-col gap-3 mb-6">
+        <h2 className="font-headline-md text-headline-md text-on-surface">Add team member</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+          <input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
+        </div>
+        <select value={role} onChange={(e) => setRole(e.target.value)} className={`${inputClass} capitalize`}>
+          {ROLES.map((r) => (
+            <option key={r} value={r} className="capitalize">{r.replace("_", " ")}</option>
+          ))}
+        </select>
+        <button type="submit" disabled={submitting} className="self-start px-5 py-2 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary disabled:opacity-50">
+          {submitting ? "Creating..." : "Add member"}
+        </button>
+        {error && <p className="font-label-md text-label-md text-error">{error}</p>}
+        {lastTempPassword && (
+          <p className="font-body-sm text-body-sm text-primary bg-primary-container/20 rounded-lg px-3 py-2">
+            Account created. Temporary password (share securely — shown once): <strong>{lastTempPassword}</strong>
+          </p>
+        )}
+      </form>
+
+      {loading ? (
+        <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+      ) : (
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="text-left border-b border-outline-variant/30">
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Name</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Email</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Role</th>
+              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Active</th>
+            </tr>
+          </thead>
+          <tbody>
+            {team.map((m) => (
+              <tr key={m.id} className="border-b border-outline-variant/10">
+                <td className="py-3 font-body-sm text-body-sm text-on-surface">{m.name}</td>
+                <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{m.email}</td>
+                <td className="py-3">
+                  <select value={m.role} onChange={(e) => changeRole(m, e.target.value)} className={`${inputClass} py-1 capitalize`}>
+                    {ROLES.map((r) => (
+                      <option key={r} value={r} className="capitalize">{r.replace("_", " ")}</option>
+                    ))}
+                  </select>
+                </td>
+                <td className="py-3">
+                  <button onClick={() => toggleActive(m)} className={`font-label-md text-label-md hover:underline ${m.is_active ? "text-error" : "text-primary"}`}>
+                    {m.is_active ? "Deactivate" : "Reactivate"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+</file>
+
 <file path="tinytots-web/web/app/admin/layout.tsx">
 "use client";
 
@@ -11499,6 +11922,65 @@ export default function AdminDashboardPage() {
   }
 </file>
 
+<file path="tinytots-web/web/app/api/admin/inventory/[id]/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+// PUT /api/inventory/[id] — update a single variant's price/stock/reorder_level/web pricing lock (admin only)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  try {
+    const body = await request.json();
+    const { price, stock, reorder_level, color, size, web_price_locked, web_round_to } = body;
+
+    const updates: Record<string, unknown> = {};
+    if (price !== undefined) updates.price = price;
+    if (stock !== undefined) updates.stock = stock;
+    if (reorder_level !== undefined) updates.reorder_level = reorder_level;
+    if (color !== undefined) updates.color = color;
+    if (size !== undefined) updates.size = size;
+    
+    // Coerce safely to Boolean and Number to ensure no bad types hit the database
+    if (web_price_locked !== undefined) {
+      updates.web_price_locked = Boolean(web_price_locked);
+    }
+    if (web_round_to !== undefined) {
+      updates.web_round_to = Number(web_round_to);
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("variants")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, data }, { status: 200 });
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+}
+
+// DELETE /api/inventory/[id] — remove a variant entirely
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const { error } = await supabaseAdmin.from("variants").delete().eq("id", id);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ success: true }, { status: 200 });
+}
+</file>
+
 <file path="tinytots-web/web/app/api/admin/inventory/route.ts">
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -11508,6 +11990,85 @@ export async function GET() {
     .from("variants")
     .select("*, products(name, sku, cost_price, selling_price, is_active)");
 
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ data }, { status: 200 });
+}
+</file>
+
+<file path="tinytots-web/web/app/api/admin/orders/[id]/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from("orders")
+    .select("*, customers(full_name, phone, email)")
+    .eq("id", id)
+    .single();
+
+  if (orderError) return NextResponse.json({ error: orderError.message }, { status: 404 });
+
+  const { data: items, error: itemsError } = await supabaseAdmin
+    .from("order_items")
+    .select("id, quantity, unit_price, line_total, variants(id, color, size, products(name, sku))")
+    .eq("order_id", id);
+
+  if (itemsError) return NextResponse.json({ error: itemsError.message }, { status: 500 });
+
+  return NextResponse.json({ data: { ...order, items } }, { status: 200 });
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  try {
+    const body = await request.json();
+    const { status, cod_token_paid } = body;
+
+    const updates: Record<string, unknown> = {};
+    if (status !== undefined) updates.status = status;
+    if (cod_token_paid !== undefined) updates.cod_token_paid = cod_token_paid;
+    updates.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabaseAdmin
+      .from("orders")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true, data }, { status: 200 });
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+}
+</file>
+
+<file path="tinytots-web/web/app/api/admin/orders/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+export async function GET(request: NextRequest) {
+  const status = request.nextUrl.searchParams.get("status");
+
+  let query = supabaseAdmin
+    .from("orders")
+    .select("id, order_number, customer_id, guest_name, guest_phone, shipping_city, status, payment_method, cod_tier, cod_token_amount, cod_token_paid, total, created_at")
+    .order("created_at", { ascending: false });
+
+  if (status && status !== "all") {
+    query = query.eq("status", status);
+  }
+
+  const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ data }, { status: 200 });
 }
@@ -11527,7 +12088,7 @@ export async function GET(
   .from("products")
   .select(`
     id, name, sku, description, brand, category, image_url, gender, age_bracket, is_active,
-    variants ( id, color, size, price, stock, reorder_level )
+    variants ( id, color, size, price, stock, reorder_level, web_price_locked, web_round_to )
   `)
     .eq("id", id)
     .single();
@@ -11537,6 +12098,108 @@ export async function GET(
   }
   return NextResponse.json({ data }, { status: 200 });
 }
+</file>
+
+<file path="tinytots-web/web/app/api/admin/team/[id]/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  try {
+    const body = await request.json();
+    const { role, is_active } = body;
+
+    const updates: Record<string, unknown> = {};
+    if (role !== undefined) updates.role = role;
+    if (is_active !== undefined) updates.is_active = is_active;
+
+    const { data, error } = await supabaseAdmin
+      .from("admin_users")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true, data }, { status: 200 });
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+}
+</file>
+
+<file path="tinytots-web/web/app/api/admin/team/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+export async function GET() {
+  const { data, error } = await supabaseAdmin
+    .from("admin_users")
+    .select("id, name, email, role, is_active, created_at")
+    .order("created_at", { ascending: true });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ data }, { status: 200 });
+}
+
+// POST — creates a real Supabase Auth account for the new team member (temp password)
+// AND their admin_users role row, in one step.
+export async function POST(request: NextRequest) {
+    try {
+      const body = await request.json();
+      const { name, email, role } = body;
+  
+      if (!name || !email || !role) {
+        return NextResponse.json({ error: "name, email, and role are required" }, { status: 400 });
+      }
+  
+      const tempPassword = Math.random().toString(36).slice(-10) + "A1!";
+  
+      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          is_admin_created: true,
+        },
+      });
+  
+      if (authError || !authUser?.user) {
+        console.error("createUser failed — message:", authError?.message);
+        console.error("createUser failed — status:", authError?.status);
+      
+        console.error("createUser failed — CAUSE:", authError?.cause);
+        // @ts-expect-error
+        console.error("createUser failed — CAUSE STACK:", authError?.cause?.stack);
+        console.error("createUser failed — full object:", authError);
+        return NextResponse.json(
+          { error: authError?.message || "Failed to create login (see server terminal)" },
+          { status: 500 }
+        );
+      }
+  
+      const { data: adminRow, error: adminError } = await supabaseAdmin
+        .from("admin_users")
+        .insert([{ auth_user_id: authUser.user.id, name, email, role, is_active: true }])
+        .select()
+        .single();
+  
+      if (adminError) {
+        console.error("admin_users insert failed:", JSON.stringify(adminError, null, 2));
+        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
+        return NextResponse.json({ error: adminError.message || "Failed to create admin role" }, { status: 500 });
+      }
+  
+      return NextResponse.json({ success: true, data: adminRow, temp_password: tempPassword }, { status: 201 });
+    } catch (err: any) {
+      console.error("POST /api/admin/team crashed:", err);
+      return NextResponse.json({ error: err?.message || "Unexpected server error" }, { status: 500 });
+    }
+  }
 </file>
 
 <file path="tinytots-web/web/app/api/checkout/route.ts">
@@ -13041,7 +13704,7 @@ export default function ProductsPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-bento-gap">
         {products.map((p) => {
           const inStock = p.variants?.some((v: any) => v.stock > 0);
-          const price = p.variants?.[0]?.price;
+          const price = p.variants?.[0]?.web_price ?? p.variants?.[0]?.price;
           return (
             <Link
               key={p.id}
@@ -13876,11 +14539,12 @@ async function getProducts() {
       sku,
       brand,
       image_url,
-      variants (
-        id,
-        price,
-        stock
-      )
+    variants (
+  id,
+  price,
+  web_price,
+  stock
+)
     `
     )
     .eq("is_active", true)
@@ -13984,7 +14648,7 @@ export default async function Home() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
           {products.map((product: any) => {
-            const prices = product.variants.map((v: any) => v.price);
+          const prices = product.variants.map((v: any) => v.web_price ?? v.price);
             const minPrice = prices.length ? Math.min(...prices) : 0;
             const totalStock = product.variants.reduce(
               (sum: number, v: any) => sum + v.stock,
@@ -14578,6 +15242,12 @@ export function useCart() {
 
 <file path="tinytots-web/web/lib/supabase-admin.ts">
 import { createClient } from "@supabase/supabase-js";
+import { Agent, setGlobalDispatcher } from "undici";
+
+// Force IPv4 for all outbound network requests in this Node process.
+// Fixes ~20-30s hangs caused by slow IPv6 "happy eyeballs" fallback on
+// networks where IPv6 is advertised but doesn't actually route properly.
+setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
 
 // SERVER-ONLY. Never import this in a "use client" component or expose
 // this key to the browser — it bypasses Row Level Security entirely.
@@ -14588,7 +15258,9 @@ if (!supabaseUrl || !serviceRoleKey) {
   throw new Error("Missing Supabase service role environment variables");
 }
 
-export const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+export const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
 </file>
 
 <file path="tinytots-web/web/lib/supabase.ts">
@@ -32581,6 +33253,114 @@ ALTER TABLE public.variants ADD COLUMN web_discount_percent numeric(5,2) NOT NUL
 ALTER TABLE public.variants ADD COLUMN web_price numeric(10,2);
 </file>
 
+<file path="tinytots-web/web/supabase/migrations/20260718100000_auto_web_pricing.sql">
+-- Default web markup applied automatically when a variant has no web pricing set yet.
+-- Change this single number later if you want a different default markup.
+CREATE OR REPLACE FUNCTION public.auto_fill_web_pricing()
+RETURNS TRIGGER AS $$
+DECLARE
+  default_markup_percent numeric := 25;
+BEGIN
+  -- Only auto-fill web_base_price if it's genuinely untouched (NULL).
+  -- Once an admin sets it manually via the web panel, this trigger leaves it alone.
+  IF NEW.web_base_price IS NULL THEN
+    NEW.web_base_price := ROUND(COALESCE(NEW.base_price, NEW.price) * (1 + default_markup_percent / 100), 2);
+  END IF;
+
+  -- web_price is always kept in sync with web_base_price and web_discount_percent,
+  -- so admins only ever need to edit one of those two, never web_price directly.
+  NEW.web_price := ROUND(NEW.web_base_price * (1 - COALESCE(NEW.web_discount_percent, 0) / 100), 2);
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_auto_fill_web_pricing ON public.variants;
+CREATE TRIGGER trg_auto_fill_web_pricing
+BEFORE INSERT OR UPDATE ON public.variants
+FOR EACH ROW
+EXECUTE FUNCTION public.auto_fill_web_pricing();
+
+-- One-time backfill: apply this to every existing variant (old test products,
+-- anything created in Electron) that currently has no web price at all.
+UPDATE public.variants
+SET web_base_price = ROUND(COALESCE(base_price, price) * 1.25, 2)
+WHERE web_base_price IS NULL;
+
+UPDATE public.variants
+SET web_price = ROUND(web_base_price * (1 - COALESCE(web_discount_percent, 0) / 100), 2)
+WHERE web_price IS NULL;
+</file>
+
+<file path="tinytots-web/web/supabase/migrations/20260718110000_web_price_lock.sql">
+ALTER TABLE public.variants ADD COLUMN web_price_locked boolean NOT NULL DEFAULT false;
+
+CREATE OR REPLACE FUNCTION public.auto_fill_web_pricing()
+RETURNS TRIGGER AS $$
+DECLARE
+  default_markup_percent numeric := 25;
+BEGIN
+  -- Recompute web_base_price from the shop price whenever unlocked —
+  -- this makes web price track shop price increases automatically.
+  -- Set web_price_locked = true on a variant to freeze it and edit web price by hand instead.
+  IF NOT NEW.web_price_locked THEN
+    NEW.web_base_price := ROUND(COALESCE(NEW.base_price, NEW.price) * (1 + default_markup_percent / 100), 2);
+  END IF;
+
+  -- web_price always derives from web_base_price + web_discount_percent, regardless of lock state —
+  -- locking only freezes the base markup, discounts still apply on top.
+  NEW.web_price := ROUND(NEW.web_base_price * (1 - COALESCE(NEW.web_discount_percent, 0) / 100), 2);
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+</file>
+
+<file path="tinytots-web/web/supabase/migrations/20260718120000_web_price_rounding.sql">
+ALTER TABLE public.variants ADD COLUMN web_round_to numeric NOT NULL DEFAULT 50 CHECK (web_round_to IN (50, 100));
+
+CREATE OR REPLACE FUNCTION public.auto_fill_web_pricing()
+RETURNS TRIGGER AS $$
+DECLARE
+  default_markup_percent numeric := 25;
+BEGIN
+  IF NOT NEW.web_price_locked THEN
+    NEW.web_base_price := ROUND(COALESCE(NEW.base_price, NEW.price) * (1 + default_markup_percent / 100), 2);
+  END IF;
+
+  NEW.web_price := CEIL(
+    ROUND(NEW.web_base_price * (1 - COALESCE(NEW.web_discount_percent, 0) / 100), 2) / NEW.web_round_to
+  ) * NEW.web_round_to;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Re-run rounding on all existing variants now that web_round_to exists
+UPDATE public.variants SET web_round_to = web_round_to;
+</file>
+
+<file path="tinytots-web/web/supabase/migrations/20260720_handle_new_user_skip_admin.sql">
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Skip customer record creation for admin/staff-created accounts
+    IF (NEW.raw_user_meta_data->>'is_admin_created')::boolean IS TRUE THEN
+        RETURN NEW;
+    END IF;
+
+    INSERT INTO public.customers (auth_user_id, email, full_name, phone)
+    VALUES (
+        NEW.id,
+        NEW.email,
+        NEW.raw_user_meta_data->>'full_name',
+        NEW.raw_user_meta_data->>'phone'
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+</file>
+
 <file path="tinytots-web/web/supabase/snippets/Untitled query 131.sql">
 CREATE TABLE sales (
     id BIGSERIAL PRIMARY KEY,
@@ -32737,6 +33517,10 @@ SELECT * FROM products;
 .env.keys
 .env.local
 .env.*.local
+
+reset-password.mjs
+test-post.mjs
+test-fetch.mjs
 </file>
 
 <file path="tinytots-web/web/supabase/config.toml">
@@ -33200,6 +33984,10 @@ yarn-error.log*
 next-env.d.ts
 
 .env.local
+
+test-*.mjs
+*.local.mjs
+reset-password.mjs
 </file>
 
 <file path="tinytots-web/web/AGENTS.md">
@@ -33311,12 +34099,12 @@ export default nextConfig;
   "name": "tinytots",
   "version": "0.1.0",
   "private": true,
- "scripts": {
+  "scripts": {
   "dev": "next dev -p 3001",
-  "build": "next build",
-  "start": "next start -p 3001",
-  "lint": "eslint"
-},
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "eslint"
+  },
   "dependencies": {
     "@supabase/ssr": "^0.12.2",
     "@supabase/supabase-js": "^2.110.5",
@@ -33325,7 +34113,8 @@ export default nextConfig;
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-quill-new": "^3.8.3"
+    "react-quill-new": "^3.8.3",
+    "undici": "^8.8.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -33333,6 +34122,7 @@ export default nextConfig;
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",

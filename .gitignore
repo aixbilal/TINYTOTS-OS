@@ -5,3 +5,20 @@
 
 # Ignore node modules for everything
 **/node_modules
+# Node & dependencies
+**/node_modules/
+
+# Next.js build output
+**/.next/
+
+# Electron / Build output
+**/dist/
+**/out/
+
+# Environment files
+**/.env
+**/.env*.local
+
+# OS / Editor files
+.DS_Store
+Thumbs.db

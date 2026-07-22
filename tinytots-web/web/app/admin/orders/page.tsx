@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { adminFetch } from "@/lib/admin-fetch";
 
 type Order = {
   id: number; order_number: string; guest_name: string | null; guest_phone: string | null;
@@ -19,7 +20,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/admin/orders?status=${statusFilter}`)
+    adminFetch(`/api/admin/orders?status=${statusFilter}`)
       .then((r) => r.json())
       .then((json) => setOrders(json.data || []))
       .finally(() => setLoading(false));

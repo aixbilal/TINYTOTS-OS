@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TinyTots Cart</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<!-- Tailwind CSS with specific configuration -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface-variant": "#56423e",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#65b381",
+                    "secondary-fixed-dim": "#a2cbee",
+                    "on-primary-fixed": "#3d0600",
+                    "inverse-surface": "#303030",
+                    "on-surface": "#1b1c1c",
+                    "on-secondary-fixed": "#001e30",
+                    "on-tertiary": "#ffffff",
+                    "outline-variant": "#dcc0bb",
+                    "surface-bright": "#fcf9f8",
+                    "on-secondary-fixed-variant": "#1e4b67",
+                    "surface": "#fcf9f8",
+                    "error": "#ba1a1a",
+                    "inverse-primary": "#ffb4a3",
+                    "surface-container-low": "#f6f3f2",
+                    "primary-fixed": "#ffdad2",
+                    "on-error-container": "#93000a",
+                    "on-background": "#1b1c1c",
+                    "surface-tint": "#9c422e",
+                    "secondary-container": "#b2dcff",
+                    "on-primary": "#ffffff",
+                    "surface-container-highest": "#e4e2e1",
+                    "on-secondary-container": "#38617f",
+                    "surface-variant": "#e4e2e1",
+                    "primary": "#9c422e",
+                    "primary-fixed-dim": "#ffb4a3",
+                    "tertiary-fixed-dim": "#88d7a2",
+                    "on-tertiary-fixed-variant": "#00522d",
+                    "on-primary-container": "#6b1e0d",
+                    "surface-dim": "#dcd9d9",
+                    "outline": "#89726d",
+                    "on-tertiary-container": "#004324",
+                    "tertiary-fixed": "#a3f4bd",
+                    "secondary-fixed": "#cae6ff",
+                    "on-tertiary-fixed": "#00210f",
+                    "surface-container-high": "#eae7e7",
+                    "primary-container": "#f2846b",
+                    "secondary": "#396280",
+                    "tertiary": "#186c40",
+                    "inverse-on-surface": "#f3f0f0",
+                    "surface-container-lowest": "#ffffff",
+                    "background": "#fcf9f8",
+                    "on-primary-fixed-variant": "#7d2c19",
+                    "surface-container": "#f0eded",
+                    "on-secondary": "#ffffff",
+                    "on-error": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-sm": "12px",
+                    "stack-md": "24px",
+                    "margin-mobile": "20px",
+                    "unit": "4px",
+                    "margin-desktop": "64px",
+                    "bento-gap": "20px",
+                    "stack-lg": "48px",
+                    "container-max": "1280px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "button": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "label-md": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-sm": ["Inter"],
+                    "display-md": ["Plus Jakarta Sans"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "button": ["16px", {"lineHeight": "1", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "label-md": ["12px", {"lineHeight": "1", "fontWeight": "500"}],
+                    "label-lg": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg": ["30px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "display-md": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-container h-screen w-screen overflow-hidden flex items-end justify-center font-body-md antialiased text-on-surface">
+<!-- Mobile Viewport Simulator Overlay (Backdrop) -->
+<div class="fixed inset-0 bg-on-surface/40 backdrop-blur-sm z-40"></div>
+<!-- Bottom Sheet Modal -->
+<div class="relative w-full max-w-[480px] bg-surface-bright rounded-t-[16px] flex flex-col z-50 shadow-2xl h-[795px] overflow-hidden transform transition-transform duration-300 translate-y-0">
+<!-- Header -->
+<div class="flex items-center justify-between p-margin-mobile border-b border-outline-variant/30 shrink-0">
+<div class="flex items-center gap-stack-sm">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Your Cart</h2>
+<span class="flex items-center justify-center bg-primary-container text-on-primary-container font-label-lg text-label-lg h-6 w-6 rounded-full mt-1">2</span>
+</div>
+<button class="p-2 -mr-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[24px]" data-icon="close">close</span>
+</button>
+</div>
+<!-- Scrollable Item List -->
+<div class="flex-1 overflow-y-auto p-margin-mobile flex flex-col gap-bento-gap bg-surface-bright">
+<!-- Cart Item 1 -->
+<div class="flex gap-4 p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm relative group">
+<div class="w-[100px] h-[100px] rounded-lg bg-surface-container overflow-hidden flex-shrink-0 relative">
+<img class="w-full h-full object-cover" data-alt="A soft, high-quality photograph of a folded baby's organic cotton cable knit sweater in an oatmeal color. The sweater is resting on a clean, light cream surface. Soft, natural daylight highlights the intricate texture of the knit. The aesthetic is minimal, warm, and premium." src="https://lh3.googleusercontent.com/aida-public/AB6AXuArgaemEhCH4o98Ak7NNKi9uS99mpxSY8moY2g9hjbZDy1OBu8JmZNWocP68iuYt0AT3N8NL4TcwnBRMLFsR05XYCeigxLE09YhowL5fKLe8UmDPYsGaW0QTSrYfKRw9fFYGHyHqKwTOKxge5YgzLnnYD5hI4G-Q-gV8S9ctz_cXuNWpkaTe8JebNLmy4lDCPNvYq-vtW8pL7Qo26jol1a395IwPx9j45tVQWpC_gEAtnyi-CxVMMxcQ9wlMaGfmZ4be-f28kMKESFu"/>
+</div>
+<div class="flex flex-col flex-1 justify-between">
+<div class="flex justify-between items-start gap-2">
+<div>
+<h3 class="font-body-md text-body-md font-semibold text-on-surface leading-tight">Organic Cotton Cable Knit Sweater</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Size: 12-18M | Oatmeal</p>
+</div>
+</div>
+<div class="flex items-end justify-between mt-2">
+<span class="font-headline-md text-headline-md text-on-surface">$48.00</span>
+<!-- Quantity Stepper -->
+<div class="flex items-center gap-1 bg-surface-container-low rounded-lg p-1 border border-outline-variant/20">
+<button class="w-7 h-7 flex items-center justify-center text-on-surface-variant rounded-md hover:bg-surface-variant transition-colors active:bg-surface-container-high">
+<span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span>
+</button>
+<span class="font-label-lg text-label-lg text-on-surface w-6 text-center select-none">1</span>
+<button class="w-7 h-7 flex items-center justify-center text-on-surface-variant rounded-md hover:bg-surface-variant transition-colors active:bg-surface-container-high">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</div>
+<button aria-label="Remove item" class="absolute top-2 right-2 p-2 text-on-surface-variant/50 hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="delete">delete</span>
+</button>
+</div>
+<!-- Cart Item 2 -->
+<div class="flex gap-4 p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm relative group">
+<div class="w-[100px] h-[100px] rounded-lg bg-surface-container overflow-hidden flex-shrink-0 relative">
+<img class="w-full h-full object-cover" data-alt="A beautifully styled set of two muslin baby swaddles, gently rolled and tied with a subtle ribbon. The swaddles feature delicate, minimalist patterns in sage green and soft clay. The setting is bright and airy, with soft shadows, reflecting a modern editorial aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnQyHiRvmfTifheVDoKGzBgwUZ69Y_vvMIZJ2M1DYSn6bKqq4UG_EEXFP2SfT4N_ywCS6PzkWfzUBrAkn_oQgEabq15L4CK2ls_nUa0XEw9beXu18_IHIxoAaaaIf7BvP64I-czSB4eImxQeg2RmNCfiCjF4KoBeAUy0z_6VwVVaTCRIar6YGKtK-Z_u2Th2j02sFq4d4v-pl8C_C5P8B13fe-9ynCBHlxFmZzJiSVOs5hwQtoB8DHqzJHgvawmn98EdYeJqfVCQRH"/>
+</div>
+<div class="flex flex-col flex-1 justify-between">
+<div class="flex justify-between items-start gap-2">
+<div>
+<h3 class="font-body-md text-body-md font-semibold text-on-surface leading-tight">Premium Muslin Swaddle Set</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Pack of 2 | Sage & Clay</p>
+</div>
+</div>
+<div class="flex items-end justify-between mt-2">
+<span class="font-headline-md text-headline-md text-on-surface">$32.00</span>
+<!-- Quantity Stepper -->
+<div class="flex items-center gap-1 bg-surface-container-low rounded-lg p-1 border border-outline-variant/20">
+<button class="w-7 h-7 flex items-center justify-center text-on-surface-variant rounded-md hover:bg-surface-variant transition-colors active:bg-surface-container-high">
+<span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span>
+</button>
+<span class="font-label-lg text-label-lg text-on-surface w-6 text-center select-none">1</span>
+<button class="w-7 h-7 flex items-center justify-center text-on-surface-variant rounded-md hover:bg-surface-variant transition-colors active:bg-surface-container-high">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</div>
+<button aria-label="Remove item" class="absolute top-2 right-2 p-2 text-on-surface-variant/50 hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="delete">delete</span>
+</button>
+</div>
+<!-- Spacer to ensure content isn't hidden behind fixed footer -->
+<div class="h-4 w-full"></div>
+</div>
+<!-- Fixed Bottom Checkout Panel -->
+<div class="bg-surface-container-lowest border-t border-outline-variant/30 px-margin-mobile pt-stack-sm pb-8 flex flex-col gap-stack-sm shrink-0 shadow-[0_-8px_30px_rgba(0,0,0,0.04)] relative z-10">
+<!-- Promo Code Input -->
+<div class="flex items-center gap-2 mb-2">
+<div class="relative flex-1 group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 text-[20px] transition-colors group-focus-within:text-primary" data-icon="sell">sell</span>
+<input class="w-full pl-11 pr-4 py-3.5 rounded-lg border border-outline-variant/50 bg-surface text-on-surface font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-on-surface-variant/50" placeholder="Promo code" type="text"/>
+</div>
+<button class="font-button text-button text-secondary px-4 py-3.5 hover:text-secondary-fixed transition-colors">Apply</button>
+</div>
+<!-- Summary -->
+<div class="flex justify-between items-end px-1">
+<div class="flex flex-col gap-1">
+<span class="font-body-md text-body-md text-on-surface-variant">Subtotal (2 items)</span>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="material-symbols-outlined text-tertiary-container text-[18px]" data-icon="local_shipping">local_shipping</span>
+<span class="font-label-md text-label-md text-tertiary-container font-semibold tracking-wide uppercase">Free Delivery</span>
+</div>
+</div>
+<span class="font-display-md text-display-md text-on-surface tracking-tight">$80.00</span>
+</div>
+<!-- Checkout Button -->
+<button class="w-full bg-primary-container text-on-primary-container font-button text-button py-4 mt-2 rounded-[12px] flex justify-center items-center gap-2 active:scale-[0.98] transition-transform hover:bg-primary-container/90">
+                Checkout Now
+                <span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<!-- Trust Note -->
+<div class="flex items-center justify-center gap-1.5 text-center mt-2 opacity-80">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]" data-icon="verified_user">verified_user</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-[12px]">Cash on Delivery available across Punjab & Islamabad.</p>
+</div>
+</div>
+</div>
+</body></html>

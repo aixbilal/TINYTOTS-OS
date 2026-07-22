@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TinyTots - User Dashboard</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#001e30",
+                        "on-background": "#1b1c1c",
+                        "tertiary": "#186c40",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#65b381",
+                        "on-primary-fixed-variant": "#7d2c19",
+                        "error-container": "#ffdad6",
+                        "inverse-primary": "#ffb4a3",
+                        "on-error-container": "#93000a",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#fcf9f8",
+                        "surface-variant": "#e4e2e1",
+                        "on-tertiary-fixed": "#00210f",
+                        "on-tertiary-fixed-variant": "#00522d",
+                        "tertiary-fixed-dim": "#88d7a2",
+                        "secondary-container": "#b2dcff",
+                        "on-secondary-fixed-variant": "#1e4b67",
+                        "surface-container-low": "#f6f3f2",
+                        "secondary-fixed-dim": "#a2cbee",
+                        "primary-fixed": "#ffdad2",
+                        "tertiary-fixed": "#a3f4bd",
+                        "surface-dim": "#dcd9d9",
+                        "surface-tint": "#9c422e",
+                        "outline-variant": "#dcc0bb",
+                        "on-surface": "#1b1c1c",
+                        "on-tertiary-container": "#004324",
+                        "on-surface-variant": "#56423e",
+                        "inverse-surface": "#303030",
+                        "surface-container-high": "#eae7e7",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "on-primary": "#ffffff",
+                        "secondary": "#396280",
+                        "primary": "#9c422e",
+                        "surface-container-highest": "#e4e2e1",
+                        "on-primary-fixed": "#3d0600",
+                        "inverse-on-surface": "#f3f0f0",
+                        "surface": "#fcf9f8",
+                        "surface-container": "#f0eded",
+                        "background": "#fcf9f8",
+                        "on-primary-container": "#6b1e0d",
+                        "secondary-fixed": "#cae6ff",
+                        "outline": "#89726d",
+                        "primary-container": "#f2846b",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#38617f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "20px",
+                        "stack-sm": "12px",
+                        "bento-gap": "20px",
+                        "stack-lg": "48px",
+                        "container-max": "1280px",
+                        "stack-md": "24px",
+                        "gutter": "24px",
+                        "unit": "4px",
+                        "margin-desktop": "64px"
+                    },
+                    "fontFamily": {
+                        "display-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "button": ["Inter"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "display-md": ["36px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "1", "fontWeight": "500" }],
+                        "label-lg": ["14px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "button": ["16px", { "lineHeight": "1", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "headline-lg": ["30px", { "lineHeight": "1.3", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Shimmer Effect for Cards */
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .shimmer-effect::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 2.5s infinite;
+            pointer-events: none;
+        }
+        
+        /* Hide scrollbar for clean mobile look but allow scrolling */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md antialiased pb-24 selection:bg-primary-container selection:text-on-primary-container">
+<!-- Mobile Top Header (Dashboard Specific) -->
+<header class="sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-on-background/5 h-[64px] flex items-center justify-between px-margin-mobile">
+<h1 class="font-headline-md text-headline-md text-on-surface">My Account</h1>
+<button aria-label="Settings" class="w-12 h-12 flex items-center justify-end text-on-surface-variant hover:text-primary transition-colors focus:outline-none">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+</button>
+</header>
+<main class="flex flex-col w-full max-w-md mx-auto">
+<!-- 1. Profile Header -->
+<section class="mt-stack-sm mb-stack-md px-margin-mobile flex items-center gap-4">
+<div class="relative w-20 h-20 rounded-full border border-on-background/10 overflow-hidden shadow-sm shrink-0">
+<img class="w-full h-full object-cover" data-alt="A close-up lifestyle portrait of a young mother smiling gently, set against a warm, soft-focus modern nursery background. The lighting is bright and airy, typical of a high-end minimalist editorial shoot. The color palette features warm ivory, soft coral accents, and natural wood tones, conveying trust and premium quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZtAk55RsLI24HW_k_GwFTInkUXw_lga3ea0D6gjnqqACNMRvhgY23GbEErhKk-qBjBX7nqtXkdTJPPvMQDfZHAfFAznPPyh0w3HgNUc9HBO7mvLhg6o-aGoqhy5qFfizySjBDY5-tkBMGB_240N4lbUx7NWgTMV0l_JuRS_9SNDEXvaJYmxUofYEgjjUqmYWKcaPbNhydkNjfd2HrFCV8pES2OKmAKRkWCzzv12MyZtVBIW_mz1emDFGIoUMFnnkIZow1NI4w3ToN"/>
+</div>
+<div class="flex flex-col justify-center">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Eleanor Vance</h2>
+<div class="flex items-center gap-2 mt-2">
+<span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-label-md">
+<span class="material-symbols-outlined text-[14px] mr-1" style="font-variation-settings: 'FILL' 1;">stars</span>
+                        Gold Member
+                    </span>
+</div>
+</div>
+</section>
+<!-- 2. Loyalty Points Card -->
+<section class="px-margin-mobile mb-stack-md">
+<div class="relative overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low p-5 shadow-sm shimmer-effect">
+<div class="relative z-10 flex justify-between items-start mb-4">
+<div>
+<p class="font-label-lg text-label-lg text-on-surface-variant mb-1 uppercase tracking-wider">Available Points</p>
+<p class="font-display-md text-display-md text-primary">2,450</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">redeem</span>
+</div>
+</div>
+<div class="relative z-10">
+<div class="flex justify-between font-label-md text-label-md text-on-surface-variant mb-2">
+<span>Current: Gold</span>
+<span>Platinum: 3,000 pts</span>
+</div>
+<!-- Progress Bar -->
+<div class="w-full h-2 rounded-full bg-surface-variant overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-1000 ease-out" style="width: 81%;"></div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-3">Only <strong class="text-primary font-medium">550 points</strong> away from Platinum Tier benefits.</p>
+</div>
+</div>
+</section>
+<!-- 3. Recent Order Section -->
+<section class="px-margin-mobile mb-stack-md flex flex-col gap-bento-gap">
+<h3 class="font-headline-md text-headline-md text-on-surface">Recent Order</h3>
+<div class="rounded-xl border border-on-background/10 bg-surface p-4 flex flex-col gap-4 shadow-sm">
+<div class="flex justify-between items-center pb-3 border-b border-on-background/5">
+<span class="font-label-md text-label-md text-on-surface-variant">Order #TT-8924</span>
+<span class="inline-flex items-center px-2.5 py-1 rounded-full bg-tertiary-container/20 text-on-tertiary-container font-label-md text-label-md">
+<span class="material-symbols-outlined text-[14px] mr-1">local_shipping</span>
+                        In Transit
+                    </span>
+</div>
+<div class="flex gap-4 items-center">
+<div class="w-20 h-20 rounded-lg bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="A studio product shot of a premium, organic cotton baby swaddle blanket in a soft sage green color, neatly folded. The lighting is soft and diffused, resting on a clean, warm ivory surface. The aesthetic is highly minimalist, focusing on the texture and quality of the fabric, consistent with a high-end juvenile fashion brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD35jR1TWUU7HfOOwwZHRVXjTgvs5BevDsMVRK_QBz6PMerEX7iM9O1weQ643fYF6DfLU5CkBix_rm_PkjyfGnW1VL5I84xYO19oURGYJaNJB4ASNOh7KZ15CMktb4yhEBZTC0O8H2DEgk5SP5zULeAwAyRKTJLxqwz3FTlgxnH_f3tEDD_PyTc-U5M5dvtv1iVWs7LsHVWGEehG31qIEt2Lqzxqnx9rlN5HmxVhcUoB8JNkB6Bh4Iqes4Nz-fEFbagYEeANJKZj5rz"/>
+</div>
+<div class="flex flex-col flex-grow">
+<h4 class="font-body-lg text-body-lg text-on-surface font-medium line-clamp-1">Organic Cotton Swaddle Set</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Qty: 2 • Sage Green</p>
+<p class="font-label-lg text-label-lg text-on-surface mt-2">$48.00</p>
+</div>
+</div>
+<button class="w-full h-12 mt-2 rounded-lg bg-surface border border-outline text-on-surface font-button text-button hover:bg-surface-container-low transition-colors flex justify-center items-center active:scale-[0.98]">
+                    Track Package
+                </button>
+</div>
+</section>
+<!-- 4. Recommendation Grid -->
+<section class="px-margin-mobile mb-stack-lg">
+<div class="flex justify-between items-end mb-bento-gap">
+<h3 class="font-headline-md text-headline-md text-on-surface">Recommended for You</h3>
+<a class="font-label-lg text-label-lg text-primary hover:opacity-80 transition-opacity" href="#">View All</a>
+</div>
+<div class="grid grid-cols-2 gap-bento-gap">
+<!-- Product Card 1 -->
+<div class="flex flex-col group cursor-pointer">
+<div class="relative w-full aspect-square rounded-xl overflow-hidden bg-surface-container-lowest border border-on-background/5 mb-3">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A beautiful studio shot of a modern, minimalist wooden baby rattle. The rattle is made of smooth, light beech wood with delicate silicone rings in dusty blue and soft coral colors. It sits on a pristine warm white surface with soft, directional lighting casting gentle shadows, emphasizing safety and premium craftsmanship." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAspyzjWgWE7GJz0ebSc1Elbn1iGoni72zqXZaiK9gKBHsWmEtIl0DwIZyIeqlKdcP6zQrz4sLWkd9Mw8iBIiEVh1GLg46Hm8Qwyh9FCfWZJURzc1AqDPxrd09CHYz54hOu9xMUm1h0hu5Pp9dDer1dbRukEPmPebjTBebQCMolYxd-Z7Irc1908-8TX1Z3U3Gmqi9h9NeN5lx6RtEr8MbhPi8LJvr7sstV8Il6lUbqTbzRXoIApM5jZe8gLgVSjI7lwqxeMdHB5q3t"/>
+<button aria-label="Add to favorites" class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-surface/90 backdrop-blur text-on-surface flex items-center justify-center shadow-sm hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">favorite</span>
+</button>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface line-clamp-1">Montessori Beech Rattle</h4>
+<p class="font-label-lg text-label-lg text-on-surface-variant mt-1">$22.00</p>
+</div>
+<!-- Product Card 2 -->
+<div class="flex flex-col group cursor-pointer">
+<div class="relative w-full aspect-square rounded-xl overflow-hidden bg-surface-container-lowest border border-on-background/5 mb-3">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A high-end editorial shot of a soft, ribbed knit baby beanie in a subtle oat color. The beanie is perfectly arranged against a minimalist ivory background. The lighting highlights the soft, premium texture of the knit material. The overall composition is clean, airy, and sophisticated, tailored for a luxury children's boutique." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZuAdevrI3qdvWy6absbyxRo0FMOYdzTMCtOmmu-1r6_oxEeJXLh8I7LxMeLWty6qSj9eJqkQeMPFEV8ENamBU4W9tE6q_09wpXEZoyvi9BuLPyBMvrBksXC4d5rpiB4HvbFPa2XwtmIQG58WOSV5zCxl0XnwU2ZLClZ0THpWe0seHt6J5rwpacwHO3saInFuGS3KL7V6Zgt41k8ABVycWx9rdq7gXFgdmsGMtLb_15YoJmm3KVebQtBjMfk_BJgp2jrp2YNBCYNaO"/>
+<button aria-label="Add to favorites" class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-surface/90 backdrop-blur text-on-surface flex items-center justify-center shadow-sm hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">favorite</span>
+</button>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface line-clamp-1">Ribbed Knit Beanie</h4>
+<p class="font-label-lg text-label-lg text-on-surface-variant mt-1">$18.00</p>
+</div>
+<!-- Product Card 3 -->
+<div class="flex flex-col group cursor-pointer">
+<div class="relative w-full aspect-square rounded-xl overflow-hidden bg-surface-container-lowest border border-on-background/5 mb-3">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A serene photograph of a plush, organic cotton baby play mat with a subtle, contemporary geometric pattern in soft greys and warm ivory. The mat is laid flat, illuminated by bright, natural window light that creates an inviting, clean, and airy atmosphere suitable for a modern nursery setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqc52qPAtFc2bBJSkz8h0BzBkspQXJriFgmV5_2rvTzFslz2EjY2kRp4p_5Uo4zabhHPwG26jDglkrMvOd1pkuzzJ8UXnYD96RufnwBwvioXG6FXvg1_CbqnILHpWNLfNvw3Ic7V-VCgWLIqrYAH_9XLE0E37_W-8m4RdWPi6jmGKrIGgxyp9KMs9VG-HAa8lXgTmxEFxqrI3DL1wpfi3pjvJpoAEr2Z7cWvcPJlLFWPLazJONsiMPwtr8kU_2jGCY1PWEXQW0wvSL"/>
+<button aria-label="Add to favorites" class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-surface/90 backdrop-blur text-on-surface flex items-center justify-center shadow-sm hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">favorite</span>
+</button>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface line-clamp-1">Plush Geometric Playmat</h4>
+<p class="font-label-lg text-label-lg text-on-surface-variant mt-1">$85.00</p>
+</div>
+<!-- Product Card 4 -->
+<div class="flex flex-col group cursor-pointer">
+<div class="relative w-full aspect-square rounded-xl overflow-hidden bg-surface-container-lowest border border-on-background/5 mb-3">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A pristine, minimalist product shot of a set of three silicone baby feeding bowls in muted, earthy tones: sage green, soft coral, and deep slate. The bowls are neatly stacked on a warm white background. The lighting is soft and even, highlighting the matte texture and modern design of the premium feeding accessories." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpqhoDOI-gOoqYPHZ4Li940rYAOioyDj1iuPHRaAXH56oabcTZoRmIf0XtxBv2TpqA4qeevU870hptYjjmKpbnk_4gESgrZkYzO1_vIFdp5CCDwt64Ug-pWE7AEN1zopegPEIQNl1jB4b-tm9ND4foCWCPy7Dzn1U6Ozk5X6VXOVY11zoJ2IvAvNMhqlVIPKXx37oWnUBVz9DI1u7PLxRU08obSByoyXqfpF8xNODclSrSPf9KE1xQzF5LVesb_W74Q0GPldJKd9r7"/>
+<button aria-label="Add to favorites" class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-surface/90 backdrop-blur text-on-surface flex items-center justify-center shadow-sm hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">favorite</span>
+</button>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface line-clamp-1">Silicone Feeding Set</h4>
+<p class="font-label-lg text-label-lg text-on-surface-variant mt-1">$34.00</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Shell (From JSON Shared Component) -->
+<nav class="bg-surface dark:bg-surface-container-highest font-label-md text-label-md fixed bottom-0 w-full z-50 md:hidden border-t border-on-background/5 fixed bottom-0 left-0 w-full flex justify-around items-center px-margin-mobile py-3">
+<!-- Item 0: Home -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-low active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span>Home</span>
+</a>
+<!-- Item 1: Shop -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-low active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1">grid_view</span>
+<span>Shop</span>
+</a>
+<!-- Item 2: Account (Active State based on Intent) -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl p-2 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">person</span>
+<span>Account</span>
+</a>
+<!-- Item 3: Cart -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-low active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1">shopping_basket</span>
+<span>Cart</span>
+</a>
+</nav>
+</body></html>

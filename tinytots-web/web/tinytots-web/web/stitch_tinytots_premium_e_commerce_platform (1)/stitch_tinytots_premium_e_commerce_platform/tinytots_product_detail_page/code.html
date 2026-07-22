@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TinyTots - Product Detail Page</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#fcf9f8",
+                        "on-secondary-container": "#38617f",
+                        "tertiary-fixed": "#a3f4bd",
+                        "inverse-primary": "#ffb4a3",
+                        "on-tertiary-fixed-variant": "#00522d",
+                        "primary": "#9c422e",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#e4e2e1",
+                        "surface-container-highest": "#e4e2e1",
+                        "secondary-fixed": "#cae6ff",
+                        "on-tertiary-container": "#004324",
+                        "on-background": "#1b1c1c",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed": "#001e30",
+                        "surface-bright": "#fcf9f8",
+                        "primary-fixed": "#ffdad2",
+                        "on-primary-container": "#6b1e0d",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#b2dcff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#ffb4a3",
+                        "surface-container-low": "#f6f3f2",
+                        "outline": "#89726d",
+                        "on-surface": "#1b1c1c",
+                        "inverse-on-surface": "#f3f0f0",
+                        "on-error-container": "#93000a",
+                        "outline-variant": "#dcc0bb",
+                        "surface-tint": "#9c422e",
+                        "on-tertiary-fixed": "#00210f",
+                        "on-primary-fixed-variant": "#7d2c19",
+                        "secondary": "#396280",
+                        "secondary-fixed-dim": "#a2cbee",
+                        "on-secondary-fixed-variant": "#1e4b67",
+                        "tertiary": "#186c40",
+                        "surface-container-high": "#eae7e7",
+                        "on-surface-variant": "#56423e",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#88d7a2",
+                        "surface-dim": "#dcd9d9",
+                        "inverse-surface": "#303030",
+                        "primary-container": "#f2846b",
+                        "background": "#fcf9f8",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#3d0600",
+                        "surface-container": "#f0eded",
+                        "tertiary-container": "#65b381"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "2xl": "1rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "12px",
+                        "margin-mobile": "20px",
+                        "gutter": "24px",
+                        "container-max": "1280px",
+                        "stack-lg": "48px",
+                        "bento-gap": "20px",
+                        "stack-md": "24px",
+                        "unit": "4px",
+                        "margin-desktop": "64px"
+                    },
+                    "fontFamily": {
+                        "button": ["Inter"],
+                        "label-lg": ["Inter"],
+                        "display-md": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "button": ["16px", { "lineHeight": "1", "fontWeight": "600" }],
+                        "label-lg": ["14px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "display-md": ["36px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "1", "fontWeight": "500" }],
+                        "headline-lg": ["30px", { "lineHeight": "1.3", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-surface/80 dark:bg-surface/80 backdrop-blur-md fixed top-0 w-full border-b border-outline-variant/30 flat no shadows z-50">
+<div class="flex justify-between items-center h-20 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="hidden md:flex space-x-6 text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:scale-95">
+<a class="font-bold border-b-2 border-primary pb-1 text-primary" href="#">Shop</a>
+<a class="hover:text-primary transition-colors hover:opacity-80 transition-opacity duration-200" href="#">New Arrivals</a>
+<a class="hover:text-primary transition-colors hover:opacity-80 transition-opacity duration-200" href="#">Sustainability</a>
+<a class="hover:text-primary transition-colors hover:opacity-80 transition-opacity duration-200" href="#">Journal</a>
+</div>
+<button class="md:hidden p-2 text-on-surface hover:opacity-80 transition-opacity duration-200">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<a class="font-display-md text-display-md text-primary dark:text-primary-fixed-dim tracking-tight" href="#">TinyTots</a>
+<div class="flex items-center space-x-4 text-primary dark:text-primary-fixed-dim font-body-md text-body-md cursor-pointer active:scale-95 transition-transform">
+<button class="p-2 hover:opacity-80 transition-opacity duration-200">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="p-2 hidden md:block hover:opacity-80 transition-opacity duration-200">
+<span class="material-symbols-outlined">person</span>
+</button>
+<button class="p-2 hover:opacity-80 transition-opacity duration-200 relative">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow pt-24 pb-stack-lg px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full">
+<!-- Breadcrumbs -->
+<nav aria-label="Breadcrumb" class="flex text-on-surface-variant text-body-sm mb-stack-md">
+<ol class="inline-flex items-center space-x-1 md:space-x-3">
+<li class="inline-flex items-center">
+<a class="hover:text-primary transition-colors" href="#">Home</a>
+</li>
+<li>
+<div class="flex items-center">
+<span class="material-symbols-outlined text-[16px] mx-1">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Shop</a>
+</div>
+</li>
+<li>
+<div class="flex items-center">
+<span class="material-symbols-outlined text-[16px] mx-1">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Clothing</a>
+</div>
+</li>
+<li aria-current="page">
+<div class="flex items-center">
+<span class="material-symbols-outlined text-[16px] mx-1">chevron_right</span>
+<span class="text-on-surface font-medium">Organic Cotton Cable Knit Sweater</span>
+</div>
+</li>
+</ol>
+</nav>
+<!-- Product PDP Layout -->
+<div class="flex flex-col lg:flex-row gap-gutter lg:gap-16">
+<!-- Left Column: Image Gallery -->
+<div class="w-full lg:w-[60%] flex flex-col-reverse md:flex-row gap-4">
+<!-- Thumbnails (Vertical on Desktop, Horizontal on Mobile) -->
+<div class="flex md:flex-col gap-4 overflow-x-auto md:overflow-y-auto hide-scrollbar snap-x md:w-24 shrink-0">
+<button class="w-20 h-24 md:w-24 md:h-28 rounded-2xl overflow-hidden border-2 border-primary shrink-0 snap-start">
+<img class="w-full h-full object-cover" data-alt="A soft oatmeal colored organic cotton cable knit baby sweater, styled flat lay on a bright white seamless background. The warm, soft light highlights the intricate cable knit texture and premium quality. Modern editorial minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgfSPZtFBII683168TRO8VDGBR6TL0dgIt6or78MQCSdpc5P9BsRif8Y_ul2N-y8pDFVP8SiC_DHEusC3-kIZ3I--47JVEjRm59WPCr_vlZpZojrA70048EHBf1P2e33euK-FOGG8lHdnBT006a9CQsKayN3zHVC3yNXsJuHe_ejdRTlG7Gz_61Mb3BRnNTI7nlx30JN4z6cbRC7b5OYqbjTsdRu4ZYCh5Yua-WAEh1u-CGqebA_yZLb7X_TNZIiM6XFrA1ToA9PNn"/>
+</button>
+<button class="w-20 h-24 md:w-24 md:h-28 rounded-2xl overflow-hidden border border-outline-variant/30 hover:border-primary/50 transition-colors shrink-0 snap-start">
+<img class="w-full h-full object-cover" data-alt="Close up detail shot of the sleeve and ribbed cuff of an oatmeal colored baby sweater. Soft, warm diffused lighting emphasizing the delicate knit pattern and natural organic cotton material. High-key light modern editorial style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCySH3mM6sckZwjIoeQSn3N_kyj0PMemAAdDmGRCbuGs3UBlEuWivWF39y0we_TJ_nAassksZX7V45AFyil1atPHjLXoIaru2af7dYRZ53yZKRWrbyAe03dvu6wWCcTWf25hg0xmssNG04v9o2QPO7jBJ0VcumDm_xvMkZhLrI6hcSSl7-kQlCQ757nG2xTmdiTCKMFsz3g5IJWK_jqjvWYnoWgy5_tV5Ay8dXod3EpaSD73YWtWlVQO7xjX1-vHOroY65zMRLVOG86"/>
+</button>
+<button class="w-20 h-24 md:w-24 md:h-28 rounded-2xl overflow-hidden border border-outline-variant/30 hover:border-primary/50 transition-colors shrink-0 snap-start">
+<img class="w-full h-full object-cover" data-alt="A smiling toddler wearing the oatmeal cable knit sweater, sitting in a naturally lit minimal nursery. The room features soft white and warm beige tones. A bento-box inspired clean composition with negative space. Editorial premium juvenile brand photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzpL2i4JFdDmLvaybisZt_6c2iuCHhZLLAYYwGw3mog5ND8yGZKIchHjxCGbPIoTsO0D5qvMvDSHsn-_SH-4586vxwFmT_K432g3wVUl-_abpbEBbVjsFTW3kOAuboQLeUbcWzEls1uZBHsswwGlKtTZ7fCDInpwXyBR0l-sgzb8oXUxWjs0EcELKJmE3KTRwh-jfMkt_0Q_3aNUBy9_Nxx2mTs5F-2EPkNTjfnhbmEMjVP4VBZmWlSJ-ADQ01HHX4zOTm8kWGGPL-"/>
+</button>
+<button class="w-20 h-24 md:w-24 md:h-28 rounded-2xl overflow-hidden border border-outline-variant/30 hover:border-primary/50 transition-colors shrink-0 snap-start">
+<img class="w-full h-full object-cover" data-alt="Folded oatmeal colored organic cotton baby sweater resting on a light wood surface next to small wooden baby toys. Minimalist bento-style composition, bright and airy lighting, sophisticated premium childrenswear aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCDa8XtTzqX0SFjy2ar9qXi8K5LiU4BJU2aZ8FmM5r-vYef-D79ZjDT1Zeps3XKl56-fJyTrLYSk8X8VuzmMa3Mxl87vZIe0zPryctRXK_isJfvUdnzeXnjYcQQhvh6H7ulekoa-F2IEirFTSW2BRRlPThGpKx9i9PMy5LGYQTFLb5KI4HNeL7W2lzf0tRHMJ2obo9_XHzWNkmIGsj4UWpkupvgAHGGv6wCz8FM5-PpSrr3ZTy8XH_09Gd00W4ddLCXEA-eXoXMSTn"/>
+</button>
+</div>
+<!-- Main Image -->
+<div class="w-full aspect-[4/5] bg-surface-container-low rounded-2xl overflow-hidden border border-outline-variant/30 relative">
+<img class="w-full h-full object-cover" data-alt="A soft oatmeal colored organic cotton cable knit baby sweater, styled flat lay on a bright white seamless background. The warm, soft light highlights the intricate cable knit texture and premium quality. Modern editorial minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBF0m2rraV2nROvOBZt4woe920sgnUJTNmdE-iHFU93OKA_8qQev4cUFHMgn9SnFjBEg23vAsQ_GQuBWG5UmNDHUtULCSi-zLRydqxNDcpWcNYWKw3Jjc_SOAYzLMyhnO8ODJdgtyDfjY-zshcWRsOiJerNDFNwXXiXgMTw-cGKxKHSxDWQZ2CJpVxNDl_BO0go8GSRYXe6t_t9cGiZZ_7o5QYFVtl-ZO09Rr2O4TyfSkF9nXtmR_mRxZMG8Twsgh7lP5Ph8B6EjThL"/>
+<!-- Badges -->
+<div class="absolute top-4 left-4 flex flex-col gap-2">
+<span class="bg-surface/80 backdrop-blur-md text-on-surface font-label-md text-label-md px-3 py-1.5 rounded-full shadow-sm border border-outline-variant/20">Organic</span>
+<span class="bg-secondary-container/20 text-secondary font-label-md text-label-md px-3 py-1.5 rounded-full border border-secondary/20">New Arrival</span>
+</div>
+</div>
+</div>
+<!-- Right Column: Product Details (Sticky) -->
+<div class="w-full lg:w-[40%] flex flex-col">
+<div class="sticky top-24 pb-12">
+<!-- Header Info -->
+<div class="mb-6">
+<p class="text-on-surface-variant font-label-lg text-label-lg uppercase tracking-wider mb-2">TinyTots Essentials</p>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-3">Organic Cotton Cable Knit Sweater</h1>
+<!-- Price & Reviews -->
+<div class="flex items-center justify-between">
+<div class="flex items-baseline gap-3">
+<span class="font-headline-md text-headline-md text-primary-container">Rs. 3,600</span>
+<span class="font-body-md text-body-md text-on-surface-variant line-through">Rs. 4,500</span>
+</div>
+<button class="flex items-center gap-1 group hover:opacity-80 transition-opacity">
+<div class="flex text-yellow-400">
+<span class="material-symbols-outlined fill text-[18px]">star</span>
+<span class="material-symbols-outlined fill text-[18px]">star</span>
+<span class="material-symbols-outlined fill text-[18px]">star</span>
+<span class="material-symbols-outlined fill text-[18px]">star</span>
+<span class="material-symbols-outlined fill text-[18px]">star_half</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant group-hover:underline underline-offset-4 decoration-outline-variant">4.8 (124 reviews)</span>
+</button>
+</div>
+</div>
+<div class="h-px w-full bg-outline-variant/30 mb-8"></div>
+<!-- Color Selection -->
+<div class="mb-8">
+<p class="font-label-lg text-label-lg text-on-surface mb-3">Color: <span class="font-body-md text-on-surface-variant ml-1">Oatmeal</span></p>
+<div class="flex gap-3">
+<button aria-label="Oatmeal" class="w-10 h-10 rounded-full bg-[#E5DBCB] border-2 border-primary shadow-sm hover:scale-105 transition-transform"></button>
+<button aria-label="Dusty Blue" class="w-10 h-10 rounded-full bg-[#87A1B8] border border-outline-variant/30 shadow-sm hover:scale-105 transition-transform"></button>
+<button aria-label="Sage Green" class="w-10 h-10 rounded-full bg-[#8A9A86] border border-outline-variant/30 shadow-sm hover:scale-105 transition-transform"></button>
+</div>
+</div>
+<!-- Size Selection -->
+<div class="mb-8">
+<div class="flex justify-between items-center mb-3">
+<p class="font-label-lg text-label-lg text-on-surface">Size</p>
+<button class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors underline underline-offset-4 decoration-outline-variant">Size Guide</button>
+</div>
+<div class="grid grid-cols-4 gap-2">
+<button class="py-3 px-2 rounded-xl border border-outline-variant/30 bg-surface hover:border-primary/50 text-on-surface font-body-sm text-body-sm transition-colors">Newborn</button>
+<button class="py-3 px-2 rounded-xl border-2 border-primary bg-primary/5 text-primary font-label-lg text-label-lg transition-colors">3-6m</button>
+<button class="py-3 px-2 rounded-xl border border-outline-variant/30 bg-surface hover:border-primary/50 text-on-surface font-body-sm text-body-sm transition-colors">6-12m</button>
+<button class="py-3 px-2 rounded-xl border border-outline-variant/30 bg-surface hover:border-primary/50 text-on-surface font-body-sm text-body-sm transition-colors">12-18m</button>
+</div>
+</div>
+<!-- Add to Cart -->
+<div class="mb-8">
+<div class="flex items-center gap-2 mb-3 text-[#D9822B]">
+<span class="material-symbols-outlined text-[18px]">local_fire_department</span>
+<span class="font-label-md text-label-md tracking-wide uppercase">Only 3 left in stock</span>
+</div>
+<button class="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors flex items-center justify-center gap-2 active:scale-[0.98]">
+<span class="material-symbols-outlined">shopping_bag</span>
+                            Add to Cart
+                        </button>
+</div>
+<!-- Accordions -->
+<div class="flex flex-col border-t border-outline-variant/30">
+<!-- Description -->
+<div class="border-b border-outline-variant/30">
+<button class="w-full py-4 flex justify-between items-center text-left hover:text-primary transition-colors group">
+<span class="font-label-lg text-label-lg">Description</span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">expand_more</span>
+</button>
+<div class="pb-4 hidden">
+<p class="font-body-sm text-body-sm text-on-surface-variant">Our signature cable knit sweater is crafted from 100% organic cotton, offering unparalleled softness for your little one's delicate skin. The timeless design features a comfortable crew neck and ribbed cuffs, perfect for layering during cooler months.</p>
+</div>
+</div>
+<!-- Fabric & Care -->
+<div class="border-b border-outline-variant/30">
+<button class="w-full py-4 flex justify-between items-center text-left hover:text-primary transition-colors group">
+<span class="font-label-lg text-label-lg">Fabric &amp; Care</span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">expand_more</span>
+</button>
+</div>
+<!-- Shipping -->
+<div class="border-b border-outline-variant/30">
+<button class="w-full py-4 flex justify-between items-center text-left hover:text-primary transition-colors group">
+<span class="font-label-lg text-label-lg">Shipping &amp; Returns</span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">expand_more</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low dark:bg-surface-dim w-full py-stack-lg border-t border-outline-variant/20 flat no shadows">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<div class="col-span-1 md:col-span-1 mb-6 md:mb-0">
+<a class="font-display-md text-display-md text-primary mb-4 block" href="#">TinyTots</a>
+<p class="font-body-sm text-body-sm text-on-surface dark:text-on-surface-variant">© 2024 TinyTots Boutique. All rights reserved.</p>
+</div>
+<div class="flex flex-col space-y-3 font-body-sm text-body-sm">
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">About Us</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Size Guide</a>
+</div>
+<div class="flex flex-col space-y-3 font-body-sm text-body-sm">
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Shipping &amp; Returns</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Contact</a>
+</div>
+<div class="flex flex-col space-y-3 font-body-sm text-body-sm">
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+</div>
+</div>
+</footer>
+<script>
+        // Simple script to toggle accordions for demo purposes
+        document.querySelectorAll('.border-b button').forEach(button => {
+            button.addEventListener('click', () => {
+                const content = button.nextElementSibling;
+                if(content) {
+                    content.classList.toggle('hidden');
+                    const icon = button.querySelector('.material-symbols-outlined');
+                    if(icon) {
+                        icon.textContent = content.classList.contains('hidden') ? 'expand_more' : 'expand_less';
+                    }
+                }
+            });
+        });
+    </script>
+</body></html>

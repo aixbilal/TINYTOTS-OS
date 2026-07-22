@@ -40,7 +40,9 @@ export default function ProductsPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-bento-gap">
         {products.map((p) => {
           const inStock = p.variants?.some((v: any) => v.stock > 0);
-          const price = p.variants?.[0]?.web_price ?? p.variants?.[0]?.price;
+          const variant = p.variants?.[0];
+          const price = variant?.web_price ?? variant?.price;
+          const hasDiscount = variant?.web_discount_percent > 0 && variant?.web_base_price;
           return (
             <Link
               key={p.id}
@@ -59,10 +61,22 @@ export default function ProductsPage() {
               <div className="p-4 flex flex-col gap-1">
                 <p className="font-body-md text-body-md text-on-surface">{p.name}</p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">{p.brand}</p>
+                {hasDiscount && (
+                  <span className="self-start font-label-md text-label-md text-white bg-primary px-2 py-0.5 rounded-full">
+                    -{variant.web_discount_percent}%
+                  </span>
+                )}
                 <div className="flex justify-between items-center mt-1">
-                  <p className="font-headline-md text-headline-md text-primary">
-                    {price ? `Rs. ${price.toLocaleString()}` : ""}
-                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="font-headline-md text-headline-md text-primary">
+                      {price ? `Rs. ${price.toLocaleString()}` : ""}
+                    </p>
+                    {hasDiscount && (
+                      <p className="font-body-sm text-body-sm text-on-surface-variant line-through">
+                        Rs. {variant.web_base_price.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
                   {!inStock && (
                     <span className="font-label-md text-label-md text-error">Out of stock</span>
                   )}

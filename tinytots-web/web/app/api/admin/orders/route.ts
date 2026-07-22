@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
 
 export async function GET(request: NextRequest) {
+  // Add these two lines right at the start:
+  const denied = await requireAdmin(request, "canManageOrders");
+  if (denied) return denied;
+
   const status = request.nextUrl.searchParams.get("status");
 
   let query = supabaseAdmin

@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
 import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth-context";
+import { can } from "@/lib/admin-permissions";
 
 function AdminShell({ children }: { children: React.ReactNode }) {
   const { admin, loading, signOut } = useAdminAuth();
@@ -53,12 +54,12 @@ function AdminShell({ children }: { children: React.ReactNode }) {
       <aside className="w-60 shrink-0 border-r border-outline-variant/30 bg-surface-container-lowest p-4 flex flex-col gap-1">
         <div className="font-display-sm text-display-sm text-primary mb-4 px-2">TinyTots Admin</div>
         {navItem("/admin", "Dashboard")}
-        {navItem("/admin/products", "Products")}
-        {navItem("/admin/orders", "Orders")}
-        {navItem("/admin/discounts", "Discounts")}
-        {navItem("/admin/coupons", "Coupons")}
-        {navItem("/admin/complaints", "Complaints")}
-        {navItem("/admin/team", "Team")}
+        {can(admin.role, "canManageInventory") && navItem("/admin/products", "Products")}
+        {can(admin.role, "canManageOrders") && navItem("/admin/orders", "Orders")}
+        {can(admin.role, "canManageDiscounts") && navItem("/admin/discounts", "Discounts")}
+        {can(admin.role, "canManageCoupons") && navItem("/admin/coupons", "Coupons")}
+        {can(admin.role, "canHandleComplaints") && navItem("/admin/complaints", "Complaints")}
+        {can(admin.role, "canManageTeam") && navItem("/admin/team", "Team")}
 
         <div className="mt-auto pt-4 border-t border-outline-variant/20">
           <p className="font-body-sm text-body-sm text-on-surface px-2 mb-1">{admin.name}</p>

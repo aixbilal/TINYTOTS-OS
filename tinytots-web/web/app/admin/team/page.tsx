@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/lib/admin-auth-context";
+import { adminFetch } from "@/lib/admin-fetch";
 
 type TeamMember = { id: string; name: string; email: string; role: string; is_active: boolean };
 
@@ -20,7 +21,7 @@ export default function TeamPage() {
 
   function loadTeam() {
     setLoading(true);
-    fetch("/api/admin/team")
+    adminFetch("/api/admin/team")
       .then((r) => r.json())
       .then((json) => setTeam(json.data || []))
       .finally(() => setLoading(false));
@@ -34,7 +35,7 @@ export default function TeamPage() {
     if (!name.trim() || !email.trim()) return setError("Name and email are required.");
 
     setSubmitting(true);
-    const res = await fetch("/api/admin/team", {
+    const res = await adminFetch("/api/admin/team", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, role }),
@@ -49,7 +50,7 @@ export default function TeamPage() {
   }
 
   async function toggleActive(member: TeamMember) {
-    await fetch(`/api/admin/team/${member.id}`, {
+    await adminFetch(`/api/admin/team/${member.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ is_active: !member.is_active }),
@@ -58,11 +59,17 @@ export default function TeamPage() {
   }
 
   async function changeRole(member: TeamMember, newRole: string) {
-    await fetch(`/api/admin/team/${member.id}`, {
+    await adminFetch(`/api/admin/team/${member.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role: newRole }),
     });
+    loadTeam();
+  }
+
+  async function handleRemove(member: TeamMember) {
+    if (!confirm(`Permanently remove ${member.name}? This cannot be undone.`)) return;
+    await adminFetch(`/api/admin/team/${member.id}`, { method: "DELETE" });
     loadTeam();
   }
 
@@ -123,9 +130,12 @@ export default function TeamPage() {
                     ))}
                   </select>
                 </td>
-                <td className="py-3">
+                <td className="py-3 flex gap-3">
                   <button onClick={() => toggleActive(m)} className={`font-label-md text-label-md hover:underline ${m.is_active ? "text-error" : "text-primary"}`}>
                     {m.is_active ? "Deactivate" : "Reactivate"}
+                  </button>
+                  <button onClick={() => handleRemove(m)} className="font-label-md text-label-md text-error hover:underline">
+                    Remove
                   </button>
                 </td>
               </tr>

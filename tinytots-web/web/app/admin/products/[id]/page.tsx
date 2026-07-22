@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import RichTextEditor from "@/components/admin/RichTextEditor";
+import { adminFetch } from "@/lib/admin-fetch";
 
 type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number; reorder_level: number; web_price_locked: boolean; web_round_to: number };
 type Product = {
@@ -23,7 +24,7 @@ function AddVariantForm({ productId, onAdded }: { productId: number; onAdded: (v
   async function handleAdd() {
     if (!price) return;
     setSaving(true);
-    const res = await fetch("/api/inventory", {
+    const res = await adminFetch("/api/inventory", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -64,9 +65,16 @@ export default function EditProductPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/admin/products/${id}`)
+    adminFetch(`/api/admin/products/${id}`)
       .then((r) => r.json())
-      .then((json) => setProduct(json.data))
+      .then((json) => {
+        if (json.error) {
+          setError(json.error);
+        } else {
+          setProduct(json.data);
+        }
+      })
+      .catch((err) => setError("Fetch failed: " + err.message))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -95,7 +103,7 @@ export default function EditProductPage() {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await adminFetch(`/api/products/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -120,7 +128,7 @@ export default function EditProductPage() {
 
   async function saveVariant(v: Variant) {
     setError(null);
-    const res = await fetch(`/api/inventory/${v.id}`, {
+    const res = await adminFetch(`/api/inventory/${v.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ price: v.price, stock: v.stock, reorder_level: v.reorder_level, color: v.color, size: v.size, web_price_locked: v.web_price_locked, web_round_to: v.web_round_to }),
@@ -133,15 +141,16 @@ export default function EditProductPage() {
 
   async function deleteProduct() {
     if (!confirm("Deactivate this product? It will disappear from the storefront but stay in past orders.")) return;
-    await fetch(`/api/products/${id}`, { method: "DELETE" });
+    await adminFetch(`/api/products/${id}`, { method: "DELETE" });
     router.push("/admin/products");
   }
 
   const inputClass =
     "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
 
-  if (loading) return <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>;
-  if (!product) return <p className="font-body-md text-body-md text-error">Product not found.</p>;
+    if (loading) return <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>;
+    if (!product) return <p className="font-body-md text-body-md text-error">Product not found or failed to load. {error && `(${error})`}</p>;
+  
 
   return (
     <div className="max-w-2xl">
@@ -149,7 +158,7 @@ export default function EditProductPage() {
         <h1 className="font-display-md text-display-md text-on-surface">Edit Product</h1>
         <button
   onClick={async () => {
-    const res = await fetch(`/api/products/${id}`, {
+    const res = await adminFetch(`/api/products/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...product, is_active: !product.is_active }),
@@ -186,7 +195,7 @@ export default function EditProductPage() {
 
       <div className="border-t border-outline-variant/20 pt-4 mt-6">
         <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Variants</h2>
-        {product.variants.map((v) => (
+        {(product.variants ?? []).map((v) => (
         <div key={v.id} className="grid grid-cols-6 gap-2 mb-2 items-center">
         <input value={v.color ?? ""} onChange={(e) => updateVariant(v.id, "color", e.target.value)} className={inputClass} placeholder="Color" />
         <input value={v.size ?? ""} onChange={(e) => updateVariant(v.id, "size", e.target.value)} className={inputClass} placeholder="Size" />
@@ -198,7 +207,7 @@ export default function EditProductPage() {
         <button
           onClick={async () => {
             if (!confirm("Delete this variant permanently?")) return;
-            const res = await fetch(`/api/inventory/${v.id}`, { method: "DELETE" });
+            const res = await adminFetch(`/api/inventory/${v.id}`, { method: "DELETE" });
             if (res.ok) {
               setProduct((prev) => prev ? { ...prev, variants: prev.variants.filter((x) => x.id !== v.id) } : prev);
             }
