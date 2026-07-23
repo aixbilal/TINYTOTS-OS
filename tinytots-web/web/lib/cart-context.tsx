@@ -13,6 +13,13 @@ export type CartItem = {
   maxStock: number;
 };
 
+export type AppliedCoupon = {
+  code: string;
+  discountType: "percentage" | "flat";
+  value: number;
+  discountAmount: number;
+};
+
 type CartContextType = {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "quantity">, quantity: number) => void;
@@ -21,12 +28,17 @@ type CartContextType = {
   clearCart: () => void;
   totalItems: number;
   subtotal: number;
+  appliedCoupon: AppliedCoupon | null;
+  applyCoupon: (coupon: AppliedCoupon) => void;
+  clearCoupon: () => void;
+  total: number;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
 
   function addItem(item: Omit<CartItem, "quantity">, quantity: number) {
     setItems((prev) => {
@@ -59,10 +71,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   function clearCart() {
     setItems([]);
+    setAppliedCoupon(null);
+  }
+
+  function applyCoupon(coupon: AppliedCoupon) {
+    setAppliedCoupon(coupon);
+  }
+
+  function clearCoupon() {
+    setAppliedCoupon(null);
   }
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const subtotal = items.reduce((sum, i) => sum + i.quantity * i.price, 0);
+  const total = Math.max(0, subtotal - (appliedCoupon?.discountAmount ?? 0));
 
   return (
     <CartContext.Provider
@@ -74,6 +96,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearCart,
         totalItems,
         subtotal,
+        appliedCoupon,
+        applyCoupon,
+        clearCoupon,
+        total,
       }}
     >
       {children}

@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
           delivery_fee: deliveryFee,
           discount_total: discountTotal,
           total,
-          coupon_code: coupon_code ?? null,
+          coupon_code: appliedCouponCode,
         },
       ])
       .select()
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: orderError.message }, { status: 500 });
       }
   
-      // Increment coupon usage count now that the order is confirmed created
+      // Insert order_items — this triggers the deduct_stock_order function automatically
       if (appliedCouponCode) {
         await supabase.rpc("increment_coupon_uses", { p_code: appliedCouponCode });
       }
