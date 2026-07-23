@@ -1,6 +1,13 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
+// Same root cause and fix as app/products/[id]/page.tsx and
+// app/api/products/route.ts — without this, Next.js caches this Server
+// Component's Supabase data fetch indefinitely, so newly uploaded images,
+// price changes, and stock updates never show up on the homepage until a
+// full rebuild.
+export const dynamic = "force-dynamic";
+
 async function getProducts() {
   const { data, error } = await supabase
     .from("products")
@@ -11,13 +18,11 @@ async function getProducts() {
       sku,
       brand,
       image_url,
-  variants (
+    variants (
   id,
   price,
   web_price,
-  stock,
-  web_base_price,
-  web_discount_percent
+  stock
 )
     `
     )
@@ -122,16 +127,12 @@ export default async function Home() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
           {products.map((product: any) => {
-   const prices = product.variants.map((v: any) => v.web_price ?? v.price);
-   const minPrice = prices.length ? Math.min(...prices) : 0;
-   const totalStock = product.variants.reduce(
-     (sum: number, v: any) => sum + v.stock,
-     0
-   );
-   const cheapestVariant = product.variants.reduce((min: any, v: any) =>
-     (v.web_price ?? v.price) < (min.web_price ?? min.price) ? v : min
-   , product.variants[0]);
-   const hasDiscount = cheapestVariant?.web_discount_percent > 0 && cheapestVariant?.web_base_price;
+          const prices = product.variants.map((v: any) => v.web_price ?? v.price);
+            const minPrice = prices.length ? Math.min(...prices) : 0;
+            const totalStock = product.variants.reduce(
+              (sum: number, v: any) => sum + v.stock,
+              0
+            );
 
             return (
               <Link key={product.id} href={`/products/${product.id}`} className="group cursor-pointer">
@@ -155,16 +156,9 @@ export default async function Home() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <h3 className="font-body-md text-body-md text-on-surface">{product.name}</h3>
-                  <div className="flex items-baseline gap-2">
-                    <p className="font-body-md text-body-md text-on-surface-variant">
-                      Rs. {minPrice.toLocaleString()}
-                    </p>
-                    {hasDiscount && (
-                      <p className="font-label-md text-label-md text-on-surface-variant/60 line-through">
-                        Rs. {cheapestVariant.web_base_price.toLocaleString()}
-                      </p>
-                    )}
-                  </div>
+                  <p className="font-body-md text-body-md text-on-surface-variant">
+                    Rs. {minPrice.toLocaleString()}
+                  </p>
                 </div>
               </Link>
             );

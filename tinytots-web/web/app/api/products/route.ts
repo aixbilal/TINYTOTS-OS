@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+// Without this, Next.js can cache this route's data fetch, so newly
+// uploaded images, price changes, and stock updates from the admin panel
+// won't show up on the storefront grid until a full rebuild. Same root
+// cause and fix as the PDP (app/products/[id]/page.tsx).
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const { data: products, error } = await supabase
     .from("products")
@@ -14,7 +20,7 @@ export async function GET() {
       brand,
       category,
       image_url,
-     variants ( id, color, size, price, web_price, stock, web_base_price, web_discount_percent )
+      variants ( id, color, size, price, web_price, stock ) 
     `
     )
     .eq("is_active", true)

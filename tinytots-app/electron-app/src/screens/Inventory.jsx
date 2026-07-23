@@ -6,6 +6,7 @@ import FloralFlourish from "../components/FloralFlourish";
 import VariantsTable from "../components/inventory/VariantsTable";
 import BarcodeQrPanel from "../components/inventory/BarcodeQrPanel";
 import ProductFormModal from "../components/inventory/ProductFormModal";
+import ImageUploader from "../components/inventory/ImageUploader";
 import loginBg from "../assets/login-bg.png";
 
 const glassCard =
@@ -24,6 +25,8 @@ export default function Inventory() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState(null); // null | "create" | "edit"
+  const [photosOpen, setPhotosOpen] = useState(false);
+  const [productImages, setProductImages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   async function loadInventory() {
@@ -48,6 +51,18 @@ export default function Inventory() {
   }, []);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
+
+  // Load this product's full photo gallery whenever the popover opens or
+  // the selected product changes — the "Product Information" card only
+  // shows the primary (selectedProduct.image_url), but the popover manages
+  // the full set.
+  useEffect(() => {
+    if (!photosOpen || !selectedProduct) return;
+    fetch(`http://localhost:3000/api/products/${selectedProduct.id}/images`)
+      .then((r) => r.json())
+      .then((json) => setProductImages(json.data || []))
+      .catch(() => setProductImages([]));
+  }, [photosOpen, selectedProduct?.id]);
 
   const filteredProducts = useMemo(() => {
     if (!search.trim()) return products;
@@ -205,7 +220,11 @@ export default function Inventory() {
               </div>
 
               <div className="flex gap-6">
-                <div className="w-32 h-32 rounded-xl bg-white/20 border border-white/40 flex flex-col items-center justify-center flex-shrink-0 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setPhotosOpen(true)}
+                  className="w-32 h-32 rounded-xl bg-white/20 border border-white/40 flex flex-col items-center justify-center flex-shrink-0 overflow-hidden hover:bg-white/30 transition-colors"
+                >
                   {selectedProduct.image_url ? (
                     <img src={selectedProduct.image_url} alt="" className="w-full h-full object-cover" />
                   ) : (
@@ -214,7 +233,7 @@ export default function Inventory() {
                       <span className="text-[10px] text-ink-800/60">Change Image</span>
                     </>
                   )}
-                </div>
+                </button>
 
                 <div className="grid grid-cols-3 gap-x-6 gap-y-3 flex-1 text-sm">
                   <Field label="Product Name" value={selectedProduct.name} />
@@ -300,6 +319,32 @@ export default function Inventory() {
           onClose={() => setModal(null)}
           onSaved={loadInventory}
         />
+      )}
+
+      {photosOpen && selectedProduct && (
+        <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-cream-50 rounded-2xl w-full max-w-md p-7">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-xl text-maroon-800">
+                Photos — {selectedProduct.name}
+              </h2>
+              <button
+                onClick={() => {
+                  setPhotosOpen(false);
+                  loadInventory(); // refresh so the primary thumbnail reflects any change
+                }}
+                className="text-ink-700 hover:text-maroon-700 text-sm"
+              >
+                Done
+              </button>
+            </div>
+            <ImageUploader
+              productId={selectedProduct.id}
+              images={productImages}
+              onImagesChange={setProductImages}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

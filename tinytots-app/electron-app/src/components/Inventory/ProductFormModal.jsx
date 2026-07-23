@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { X, Plus } from "lucide-react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
+import ImageUploader from "./ImageUploader";
 
 function TagInput({ label, placeholder, values, onChange }) {
   const [draft, setDraft] = useState("");
@@ -81,6 +82,23 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // Photos: for "edit" mode we already have a real product id, so fetch its
+  // images right away. For "create" mode there's no id until after the
+  // product is saved — createdProductId gets set once that happens, which
+  // flips the modal into a "photos" step instead of closing immediately.
+  const [images, setImages] = useState([]);
+  const [createdProductId, setCreatedProductId] = useState(
+    mode === "edit" && initialProduct ? initialProduct.id : null
+  );
+
+  useEffect(() => {
+    if (!createdProductId) return;
+    fetch(`http://localhost:3000/api/products/${createdProductId}/images`)
+      .then((r) => r.json())
+      .then((json) => setImages(json.data || []))
+      .catch(() => setImages([]));
+  }, [createdProductId]);
+
   function field(key) {
     return {
       value: form[key],
@@ -144,12 +162,45 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
       if (!data.success) throw new Error(data.message || data.error);
 
       onSaved();
-      onClose();
+
+      if (mode === "create" && data.product?.id) {
+        // Don't close yet — switch straight into the photos step so the
+        // product isn't left with no image, same flow as the web admin.
+        setCreatedProductId(data.product.id);
+      } else {
+        onClose();
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setSaving(false);
     }
+  }
+
+  // Photos step: shown either because we're editing an existing product,
+  // or because a brand-new product was just created in this same session.
+  const showPhotosStep = mode === "create" && createdProductId;
+
+  if (showPhotosStep) {
+    return (
+      <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
+        <div className="bg-cream-50 rounded-2xl w-full max-w-md p-7">
+          <h2 className="font-display text-2xl text-ink-900 mb-1">Product Created!</h2>
+          <p className="text-sm text-ink-700 mb-4">Add photos now, or skip and add them later.</p>
+
+          <ImageUploader productId={createdProductId} images={images} onImagesChange={setImages} />
+
+          <div className="flex justify-end pt-5">
+            <button
+              onClick={onClose}
+              className="px-5 py-2 rounded-lg bg-maroon-700 text-cream-50 font-medium hover:bg-maroon-800"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -179,6 +230,13 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
             <LabeledInput label="HSN Code" {...field("hsn_code")} />
             <LabeledInput label="Unit" {...field("unit")} />
           </div>
+
+          {mode === "edit" && (
+            <div>
+              <label className="block text-sm text-ink-700 mb-1.5">Photos</label>
+              <ImageUploader productId={initialProduct.id} images={images} onImagesChange={setImages} />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm text-ink-700 mb-1.5">Description</label>

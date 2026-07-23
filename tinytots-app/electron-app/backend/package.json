@@ -5,8 +5,8 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-  "start": "node --import dotenv/config server.js"
-},
+    "start": "node --import dotenv/config server.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -20,9 +20,11 @@
     "escpos-usb": "^3.0.0-alpha.4",
     "express": "^5.2.1",
     "json2csv": "^6.0.0-alpha.2",
+    "multer": "^2.2.0",
     "node-cron": "^4.6.0",
     "nodemailer": "^9.0.3",
     "pdf-to-printer": "^5.8.0",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "react-image-crop": "^11.1.2"
   }
 }

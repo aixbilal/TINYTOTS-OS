@@ -13,7 +13,6 @@ export default function NewProductPage() {
   const [description, setDescription] = useState("");
   const [brand, setBrand] = useState("");
   const [category, setCategory] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
   const [gender, setGender] = useState("");
   const [ageBracket, setAgeBracket] = useState("");
 
@@ -74,7 +73,7 @@ export default function NewProductPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name, sku, description, brand, category,
-          image_url: imageUrl || null,
+          image_url: null, // images are added on the edit page after creation, via ImageUploader
           gender: gender || null,
           age_bracket: ageBracket || null,
           cost_price: costPrice ? parseFloat(costPrice) : 0,
@@ -84,7 +83,11 @@ export default function NewProductPage() {
       });
       const json = await res.json();
       if (!res.ok) { setError(json.error || "Failed to create product."); setSubmitting(false); return; }
-      router.push("/admin/products");
+
+      // Redirect straight to the edit page (not the list) so photos can be
+      // added immediately — image upload needs a real product id, which
+      // only exists after this point.
+      router.push(`/admin/products/${json.data.id}?justCreated=1`);
     } catch {
       setError("Network error. Please try again.");
       setSubmitting(false);
@@ -97,6 +100,9 @@ export default function NewProductPage() {
   return (
     <div className="max-w-2xl">
       <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Add Product</h1>
+      <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">
+        Fill in the details below, then add photos on the next screen once the product is created.
+      </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-4">
@@ -110,8 +116,6 @@ export default function NewProductPage() {
           <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Description</label>
           <RichTextEditor value={description} onChange={setDescription} />
         </div>
-
-        <input placeholder="Image URL" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className={inputClass} />
 
         <div className="grid grid-cols-2 gap-4">
           <input placeholder="Gender (boy/girl/unisex) — optional" value={gender} onChange={(e) => setGender(e.target.value)} className={inputClass} />
@@ -168,7 +172,7 @@ export default function NewProductPage() {
         </div>
 
         <button type="submit" disabled={submitting} className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-4">
-          {submitting ? "Saving..." : "Create Product"}
+          {submitting ? "Saving..." : "Create Product — Add Photos Next"}
         </button>
 
         {error && <p className="font-label-md text-label-md text-error">{error}</p>}

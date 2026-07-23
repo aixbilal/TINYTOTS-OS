@@ -25,6 +25,7 @@ import bwipjs from "bwip-js";
 import pdfPrinterPkg from "pdf-to-printer";
 const { getPrinters, print } = pdfPrinterPkg;
 import { createClient } from "@supabase/supabase-js";
+import multer from "multer";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 dotenv.config();
@@ -1053,6 +1054,253 @@ app.delete("/api/products/:id", async (req, res) => {
     console.error("Delete product error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// ----------------------------------------------------
+// PRODUCT IMAGES (upload / delete / set-primary / list)
+// Shared with the web storefront — same Supabase project, same
+// 'product_images' table and 'product-images' Storage bucket, so photos
+// added here from the POS show up on the website immediately, and photos
+// added from the admin website show up here too.
+//
+// NOTE: add `import multer from "multer";` to the top of server.js
+// alongside the other imports — ES module imports can't live mid-file.
+// ----------------------------------------------------
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB, matches the Storage bucket's own limit
+});
+
+const IMAGE_BUCKET = "product-images";
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function publicUrlForImage(storagePath) {
+  const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(storagePath);
+  return data.publicUrl;
+}
+
+// Keeps products.image_url pointing at whichever image is currently primary,
+// exactly matching the web admin's sync logic — this is what makes the
+// storefront (which just reads products.image_url as a fallback) always
+// show something reasonable even before its own gallery loads.
+async function syncPrimaryImageUrl(productId) {
+  const { data: primary } = await supabase
+    .from("product_images")
+    .select("storage_path")
+    .eq("product_id", productId)
+    .eq("is_primary", true)
+    .maybeSingle();
+
+  const imageUrl = primary ? publicUrlForImage(primary.storage_path) : null;
+
+  const { error } = await supabase
+    .from("products")
+    .update({ image_url: imageUrl })
+    .eq("id", productId);
+
+  if (error) {
+    console.error(`syncPrimaryImageUrl FAILED for product ${productId}:`, error);
+  }
+}
+
+// GET /api/products/:id/images — list all images for a product
+app.get("/api/products/:id/images", async (req, res) => {
+  const { id } = req.params;
+
+  const { data, error } = await supabase
+    .from("product_images")
+    .select("id, storage_path, is_primary, sort_order, created_at")
+    .eq("product_id", id)
+    .order("sort_order", { ascending: true });
+
+  if (error) return res.status(500).json({ success: false, error: error.message });
+
+  const withUrls = (data || []).map((img) => ({
+    ...img,
+    url: publicUrlForImage(img.storage_path),
+  }));
+
+  res.json({ success: true, data: withUrls });
+});
+
+// POST /api/products/:id/images — upload a new image
+// multipart/form-data: "file" field (required), "is_primary" ("true"/"false", optional)
+app.post("/api/products/:id/images", upload.single("file"), async (req, res) => {
+  const { id: productId } = req.params;
+
+  try {
+    const file = req.file;
+    const makePrimary = req.body.is_primary === "true";
+
+    if (!file) {
+      return res.status(400).json({ success: false, error: "No file provided" });
+    }
+    if (!ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+      return res.status(400).json({ success: false, error: "Only JPEG, PNG, or WebP images are allowed" });
+    }
+
+    const { data: product, error: productError } = await supabase
+      .from("products")
+      .select("id")
+      .eq("id", productId)
+      .single();
+
+    if (productError || !product) {
+      return res.status(404).json({ success: false, error: "Product not found" });
+    }
+
+    const ext = file.mimetype === "image/png" ? "png" : file.mimetype === "image/webp" ? "webp" : "jpg";
+    const storagePath = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(IMAGE_BUCKET)
+      .upload(storagePath, file.buffer, { contentType: file.mimetype, upsert: false });
+
+    if (uploadError) {
+      return res.status(500).json({ success: false, error: uploadError.message });
+    }
+
+    const { count: existingCount } = await supabase
+      .from("product_images")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId);
+
+    const shouldBePrimary = makePrimary || !existingCount;
+
+    if (shouldBePrimary) {
+      await supabase
+        .from("product_images")
+        .update({ is_primary: false })
+        .eq("product_id", productId)
+        .eq("is_primary", true);
+    }
+
+    const { data: inserted, error: insertError } = await supabase
+      .from("product_images")
+      .insert([
+        {
+          product_id: productId,
+          storage_path: storagePath,
+          is_primary: shouldBePrimary,
+          sort_order: existingCount ?? 0,
+        },
+      ])
+      .select()
+      .single();
+
+    if (insertError) {
+      await supabase.storage.from(IMAGE_BUCKET).remove([storagePath]);
+      return res.status(500).json({ success: false, error: insertError.message });
+    }
+
+    if (shouldBePrimary) {
+      await syncPrimaryImageUrl(productId);
+    }
+
+    res.status(201).json({
+      success: true,
+      data: { ...inserted, url: publicUrlForImage(storagePath) },
+    });
+  } catch (err) {
+    console.error("POST /api/products/:id/images crashed:", err);
+    res.status(500).json({ success: false, error: err.message || "Unexpected server error" });
+  }
+});
+
+// PATCH /api/products/:id/images — set primary, or reorder
+// Body: { image_id, action: "set_primary" } OR { order: [image_id, ...] }
+app.patch("/api/products/:id/images", async (req, res) => {
+  const { id: productId } = req.params;
+  const { action, image_id, order } = req.body;
+
+  try {
+    if (action === "set_primary" && image_id) {
+      await supabase
+        .from("product_images")
+        .update({ is_primary: false })
+        .eq("product_id", productId)
+        .eq("is_primary", true);
+
+      const { error } = await supabase
+        .from("product_images")
+        .update({ is_primary: true })
+        .eq("id", image_id)
+        .eq("product_id", productId);
+
+      if (error) return res.status(500).json({ success: false, error: error.message });
+
+      await syncPrimaryImageUrl(productId);
+      return res.json({ success: true });
+    }
+
+    if (Array.isArray(order)) {
+      for (let i = 0; i < order.length; i++) {
+        await supabase
+          .from("product_images")
+          .update({ sort_order: i })
+          .eq("id", order[i])
+          .eq("product_id", productId);
+      }
+      return res.json({ success: true });
+    }
+
+    res.status(400).json({
+      success: false,
+      error: "Provide either { action: 'set_primary', image_id } or { order: [...] }",
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message || "Invalid request body" });
+  }
+});
+
+// DELETE /api/products/:id/images?image_id=123
+app.delete("/api/products/:id/images", async (req, res) => {
+  const { id: productId } = req.params;
+  const { image_id: imageId } = req.query;
+
+  if (!imageId) {
+    return res.status(400).json({ success: false, error: "image_id query param is required" });
+  }
+
+  const { data: image, error: fetchError } = await supabase
+    .from("product_images")
+    .select("id, storage_path, is_primary")
+    .eq("id", imageId)
+    .eq("product_id", productId)
+    .single();
+
+  if (fetchError || !image) {
+    return res.status(404).json({ success: false, error: "Image not found" });
+  }
+
+  const { error: deleteRowError } = await supabase
+    .from("product_images")
+    .delete()
+    .eq("id", imageId);
+
+  if (deleteRowError) {
+    return res.status(500).json({ success: false, error: deleteRowError.message });
+  }
+
+  await supabase.storage.from(IMAGE_BUCKET).remove([image.storage_path]);
+
+  if (image.is_primary) {
+    const { data: nextImage } = await supabase
+      .from("product_images")
+      .select("id")
+      .eq("product_id", productId)
+      .order("sort_order", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (nextImage) {
+      await supabase.from("product_images").update({ is_primary: true }).eq("id", nextImage.id);
+    }
+
+    await syncPrimaryImageUrl(productId);
+  }
+
+  res.json({ success: true });
 });
 
 // ----------------------------------------------------

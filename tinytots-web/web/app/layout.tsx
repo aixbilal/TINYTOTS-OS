@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Inter, Plus_Jakarta_Sans } from "next/font/google";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
@@ -16,64 +16,133 @@ const plusJakarta = Plus_Jakarta_Sans({ variable: "--font-plus-jakarta", subsets
 
 function SearchOverlay({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [allProducts, setAllProducts] = useState<any[] | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    const q = query.trim().slice(0, 100); // cap length, avoid junk payloads
-    if (!q) return;
-    setLoading(true);
-    setSearched(true);
-    try {
-      const res = await fetch("/api/products");
-      const json = await res.json();
-      const filtered = (json.data || []).filter((p: any) =>
-        p.name?.toLowerCase().includes(q.toLowerCase())
-      );
-      setResults(filtered);
-    } catch {
-      setResults([]);
-    } finally {
-      setLoading(false);
+  // Fetch the product list once when the overlay opens, then filter
+  // in-memory as the user types — this is what makes it feel instant
+  // instead of requiring Enter + a round trip on every keystroke.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((json) => {
+        if (!cancelled) setAllProducts(json.data || []);
+      })
+      .catch(() => {
+        if (!cancelled) setAllProducts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Close when clicking outside the dropdown, so it behaves like a normal
+  // popover instead of a full-screen modal that has to be explicitly closed.
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        onClose();
+      }
     }
-  }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  const categories = Array.from(
+    new Set((allProducts || []).map((p: any) => p.category).filter(Boolean))
+  ) as string[];
+
+  const needle = query.trim().toLowerCase();
+  const filtered = (allProducts || []).filter((p: any) => {
+    const matchesCategory = !activeCategory || p.category === activeCategory;
+    if (!needle) return matchesCategory;
+    const haystack = [p.name, p.brand, p.sku, p.category]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return matchesCategory && haystack.includes(needle);
+  });
+
+  // Group results by category so browsing (not just typed search) shows
+  // structure — e.g. hovering/clicking "Pants" narrows straight to pants.
+  const grouped = filtered.reduce((acc: Record<string, any[]>, p: any) => {
+    const key = p.category || "Other";
+    (acc[key] = acc[key] || []).push(p);
+    return acc;
+  }, {});
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-start justify-center pt-24 px-4">
-      <div className="bg-surface w-full max-w-xl rounded-2xl shadow-xl p-6">
-        <form onSubmit={handleSearch} className="flex gap-3 mb-4">
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            maxLength={100}
-            placeholder="Search products..."
-            className="flex-1 border border-outline-variant/50 rounded-lg px-4 py-3 bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          <button type="submit" className="bg-primary-container text-on-primary px-5 rounded-lg font-button text-button hover:bg-primary transition-colors">
-            {loading ? "..." : "Go"}
-          </button>
-          <button type="button" onClick={onClose} className="text-on-surface-variant hover:text-primary px-2">✕</button>
-        </form>
+    <div
+      ref={containerRef}
+      className="absolute top-full right-0 mt-2 w-full max-w-md bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-4 z-[100]"
+    >
+      <input
+        autoFocus
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        maxLength={100}
+        placeholder="Search by name, brand, SKU, or category..."
+        className="w-full border border-outline-variant/50 rounded-lg px-4 py-2.5 bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary mb-3"
+      />
 
-        {results.length > 0 && (
-          <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
-            {results.map((p) => (
-              <Link key={p.id} href={`/products/${p.id}`} onClick={onClose}
-                className="flex justify-between px-3 py-2 rounded-lg hover:bg-surface-container-low font-body-sm text-body-sm text-on-surface">
-                <span>{p.name}</span>
-                <span className="text-on-surface-variant">{p.brand}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-        {!loading && searched && results.length === 0 && (
-          <p className="font-body-sm text-body-sm text-on-surface-variant px-3">
-            No products found for &ldquo;{query}&rdquo;.
+      {categories.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          <button
+            onClick={() => setActiveCategory(null)}
+            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+              !activeCategory
+                ? "bg-primary-container text-on-primary border-primary-container"
+                : "border-outline-variant/50 text-on-surface-variant hover:border-primary"
+            }`}
+          >
+            All
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onMouseEnter={() => setActiveCategory(cat)}
+              onClick={() => setActiveCategory(cat)}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                activeCategory === cat
+                  ? "bg-primary-container text-on-primary border-primary-container"
+                  : "border-outline-variant/50 text-on-surface-variant hover:border-primary"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="max-h-80 overflow-y-auto flex flex-col gap-3">
+        {Object.keys(grouped).length === 0 && (
+          <p className="font-body-sm text-body-sm text-on-surface-variant px-1 py-2">
+            {query ? `No products found for \u201c${query}\u201d.` : "No products available."}
           </p>
         )}
+
+        {Object.entries(grouped).map(([category, products]) => (
+          <div key={category}>
+            <p className="font-label-md text-label-md text-on-surface-variant uppercase px-1 mb-1">
+              {category}
+            </p>
+            <div className="flex flex-col gap-1">
+              {products.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/products/${p.id}`}
+                  onClick={onClose}
+                  className="flex justify-between px-3 py-2 rounded-lg hover:bg-surface-container-low font-body-sm text-body-sm text-on-surface"
+                >
+                  <span>{p.name}</span>
+                  <span className="text-on-surface-variant">{p.brand}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -164,8 +233,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="bg-surface font-body-md text-on-surface antialiased pt-[80px] min-h-screen flex flex-col">
       <AuthProvider>
       <CartProvider>
-          {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
-
           <nav className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
             <div className="flex items-center gap-6">
               <Link href="/" className="font-display-md text-display-md text-primary tracking-tight">TinyTots</Link>
@@ -175,9 +242,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button onClick={() => setSearchOpen(true)} className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Search">
-                <span className="material-symbols-outlined">search</span>
-              </button>
+              <div className="relative">
+                <button onClick={() => setSearchOpen((o) => !o)} className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Search">
+                  <span className="material-symbols-outlined">search</span>
+                </button>
+                {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
+              </div>
               <AccountMenu />
               <HeaderCart />
             </div>
