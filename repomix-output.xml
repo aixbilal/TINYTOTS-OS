@@ -80,6 +80,7 @@ tinytots-app/
       components/
         Inventory/
           BarcodeQrPanel.jsx
+          ImageUploader.jsx
           ProductFormModal.jsx
           VariantsTable.jsx
         performance/
@@ -186,6 +187,8 @@ tinytots-web/
             route.ts
           products/
             [id]/
+              images/
+                route.ts
               route.ts
             route.ts
           team/
@@ -235,11 +238,13 @@ tinytots-web/
       page.tsx
     components/
       admin/
+        ImageUploader.tsx
         MarkupCalculator.tsx
         RichTextEditor.tsx
         TagInput.tsx
       AddToCart.tsx
       HeaderCart.tsx
+      ProductGallery.tsx
     lib/
       admin-auth-context.tsx
       admin-fetch.ts
@@ -449,6 +454,9 @@ tinytots-web/
         20260718120000_web_price_rounding.sql
         20260720_handle_new_user_skip_admin.sql
         20260721_discounts_category.sql
+        20260723_product_images.sql
+        20260723100000_product_images_storage.sql
+        20260723200000_product_image_variants.sql
       snippets/
         Untitled query 131.sql
         Untitled query 174.sql
@@ -480,6 +488,7 @@ tinytots-web/
     postcss.config.mjs
     README.md
     repomix-output.xml
+    reverted
     seed.sql
     tsconfig.json
 .gitignore
@@ -2395,6 +2404,301 @@ contextBridge.exposeInMainWorld("electron", {
 
 <file path="tinytots-app/electron-app/src/assets/vite.svg">
 <svg xmlns="http://www.w3.org/2000/svg" width="77" height="47" fill="none" aria-labelledby="vite-logo-title" viewBox="0 0 77 47"><title id="vite-logo-title">Vite</title><style>.parenthesis{fill:#000}@media (prefers-color-scheme:dark){.parenthesis{fill:#fff}}</style><path fill="#9135ff" d="M40.151 45.71c-.663.844-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.493c-.92 0-1.457-1.04-.92-1.788l7.479-10.471c1.07-1.498 0-3.578-1.842-3.578H15.443c-.92 0-1.456-1.04-.92-1.788l9.696-13.576c.213-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.472c-1.07 1.497 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.087.89 1.83L40.153 45.712z"/><mask id="a" width="48" height="47" x="14" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M40.047 45.71c-.663.843-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.389c-.92 0-1.457-1.04-.92-1.788l7.479-10.472c1.07-1.497 0-3.578-1.842-3.578H15.34c-.92 0-1.456-1.04-.92-1.788l9.696-13.575c.213-.297.556-.474.92-.474H53.93c.92 0 1.456 1.04.92 1.788L47.37 13.03c-1.07 1.498 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.088.89 1.831L40.049 45.712z"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#eee6ff" rx="5.508" ry="14.704" transform="rotate(269.814 20.96 11.29)scale(-1 1)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#eee6ff" rx="10.399" ry="29.851" transform="rotate(89.814 -16.902 -8.275)scale(1 -1)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#8900ff" rx="5.508" ry="30.487" transform="rotate(89.814 -19.197 -7.127)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.928 4.177)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.738 5.52)scale(1 -1)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#eee6ff" rx="14.072" ry="22.078" transform="rotate(93.35 31.245 55.578)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx="14.592" cy="9.743" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(39.51 14.592 9.743)"/></g><g filter="url(#k)"><ellipse cx="61.728" cy="-5.321" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 61.728 -5.32)"/></g><g filter="url(#l)"><ellipse cx="55.618" cy="7.104" fill="#00c2ff" rx="5.971" ry="9.665" transform="rotate(37.892 55.618 7.104)"/></g><g filter="url(#m)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#n)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#o)"><ellipse cx="49.857" cy="30.678" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 49.857 30.678)"/></g><g filter="url(#p)"><ellipse cx="52.623" cy="33.171" fill="#00c2ff" rx="5.971" ry="15.297" transform="rotate(37.892 52.623 33.17)"/></g></g><path d="M6.919 0c-9.198 13.166-9.252 33.575 0 46.789h6.215c-9.25-13.214-9.196-33.623 0-46.789zm62.424 0h-6.215c9.198 13.166 9.252 33.575 0 46.789h6.215c9.25-13.214 9.196-33.623 0-46.789" class="parenthesis"/><defs><filter id="b" width="60.045" height="41.654" x="-5.564" y="16.92" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-40.407" y="-6.762" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-35.435" y="2.801" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-30.84" y="20.8" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-29.307" y="21.949" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="29.961" y="-17.13" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-13.43" y="-22.082" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="34.321" y="-37.644" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="38.847" y="-10.552" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="22.45" y="-1.645" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="32.919" y="11.36" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter></defs></svg>
+</file>
+
+<file path="tinytots-app/electron-app/src/components/Inventory/ImageUploader.jsx">
+import { useState, useRef, useCallback } from "react";
+import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
+
+const API_BASE = "http://localhost:3000";
+const MAX_DIMENSION = 1600; // px — cuts upload size/time drastically vs. a raw phone/camera photo
+
+async function getCroppedBlob(image, crop) {
+  const scaleX = image.naturalWidth / image.width;
+  const scaleY = image.naturalHeight / image.height;
+  const cropWidthPx = crop.width * scaleX;
+  const cropHeightPx = crop.height * scaleY;
+
+  const scale = Math.min(1, MAX_DIMENSION / Math.max(cropWidthPx, cropHeightPx));
+  const outputWidth = Math.round(cropWidthPx * scale);
+  const outputHeight = Math.round(cropHeightPx * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not get canvas context");
+
+  ctx.drawImage(
+    image,
+    crop.x * scaleX,
+    crop.y * scaleY,
+    cropWidthPx,
+    cropHeightPx,
+    0,
+    0,
+    outputWidth,
+    outputHeight
+  );
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Crop failed"));
+    }, "image/jpeg", 0.85);
+  });
+}
+
+export default function ImageUploader({ productId, images, onImagesChange }) {
+  const [error, setError] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [deletingIds, setDeletingIds] = useState(new Set());
+
+  const [queue, setQueue] = useState([]);
+  const [cropSrc, setCropSrc] = useState(null);
+  const [crop, setCrop] = useState();
+  const [completedCrop, setCompletedCrop] = useState();
+  const imgRef = useRef(null);
+  const pendingFileRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  function processNext(remaining) {
+    const [next, ...rest] = remaining;
+    setQueue(rest);
+    if (!next) {
+      setCropSrc(null);
+      return;
+    }
+    pendingFileRef.current = { name: next.name, type: next.type };
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result);
+    reader.readAsDataURL(next);
+  }
+
+  function onSelectFiles(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const valid = [];
+    for (const file of files) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        setError(`${file.name}: only JPEG, PNG, or WebP images are allowed.`);
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError(`${file.name}: must be under 5MB.`);
+        continue;
+      }
+      valid.push(file);
+    }
+    if (valid.length) {
+      setError(null);
+      setQueue(valid);
+      processNext(valid);
+    }
+    e.target.value = "";
+  }
+
+  function onImageLoad(e) {
+    const { width, height } = e.currentTarget;
+    setCrop(centerCrop(makeAspectCrop({ unit: "%", width: 90 }, 1, width, height), width, height));
+  }
+
+  const uploadCroppedImage = useCallback(
+    async (makePrimary) => {
+      if (!imgRef.current || !completedCrop || !pendingFileRef.current) return;
+      setUploading(true);
+      setError(null);
+      try {
+        const blob = await getCroppedBlob(imgRef.current, completedCrop);
+        const formData = new FormData();
+        formData.append("file", blob, pendingFileRef.current.name);
+        formData.append("is_primary", makePrimary ? "true" : "false");
+
+        const res = await fetch(`${API_BASE}/api/products/${productId}/images`, {
+          method: "POST",
+          body: formData,
+        });
+        const json = await res.json();
+
+        if (!res.ok || !json.success) {
+          setError(json.error || "Upload failed.");
+          setUploading(false);
+          return;
+        }
+
+        const updated = makePrimary
+          ? [...images.map((img) => ({ ...img, is_primary: false })), json.data]
+          : [...images, json.data];
+        onImagesChange(updated);
+
+        pendingFileRef.current = null;
+        setCompletedCrop(undefined);
+        processNext(queue);
+      } catch {
+        setError("Network error during upload. Please try again.");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [completedCrop, images, onImagesChange, productId, queue]
+  );
+
+  function skipCurrent() {
+    pendingFileRef.current = null;
+    setCompletedCrop(undefined);
+    processNext(queue);
+  }
+
+  async function setPrimary(imageId) {
+    setError(null);
+    const res = await fetch(`${API_BASE}/api/products/${productId}/images`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "set_primary", image_id: imageId }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      setError(json.error || "Failed to set primary image.");
+      return;
+    }
+    onImagesChange(images.map((img) => ({ ...img, is_primary: img.id === imageId })));
+  }
+
+  async function deleteImage(imageId) {
+    if (deletingIds.has(imageId)) return;
+    setDeletingIds((prev) => new Set(prev).add(imageId));
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/products/${productId}/images?image_id=${imageId}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setError(json.error || "Failed to delete image.");
+        return;
+      }
+      const remaining = images.filter((img) => img.id !== imageId);
+      const wasPrimary = images.find((img) => img.id === imageId)?.is_primary;
+      if (wasPrimary && remaining.length > 0) {
+        remaining[0] = { ...remaining[0], is_primary: true };
+      }
+      onImagesChange(remaining);
+    } finally {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(imageId);
+        return next;
+      });
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-3">
+        {images
+          .slice()
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((img) => (
+            <div
+              key={img.id}
+              className="relative w-24 h-24 rounded-lg overflow-hidden border-2 group"
+              style={{ borderColor: img.is_primary ? "#7A2E2E" : "transparent" }}
+            >
+              <img src={img.url} alt="" className="w-full h-full object-cover" />
+              {img.is_primary && (
+                <span className="absolute top-1 left-1 bg-maroon-700 text-cream-50 text-[9px] px-1.5 py-0.5 rounded">
+                  Primary
+                </span>
+              )}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1">
+                {!img.is_primary && (
+                  <button
+                    type="button"
+                    onClick={() => setPrimary(img.id)}
+                    className="text-white text-[10px] bg-white/20 rounded px-1.5 py-1 hover:bg-white/30"
+                  >
+                    Primary
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={deletingIds.has(img.id)}
+                  onClick={() => deleteImage(img.id)}
+                  className="text-white text-[10px] bg-red-600/80 rounded px-1.5 py-1 hover:bg-red-600 disabled:opacity-50"
+                >
+                  {deletingIds.has(img.id) ? "..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          ))}
+
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="w-24 h-24 rounded-lg border-2 border-dashed border-gold-300/50 flex items-center justify-center text-xs text-ink-700 hover:border-maroon-700 hover:text-maroon-700 transition text-center px-2"
+        >
+          + Add photos
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/jpeg,image/png,image/webp"
+          onChange={onSelectFiles}
+          className="hidden"
+        />
+      </div>
+
+      {error && <p className="text-sm text-maroon-700">{error}</p>}
+
+      {cropSrc && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
+          <div className="bg-cream-50 rounded-xl p-4 max-w-lg w-full flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-ink-900">Crop image</h3>
+              {queue.length > 0 && (
+                <span className="text-xs text-ink-700/70">{queue.length} more queued</span>
+              )}
+            </div>
+            <ReactCrop crop={crop} onChange={(c) => setCrop(c)} onComplete={(c) => setCompletedCrop(c)} aspect={1}>
+              {/* eslint-disable-next-line jsx-a11y/alt-text */}
+              <img ref={imgRef} src={cropSrc} onLoad={onImageLoad} alt="Crop preview" className="max-h-[50vh]" />
+            </ReactCrop>
+            <div className="flex justify-between gap-2">
+              <button
+                type="button"
+                onClick={skipCurrent}
+                className="px-4 py-2 rounded-lg border border-gold-300/50 text-sm text-ink-900"
+              >
+                {queue.length > 0 ? "Skip" : "Cancel"}
+              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => uploadCroppedImage(false)}
+                  className="px-4 py-2 rounded-lg border border-gold-300/50 text-sm text-ink-900 disabled:opacity-50"
+                >
+                  {uploading ? "Uploading..." : "Add as gallery image"}
+                </button>
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => uploadCroppedImage(true)}
+                  className="px-4 py-2 rounded-lg bg-maroon-700 text-cream-50 text-sm disabled:opacity-50"
+                >
+                  {uploading ? "Uploading..." : "Set as primary"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 </file>
 
 <file path="tinytots-app/electron-app/src/components/performance/CategoryDonut.jsx">
@@ -6570,6 +6874,316 @@ export async function PUT(
 }
 </file>
 
+<file path="tinytots-web/web/app/api/admin/products/[id]/images/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
+
+const BUCKET = "product-images";
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB, matches bucket config
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function publicUrlFor(storagePath: string) {
+  const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(storagePath);
+  return data.publicUrl;
+}
+
+// Keeps products.image_url pointing at whichever image is currently primary
+// for this product. Called after every insert/delete/set-primary so existing
+// code that reads products.image_url directly (storefront PDP, POS
+// ProductCard, admin list view) always stays correct without changes there.
+async function syncPrimaryImageUrl(productId: string) {
+  const { data: primary } = await supabaseAdmin
+    .from("product_images")
+    .select("storage_path")
+    .eq("product_id", productId)
+    .eq("is_primary", true)
+    .maybeSingle();
+
+  const imageUrl = primary ? publicUrlFor(primary.storage_path) : null;
+
+  const { error } = await supabaseAdmin
+    .from("products")
+    .update({ image_url: imageUrl })
+    .eq("id", productId);
+
+  if (error) {
+    // This was previously swallowed silently, which is exactly why the
+    // image_url mismatch was invisible. Now it'll show in the server
+    // terminal (npm run dev) if it happens again.
+    console.error(`syncPrimaryImageUrl FAILED for product ${productId}:`, error);
+  } else {
+    console.log(`syncPrimaryImageUrl OK for product ${productId}: image_url = ${imageUrl}`);
+  }
+}
+
+// GET /api/admin/products/[id]/images — list all images for a product
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
+  const { id } = await params;
+
+  const { data, error } = await supabaseAdmin
+    .from("product_images")
+    .select("id, storage_path, is_primary, sort_order, created_at")
+    .eq("product_id", id)
+    .order("sort_order", { ascending: true });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const withUrls = await Promise.all(
+    (data || []).map(async (img) => {
+      const { data: links } = await supabaseAdmin
+        .from("product_image_variants")
+        .select("variant_id")
+        .eq("image_id", img.id);
+      return {
+        ...img,
+        url: publicUrlFor(img.storage_path),
+        variant_ids: (links || []).map((l) => l.variant_id),
+      };
+    })
+  );
+
+  return NextResponse.json({ data: withUrls }, { status: 200 });
+}
+
+// POST /api/admin/products/[id]/images — upload a new image
+// Expects multipart/form-data with a "file" field, and optional "is_primary" ("true"/"false")
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
+  const { id: productId } = await params;
+
+  try {
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
+    const makePrimary = formData.get("is_primary") === "true";
+    // Optional: comma-separated variant ids this image applies to (e.g. all
+    // "Sea Green" variants regardless of size). Omit/empty = applies to the
+    // whole product (shown for every variant), matching pre-existing images.
+    const variantIdsRaw = formData.get("variant_ids") as string | null;
+    const variantIds = variantIdsRaw
+      ? variantIdsRaw.split(",").map((v) => v.trim()).filter(Boolean)
+      : [];
+
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        { error: "Only JPEG, PNG, or WebP images are allowed" },
+        { status: 400 }
+      );
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      return NextResponse.json({ error: "Image must be under 5MB" }, { status: 400 });
+    }
+
+    // Verify the product actually exists before writing anything
+    const { data: product, error: productError } = await supabaseAdmin
+      .from("products")
+      .select("id")
+      .eq("id", productId)
+      .single();
+
+    if (productError || !product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    const storagePath = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .upload(storagePath, arrayBuffer, { contentType: file.type, upsert: false });
+
+    if (uploadError) {
+      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    }
+
+    // If this is the first image for the product, or the caller asked for it,
+    // make it primary. Unset any existing primary first (DB has a unique
+    // index enforcing only one primary per product).
+    const { count: existingCount } = await supabaseAdmin
+      .from("product_images")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId);
+
+    const shouldBePrimary = makePrimary || !existingCount;
+
+    if (shouldBePrimary) {
+      await supabaseAdmin
+        .from("product_images")
+        .update({ is_primary: false })
+        .eq("product_id", productId)
+        .eq("is_primary", true);
+    }
+
+    const { data: inserted, error: insertError } = await supabaseAdmin
+      .from("product_images")
+      .insert([
+        {
+          product_id: productId,
+          storage_path: storagePath,
+          is_primary: shouldBePrimary,
+          sort_order: existingCount ?? 0,
+        },
+      ])
+      .select()
+      .single();
+
+    if (insertError) {
+      // Roll back the uploaded file so we don't leave orphaned storage objects
+      await supabaseAdmin.storage.from(BUCKET).remove([storagePath]);
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
+
+    if (shouldBePrimary) {
+      await syncPrimaryImageUrl(productId);
+    }
+
+    if (variantIds.length > 0) {
+      await supabaseAdmin.from("product_image_variants").insert(
+        variantIds.map((variantId) => ({ image_id: inserted.id, variant_id: variantId }))
+      );
+    }
+
+    return NextResponse.json(
+      { success: true, data: { ...inserted, url: publicUrlFor(storagePath), variant_ids: variantIds } },
+      { status: 201 }
+    );
+  } catch (err: any) {
+    console.error("POST /api/admin/products/[id]/images crashed:", err);
+    return NextResponse.json({ error: err?.message || "Unexpected server error" }, { status: 500 });
+  }
+}
+
+// PATCH /api/admin/products/[id]/images — set primary image, or reorder
+// Body: { image_id, action: "set_primary" } OR { order: [image_id, image_id, ...] }
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
+  const { id: productId } = await params;
+
+  try {
+    const body = await request.json();
+
+    if (body.action === "set_primary" && body.image_id) {
+      await supabaseAdmin
+        .from("product_images")
+        .update({ is_primary: false })
+        .eq("product_id", productId)
+        .eq("is_primary", true);
+
+      const { error } = await supabaseAdmin
+        .from("product_images")
+        .update({ is_primary: true })
+        .eq("id", body.image_id)
+        .eq("product_id", productId);
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      await syncPrimaryImageUrl(productId);
+      return NextResponse.json({ success: true }, { status: 200 });
+    }
+
+    if (Array.isArray(body.order)) {
+      // body.order is an array of image ids in the desired display order
+      for (let i = 0; i < body.order.length; i++) {
+        await supabaseAdmin
+          .from("product_images")
+          .update({ sort_order: i })
+          .eq("id", body.order[i])
+          .eq("product_id", productId);
+      }
+      return NextResponse.json({ success: true }, { status: 200 });
+    }
+
+    return NextResponse.json(
+      { error: "Provide either { action: 'set_primary', image_id } or { order: [...] }" },
+      { status: 400 }
+    );
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Invalid request body" }, { status: 400 });
+  }
+}
+
+// DELETE /api/admin/products/[id]/images?image_id=123
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
+  const { id: productId } = await params;
+  const imageId = request.nextUrl.searchParams.get("image_id");
+
+  if (!imageId) {
+    return NextResponse.json({ error: "image_id query param is required" }, { status: 400 });
+  }
+
+  const { data: image, error: fetchError } = await supabaseAdmin
+    .from("product_images")
+    .select("id, storage_path, is_primary")
+    .eq("id", imageId)
+    .eq("product_id", productId)
+    .single();
+
+  if (fetchError || !image) {
+    return NextResponse.json({ error: "Image not found" }, { status: 404 });
+  }
+
+  const { error: deleteRowError } = await supabaseAdmin
+    .from("product_images")
+    .delete()
+    .eq("id", imageId);
+
+  if (deleteRowError) {
+    return NextResponse.json({ error: deleteRowError.message }, { status: 500 });
+  }
+
+  // Best-effort storage cleanup — the DB row is already gone either way
+  await supabaseAdmin.storage.from(BUCKET).remove([image.storage_path]);
+
+  if (image.is_primary) {
+    // Promote the next image (lowest sort_order) to primary, if any remain
+    const { data: nextImage } = await supabaseAdmin
+      .from("product_images")
+      .select("id")
+      .eq("product_id", productId)
+      .order("sort_order", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (nextImage) {
+      await supabaseAdmin
+        .from("product_images")
+        .update({ is_primary: true })
+        .eq("id", nextImage.id);
+    }
+
+    await syncPrimaryImageUrl(productId);
+  }
+
+  return NextResponse.json({ success: true }, { status: 200 });
+}
+</file>
+
 <file path="tinytots-web/web/app/api/admin/products/route.ts">
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -7351,6 +7965,394 @@ export default function SignupPage() {
 }
 </file>
 
+<file path="tinytots-web/web/components/admin/ImageUploader.tsx">
+"use client";
+
+import { useState, useRef, useCallback } from "react";
+import ReactCrop, { centerCrop, makeAspectCrop, type Crop, type PixelCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
+import { adminFetch } from "@/lib/admin-fetch";
+
+type ProductImage = {
+  id: number;
+  storage_path: string;
+  is_primary: boolean;
+  sort_order: number;
+  url: string;
+  variant_ids?: number[];
+};
+
+type VariantOption = { id: number; color: string | null; size: string | null };
+
+const MAX_DIMENSION = 1600; // px — plenty for a product photo, cuts upload size/time drastically
+
+// Reads the cropped area of an <img> onto a canvas, downscales if needed,
+// and returns a Blob. Downscaling is the main fix for slow uploads — a
+// phone photo can be 4000px+ wide, which takes far longer to upload than
+// the product card will ever actually display.
+async function getCroppedBlob(image: HTMLImageElement, crop: PixelCrop): Promise<Blob> {
+  const scaleX = image.naturalWidth / image.width;
+  const scaleY = image.naturalHeight / image.height;
+  const cropWidthPx = crop.width * scaleX;
+  const cropHeightPx = crop.height * scaleY;
+
+  const scale = Math.min(1, MAX_DIMENSION / Math.max(cropWidthPx, cropHeightPx));
+  const outputWidth = Math.round(cropWidthPx * scale);
+  const outputHeight = Math.round(cropHeightPx * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not get canvas context");
+
+  ctx.drawImage(
+    image,
+    crop.x * scaleX,
+    crop.y * scaleY,
+    cropWidthPx,
+    cropHeightPx,
+    0,
+    0,
+    outputWidth,
+    outputHeight
+  );
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Crop failed"));
+    }, "image/jpeg", 0.85);
+  });
+}
+
+export default function ImageUploader({
+  productId,
+  images,
+  onImagesChange,
+  variants = [],
+}: {
+  productId: string | number;
+  images: ProductImage[];
+  onImagesChange: (images: ProductImage[]) => void;
+  variants?: VariantOption[];
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
+
+  // Queue of files picked in one go — crop them one at a time
+  const [queue, setQueue] = useState<File[]>([]);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const [selectedVariantIds, setSelectedVariantIds] = useState<number[]>([]);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const pendingFileRef = useRef<{ name: string; type: string } | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function startQueue(files: File[]) {
+    setQueue(files);
+    processNext(files);
+  }
+
+  function processNext(remaining: File[]) {
+    const [next, ...rest] = remaining;
+    setQueue(rest);
+    if (!next) {
+      setCropSrc(null);
+      return;
+    }
+    pendingFileRef.current = { name: next.name, type: next.type };
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result as string);
+    reader.readAsDataURL(next);
+  }
+
+  function onSelectFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const valid: File[] = [];
+    for (const file of files) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        setError(`${file.name}: only JPEG, PNG, or WebP images are allowed.`);
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError(`${file.name}: must be under 5MB.`);
+        continue;
+      }
+      valid.push(file);
+    }
+    if (valid.length) {
+      setError(null);
+      setSelectedVariantIds([]);
+      startQueue(valid);
+    }
+    e.target.value = ""; // allow re-selecting the same file(s) later
+  }
+
+  function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    const { width, height } = e.currentTarget;
+    const initialCrop = centerCrop(
+      makeAspectCrop({ unit: "%", width: 90 }, 1, width, height),
+      width,
+      height
+    );
+    setCrop(initialCrop);
+  }
+
+  const uploadCroppedImage = useCallback(
+    async (makePrimary: boolean) => {
+      if (!imgRef.current || !completedCrop || !pendingFileRef.current) return;
+      setUploading(true);
+      setError(null);
+      try {
+        const blob = await getCroppedBlob(imgRef.current, completedCrop);
+        const formData = new FormData();
+        formData.append("file", blob, pendingFileRef.current.name);
+        formData.append("is_primary", makePrimary ? "true" : "false");
+        if (selectedVariantIds.length > 0) {
+          formData.append("variant_ids", selectedVariantIds.join(","));
+        }
+
+        const res = await adminFetch(`/api/admin/products/${productId}/images`, {
+          method: "POST",
+          body: formData,
+        });
+        const json = await res.json();
+
+        if (!res.ok) {
+          setError(json.error || "Upload failed.");
+          setUploading(false);
+          return;
+        }
+
+        const updated = makePrimary
+          ? [...images.map((img) => ({ ...img, is_primary: false })), json.data]
+          : [...images, json.data];
+        onImagesChange(updated);
+
+        pendingFileRef.current = null;
+        setCompletedCrop(undefined);
+        setSelectedVariantIds([]);
+
+        // Move to the next file in the queue, if any (multi-select flow)
+        processNext(queue);
+      } catch {
+        setError("Network error during upload. Please try again.");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [completedCrop, images, onImagesChange, productId, queue, selectedVariantIds]
+  );
+
+  function skipCurrent() {
+    pendingFileRef.current = null;
+    setCompletedCrop(undefined);
+    setSelectedVariantIds([]);
+    processNext(queue);
+  }
+
+  async function setPrimary(imageId: number) {
+    setError(null);
+    const res = await adminFetch(`/api/admin/products/${productId}/images`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "set_primary", image_id: imageId }),
+    });
+    if (!res.ok) {
+      const json = await res.json();
+      setError(json.error || "Failed to set primary image.");
+      return;
+    }
+    onImagesChange(
+      images.map((img) => ({ ...img, is_primary: img.id === imageId }))
+    );
+  }
+
+  async function deleteImage(imageId: number) {
+    // Guard against double-clicks / double-fires: if a delete for this
+    // image is already in flight, ignore further clicks entirely.
+    if (deletingIds.has(imageId)) return;
+
+    setDeletingIds((prev) => new Set(prev).add(imageId));
+    setError(null);
+    try {
+      const res = await adminFetch(
+        `/api/admin/products/${productId}/images?image_id=${imageId}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        const json = await res.json();
+        setError(json.error || "Failed to delete image.");
+        return;
+      }
+      const remaining = images.filter((img) => img.id !== imageId);
+      const wasPrimary = images.find((img) => img.id === imageId)?.is_primary;
+      if (wasPrimary && remaining.length > 0) {
+        remaining[0] = { ...remaining[0], is_primary: true };
+      }
+      onImagesChange(remaining);
+    } finally {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(imageId);
+        return next;
+      });
+    }
+  }
+
+  function variantLabel(v: VariantOption) {
+    return [v.color, v.size].filter(Boolean).join(" / ") || `Variant ${v.id}`;
+  }
+
+  function toggleVariant(id: number) {
+    setSelectedVariantIds((prev) =>
+      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-3">
+        {images
+          .slice()
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((img) => (
+            <div
+              key={img.id}
+              className="relative w-28 h-28 rounded-lg overflow-hidden border-2 group"
+              style={{ borderColor: img.is_primary ? "#9c422e" : "transparent" }}
+            >
+              <img src={img.url} alt="" className="w-full h-full object-cover" />
+              {img.is_primary && (
+                <span className="absolute top-1 left-1 bg-[#9c422e] text-white text-[10px] px-1.5 py-0.5 rounded">
+                  Primary
+                </span>
+              )}
+              {!!img.variant_ids?.length && (
+                <span className="absolute bottom-1 left-1 right-1 bg-black/60 text-white text-[9px] px-1 py-0.5 rounded truncate">
+                  {img.variant_ids.length} variant{img.variant_ids.length > 1 ? "s" : ""}
+                </span>
+              )}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                {!img.is_primary && (
+                  <button
+                    type="button"
+                    onClick={() => setPrimary(img.id)}
+                    className="text-white text-xs bg-white/20 rounded px-2 py-1 hover:bg-white/30"
+                  >
+                    Make primary
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={deletingIds.has(img.id)}
+                  onClick={() => deleteImage(img.id)}
+                  className="text-white text-xs bg-red-600/80 rounded px-2 py-1 hover:bg-red-600 disabled:opacity-50"
+                >
+                  {deletingIds.has(img.id) ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          ))}
+
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="w-28 h-28 rounded-lg border-2 border-dashed border-outline-variant flex items-center justify-center text-sm text-on-surface-variant hover:border-primary hover:text-primary transition text-center px-2"
+        >
+          + Add photos
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/jpeg,image/png,image/webp"
+          onChange={onSelectFiles}
+          className="hidden"
+        />
+      </div>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {cropSrc && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-4 max-w-lg w-full flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Crop image</h3>
+              {queue.length > 0 && (
+                <span className="text-xs text-on-surface-variant">{queue.length} more queued</span>
+              )}
+            </div>
+            <ReactCrop crop={crop} onChange={(c) => setCrop(c)} onComplete={(c) => setCompletedCrop(c)} aspect={1}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img ref={imgRef} src={cropSrc} onLoad={onImageLoad} alt="Crop preview" className="max-h-[50vh]" />
+            </ReactCrop>
+
+            {variants.length > 0 && (
+              <div>
+                <label className="block text-xs text-on-surface-variant mb-1">
+                  Show this photo for specific variants (optional — leave blank to show for all)
+                </label>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                  {variants.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => toggleVariant(v.id)}
+                      className={`text-xs px-2 py-1 rounded-full border ${
+                        selectedVariantIds.includes(v.id)
+                          ? "bg-[#9c422e] text-white border-[#9c422e]"
+                          : "border-outline-variant text-on-surface-variant"
+                      }`}
+                    >
+                      {variantLabel(v)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-between gap-2">
+              <button
+                type="button"
+                onClick={skipCurrent}
+                className="px-4 py-2 rounded-lg border border-outline-variant text-sm"
+              >
+                {queue.length > 0 ? "Skip" : "Cancel"}
+              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => uploadCroppedImage(false)}
+                  className="px-4 py-2 rounded-lg border border-outline-variant text-sm disabled:opacity-50"
+                >
+                  {uploading ? "Uploading..." : "Add as gallery image"}
+                </button>
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => uploadCroppedImage(true)}
+                  className="px-4 py-2 rounded-lg bg-[#9c422e] text-white text-sm disabled:opacity-50"
+                >
+                  {uploading ? "Uploading..." : "Set as primary"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+</file>
+
 <file path="tinytots-web/web/components/admin/MarkupCalculator.tsx">
 "use client";
 
@@ -7541,6 +8543,62 @@ export default function TagInput({
         />
       </div>
       <p className="font-label-md text-label-md text-on-surface-variant/60 mt-1">Press Enter or comma to add</p>
+    </div>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/components/ProductGallery.tsx">
+"use client";
+
+import { useState } from "react";
+
+type GalleryImage = { id: number; url: string; is_primary: boolean };
+
+export default function ProductGallery({
+  images,
+  productName,
+}: {
+  images: GalleryImage[];
+  productName: string;
+}) {
+  const sorted = images.slice(); // already sorted by sort_order from the query
+  const primaryIndex = Math.max(0, sorted.findIndex((img) => img.is_primary));
+  const [activeIndex, setActiveIndex] = useState(primaryIndex === -1 ? 0 : primaryIndex);
+
+  if (sorted.length === 0) {
+    return (
+      <div className="aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 bg-surface-container-low flex items-center justify-center text-on-surface-variant">
+        No image
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 bg-surface-container-low">
+        <img
+          className="w-full h-full object-cover"
+          src={sorted[activeIndex].url}
+          alt={productName}
+        />
+      </div>
+
+      {sorted.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto">
+          {sorted.map((img, i) => (
+            <button
+              key={img.id}
+              type="button"
+              onClick={() => setActiveIndex(i)}
+              className="w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition-colors"
+              style={{ borderColor: i === activeIndex ? "#9c422e" : "transparent" }}
+            >
+              <img src={img.url} alt="" className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -25905,6 +26963,101 @@ ALTER TABLE public.discounts ADD CONSTRAINT discounts_applies_to_check
   CHECK (applies_to = ANY (ARRAY['single_product'::text, 'product_set'::text, 'category'::text]));
 
 ALTER TABLE public.discounts ADD COLUMN category text;
+</file>
+
+<file path="tinytots-web/web/supabase/migrations/20260723_product_images.sql">
+-- tinytots-web/web/supabase/migrations/20260723_product_images.sql
+-- Adds multi-image support per product (primary image + gallery), backed by
+-- Supabase Storage. products.image_url is kept in sync automatically so any
+-- existing code that reads image_url (storefront PDP, POS, product cards)
+-- keeps working without changes.
+
+CREATE TABLE public.product_images (
+    id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    product_id bigint NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    storage_path text NOT NULL,          -- path inside the 'product-images' bucket
+    is_primary boolean NOT NULL DEFAULT false,
+    sort_order integer NOT NULL DEFAULT 0,
+    created_at timestamp with time zone NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_product_images_product_id ON public.product_images (product_id);
+
+ALTER TABLE public.product_images ENABLE ROW LEVEL SECURITY;
+
+-- Public can view images (storefront + POS need this to render pictures)
+CREATE POLICY "Public can view product images" ON public.product_images
+FOR SELECT USING (true);
+
+-- Only service_role (admin API routes) may insert/update/delete — matches
+-- the existing pattern where all writes go through supabaseAdmin, never anon.
+-- (No policy for INSERT/UPDATE/DELETE means only service_role, which bypasses
+-- RLS entirely, can perform them — anon/authenticated are blocked by default.)
+
+-- Enforce only one primary image per product at the database level, so a
+-- buggy client can never end up with two "is_primary = true" rows.
+CREATE UNIQUE INDEX idx_product_images_one_primary
+ON public.product_images (product_id)
+WHERE is_primary = true;
+
+-- NOTE: products.image_url is kept in sync at the APPLICATION layer (in the
+-- /api/admin/products/[id]/images route), not via a DB trigger. A trigger
+-- would need to know the Supabase project's public storage URL to build a
+-- full image_url, and hardcoding that into SQL is fragile across environments
+-- (local/staging/prod). The API route already has this URL available after
+-- every upload/delete/set-primary call, so it writes products.image_url
+-- directly in the same request — simpler and environment-safe.
+</file>
+
+<file path="tinytots-web/web/supabase/migrations/20260723100000_product_images_storage.sql">
+-- tinytots-web/web/supabase/migrations/20260723_product_images_storage.sql
+-- Creates the storage bucket for product images. Public read (so storefront
+-- and POS can display images directly), writes only via service_role
+-- (your admin API routes), matching the pattern used everywhere else.
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'product-images',
+  'product-images',
+  true,                                  -- public read
+  5242880,                               -- 5MB max per image
+  ARRAY['image/jpeg', 'image/png', 'image/webp']
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- Public (anon) can only READ objects in this bucket
+CREATE POLICY "Public can view product images objects"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'product-images');
+
+-- No INSERT/UPDATE/DELETE policy for anon/authenticated — only service_role
+-- (which bypasses RLS) can write, matching your existing admin-write pattern.
+-- This is intentional: uploads must always go through supabaseAdmin in an
+-- API route, never directly from the browser with the anon key.
+</file>
+
+<file path="tinytots-web/web/supabase/migrations/20260723200000_product_image_variants.sql">
+-- tinytots-web/web/supabase/migrations/20260723200000_product_image_variants.sql
+-- Lets each image optionally be linked to one or more specific variants
+-- (e.g. a "Sea Green" photo should show for all sizes of that color, but
+-- not for "Beige"). An image with no rows here applies to the whole product
+-- (falls back to showing on every variant) — this keeps existing images
+-- (uploaded before this feature existed) working exactly as before.
+
+CREATE TABLE public.product_image_variants (
+    image_id bigint NOT NULL REFERENCES public.product_images(id) ON DELETE CASCADE,
+    variant_id bigint NOT NULL REFERENCES public.variants(id) ON DELETE CASCADE,
+    PRIMARY KEY (image_id, variant_id)
+);
+
+CREATE INDEX idx_product_image_variants_variant_id ON public.product_image_variants (variant_id);
+
+ALTER TABLE public.product_image_variants ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public can view image-variant links" ON public.product_image_variants
+FOR SELECT USING (true);
+
+-- Writes only via service_role, same pattern as product_images itself.
 </file>
 
 <file path="tinytots-web/web/supabase/snippets/Untitled query 131.sql">
@@ -60521,6 +61674,10 @@ RESET ALL;
 </files>
 </file>
 
+<file path="tinytots-web/web/reverted">
+
+</file>
+
 <file path="tinytots-web/web/seed.sql">
 SET session_replication_role = replica;
 
@@ -61119,37 +62276,6 @@ export async function createNotification({
   } catch (err) {
     console.error("❌ [Notification Unexpected Error]:", err.message);
     return { success: false, error: err };
-  }
-}
-</file>
-
-<file path="tinytots-app/electron-app/backend/package.json">
-{
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "",
-  "type": "module",
-  "main": "server.js",
-  "scripts": {
-  "start": "node --import dotenv/config server.js"
-},
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.110.0",
-    "bcryptjs": "^3.0.3",
-    "bwip-js": "^4.11.2",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "escpos": "^3.0.0-alpha.6",
-    "escpos-usb": "^3.0.0-alpha.4",
-    "express": "^5.2.1",
-    "json2csv": "^6.0.0-alpha.2",
-    "node-cron": "^4.6.0",
-    "nodemailer": "^9.0.3",
-    "pdf-to-printer": "^5.8.0",
-    "qrcode": "^1.5.4"
   }
 }
 </file>
@@ -62625,187 +63751,6 @@ export default function AdminOrdersPage() {
 }
 </file>
 
-<file path="tinytots-web/web/app/admin/products/new/page.tsx">
-"use client";
-
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import RichTextEditor from "@/components/admin/RichTextEditor";
-import TagInput from "@/components/admin/TagInput";
-import MarkupCalculator from "@/components/admin/MarkupCalculator";
-
-export default function NewProductPage() {
-  const router = useRouter();
-  const [name, setName] = useState("");
-  const [sku, setSku] = useState("");
-  const [description, setDescription] = useState("");
-  const [brand, setBrand] = useState("");
-  const [category, setCategory] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [gender, setGender] = useState("");
-  const [ageBracket, setAgeBracket] = useState("");
-
-  const [costPrice, setCostPrice] = useState("");
-  const [shopBasePrice, setShopBasePrice] = useState("");
-  const [shopDiscountPercent, setShopDiscountPercent] = useState("0");
-  const [shopFinalPrice, setShopFinalPrice] = useState("");
-  const [webBasePrice, setWebBasePrice] = useState("");
-  const [webDiscountPercent, setWebDiscountPercent] = useState("0");
-  const [webFinalPrice, setWebFinalPrice] = useState("");
-
-  const [initialStock, setInitialStock] = useState("");
-  const [colors, setColors] = useState<string[]>([]);
-  const [sizes, setSizes] = useState<string[]>([]);
-  const [stockOverrides, setStockOverrides] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const variantCombos = useMemo(() => {
-    const combos: { key: string; color: string; size: string }[] = [];
-    for (const color of colors) for (const size of sizes) combos.push({ key: `${color}__${size}`, color, size });
-    return combos;
-  }, [colors, sizes]);
-
-  function stockFor(key: string) {
-    return stockOverrides[key] ?? initialStock ?? "";
-  }
-  function setStockFor(key: string, value: string) {
-    setStockOverrides((prev) => ({ ...prev, [key]: value }));
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-
-    if (!name.trim() || !sku.trim()) return setError("Name and SKU are required.");
-    if (!shopFinalPrice || !webFinalPrice) return setError("Fill in cost price and shop selling price so both prices can be calculated.");
-    if (!colors.length || !sizes.length) return setError("Add at least one color and one size to generate variants.");
-
-    setSubmitting(true);
-    try {
-      const variants = variantCombos.map((c) => ({
-        color: c.color,
-        size: c.size,
-        cost_price: costPrice ? parseFloat(costPrice) : 0,
-        base_price: shopBasePrice ? parseFloat(shopBasePrice) : null,
-        discount_percent: shopDiscountPercent ? parseFloat(shopDiscountPercent) : 0,
-        price: parseFloat(shopFinalPrice),
-        web_base_price: webBasePrice ? parseFloat(webBasePrice) : null,
-        web_discount_percent: webDiscountPercent ? parseFloat(webDiscountPercent) : 0,
-        web_price: parseFloat(webFinalPrice),
-        stock: parseInt(stockFor(c.key) || "0", 10),
-        reorder_level: 5,
-      }));
-
-      const res = await fetch("/api/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name, sku, description, brand, category,
-          image_url: imageUrl || null,
-          gender: gender || null,
-          age_bracket: ageBracket || null,
-          cost_price: costPrice ? parseFloat(costPrice) : 0,
-          selling_price: shopFinalPrice ? parseFloat(shopFinalPrice) : 0,
-          variants,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) { setError(json.error || "Failed to create product."); setSubmitting(false); return; }
-      router.push("/admin/products");
-    } catch {
-      setError("Network error. Please try again.");
-      setSubmitting(false);
-    }
-  }
-
-  const inputClass =
-    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
-
-  return (
-    <div className="max-w-2xl">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Add Product</h1>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-4">
-          <input placeholder="Product name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
-          <input placeholder="SKU" value={sku} onChange={(e) => setSku(e.target.value)} className={inputClass} />
-          <input placeholder="Brand" value={brand} onChange={(e) => setBrand(e.target.value)} className={inputClass} />
-          <input placeholder="Category (Shirts, Pants...)" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} />
-        </div>
-
-        <div>
-          <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Description</label>
-          <RichTextEditor value={description} onChange={setDescription} />
-        </div>
-
-        <input placeholder="Image URL" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className={inputClass} />
-
-        <div className="grid grid-cols-2 gap-4">
-          <input placeholder="Gender (boy/girl/unisex) — optional" value={gender} onChange={(e) => setGender(e.target.value)} className={inputClass} />
-          <input placeholder="Age bracket — optional" value={ageBracket} onChange={(e) => setAgeBracket(e.target.value)} className={inputClass} />
-        </div>
-
-        <MarkupCalculator
-          costPrice={costPrice}
-          shopBasePrice={shopBasePrice} shopDiscountPercent={shopDiscountPercent} shopFinalPrice={shopFinalPrice}
-          webBasePrice={webBasePrice} webDiscountPercent={webDiscountPercent} webFinalPrice={webFinalPrice}
-          onCostChange={setCostPrice}
-          onShopBaseChange={setShopBasePrice} onShopDiscountChange={setShopDiscountPercent} onShopFinalChange={setShopFinalPrice}
-          onWebBaseChange={setWebBasePrice} onWebDiscountChange={setWebDiscountPercent} onWebFinalChange={setWebFinalPrice}
-        />
-
-        <input placeholder="Default stock per variant" type="number" value={initialStock} onChange={(e) => setInitialStock(e.target.value)} className={inputClass} />
-
-        <div className="border-t border-outline-variant/20 pt-4 mt-2">
-          <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Variants</h2>
-          <div className="grid grid-cols-2 gap-4 mb-3">
-            <TagInput label="Colors" placeholder="Maroon, Black..." values={colors} onChange={setColors} />
-            <TagInput label="Sizes" placeholder="S, M, L, XL..." values={sizes} onChange={setSizes} />
-          </div>
-
-          {variantCombos.length > 0 && (
-            <div>
-              <p className="font-body-sm text-body-sm text-primary bg-primary-container/20 rounded-lg px-3 py-2 mb-2">
-                This will generate <strong>{variantCombos.length}</strong> variants ({colors.length} colors × {sizes.length} sizes). Adjust stock per combo below if needed.
-              </p>
-              <div className="border border-outline-variant/30 rounded-lg max-h-56 overflow-y-auto">
-                <table className="w-full font-body-sm text-body-sm">
-                  <thead className="bg-surface-container-low sticky top-0">
-                    <tr>
-                      <th className="text-left px-3 py-2 text-on-surface-variant">Color</th>
-                      <th className="text-left px-3 py-2 text-on-surface-variant">Size</th>
-                      <th className="text-left px-3 py-2 text-on-surface-variant">Stock</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {variantCombos.map(({ key, color, size }) => (
-                      <tr key={key} className="border-t border-outline-variant/10">
-                        <td className="px-3 py-1.5">{color}</td>
-                        <td className="px-3 py-1.5">{size}</td>
-                        <td className="px-3 py-1.5">
-                          <input type="number" value={stockFor(key)} onChange={(e) => setStockFor(key, e.target.value)} className="w-20 border border-outline-variant/50 rounded px-2 py-1" />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <button type="submit" disabled={submitting} className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-4">
-          {submitting ? "Saving..." : "Create Product"}
-        </button>
-
-        {error && <p className="font-label-md text-label-md text-error">{error}</p>}
-      </form>
-    </div>
-  );
-}
-</file>
-
 <file path="tinytots-web/web/app/admin/products/page.tsx">
 "use client";
 
@@ -63669,360 +64614,36 @@ This document serves as the absolute source of truth for engineering practices, 
 - **Implementation Constraint:** Implement blue-green deployments, canary releases, or robust container orchestration rollbacks. Database migrations must always be backward-compatible (non-breaking) to avoid data corruption during a rollback event.
 </file>
 
-<file path="tinytots-app/electron-app/src/screens/Inventory.jsx">
-import DOMPurify from "dompurify";
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, Pencil, Plus, Search, ChevronDown, Bell } from "lucide-react";
-import FloralFlourish from "../components/FloralFlourish";
-import VariantsTable from "../components/inventory/VariantsTable";
-import BarcodeQrPanel from "../components/inventory/BarcodeQrPanel";
-import ProductFormModal from "../components/inventory/ProductFormModal";
-import loginBg from "../assets/login-bg.png";
-
-const glassCard =
-  "rounded-2xl border border-white/40 backdrop-blur-xl transition-transform duration-300";
-const glassCardStyle = {
-  background: "linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.12) 100%)",
-  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
-};
-
-export default function Inventory() {
-  const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-  const [selectedProductId, setSelectedProductId] = useState(null);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [tab, setTab] = useState("variants");
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [modal, setModal] = useState(null); // null | "create" | "edit"
-  const [loading, setLoading] = useState(true);
-
-  async function loadInventory() {
-    setLoading(true);
-    try {
-      const res = await fetch("http://localhost:3000/api/inventory");
-      const data = await res.json();
-      if (data.success) {
-        setProducts(data.products);
-        if (!selectedProductId && data.products.length) {
-          setSelectedProductId(data.products[0].id);
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
+<file path="tinytots-app/electron-app/backend/package.json">
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --import dotenv/config server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.0",
+    "bcryptjs": "^3.0.3",
+    "bwip-js": "^4.11.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "escpos": "^3.0.0-alpha.6",
+    "escpos-usb": "^3.0.0-alpha.4",
+    "express": "^5.2.1",
+    "json2csv": "^6.0.0-alpha.2",
+    "multer": "^2.2.0",
+    "node-cron": "^4.6.0",
+    "nodemailer": "^9.0.3",
+    "pdf-to-printer": "^5.8.0",
+    "qrcode": "^1.5.4",
+    "react-image-crop": "^11.1.2"
   }
-
-  useEffect(() => {
-    loadInventory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const selectedProduct = products.find((p) => p.id === selectedProductId);
-
-  const filteredProducts = useMemo(() => {
-    if (!search.trim()) return products;
-    const q = search.toLowerCase();
-    return products.filter(
-      (p) => p.name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q)
-    );
-  }, [products, search]);
-
-  function toggleSelect(id) {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }
-
-  function selectAll(checked) {
-    setSelectedIds(checked ? selectedProduct?.variants.map((v) => v.id) || [] : []);
-  }
-
-  async function handleDeleteProduct() {
-    if (!selectedProduct) return;
-    if (!confirm(`Delete "${selectedProduct.name}" and all its variants? This can't be undone.`)) return;
-    await fetch(`http://localhost:3000/api/products/${selectedProduct.id}`, { method: "DELETE" });
-    setSelectedProductId(null);
-    setSelectedIds([]);
-    loadInventory();
-  }
-
-  return (
-    <div
-      className="min-h-screen px-10 py-6 bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${loginBg})` }}
-    >
-      {/* Top bar */}
-      <div className="flex items-center justify-between mb-4">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-maroon-700"
-        >
-          <ArrowLeft size={15} /> Dashboard
-        </button>
-
-        <div className="flex items-center gap-4">
-          <button
-            className="w-10 h-10 rounded-full flex items-center justify-center border border-white/40 text-ink-800 hover:bg-white/20"
-            aria-label="Notifications"
-          >
-            <Bell size={17} />
-          </button>
-          <div className="w-10 h-10 rounded-full bg-maroon-700 text-cream-50 flex items-center justify-center font-semibold">
-            M
-          </div>
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className="relative flex items-start justify-between mb-8">
-        <FloralFlourish className="absolute -top-4 right-0 w-80 h-40 pointer-events-none hidden md:block" />
-        <div className="relative">
-          <h1 className="font-display text-4xl text-maroon-800">
-            Dynamic Inventory
-          </h1>
-          <p className="text-ink-800 mt-1">Add, manage and track all your products &amp; variants.</p>
-        </div>
-
-        <div className="flex gap-3 relative">
-          <button className="px-4 py-2.5 rounded-lg border border-white/40 text-ink-900 text-sm font-medium hover:bg-white/20 backdrop-blur-sm">
-            Import Products
-          </button>
-          <button
-            onClick={() => setModal("create")}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-maroon-700 text-cream-50 text-sm font-medium hover:bg-maroon-800"
-          >
-            <Plus size={16} /> Add New Product
-          </button>
-        </div>
-      </div>
-
-      {loading ? (
-        <p className="text-center text-ink-800 py-20">Loading inventory…</p>
-      ) : !selectedProduct ? (
-        <div className={`text-center py-24 ${glassCard}`} style={glassCardStyle}>
-          <p className="text-ink-800 mb-4">No products yet.</p>
-          <button
-            onClick={() => setModal("create")}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-maroon-700 text-cream-50 text-sm font-medium hover:bg-maroon-800"
-          >
-            <Plus size={16} /> Add Your First Product
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            {/* Product picker */}
-            <div className="relative">
-              <button
-                onClick={() => setPickerOpen((o) => !o)}
-                className="inline-flex items-center gap-2 text-sm bg-white/25 backdrop-blur-sm border border-white/40 rounded-lg px-3 py-2 text-ink-900"
-              >
-                Viewing: <span className="font-semibold">{selectedProduct.name}</span>
-                <ChevronDown size={14} />
-              </button>
-              {pickerOpen && (
-                <div className="absolute z-10 mt-1 w-72 bg-white border border-cream-100 shadow-lg rounded-lg overflow-hidden">
-                  <div className="p-2 border-b border-cream-100 flex items-center gap-2">
-                    <Search size={14} className="text-ink-700/50" />
-                    <input
-                      autoFocus
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search product or SKU…"
-                      className="w-full text-sm outline-none"
-                    />
-                  </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {filteredProducts.map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => {
-                          setSelectedProductId(p.id);
-                          setSelectedIds([]);
-                          setPickerOpen(false);
-                          setSearch("");
-                        }}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-cream-50 flex justify-between ${
-                          p.id === selectedProductId ? "bg-maroon-100 text-maroon-800" : ""
-                        }`}
-                      >
-                        <span>{p.name}</span>
-                        <span className="text-ink-700/50 text-xs">{p.total_variants} variants</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Product Information */}
-            <div className={`p-6 hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-xl text-maroon-800">Product Information</h2>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setModal("edit")}
-                    className="p-2 rounded-lg hover:bg-white/20 text-ink-800"
-                    aria-label="Edit product"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    onClick={handleDeleteProduct}
-                    className="text-xs text-maroon-700 hover:underline px-2"
-                  >
-                    Delete product
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex gap-6">
-                <div className="w-32 h-32 rounded-xl bg-white/20 border border-white/40 flex flex-col items-center justify-center flex-shrink-0 overflow-hidden">
-                  {selectedProduct.image_url ? (
-                    <img src={selectedProduct.image_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <>
-                      <Camera size={22} className="text-ink-800/50 mb-1" />
-                      <span className="text-[10px] text-ink-800/60">Change Image</span>
-                    </>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-3 gap-x-6 gap-y-3 flex-1 text-sm">
-                  <Field label="Product Name" value={selectedProduct.name} />
-                  <Field label="Category" value={selectedProduct.category || "—"} />
-                  <Field label="Status" value={selectedProduct.status || "active"} pill />
-                  <Field label="Brand" value={selectedProduct.brand || "—"} />
-                  <Field label="SKU ID (Base)" value={selectedProduct.sku} mono />
-                  <Field label="Total Variants" value={selectedProduct.total_variants} />
-                  <Field label="HSN Code" value={selectedProduct.hsn_code || "—"} />
-                  <Field label="Unit" value={selectedProduct.unit || "Pcs"} />
-                  <Field label="Total Stock" value={selectedProduct.total_stock} />
-                  <Field
-                    label="Description"
-                    value={selectedProduct.description || "—"}
-                    className="col-span-2"
-                    html
-                  />
-                  <Field
-                    label="Created On"
-                    value={
-                      selectedProduct.created_at
-                        ? new Date(selectedProduct.created_at).toLocaleDateString()
-                        : "—"
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Variants */}
-            <div className={`p-6 hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex gap-6 text-sm font-medium">
-                  <button
-                    onClick={() => setTab("variants")}
-                    className={`pb-2 border-b-2 ${
-                      tab === "variants" ? "border-maroon-700 text-maroon-700" : "border-transparent text-ink-800"
-                    }`}
-                  >
-                    Variants ({selectedProduct.total_variants})
-                  </button>
-                  <button
-                    onClick={() => setTab("stock")}
-                    className={`pb-2 border-b-2 ${
-                      tab === "stock" ? "border-maroon-700 text-maroon-700" : "border-transparent text-ink-800"
-                    }`}
-                  >
-                    Stock Overview
-                  </button>
-                </div>
-              </div>
-
-              {tab === "variants" ? (
-                <VariantsTable
-                  variants={selectedProduct.variants}
-                  selectedIds={selectedIds}
-                  onToggleSelect={toggleSelect}
-                  onSelectAll={selectAll}
-                  onChanged={loadInventory}
-                  productId={selectedProduct.id}
-                />
-              ) : (
-                <StockOverview variants={selectedProduct.variants} />
-              )}
-            </div>
-          </div>
-
-          {/* Barcode / QR generation */}
-          <div>
-            <BarcodeQrPanel
-              product={selectedProduct}
-              allVariants={selectedProduct.variants}
-              selectedIds={selectedIds}
-            />
-          </div>
-        </div>
-      )}
-
-      {modal && (
-        <ProductFormModal
-          mode={modal}
-          initialProduct={modal === "edit" ? selectedProduct : null}
-          onClose={() => setModal(null)}
-          onSaved={loadInventory}
-        />
-      )}
-    </div>
-  );
-}
-
-function Field({ label, value, mono, pill, className = "", html = false }) {
-  return (
-    <div className={`min-w-0 ${className}`}>
-      <p className="text-xs text-ink-800/70">{label}</p>
-      {pill ? (
-        <span className="inline-block mt-0.5 text-xs px-2 py-0.5 rounded-full bg-white/30 text-ink-900 capitalize">
-          {value}
-        </span>
-      ) : html ? (
-        <div
-          className="text-ink-900 font-medium prose prose-sm max-w-none break-words [overflow-wrap:anywhere]"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }}
-        />
-      ) : (
-        <p className={`text-ink-900 ${mono ? "font-mono text-sm" : "font-medium"}`}>{value}</p>
-      )}
-    </div>
-  );
-}
-
-function StockOverview({ variants }) {
-  const byColor = {};
-  for (const v of variants) {
-    byColor[v.color] = (byColor[v.color] || 0) + (v.stock || 0);
-  }
-  const max = Math.max(1, ...Object.values(byColor));
-
-  return (
-    <div className="space-y-3">
-      {Object.entries(byColor).map(([color, stock]) => (
-        <div key={color} className="flex items-center gap-3">
-          <span className="w-20 text-sm text-ink-900 flex-shrink-0">{color}</span>
-          <div className="flex-1 h-3 bg-white/20 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-maroon-700 rounded-full"
-              style={{ width: `${(stock / max) * 100}%` }}
-            />
-          </div>
-          <span className="w-10 text-sm text-ink-800 text-right">{stock}</span>
-        </div>
-      ))}
-      {variants.length === 0 && (
-        <p className="text-center text-ink-800/60 py-8 text-sm">No stock data yet.</p>
-      )}
-    </div>
-  );
 }
 </file>
 
@@ -64613,52 +65234,188 @@ function Row({ label, value }) {
 }
 </file>
 
-<file path="tinytots-app/electron-app/package.json">
-{
-  "name": "pos-desktop",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "main": "electron/main.js",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "electron": "electron .",
-    "start": "concurrently \"npm run dev\" \"wait-on http://localhost:3000/api/health && npm run electron\""
-  },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.3.2",
-    "bcryptjs": "^3.0.3",
-    "dompurify": "^3.4.12",
-    "jsbarcode": "^3.12.3",
-    "lucide-react": "^1.23.0",
-    "pdf-lib": "^1.17.1",
-    "pdf-to-printer": "^5.8.0",
-    "qrcode": "^1.5.4",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-quill-new": "^3.8.3",
-    "react-router-dom": "^7.18.1",
-    "recharts": "^3.9.2",
-    "tailwindcss": "^4.3.2"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@tailwindcss/typography": "^0.5.20",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
-    "concurrently": "^10.0.3",
-    "electron": "^43.0.0",
-    "eslint": "^10.6.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.3",
-    "globals": "^17.7.0",
-    "vite": "^8.1.1",
-    "wait-on": "^9.0.10"
+<file path="tinytots-web/web/app/admin/products/new/page.tsx">
+"use client";
+
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import RichTextEditor from "@/components/admin/RichTextEditor";
+import TagInput from "@/components/admin/TagInput";
+import MarkupCalculator from "@/components/admin/MarkupCalculator";
+
+export default function NewProductPage() {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [sku, setSku] = useState("");
+  const [description, setDescription] = useState("");
+  const [brand, setBrand] = useState("");
+  const [category, setCategory] = useState("");
+  const [gender, setGender] = useState("");
+  const [ageBracket, setAgeBracket] = useState("");
+
+  const [costPrice, setCostPrice] = useState("");
+  const [shopBasePrice, setShopBasePrice] = useState("");
+  const [shopDiscountPercent, setShopDiscountPercent] = useState("0");
+  const [shopFinalPrice, setShopFinalPrice] = useState("");
+  const [webBasePrice, setWebBasePrice] = useState("");
+  const [webDiscountPercent, setWebDiscountPercent] = useState("0");
+  const [webFinalPrice, setWebFinalPrice] = useState("");
+
+  const [initialStock, setInitialStock] = useState("");
+  const [colors, setColors] = useState<string[]>([]);
+  const [sizes, setSizes] = useState<string[]>([]);
+  const [stockOverrides, setStockOverrides] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const variantCombos = useMemo(() => {
+    const combos: { key: string; color: string; size: string }[] = [];
+    for (const color of colors) for (const size of sizes) combos.push({ key: `${color}__${size}`, color, size });
+    return combos;
+  }, [colors, sizes]);
+
+  function stockFor(key: string) {
+    return stockOverrides[key] ?? initialStock ?? "";
   }
+  function setStockFor(key: string, value: string) {
+    setStockOverrides((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (!name.trim() || !sku.trim()) return setError("Name and SKU are required.");
+    if (!shopFinalPrice || !webFinalPrice) return setError("Fill in cost price and shop selling price so both prices can be calculated.");
+    if (!colors.length || !sizes.length) return setError("Add at least one color and one size to generate variants.");
+
+    setSubmitting(true);
+    try {
+      const variants = variantCombos.map((c) => ({
+        color: c.color,
+        size: c.size,
+        cost_price: costPrice ? parseFloat(costPrice) : 0,
+        base_price: shopBasePrice ? parseFloat(shopBasePrice) : null,
+        discount_percent: shopDiscountPercent ? parseFloat(shopDiscountPercent) : 0,
+        price: parseFloat(shopFinalPrice),
+        web_base_price: webBasePrice ? parseFloat(webBasePrice) : null,
+        web_discount_percent: webDiscountPercent ? parseFloat(webDiscountPercent) : 0,
+        web_price: parseFloat(webFinalPrice),
+        stock: parseInt(stockFor(c.key) || "0", 10),
+        reorder_level: 5,
+      }));
+
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name, sku, description, brand, category,
+          image_url: null, // images are added on the edit page after creation, via ImageUploader
+          gender: gender || null,
+          age_bracket: ageBracket || null,
+          cost_price: costPrice ? parseFloat(costPrice) : 0,
+          selling_price: shopFinalPrice ? parseFloat(shopFinalPrice) : 0,
+          variants,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.error || "Failed to create product."); setSubmitting(false); return; }
+
+      // Redirect straight to the edit page (not the list) so photos can be
+      // added immediately — image upload needs a real product id, which
+      // only exists after this point.
+      router.push(`/admin/products/${json.data.id}?justCreated=1`);
+    } catch {
+      setError("Network error. Please try again.");
+      setSubmitting(false);
+    }
+  }
+
+  const inputClass =
+    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+
+  return (
+    <div className="max-w-2xl">
+      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Add Product</h1>
+      <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">
+        Fill in the details below, then add photos on the next screen once the product is created.
+      </p>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <input placeholder="Product name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+          <input placeholder="SKU" value={sku} onChange={(e) => setSku(e.target.value)} className={inputClass} />
+          <input placeholder="Brand" value={brand} onChange={(e) => setBrand(e.target.value)} className={inputClass} />
+          <input placeholder="Category (Shirts, Pants...)" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} />
+        </div>
+
+        <div>
+          <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Description</label>
+          <RichTextEditor value={description} onChange={setDescription} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <input placeholder="Gender (boy/girl/unisex) — optional" value={gender} onChange={(e) => setGender(e.target.value)} className={inputClass} />
+          <input placeholder="Age bracket — optional" value={ageBracket} onChange={(e) => setAgeBracket(e.target.value)} className={inputClass} />
+        </div>
+
+        <MarkupCalculator
+          costPrice={costPrice}
+          shopBasePrice={shopBasePrice} shopDiscountPercent={shopDiscountPercent} shopFinalPrice={shopFinalPrice}
+          webBasePrice={webBasePrice} webDiscountPercent={webDiscountPercent} webFinalPrice={webFinalPrice}
+          onCostChange={setCostPrice}
+          onShopBaseChange={setShopBasePrice} onShopDiscountChange={setShopDiscountPercent} onShopFinalChange={setShopFinalPrice}
+          onWebBaseChange={setWebBasePrice} onWebDiscountChange={setWebDiscountPercent} onWebFinalChange={setWebFinalPrice}
+        />
+
+        <input placeholder="Default stock per variant" type="number" value={initialStock} onChange={(e) => setInitialStock(e.target.value)} className={inputClass} />
+
+        <div className="border-t border-outline-variant/20 pt-4 mt-2">
+          <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Variants</h2>
+          <div className="grid grid-cols-2 gap-4 mb-3">
+            <TagInput label="Colors" placeholder="Maroon, Black..." values={colors} onChange={setColors} />
+            <TagInput label="Sizes" placeholder="S, M, L, XL..." values={sizes} onChange={setSizes} />
+          </div>
+
+          {variantCombos.length > 0 && (
+            <div>
+              <p className="font-body-sm text-body-sm text-primary bg-primary-container/20 rounded-lg px-3 py-2 mb-2">
+                This will generate <strong>{variantCombos.length}</strong> variants ({colors.length} colors × {sizes.length} sizes). Adjust stock per combo below if needed.
+              </p>
+              <div className="border border-outline-variant/30 rounded-lg max-h-56 overflow-y-auto">
+                <table className="w-full font-body-sm text-body-sm">
+                  <thead className="bg-surface-container-low sticky top-0">
+                    <tr>
+                      <th className="text-left px-3 py-2 text-on-surface-variant">Color</th>
+                      <th className="text-left px-3 py-2 text-on-surface-variant">Size</th>
+                      <th className="text-left px-3 py-2 text-on-surface-variant">Stock</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {variantCombos.map(({ key, color, size }) => (
+                      <tr key={key} className="border-t border-outline-variant/10">
+                        <td className="px-3 py-1.5">{color}</td>
+                        <td className="px-3 py-1.5">{size}</td>
+                        <td className="px-3 py-1.5">
+                          <input type="number" value={stockFor(key)} onChange={(e) => setStockFor(key, e.target.value)} className="w-20 border border-outline-variant/50 rounded px-2 py-1" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button type="submit" disabled={submitting} className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-4">
+          {submitting ? "Saving..." : "Create Product — Add Photos Next"}
+        </button>
+
+        {error && <p className="font-label-md text-label-md text-error">{error}</p>}
+      </form>
+    </div>
+  );
 }
 </file>
 
@@ -65898,244 +66655,455 @@ function AddVariantModal({ productId, onClose, onAdded }) {
 }
 </file>
 
-<file path="tinytots-web/web/app/admin/products/[id]/page.tsx">
-"use client";
+<file path="tinytots-app/electron-app/src/screens/Inventory.jsx">
+import DOMPurify from "dompurify";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Camera, Pencil, Plus, Search, ChevronDown, Bell } from "lucide-react";
+import FloralFlourish from "../components/FloralFlourish";
+import VariantsTable from "../components/inventory/VariantsTable";
+import BarcodeQrPanel from "../components/inventory/BarcodeQrPanel";
+import ProductFormModal from "../components/inventory/ProductFormModal";
+import ImageUploader from "../components/inventory/ImageUploader";
+import loginBg from "../assets/login-bg.png";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import RichTextEditor from "@/components/admin/RichTextEditor";
-import { adminFetch } from "@/lib/admin-fetch";
-
-type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number; reorder_level: number; web_price_locked: boolean; web_round_to: number };
-type Product = {
-  id: number; name: string; sku: string; description: string | null; brand: string | null;
-  category: string | null; image_url: string | null; gender: string | null; age_bracket: string | null;
-  is_active: boolean; variants: Variant[];
+const glassCard =
+  "rounded-2xl border border-white/40 backdrop-blur-xl transition-transform duration-300";
+const glassCardStyle = {
+  background: "linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.12) 100%)",
+  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
 };
 
-function AddVariantForm({ productId, onAdded }: { productId: number; onAdded: (v: Variant) => void }) {
-  const [color, setColor] = useState("");
-  const [size, setSize] = useState("");
-  const [price, setPrice] = useState("");
-  const [stock, setStock] = useState("");
-  const [saving, setSaving] = useState(false);
-  const inputClass =
-    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+export default function Inventory() {
+  const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [tab, setTab] = useState("variants");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [modal, setModal] = useState(null); // null | "create" | "edit"
+  const [photosOpen, setPhotosOpen] = useState(false);
+  const [productImages, setProductImages] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  async function handleAdd() {
-    if (!price) return;
-    setSaving(true);
-    const res = await adminFetch("/api/inventory", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        product_id: productId,
-        color: color || null,
-        size: size || null,
-        price: parseFloat(price),
-        stock: parseInt(stock || "0", 10),
-      }),
-    });
-    const json = await res.json();
-    setSaving(false);
-    if (res.ok && json.data?.[0]) {
-      onAdded(json.data[0]);
-      setColor(""); setSize(""); setPrice(""); setStock("");
+  async function loadInventory() {
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:3000/api/inventory");
+      const data = await res.json();
+      if (data.success) {
+        setProducts(data.products);
+        if (!selectedProductId && data.products.length) {
+          setSelectedProductId(data.products[0].id);
+        }
+      }
+    } finally {
+      setLoading(false);
     }
   }
 
+  useEffect(() => {
+    loadInventory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const selectedProduct = products.find((p) => p.id === selectedProductId);
+
+  // Load this product's full photo gallery whenever the popover opens or
+  // the selected product changes — the "Product Information" card only
+  // shows the primary (selectedProduct.image_url), but the popover manages
+  // the full set.
+  useEffect(() => {
+    if (!photosOpen || !selectedProduct) return;
+    fetch(`http://localhost:3000/api/products/${selectedProduct.id}/images`)
+      .then((r) => r.json())
+      .then((json) => setProductImages(json.data || []))
+      .catch(() => setProductImages([]));
+  }, [photosOpen, selectedProduct?.id]);
+
+  const filteredProducts = useMemo(() => {
+    if (!search.trim()) return products;
+    const q = search.toLowerCase();
+    return products.filter(
+      (p) => p.name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q)
+    );
+  }, [products, search]);
+
+  function toggleSelect(id) {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function selectAll(checked) {
+    setSelectedIds(checked ? selectedProduct?.variants.map((v) => v.id) || [] : []);
+  }
+
+  async function handleDeleteProduct() {
+    if (!selectedProduct) return;
+    if (!confirm(`Delete "${selectedProduct.name}" and all its variants? This can't be undone.`)) return;
+    await fetch(`http://localhost:3000/api/products/${selectedProduct.id}`, { method: "DELETE" });
+    setSelectedProductId(null);
+    setSelectedIds([]);
+    loadInventory();
+  }
+
   return (
-    <div className="grid grid-cols-5 gap-2 mt-3 pt-3 border-t border-outline-variant/10 items-center">
-      <input value={color} onChange={(e) => setColor(e.target.value)} className={inputClass} placeholder="New color" />
-      <input value={size} onChange={(e) => setSize(e.target.value)} className={inputClass} placeholder="New size" />
-      <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} placeholder="Price" />
-      <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} className={inputClass} placeholder="Stock" />
-      <button onClick={handleAdd} disabled={saving} className="font-label-md text-label-md text-primary hover:underline disabled:opacity-50">
-        {saving ? "Adding..." : "+ Add variant"}
-      </button>
+    <div
+      className="min-h-screen px-10 py-6 bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${loginBg})` }}
+    >
+      {/* Top bar */}
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-maroon-700"
+        >
+          <ArrowLeft size={15} /> Dashboard
+        </button>
+
+        <div className="flex items-center gap-4">
+          <button
+            className="w-10 h-10 rounded-full flex items-center justify-center border border-white/40 text-ink-800 hover:bg-white/20"
+            aria-label="Notifications"
+          >
+            <Bell size={17} />
+          </button>
+          <div className="w-10 h-10 rounded-full bg-maroon-700 text-cream-50 flex items-center justify-center font-semibold">
+            M
+          </div>
+        </div>
+      </div>
+
+      {/* Header */}
+      <div className="relative flex items-start justify-between mb-8">
+        <FloralFlourish className="absolute -top-4 right-0 w-80 h-40 pointer-events-none hidden md:block" />
+        <div className="relative">
+          <h1 className="font-display text-4xl text-maroon-800">
+            Dynamic Inventory
+          </h1>
+          <p className="text-ink-800 mt-1">Add, manage and track all your products &amp; variants.</p>
+        </div>
+
+        <div className="flex gap-3 relative">
+          <button className="px-4 py-2.5 rounded-lg border border-white/40 text-ink-900 text-sm font-medium hover:bg-white/20 backdrop-blur-sm">
+            Import Products
+          </button>
+          <button
+            onClick={() => setModal("create")}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-maroon-700 text-cream-50 text-sm font-medium hover:bg-maroon-800"
+          >
+            <Plus size={16} /> Add New Product
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <p className="text-center text-ink-800 py-20">Loading inventory…</p>
+      ) : !selectedProduct ? (
+        <div className={`text-center py-24 ${glassCard}`} style={glassCardStyle}>
+          <p className="text-ink-800 mb-4">No products yet.</p>
+          <button
+            onClick={() => setModal("create")}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-maroon-700 text-cream-50 text-sm font-medium hover:bg-maroon-800"
+          >
+            <Plus size={16} /> Add Your First Product
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {/* Product picker */}
+            <div className="relative">
+              <button
+                onClick={() => setPickerOpen((o) => !o)}
+                className="inline-flex items-center gap-2 text-sm bg-white/25 backdrop-blur-sm border border-white/40 rounded-lg px-3 py-2 text-ink-900"
+              >
+                Viewing: <span className="font-semibold">{selectedProduct.name}</span>
+                <ChevronDown size={14} />
+              </button>
+              {pickerOpen && (
+                <div className="absolute z-10 mt-1 w-72 bg-white border border-cream-100 shadow-lg rounded-lg overflow-hidden">
+                  <div className="p-2 border-b border-cream-100 flex items-center gap-2">
+                    <Search size={14} className="text-ink-700/50" />
+                    <input
+                      autoFocus
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search product or SKU…"
+                      className="w-full text-sm outline-none"
+                    />
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {filteredProducts.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          setSelectedProductId(p.id);
+                          setSelectedIds([]);
+                          setPickerOpen(false);
+                          setSearch("");
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-cream-50 flex justify-between ${
+                          p.id === selectedProductId ? "bg-maroon-100 text-maroon-800" : ""
+                        }`}
+                      >
+                        <span>{p.name}</span>
+                        <span className="text-ink-700/50 text-xs">{p.total_variants} variants</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Product Information */}
+            <div className={`p-6 hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-display text-xl text-maroon-800">Product Information</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setModal("edit")}
+                    className="p-2 rounded-lg hover:bg-white/20 text-ink-800"
+                    aria-label="Edit product"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    onClick={handleDeleteProduct}
+                    className="text-xs text-maroon-700 hover:underline px-2"
+                  >
+                    Delete product
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-6">
+                <button
+                  type="button"
+                  onClick={() => setPhotosOpen(true)}
+                  className="w-32 h-32 rounded-xl bg-white/20 border border-white/40 flex flex-col items-center justify-center flex-shrink-0 overflow-hidden hover:bg-white/30 transition-colors"
+                >
+                  {selectedProduct.image_url ? (
+                    <img src={selectedProduct.image_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <>
+                      <Camera size={22} className="text-ink-800/50 mb-1" />
+                      <span className="text-[10px] text-ink-800/60">Change Image</span>
+                    </>
+                  )}
+                </button>
+
+                <div className="grid grid-cols-3 gap-x-6 gap-y-3 flex-1 text-sm">
+                  <Field label="Product Name" value={selectedProduct.name} />
+                  <Field label="Category" value={selectedProduct.category || "—"} />
+                  <Field label="Status" value={selectedProduct.status || "active"} pill />
+                  <Field label="Brand" value={selectedProduct.brand || "—"} />
+                  <Field label="SKU ID (Base)" value={selectedProduct.sku} mono />
+                  <Field label="Total Variants" value={selectedProduct.total_variants} />
+                  <Field label="HSN Code" value={selectedProduct.hsn_code || "—"} />
+                  <Field label="Unit" value={selectedProduct.unit || "Pcs"} />
+                  <Field label="Total Stock" value={selectedProduct.total_stock} />
+                  <Field
+                    label="Description"
+                    value={selectedProduct.description || "—"}
+                    className="col-span-2"
+                    html
+                  />
+                  <Field
+                    label="Created On"
+                    value={
+                      selectedProduct.created_at
+                        ? new Date(selectedProduct.created_at).toLocaleDateString()
+                        : "—"
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Variants */}
+            <div className={`p-6 hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex gap-6 text-sm font-medium">
+                  <button
+                    onClick={() => setTab("variants")}
+                    className={`pb-2 border-b-2 ${
+                      tab === "variants" ? "border-maroon-700 text-maroon-700" : "border-transparent text-ink-800"
+                    }`}
+                  >
+                    Variants ({selectedProduct.total_variants})
+                  </button>
+                  <button
+                    onClick={() => setTab("stock")}
+                    className={`pb-2 border-b-2 ${
+                      tab === "stock" ? "border-maroon-700 text-maroon-700" : "border-transparent text-ink-800"
+                    }`}
+                  >
+                    Stock Overview
+                  </button>
+                </div>
+              </div>
+
+              {tab === "variants" ? (
+                <VariantsTable
+                  variants={selectedProduct.variants}
+                  selectedIds={selectedIds}
+                  onToggleSelect={toggleSelect}
+                  onSelectAll={selectAll}
+                  onChanged={loadInventory}
+                  productId={selectedProduct.id}
+                />
+              ) : (
+                <StockOverview variants={selectedProduct.variants} />
+              )}
+            </div>
+          </div>
+
+          {/* Barcode / QR generation */}
+          <div>
+            <BarcodeQrPanel
+              product={selectedProduct}
+              allVariants={selectedProduct.variants}
+              selectedIds={selectedIds}
+            />
+          </div>
+        </div>
+      )}
+
+      {modal && (
+        <ProductFormModal
+          mode={modal}
+          initialProduct={modal === "edit" ? selectedProduct : null}
+          onClose={() => setModal(null)}
+          onSaved={loadInventory}
+        />
+      )}
+
+      {photosOpen && selectedProduct && (
+        <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-cream-50 rounded-2xl w-full max-w-md p-7">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-xl text-maroon-800">
+                Photos — {selectedProduct.name}
+              </h2>
+              <button
+                onClick={() => {
+                  setPhotosOpen(false);
+                  loadInventory(); // refresh so the primary thumbnail reflects any change
+                }}
+                className="text-ink-700 hover:text-maroon-700 text-sm"
+              >
+                Done
+              </button>
+            </div>
+            <ImageUploader
+              productId={selectedProduct.id}
+              images={productImages}
+              onImagesChange={setProductImages}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export default function EditProductPage() {
-  const { id } = useParams<{ id: string }>();
-  const router = useRouter();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    adminFetch(`/api/admin/products/${id}`)
-      .then((r) => r.json())
-      .then((json) => {
-        if (json.error) {
-          setError(json.error);
-        } else {
-          setProduct(json.data);
-        }
-      })
-      .catch((err) => setError("Fetch failed: " + err.message))
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  function updateField<K extends keyof Product>(field: K, value: Product[K]) {
-    setProduct((prev) => (prev ? { ...prev, [field]: value } : prev));
-  }
-
-  function updateVariant(vid: number, field: keyof Variant, value: string | boolean | number) {
-    setProduct((prev) =>
-      prev
-        ? {
-            ...prev,
-            variants: prev.variants.map((v) => {
-              if (v.id !== vid) return v;
-              if (field === "web_price_locked") return { ...v, web_price_locked: value as boolean };
-              if (field === "web_round_to") return { ...v, web_round_to: value as number };
-              if (field === "color" || field === "size") return { ...v, [field]: value as string };
-              return { ...v, [field]: Number(value) };
-            }),
-          }
-        : prev
-    );
-  }
-  async function saveProduct() {
-    if (!product) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const res = await adminFetch(`/api/products/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: product.name,
-          sku: product.sku,
-          description: product.description,
-          brand: product.brand,
-          category: product.category,
-          image_url: product.image_url,
-          gender: product.gender,
-          age_bracket: product.age_bracket,
-        }),
-      });
-      if (!res.ok) {
-        const json = await res.json();
-        setError(json.error || "Failed to save product.");
-      }
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function saveVariant(v: Variant) {
-    setError(null);
-    const res = await adminFetch(`/api/inventory/${v.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ price: v.price, stock: v.stock, reorder_level: v.reorder_level, color: v.color, size: v.size, web_price_locked: v.web_price_locked, web_round_to: v.web_round_to }),
-    });
-    if (!res.ok) {
-      const json = await res.json();
-      setError(json.error || "Failed to save variant.");
-    }
-  }
-
-  async function deleteProduct() {
-    if (!confirm("Deactivate this product? It will disappear from the storefront but stay in past orders.")) return;
-    await adminFetch(`/api/products/${id}`, { method: "DELETE" });
-    router.push("/admin/products");
-  }
-
-  const inputClass =
-    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
-
-    if (loading) return <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>;
-    if (!product) return <p className="font-body-md text-body-md text-error">Product not found or failed to load. {error && `(${error})`}</p>;
-  
-
+function Field({ label, value, mono, pill, className = "", html = false }) {
   return (
-    <div className="max-w-2xl">
-      <div className="flex justify-between items-center mb-stack-md">
-        <h1 className="font-display-md text-display-md text-on-surface">Edit Product</h1>
-        <button
-  onClick={async () => {
-    const res = await adminFetch(`/api/products/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...product, is_active: !product.is_active }),
-    });
-    if (res.ok) updateField("is_active", !product.is_active);
-  }}
-  className={`font-label-md text-label-md hover:underline ${product.is_active ? "text-error" : "text-primary"}`}
->
-  {product.is_active ? "Deactivate product" : "Reactivate product"}
-</button>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <input value={product.name} onChange={(e) => updateField("name", e.target.value)} className={inputClass} placeholder="Name" />
-        <input value={product.sku} onChange={(e) => updateField("sku", e.target.value)} className={inputClass} placeholder="SKU" />
-        <div>
-  <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Description</label>
-  <RichTextEditor value={product.description ?? ""} onChange={(html) => updateField("description", html)} />
-</div>
-        <div className="grid grid-cols-2 gap-4">
-          <input value={product.brand ?? ""} onChange={(e) => updateField("brand", e.target.value)} className={inputClass} placeholder="Brand" />
-          <input value={product.category ?? ""} onChange={(e) => updateField("category", e.target.value)} className={inputClass} placeholder="Category" />
-        </div>
-        <input value={product.image_url ?? ""} onChange={(e) => updateField("image_url", e.target.value)} className={inputClass} placeholder="Image URL" />
-
-        <button
-          onClick={saveProduct}
-          disabled={saving}
-          className="self-start px-5 py-2 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save product details"}
-        </button>
-      </div>
-
-      <div className="border-t border-outline-variant/20 pt-4 mt-6">
-        <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Variants</h2>
-        {(product.variants ?? []).map((v) => (
-        <div key={v.id} className="grid grid-cols-6 gap-2 mb-2 items-center">
-        <input value={v.color ?? ""} onChange={(e) => updateVariant(v.id, "color", e.target.value)} className={inputClass} placeholder="Color" />
-        <input value={v.size ?? ""} onChange={(e) => updateVariant(v.id, "size", e.target.value)} className={inputClass} placeholder="Size" />
-        <input type="number" value={v.price} onChange={(e) => updateVariant(v.id, "price", e.target.value)} className={inputClass} placeholder="Price" />
-        <input type="number" value={v.stock} onChange={(e) => updateVariant(v.id, "stock", e.target.value)} className={inputClass} placeholder="Stock" />
-        <button onClick={() => saveVariant(v)} className="font-label-md text-label-md text-primary hover:underline">
-          Save
-        </button>
-        <button
-          onClick={async () => {
-            if (!confirm("Delete this variant permanently?")) return;
-            const res = await adminFetch(`/api/inventory/${v.id}`, { method: "DELETE" });
-            if (res.ok) {
-              setProduct((prev) => prev ? { ...prev, variants: prev.variants.filter((x) => x.id !== v.id) } : prev);
-            }
-          }}
-          className="font-label-md text-label-md text-error hover:underline"
-        >
-          Delete
-        </button>
-        <label className="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant col-span-6 mt-1">
-          <input
-            type="checkbox"
-            checked={v.web_price_locked}
-            onChange={(e) => updateVariant(v.id, "web_price_locked", e.target.checked)}
-          />
-          Lock web price (shop price changes won't affect this variant's web price)
-        </label>
-      </div>
-        ))}
-
-        <AddVariantForm productId={product.id} onAdded={(newVariant) =>
-          setProduct((prev) => prev ? { ...prev, variants: [...prev.variants, newVariant] } : prev)
-        } />
-      </div>
-
-      {error && <p className="font-label-md text-label-md text-error mt-4">{error}</p>}
+    <div className={`min-w-0 ${className}`}>
+      <p className="text-xs text-ink-800/70">{label}</p>
+      {pill ? (
+        <span className="inline-block mt-0.5 text-xs px-2 py-0.5 rounded-full bg-white/30 text-ink-900 capitalize">
+          {value}
+        </span>
+      ) : html ? (
+        <div
+          className="text-ink-900 font-medium prose prose-sm max-w-none break-words [overflow-wrap:anywhere]"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }}
+        />
+      ) : (
+        <p className={`text-ink-900 ${mono ? "font-mono text-sm" : "font-medium"}`}>{value}</p>
+      )}
     </div>
   );
+}
+
+function StockOverview({ variants }) {
+  const byColor = {};
+  for (const v of variants) {
+    byColor[v.color] = (byColor[v.color] || 0) + (v.stock || 0);
+  }
+  const max = Math.max(1, ...Object.values(byColor));
+
+  return (
+    <div className="space-y-3">
+      {Object.entries(byColor).map(([color, stock]) => (
+        <div key={color} className="flex items-center gap-3">
+          <span className="w-20 text-sm text-ink-900 flex-shrink-0">{color}</span>
+          <div className="flex-1 h-3 bg-white/20 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-maroon-700 rounded-full"
+              style={{ width: `${(stock / max) * 100}%` }}
+            />
+          </div>
+          <span className="w-10 text-sm text-ink-800 text-right">{stock}</span>
+        </div>
+      ))}
+      {variants.length === 0 && (
+        <p className="text-center text-ink-800/60 py-8 text-sm">No stock data yet.</p>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="tinytots-app/electron-app/package.json">
+{
+  "name": "pos-desktop",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "electron": "electron .",
+    "start": "concurrently \"npm run dev\" \"wait-on http://localhost:3000/api/health && npm run electron\""
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.2",
+    "bcryptjs": "^3.0.3",
+    "dompurify": "^3.4.12",
+    "jsbarcode": "^3.12.3",
+    "lucide-react": "^1.23.0",
+    "pdf-lib": "^1.17.1",
+    "pdf-to-printer": "^5.8.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-image-crop": "^11.1.2",
+    "react-quill-new": "^3.8.3",
+    "react-router-dom": "^7.18.1",
+    "recharts": "^3.9.2",
+    "tailwindcss": "^4.3.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/typography": "^0.5.20",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "concurrently": "^10.0.3",
+    "electron": "^43.0.0",
+    "eslint": "^10.6.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0",
+    "vite": "^8.1.1",
+    "wait-on": "^9.0.10"
+  }
 }
 </file>
 
@@ -66385,97 +67353,6 @@ export default function CheckoutPage() {
 }
 </file>
 
-<file path="tinytots-web/web/app/products/[id]/page.tsx">
-import { supabase } from "@/lib/supabase";
-import AddToCart from "@/components/AddToCart";
-import Link from "next/link";
-import DOMPurify from "isomorphic-dompurify";
-
-async function getProduct(id: string) {
-  const { data, error } = await supabase
-    .from("products")
-    .select(
-      `
-      id, name, sku, description, brand, category, image_url,
-variants ( id, color, size, price, web_price, stock, web_base_price, web_discount_percent )
-    `
-    )
-    .eq("id", id)
-    .eq("is_active", true)
-    .single();
-
-  if (error) return null;
-  return data;
-}
-
-export default async function ProductDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const product = await getProduct(id);
-
-  if (!product) {
-    return (
-      <main className="max-w-3xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-        <p className="text-on-surface-variant">Product not found.</p>
-        <Link href="/products" className="text-primary hover:underline">
-          ← Back to shop
-        </Link>
-      </main>
-    );
-  }
-
-  return (
-    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <nav className="text-body-sm font-body-sm text-on-surface-variant mb-stack-sm flex items-center gap-2">
-        <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <Link href="/products" className="hover:text-primary transition-colors">Shop All</Link>
-        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <span className="text-on-surface">{product.name}</span>
-      </nav>
-
-      <div className="grid md:grid-cols-2 gap-gutter">
-        <div className="aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 bg-surface-container-low">
-          {product.image_url ? (
-            <img
-              className="w-full h-full object-cover"
-              src={product.image_url}
-              alt={product.name}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-on-surface-variant">
-              No image
-            </div>
-          )}
-        </div>
-
-        <div>
-          <h1 className="font-display-md text-display-md text-on-surface">{product.name}</h1>
-          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-            {product.brand} {product.category ? `· ${product.category}` : ""}
-          </p>
-          {product.description && (
-            <div
-              className="font-body-md text-body-md text-on-surface-variant mt-4 prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
-            />
-          )}
-
-          <AddToCart
-            productId={product.id}
-            productName={product.name}
-            variants={product.variants}
-          />
-        </div>
-      </div>
-    </main>
-  );
-}
-</file>
-
 <file path="tinytots-web/web/components/AddToCart.tsx">
 "use client";
 
@@ -66590,13 +67467,383 @@ export default function AddToCart({
 }
 </file>
 
+<file path="tinytots-web/web/app/admin/products/[id]/page.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import RichTextEditor from "@/components/admin/RichTextEditor";
+import ImageUploader from "@/components/admin/ImageUploader";
+import { adminFetch } from "@/lib/admin-fetch";
+
+type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number; reorder_level: number; web_price_locked: boolean; web_round_to: number };
+type Product = {
+  id: number; name: string; sku: string; description: string | null; brand: string | null;
+  category: string | null; image_url: string | null; gender: string | null; age_bracket: string | null;
+  is_active: boolean; variants: Variant[];
+};
+type ProductImage = { id: number; storage_path: string; is_primary: boolean; sort_order: number; url: string };
+
+function AddVariantForm({ productId, onAdded }: { productId: number; onAdded: (v: Variant) => void }) {
+  const [color, setColor] = useState("");
+  const [size, setSize] = useState("");
+  const [price, setPrice] = useState("");
+  const [stock, setStock] = useState("");
+  const [saving, setSaving] = useState(false);
+  const inputClass =
+    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+
+  async function handleAdd() {
+    if (!price) return;
+    setSaving(true);
+    const res = await fetch("/api/inventory", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        product_id: productId,
+        color: color || null,
+        size: size || null,
+        price: parseFloat(price),
+        stock: parseInt(stock || "0", 10),
+      }),
+    });
+    const json = await res.json();
+    setSaving(false);
+    if (res.ok && json.data?.[0]) {
+      onAdded(json.data[0]);
+      setColor(""); setSize(""); setPrice(""); setStock("");
+    }
+  }
+
+  return (
+    <div className="grid grid-cols-5 gap-2 mt-3 pt-3 border-t border-outline-variant/10 items-center">
+      <input value={color} onChange={(e) => setColor(e.target.value)} className={inputClass} placeholder="New color" />
+      <input value={size} onChange={(e) => setSize(e.target.value)} className={inputClass} placeholder="New size" />
+      <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} placeholder="Price" />
+      <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} className={inputClass} placeholder="Stock" />
+      <button onClick={handleAdd} disabled={saving} className="font-label-md text-label-md text-primary hover:underline disabled:opacity-50">
+        {saving ? "Adding..." : "+ Add variant"}
+      </button>
+    </div>
+  );
+}
+
+export default function EditProductPage() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const justCreated = searchParams.get("justCreated") === "1";
+  const [product, setProduct] = useState<Product | null>(null);
+  const [images, setImages] = useState<ProductImage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    adminFetch(`/api/admin/products/${id}`)
+      .then((r) => r.json())
+      .then((json) => setProduct(json.data))
+      .finally(() => setLoading(false));
+
+    adminFetch(`/api/admin/products/${id}/images`)
+      .then((r) => r.json())
+      .then((json) => setImages(json.data || []))
+      .catch(() => setImages([]));
+  }, [id]);
+
+  function updateField<K extends keyof Product>(field: K, value: Product[K]) {
+    setProduct((prev) => (prev ? { ...prev, [field]: value } : prev));
+  }
+
+  function updateVariant(vid: number, field: keyof Variant, value: string | boolean | number) {
+    setProduct((prev) =>
+      prev
+        ? {
+            ...prev,
+            variants: prev.variants.map((v) => {
+              if (v.id !== vid) return v;
+              if (field === "web_price_locked") return { ...v, web_price_locked: value as boolean };
+              if (field === "web_round_to") return { ...v, web_round_to: value as number };
+              if (field === "color" || field === "size") return { ...v, [field]: value as string };
+              return { ...v, [field]: Number(value) };
+            }),
+          }
+        : prev
+    );
+  }
+  async function saveProduct() {
+    if (!product) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: product.name,
+          sku: product.sku,
+          description: product.description,
+          brand: product.brand,
+          category: product.category,
+          // image_url intentionally omitted — ImageUploader is the sole
+          // source of truth for this field now. Sending it here would
+          // overwrite it with whatever stale value was in local state when
+          // the page loaded, undoing any photo changes made since.
+          gender: product.gender,
+          age_bracket: product.age_bracket,
+        }),
+      });
+      if (!res.ok) {
+        const json = await res.json();
+        setError(json.error || "Failed to save product.");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveVariant(v: Variant) {
+    setError(null);
+    const res = await fetch(`/api/inventory/${v.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ price: v.price, stock: v.stock, reorder_level: v.reorder_level, color: v.color, size: v.size, web_price_locked: v.web_price_locked, web_round_to: v.web_round_to }),
+    });
+    if (!res.ok) {
+      const json = await res.json();
+      setError(json.error || "Failed to save variant.");
+    }
+  }
+
+  async function deleteProduct() {
+    if (!confirm("Deactivate this product? It will disappear from the storefront but stay in past orders.")) return;
+    await fetch(`/api/products/${id}`, { method: "DELETE" });
+    router.push("/admin/products");
+  }
+
+  const inputClass =
+    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+
+  if (loading) return <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>;
+  if (!product) return <p className="font-body-md text-body-md text-error">Product not found.</p>;
+
+  return (
+    <div className="max-w-2xl">
+      <div className="flex justify-between items-center mb-stack-md">
+        <h1 className="font-display-md text-display-md text-on-surface">Edit Product</h1>
+        <button
+  onClick={async () => {
+    const res = await fetch(`/api/products/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...product, is_active: !product.is_active }),
+    });
+    if (res.ok) updateField("is_active", !product.is_active);
+  }}
+  className={`font-label-md text-label-md hover:underline ${product.is_active ? "text-error" : "text-primary"}`}
+>
+  {product.is_active ? "Deactivate product" : "Reactivate product"}
+</button>
+      </div>
+
+      {justCreated && (
+        <p className="font-body-sm text-body-sm text-primary bg-primary-container/20 rounded-lg px-3 py-2 mb-4">
+          Product created! Add photos below to finish setting it up.
+        </p>
+      )}
+
+      <div className="flex flex-col gap-4">
+        <input value={product.name} onChange={(e) => updateField("name", e.target.value)} className={inputClass} placeholder="Name" />
+        <input value={product.sku} onChange={(e) => updateField("sku", e.target.value)} className={inputClass} placeholder="SKU" />
+        <div>
+  <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Description</label>
+  <RichTextEditor value={product.description ?? ""} onChange={(html) => updateField("description", html)} />
+</div>
+        <div className="grid grid-cols-2 gap-4">
+          <input value={product.brand ?? ""} onChange={(e) => updateField("brand", e.target.value)} className={inputClass} placeholder="Brand" />
+          <input value={product.category ?? ""} onChange={(e) => updateField("category", e.target.value)} className={inputClass} placeholder="Category" />
+        </div>
+
+        <div>
+          <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Photos</label>
+          <ImageUploader productId={product.id} images={images} onImagesChange={setImages} variants={product.variants} />
+        </div>
+
+        <button
+          onClick={saveProduct}
+          disabled={saving}
+          className="self-start px-5 py-2 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save product details"}
+        </button>
+      </div>
+
+      <div className="border-t border-outline-variant/20 pt-4 mt-6">
+        <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Variants</h2>
+        {product.variants.map((v) => (
+        <div key={v.id} className="grid grid-cols-6 gap-2 mb-2 items-center">
+        <input value={v.color ?? ""} onChange={(e) => updateVariant(v.id, "color", e.target.value)} className={inputClass} placeholder="Color" />
+        <input value={v.size ?? ""} onChange={(e) => updateVariant(v.id, "size", e.target.value)} className={inputClass} placeholder="Size" />
+        <input type="number" value={v.price} onChange={(e) => updateVariant(v.id, "price", e.target.value)} className={inputClass} placeholder="Price" />
+        <input type="number" value={v.stock} onChange={(e) => updateVariant(v.id, "stock", e.target.value)} className={inputClass} placeholder="Stock" />
+        <button onClick={() => saveVariant(v)} className="font-label-md text-label-md text-primary hover:underline">
+          Save
+        </button>
+        <button
+          onClick={async () => {
+            if (!confirm("Delete this variant permanently?")) return;
+            const res = await fetch(`/api/inventory/${v.id}`, { method: "DELETE" });
+            if (res.ok) {
+              setProduct((prev) => prev ? { ...prev, variants: prev.variants.filter((x) => x.id !== v.id) } : prev);
+            }
+          }}
+          className="font-label-md text-label-md text-error hover:underline"
+        >
+          Delete
+        </button>
+        <label className="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant col-span-6 mt-1">
+          <input
+            type="checkbox"
+            checked={v.web_price_locked}
+            onChange={(e) => updateVariant(v.id, "web_price_locked", e.target.checked)}
+          />
+          Lock web price (shop price changes won't affect this variant's web price)
+        </label>
+      </div>
+        ))}
+
+        <AddVariantForm productId={product.id} onAdded={(newVariant) =>
+          setProduct((prev) => prev ? { ...prev, variants: [...prev.variants, newVariant] } : prev)
+        } />
+      </div>
+
+      {error && <p className="font-label-md text-label-md text-error mt-4">{error}</p>}
+    </div>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/products/[id]/page.tsx">
+import { supabase } from "@/lib/supabase";
+import AddToCart from "@/components/AddToCart";
+import ProductGallery from "@/components/ProductGallery";
+import Link from "next/link";
+import DOMPurify from "isomorphic-dompurify";
+
+// Without this, Next.js caches the Supabase data fetch indefinitely, so
+// admin changes (new photos, price/stock updates) never show up on the live
+// storefront until a full rebuild. Product pages change often enough
+// (inventory, pricing, images) that always-fresh is the right tradeoff here.
+export const dynamic = "force-dynamic";
+
+async function getProduct(id: string) {
+  const { data, error } = await supabase
+    .from("products")
+    .select(
+      `
+      id, name, sku, description, brand, category, image_url,
+      variants ( id, color, size, price, web_price, web_base_price, web_discount_percent, stock )
+    `
+    )
+    .eq("id", id)
+    .eq("is_active", true)
+    .single();
+
+  if (error) return null;
+  return data;
+}
+
+async function getProductImages(id: string) {
+  const { data, error } = await supabase
+    .from("product_images")
+    .select("id, storage_path, is_primary, sort_order")
+    .eq("product_id", id)
+    .order("sort_order", { ascending: true });
+
+  if (error || !data) return [];
+
+  return data.map((img) => ({
+    id: img.id,
+    is_primary: img.is_primary,
+    url: supabase.storage.from("product-images").getPublicUrl(img.storage_path).data.publicUrl,
+  }));
+}
+
+export default async function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const [product, images] = await Promise.all([getProduct(id), getProductImages(id)]);
+
+  if (!product) {
+    return (
+      <main className="max-w-3xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+        <p className="text-on-surface-variant">Product not found.</p>
+        <Link href="/products" className="text-primary hover:underline">
+          ← Back to shop
+        </Link>
+      </main>
+    );
+  }
+
+  // Fallback for products created before the multi-image gallery existed:
+  // if there are no product_images rows but products.image_url is set
+  // (legacy path), show that single image instead of "No image".
+  const galleryImages =
+    images.length > 0
+      ? images
+      : product.image_url
+      ? [{ id: 0, url: product.image_url, is_primary: true }]
+      : [];
+
+  return (
+    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <nav className="text-body-sm font-body-sm text-on-surface-variant mb-stack-sm flex items-center gap-2">
+        <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        <Link href="/products" className="hover:text-primary transition-colors">Shop All</Link>
+        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        <span className="text-on-surface">{product.name}</span>
+      </nav>
+
+      <div className="grid md:grid-cols-[minmax(0,420px)_1fr] gap-gutter">
+        <div className="min-w-0">
+          <ProductGallery images={galleryImages} productName={product.name} />
+        </div>
+
+        <div className="min-w-0">
+          <h1 className="font-display-md text-display-md text-on-surface break-words">{product.name}</h1>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            {product.brand} {product.category ? `· ${product.category}` : ""}
+          </p>
+          {product.description && (
+            <div
+              className="font-body-md text-body-md text-on-surface-variant mt-4 prose prose-sm max-w-none break-words [overflow-wrap:anywhere]"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
+            />
+          )}
+
+          <AddToCart
+            productId={product.id}
+            productName={product.name}
+            variants={product.variants}
+          />
+        </div>
+      </div>
+    </main>
+  );
+}
+</file>
+
 <file path="tinytots-web/web/package.json">
 {
   "name": "tinytots",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "dev": "next dev -p 3001",
+    "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint"
@@ -66609,6 +67856,7 @@ export default function AddToCart({
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-image-crop": "^11.1.2",
     "react-quill-new": "^3.8.3",
     "undici": "^8.8.0"
   },
@@ -66633,6 +67881,12 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+// Without this, Next.js can cache this route's data fetch, so newly
+// uploaded images, price changes, and stock updates from the admin panel
+// won't show up on the storefront grid until a full rebuild. Same root
+// cause and fix as the PDP (app/products/[id]/page.tsx).
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const { data: products, error } = await supabase
     .from("products")
@@ -66645,7 +67899,7 @@ export async function GET() {
       brand,
       category,
       image_url,
-     variants ( id, color, size, price, web_price, stock, web_base_price, web_discount_percent )
+      variants ( id, color, size, price, web_price, stock ) 
     `
     )
     .eq("is_active", true)
@@ -66717,6 +67971,13 @@ export async function POST(request: Request) {
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
+// Same root cause and fix as app/products/[id]/page.tsx and
+// app/api/products/route.ts — without this, Next.js caches this Server
+// Component's Supabase data fetch indefinitely, so newly uploaded images,
+// price changes, and stock updates never show up on the homepage until a
+// full rebuild.
+export const dynamic = "force-dynamic";
+
 async function getProducts() {
   const { data, error } = await supabase
     .from("products")
@@ -66727,13 +67988,11 @@ async function getProducts() {
       sku,
       brand,
       image_url,
-  variants (
+    variants (
   id,
   price,
   web_price,
-  stock,
-  web_base_price,
-  web_discount_percent
+  stock
 )
     `
     )
@@ -66838,16 +68097,12 @@ export default async function Home() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
           {products.map((product: any) => {
-   const prices = product.variants.map((v: any) => v.web_price ?? v.price);
-   const minPrice = prices.length ? Math.min(...prices) : 0;
-   const totalStock = product.variants.reduce(
-     (sum: number, v: any) => sum + v.stock,
-     0
-   );
-   const cheapestVariant = product.variants.reduce((min: any, v: any) =>
-     (v.web_price ?? v.price) < (min.web_price ?? min.price) ? v : min
-   , product.variants[0]);
-   const hasDiscount = cheapestVariant?.web_discount_percent > 0 && cheapestVariant?.web_base_price;
+          const prices = product.variants.map((v: any) => v.web_price ?? v.price);
+            const minPrice = prices.length ? Math.min(...prices) : 0;
+            const totalStock = product.variants.reduce(
+              (sum: number, v: any) => sum + v.stock,
+              0
+            );
 
             return (
               <Link key={product.id} href={`/products/${product.id}`} className="group cursor-pointer">
@@ -66871,16 +68126,9 @@ export default async function Home() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <h3 className="font-body-md text-body-md text-on-surface">{product.name}</h3>
-                  <div className="flex items-baseline gap-2">
-                    <p className="font-body-md text-body-md text-on-surface-variant">
-                      Rs. {minPrice.toLocaleString()}
-                    </p>
-                    {hasDiscount && (
-                      <p className="font-label-md text-label-md text-on-surface-variant/60 line-through">
-                        Rs. {cheapestVariant.web_base_price.toLocaleString()}
-                      </p>
-                    )}
-                  </div>
+                  <p className="font-body-md text-body-md text-on-surface-variant">
+                    Rs. {minPrice.toLocaleString()}
+                  </p>
                 </div>
               </Link>
             );
@@ -66893,10 +68141,11 @@ export default async function Home() {
 </file>
 
 <file path="tinytots-app/electron-app/src/components/Inventory/ProductFormModal.jsx">
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { X, Plus } from "lucide-react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
+import ImageUploader from "./ImageUploader";
 
 function TagInput({ label, placeholder, values, onChange }) {
   const [draft, setDraft] = useState("");
@@ -66976,6 +68225,23 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // Photos: for "edit" mode we already have a real product id, so fetch its
+  // images right away. For "create" mode there's no id until after the
+  // product is saved — createdProductId gets set once that happens, which
+  // flips the modal into a "photos" step instead of closing immediately.
+  const [images, setImages] = useState([]);
+  const [createdProductId, setCreatedProductId] = useState(
+    mode === "edit" && initialProduct ? initialProduct.id : null
+  );
+
+  useEffect(() => {
+    if (!createdProductId) return;
+    fetch(`http://localhost:3000/api/products/${createdProductId}/images`)
+      .then((r) => r.json())
+      .then((json) => setImages(json.data || []))
+      .catch(() => setImages([]));
+  }, [createdProductId]);
+
   function field(key) {
     return {
       value: form[key],
@@ -67039,12 +68305,45 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
       if (!data.success) throw new Error(data.message || data.error);
 
       onSaved();
-      onClose();
+
+      if (mode === "create" && data.product?.id) {
+        // Don't close yet — switch straight into the photos step so the
+        // product isn't left with no image, same flow as the web admin.
+        setCreatedProductId(data.product.id);
+      } else {
+        onClose();
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setSaving(false);
     }
+  }
+
+  // Photos step: shown either because we're editing an existing product,
+  // or because a brand-new product was just created in this same session.
+  const showPhotosStep = mode === "create" && createdProductId;
+
+  if (showPhotosStep) {
+    return (
+      <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
+        <div className="bg-cream-50 rounded-2xl w-full max-w-md p-7">
+          <h2 className="font-display text-2xl text-ink-900 mb-1">Product Created!</h2>
+          <p className="text-sm text-ink-700 mb-4">Add photos now, or skip and add them later.</p>
+
+          <ImageUploader productId={createdProductId} images={images} onImagesChange={setImages} />
+
+          <div className="flex justify-end pt-5">
+            <button
+              onClick={onClose}
+              className="px-5 py-2 rounded-lg bg-maroon-700 text-cream-50 font-medium hover:bg-maroon-800"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -67074,6 +68373,13 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
             <LabeledInput label="HSN Code" {...field("hsn_code")} />
             <LabeledInput label="Unit" {...field("unit")} />
           </div>
+
+          {mode === "edit" && (
+            <div>
+              <label className="block text-sm text-ink-700 mb-1.5">Photos</label>
+              <ImageUploader productId={initialProduct.id} images={images} onImagesChange={setImages} />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm text-ink-700 mb-1.5">Description</label>
@@ -67262,6 +68568,7 @@ import bwipjs from "bwip-js";
 import pdfPrinterPkg from "pdf-to-printer";
 const { getPrinters, print } = pdfPrinterPkg;
 import { createClient } from "@supabase/supabase-js";
+import multer from "multer";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 dotenv.config();
@@ -68293,6 +69600,253 @@ app.delete("/api/products/:id", async (req, res) => {
 });
 
 // ----------------------------------------------------
+// PRODUCT IMAGES (upload / delete / set-primary / list)
+// Shared with the web storefront — same Supabase project, same
+// 'product_images' table and 'product-images' Storage bucket, so photos
+// added here from the POS show up on the website immediately, and photos
+// added from the admin website show up here too.
+//
+// NOTE: add `import multer from "multer";` to the top of server.js
+// alongside the other imports — ES module imports can't live mid-file.
+// ----------------------------------------------------
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB, matches the Storage bucket's own limit
+});
+
+const IMAGE_BUCKET = "product-images";
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function publicUrlForImage(storagePath) {
+  const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(storagePath);
+  return data.publicUrl;
+}
+
+// Keeps products.image_url pointing at whichever image is currently primary,
+// exactly matching the web admin's sync logic — this is what makes the
+// storefront (which just reads products.image_url as a fallback) always
+// show something reasonable even before its own gallery loads.
+async function syncPrimaryImageUrl(productId) {
+  const { data: primary } = await supabase
+    .from("product_images")
+    .select("storage_path")
+    .eq("product_id", productId)
+    .eq("is_primary", true)
+    .maybeSingle();
+
+  const imageUrl = primary ? publicUrlForImage(primary.storage_path) : null;
+
+  const { error } = await supabase
+    .from("products")
+    .update({ image_url: imageUrl })
+    .eq("id", productId);
+
+  if (error) {
+    console.error(`syncPrimaryImageUrl FAILED for product ${productId}:`, error);
+  }
+}
+
+// GET /api/products/:id/images — list all images for a product
+app.get("/api/products/:id/images", async (req, res) => {
+  const { id } = req.params;
+
+  const { data, error } = await supabase
+    .from("product_images")
+    .select("id, storage_path, is_primary, sort_order, created_at")
+    .eq("product_id", id)
+    .order("sort_order", { ascending: true });
+
+  if (error) return res.status(500).json({ success: false, error: error.message });
+
+  const withUrls = (data || []).map((img) => ({
+    ...img,
+    url: publicUrlForImage(img.storage_path),
+  }));
+
+  res.json({ success: true, data: withUrls });
+});
+
+// POST /api/products/:id/images — upload a new image
+// multipart/form-data: "file" field (required), "is_primary" ("true"/"false", optional)
+app.post("/api/products/:id/images", upload.single("file"), async (req, res) => {
+  const { id: productId } = req.params;
+
+  try {
+    const file = req.file;
+    const makePrimary = req.body.is_primary === "true";
+
+    if (!file) {
+      return res.status(400).json({ success: false, error: "No file provided" });
+    }
+    if (!ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+      return res.status(400).json({ success: false, error: "Only JPEG, PNG, or WebP images are allowed" });
+    }
+
+    const { data: product, error: productError } = await supabase
+      .from("products")
+      .select("id")
+      .eq("id", productId)
+      .single();
+
+    if (productError || !product) {
+      return res.status(404).json({ success: false, error: "Product not found" });
+    }
+
+    const ext = file.mimetype === "image/png" ? "png" : file.mimetype === "image/webp" ? "webp" : "jpg";
+    const storagePath = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(IMAGE_BUCKET)
+      .upload(storagePath, file.buffer, { contentType: file.mimetype, upsert: false });
+
+    if (uploadError) {
+      return res.status(500).json({ success: false, error: uploadError.message });
+    }
+
+    const { count: existingCount } = await supabase
+      .from("product_images")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId);
+
+    const shouldBePrimary = makePrimary || !existingCount;
+
+    if (shouldBePrimary) {
+      await supabase
+        .from("product_images")
+        .update({ is_primary: false })
+        .eq("product_id", productId)
+        .eq("is_primary", true);
+    }
+
+    const { data: inserted, error: insertError } = await supabase
+      .from("product_images")
+      .insert([
+        {
+          product_id: productId,
+          storage_path: storagePath,
+          is_primary: shouldBePrimary,
+          sort_order: existingCount ?? 0,
+        },
+      ])
+      .select()
+      .single();
+
+    if (insertError) {
+      await supabase.storage.from(IMAGE_BUCKET).remove([storagePath]);
+      return res.status(500).json({ success: false, error: insertError.message });
+    }
+
+    if (shouldBePrimary) {
+      await syncPrimaryImageUrl(productId);
+    }
+
+    res.status(201).json({
+      success: true,
+      data: { ...inserted, url: publicUrlForImage(storagePath) },
+    });
+  } catch (err) {
+    console.error("POST /api/products/:id/images crashed:", err);
+    res.status(500).json({ success: false, error: err.message || "Unexpected server error" });
+  }
+});
+
+// PATCH /api/products/:id/images — set primary, or reorder
+// Body: { image_id, action: "set_primary" } OR { order: [image_id, ...] }
+app.patch("/api/products/:id/images", async (req, res) => {
+  const { id: productId } = req.params;
+  const { action, image_id, order } = req.body;
+
+  try {
+    if (action === "set_primary" && image_id) {
+      await supabase
+        .from("product_images")
+        .update({ is_primary: false })
+        .eq("product_id", productId)
+        .eq("is_primary", true);
+
+      const { error } = await supabase
+        .from("product_images")
+        .update({ is_primary: true })
+        .eq("id", image_id)
+        .eq("product_id", productId);
+
+      if (error) return res.status(500).json({ success: false, error: error.message });
+
+      await syncPrimaryImageUrl(productId);
+      return res.json({ success: true });
+    }
+
+    if (Array.isArray(order)) {
+      for (let i = 0; i < order.length; i++) {
+        await supabase
+          .from("product_images")
+          .update({ sort_order: i })
+          .eq("id", order[i])
+          .eq("product_id", productId);
+      }
+      return res.json({ success: true });
+    }
+
+    res.status(400).json({
+      success: false,
+      error: "Provide either { action: 'set_primary', image_id } or { order: [...] }",
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message || "Invalid request body" });
+  }
+});
+
+// DELETE /api/products/:id/images?image_id=123
+app.delete("/api/products/:id/images", async (req, res) => {
+  const { id: productId } = req.params;
+  const { image_id: imageId } = req.query;
+
+  if (!imageId) {
+    return res.status(400).json({ success: false, error: "image_id query param is required" });
+  }
+
+  const { data: image, error: fetchError } = await supabase
+    .from("product_images")
+    .select("id, storage_path, is_primary")
+    .eq("id", imageId)
+    .eq("product_id", productId)
+    .single();
+
+  if (fetchError || !image) {
+    return res.status(404).json({ success: false, error: "Image not found" });
+  }
+
+  const { error: deleteRowError } = await supabase
+    .from("product_images")
+    .delete()
+    .eq("id", imageId);
+
+  if (deleteRowError) {
+    return res.status(500).json({ success: false, error: deleteRowError.message });
+  }
+
+  await supabase.storage.from(IMAGE_BUCKET).remove([image.storage_path]);
+
+  if (image.is_primary) {
+    const { data: nextImage } = await supabase
+      .from("product_images")
+      .select("id")
+      .eq("product_id", productId)
+      .order("sort_order", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (nextImage) {
+      await supabase.from("product_images").update({ is_primary: true }).eq("id", nextImage.id);
+    }
+
+    await syncPrimaryImageUrl(productId);
+  }
+
+  res.json({ success: true });
+});
+
+// ----------------------------------------------------
 // UPDATE A SINGLE VARIANT (stock, price, status)
 // ----------------------------------------------------
 app.put("/api/variants/:id", async (req, res) => {
@@ -69152,7 +70706,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Inter, Plus_Jakarta_Sans } from "next/font/google";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
@@ -69164,64 +70718,133 @@ const plusJakarta = Plus_Jakarta_Sans({ variable: "--font-plus-jakarta", subsets
 
 function SearchOverlay({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [allProducts, setAllProducts] = useState<any[] | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    const q = query.trim().slice(0, 100); // cap length, avoid junk payloads
-    if (!q) return;
-    setLoading(true);
-    setSearched(true);
-    try {
-      const res = await fetch("/api/products");
-      const json = await res.json();
-      const filtered = (json.data || []).filter((p: any) =>
-        p.name?.toLowerCase().includes(q.toLowerCase())
-      );
-      setResults(filtered);
-    } catch {
-      setResults([]);
-    } finally {
-      setLoading(false);
+  // Fetch the product list once when the overlay opens, then filter
+  // in-memory as the user types — this is what makes it feel instant
+  // instead of requiring Enter + a round trip on every keystroke.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((json) => {
+        if (!cancelled) setAllProducts(json.data || []);
+      })
+      .catch(() => {
+        if (!cancelled) setAllProducts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Close when clicking outside the dropdown, so it behaves like a normal
+  // popover instead of a full-screen modal that has to be explicitly closed.
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        onClose();
+      }
     }
-  }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  const categories = Array.from(
+    new Set((allProducts || []).map((p: any) => p.category).filter(Boolean))
+  ) as string[];
+
+  const needle = query.trim().toLowerCase();
+  const filtered = (allProducts || []).filter((p: any) => {
+    const matchesCategory = !activeCategory || p.category === activeCategory;
+    if (!needle) return matchesCategory;
+    const haystack = [p.name, p.brand, p.sku, p.category]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return matchesCategory && haystack.includes(needle);
+  });
+
+  // Group results by category so browsing (not just typed search) shows
+  // structure — e.g. hovering/clicking "Pants" narrows straight to pants.
+  const grouped = filtered.reduce((acc: Record<string, any[]>, p: any) => {
+    const key = p.category || "Other";
+    (acc[key] = acc[key] || []).push(p);
+    return acc;
+  }, {});
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-start justify-center pt-24 px-4">
-      <div className="bg-surface w-full max-w-xl rounded-2xl shadow-xl p-6">
-        <form onSubmit={handleSearch} className="flex gap-3 mb-4">
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            maxLength={100}
-            placeholder="Search products..."
-            className="flex-1 border border-outline-variant/50 rounded-lg px-4 py-3 bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          <button type="submit" className="bg-primary-container text-on-primary px-5 rounded-lg font-button text-button hover:bg-primary transition-colors">
-            {loading ? "..." : "Go"}
-          </button>
-          <button type="button" onClick={onClose} className="text-on-surface-variant hover:text-primary px-2">✕</button>
-        </form>
+    <div
+      ref={containerRef}
+      className="absolute top-full right-0 mt-2 w-full max-w-md bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-4 z-[100]"
+    >
+      <input
+        autoFocus
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        maxLength={100}
+        placeholder="Search by name, brand, SKU, or category..."
+        className="w-full border border-outline-variant/50 rounded-lg px-4 py-2.5 bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary mb-3"
+      />
 
-        {results.length > 0 && (
-          <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
-            {results.map((p) => (
-              <Link key={p.id} href={`/products/${p.id}`} onClick={onClose}
-                className="flex justify-between px-3 py-2 rounded-lg hover:bg-surface-container-low font-body-sm text-body-sm text-on-surface">
-                <span>{p.name}</span>
-                <span className="text-on-surface-variant">{p.brand}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-        {!loading && searched && results.length === 0 && (
-          <p className="font-body-sm text-body-sm text-on-surface-variant px-3">
-            No products found for &ldquo;{query}&rdquo;.
+      {categories.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          <button
+            onClick={() => setActiveCategory(null)}
+            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+              !activeCategory
+                ? "bg-primary-container text-on-primary border-primary-container"
+                : "border-outline-variant/50 text-on-surface-variant hover:border-primary"
+            }`}
+          >
+            All
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onMouseEnter={() => setActiveCategory(cat)}
+              onClick={() => setActiveCategory(cat)}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                activeCategory === cat
+                  ? "bg-primary-container text-on-primary border-primary-container"
+                  : "border-outline-variant/50 text-on-surface-variant hover:border-primary"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="max-h-80 overflow-y-auto flex flex-col gap-3">
+        {Object.keys(grouped).length === 0 && (
+          <p className="font-body-sm text-body-sm text-on-surface-variant px-1 py-2">
+            {query ? `No products found for \u201c${query}\u201d.` : "No products available."}
           </p>
         )}
+
+        {Object.entries(grouped).map(([category, products]) => (
+          <div key={category}>
+            <p className="font-label-md text-label-md text-on-surface-variant uppercase px-1 mb-1">
+              {category}
+            </p>
+            <div className="flex flex-col gap-1">
+              {products.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/products/${p.id}`}
+                  onClick={onClose}
+                  className="flex justify-between px-3 py-2 rounded-lg hover:bg-surface-container-low font-body-sm text-body-sm text-on-surface"
+                >
+                  <span>{p.name}</span>
+                  <span className="text-on-surface-variant">{p.brand}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -69312,8 +70935,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="bg-surface font-body-md text-on-surface antialiased pt-[80px] min-h-screen flex flex-col">
       <AuthProvider>
       <CartProvider>
-          {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
-
           <nav className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
             <div className="flex items-center gap-6">
               <Link href="/" className="font-display-md text-display-md text-primary tracking-tight">TinyTots</Link>
@@ -69323,9 +70944,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button onClick={() => setSearchOpen(true)} className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Search">
-                <span className="material-symbols-outlined">search</span>
-              </button>
+              <div className="relative">
+                <button onClick={() => setSearchOpen((o) => !o)} className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Search">
+                  <span className="material-symbols-outlined">search</span>
+                </button>
+                {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
+              </div>
               <AccountMenu />
               <HeaderCart />
             </div>

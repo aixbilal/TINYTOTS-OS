@@ -1,8 +1,6 @@
 import { supabase } from "@/lib/supabase";
-import AddToCart from "@/components/AddToCart";
-import ProductGallery from "@/components/ProductGallery";
+import ProductDetailInteractive from "@/components/ProductDetailInteractive";
 import Link from "next/link";
-import DOMPurify from "isomorphic-dompurify";
 
 // Without this, Next.js caches the Supabase data fetch indefinitely, so
 // admin changes (new photos, price/stock updates) never show up on the live
@@ -28,9 +26,13 @@ async function getProduct(id: string) {
 }
 
 async function getProductImages(id: string) {
+  // Embeds product_image_variants so we know which variant(s) each photo
+  // belongs to. An image with no linked variants applies to the whole
+  // product (pre-existing photos uploaded before this feature existed
+  // keep working exactly as before).
   const { data, error } = await supabase
     .from("product_images")
-    .select("id, storage_path, is_primary, sort_order")
+    .select("id, storage_path, is_primary, sort_order, product_image_variants ( variant_id )")
     .eq("product_id", id)
     .order("sort_order", { ascending: true });
 
@@ -40,6 +42,7 @@ async function getProductImages(id: string) {
     id: img.id,
     is_primary: img.is_primary,
     url: supabase.storage.from("product-images").getPublicUrl(img.storage_path).data.publicUrl,
+    variant_ids: (img.product_image_variants || []).map((l: any) => l.variant_id),
   }));
 }
 
@@ -69,7 +72,7 @@ export default async function ProductDetailPage({
     images.length > 0
       ? images
       : product.image_url
-      ? [{ id: 0, url: product.image_url, is_primary: true }]
+      ? [{ id: 0, url: product.image_url, is_primary: true, variant_ids: [] }]
       : [];
 
   return (
@@ -83,28 +86,15 @@ export default async function ProductDetailPage({
       </nav>
 
       <div className="grid md:grid-cols-[minmax(0,420px)_1fr] gap-gutter">
-        <div className="min-w-0">
-          <ProductGallery images={galleryImages} productName={product.name} />
-        </div>
-
-        <div className="min-w-0">
-          <h1 className="font-display-md text-display-md text-on-surface break-words">{product.name}</h1>
-          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-            {product.brand} {product.category ? `· ${product.category}` : ""}
-          </p>
-          {product.description && (
-            <div
-              className="font-body-md text-body-md text-on-surface-variant mt-4 prose prose-sm max-w-none break-words [overflow-wrap:anywhere]"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
-            />
-          )}
-
-          <AddToCart
-            productId={product.id}
-            productName={product.name}
-            variants={product.variants}
-          />
-        </div>
+        <ProductDetailInteractive
+          productId={product.id}
+          productName={product.name}
+          brand={product.brand}
+          category={product.category}
+          description={product.description}
+          variants={product.variants}
+          images={galleryImages}
+        />
       </div>
     </main>
   );

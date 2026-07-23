@@ -18,18 +18,36 @@ export default function AddToCart({
   productId,
   productName,
   variants,
+  selectedVariantId,
+  onVariantChange,
 }: {
   productId: number;
   productName: string;
   variants: Variant[];
+  // Optional: pass these to let a parent (e.g. the gallery) stay in sync
+  // with the picked color/size. Omit them and this component manages its
+  // own selection, same as before.
+  selectedVariantId?: number | null;
+  onVariantChange?: (variantId: number) => void;
 }) {
   const { addItem } = useCart();
   const firstAvailable = variants.find((v) => v.stock > 0) ?? variants[0];
-  const [selected, setSelected] = useState<Variant | null>(firstAvailable ?? null);
+  const [internalSelectedId, setInternalSelectedId] = useState<number | null>(
+    firstAvailable?.id ?? null
+  );
+
+  const isControlled = selectedVariantId !== undefined;
+  const selectedId = isControlled ? selectedVariantId : internalSelectedId;
+  const selected = variants.find((v) => v.id === selectedId) ?? null;
   const [added, setAdded] = useState(false);
 
   function displayPrice(v: Variant) {
     return v.web_price ?? v.price;
+  }
+
+  function selectVariant(v: Variant) {
+    if (onVariantChange) onVariantChange(v.id);
+    if (!isControlled) setInternalSelectedId(v.id);
   }
 
   function handleAddToCart() {
@@ -76,7 +94,7 @@ export default function AddToCart({
           {variants.map((v) => (
             <button
               key={v.id}
-              onClick={() => setSelected(v)}
+              onClick={() => selectVariant(v)}
               disabled={v.stock === 0}
               className={`px-4 py-2 rounded-lg border font-body-sm text-body-sm transition-colors ${
                 selected?.id === v.id

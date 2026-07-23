@@ -165,27 +165,33 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Coupon validation (basic — flat or percentage, active + not expired)
-    let discountTotal = 0;
-    if (coupon_code) {
-      const { data: coupon } = await supabase
-        .from("coupons")
-        .select("*")
-        .eq("code", coupon_code)
-        .eq("is_active", true)
-        .single();
+ // Coupon validation — active, not expired, under max_uses, subtotal meets min_spend
+ let discountTotal = 0;
+ let appliedCouponCode: string | null = null;
+ if (coupon_code) {
+   const { data: coupon } = await supabase
+     .from("coupons")
+     .select("*")
+     .eq("code", coupon_code)
+     .eq("is_active", true)
+     .single();
 
-      if (coupon) {
-        const notExpired =
-          !coupon.expires_at || new Date(coupon.expires_at) > new Date();
-        if (notExpired) {
-          discountTotal =
-            coupon.discount_type === "percentage"
-              ? Math.round(subtotal * (coupon.value / 100))
-              : coupon.value;
-        }
-      }
-    }
+   if (coupon) {
+     const notExpired =
+       !coupon.expires_at || new Date(coupon.expires_at) > new Date();
+     const underMaxUses =
+       coupon.max_uses === null || coupon.uses_count < coupon.max_uses;
+     const meetsMinSpend = subtotal >= (coupon.min_spend ?? 0);
+
+     if (notExpired && underMaxUses && meetsMinSpend) {
+       discountTotal =
+         coupon.discount_type === "percentage"
+           ? Math.round(subtotal * (coupon.value / 100))
+           : coupon.value;
+       appliedCouponCode = coupon.code;
+     }
+   }
+ }
 
     // Delivery fee: free for first 5 orders per signed-in customer, else Rs. 249.
     // Guests always pay delivery.
@@ -239,11 +245,16 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (orderError) {
-      return NextResponse.json({ error: orderError.message }, { status: 500 });
-    }
-
-    // Insert order_items — this triggers the deduct_stock_order function automatically
+      if (orderError) {
+        return NextResponse.json({ error: orderError.message }, { status: 500 });
+      }
+  
+      // Increment coupon usage count now that the order is confirmed created
+      if (appliedCouponCode) {
+        await supabase.rpc("increment_coupon_uses", { p_code: appliedCouponCode });
+      }
+  
+      // Insert order_items — this triggers the deduct_stock_order function automatically
     const itemsToInsert = orderItems.map((item) => ({
       ...item,
       order_id: order.id,
