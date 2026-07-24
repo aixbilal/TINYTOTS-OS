@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { adminFetch } from "@/lib/admin-fetch"; // ⚠️ confirm this path is correct
 
 interface CustomerLite {
   id: number;
@@ -38,7 +39,7 @@ export default function AdminReferralsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/referrals");
+      const res = await adminFetch("/api/admin/referrals");
       const data = await res.json();
       if (res.ok) {
         setReferrals(data.referrals || []);
@@ -62,7 +63,7 @@ export default function AdminReferralsPage() {
     setIssuingId(referralId);
     setErrorMsg("");
     try {
-      const res = await fetch("/api/admin/referrals/issue-reward", {
+      const res = await adminFetch("/api/admin/referrals/issue-reward", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ referral_id: referralId }),
@@ -81,7 +82,7 @@ export default function AdminReferralsPage() {
 
   const toggleVoucherUsed = async (voucherId: number, currentUsed: boolean) => {
     try {
-      const res = await fetch("/api/admin/referrals", {
+      const res = await adminFetch("/api/admin/referrals", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ voucher_id: voucherId, is_used: !currentUsed }),

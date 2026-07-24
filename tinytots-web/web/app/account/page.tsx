@@ -12,6 +12,7 @@ type Customer = {
   email: string | null;
   phone: string | null;
   orders_count: number;
+  referral_code: string;
 };
 
 type Order = {
@@ -23,6 +24,13 @@ type Order = {
   created_at: string;
 };
 
+type Voucher = {
+  id: number;
+  amount: number;
+  is_used: boolean;
+  expires_at: string;
+  source: string;
+};
 const STATUS_LABELS: Record<string, string> = {
   new: "Order Placed",
   processing: "Processing",
@@ -45,6 +53,7 @@ export default function AccountPage() {
 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,7 +74,7 @@ export default function AccountPage() {
 
       const { data: customerData, error: customerError } = await supabase
         .from("customers")
-        .select("id, full_name, email, phone, orders_count")
+        .select("id, full_name, email, phone, orders_count, referral_code")
         .eq("auth_user_id", userId)
         .single();
 
@@ -83,13 +92,21 @@ export default function AccountPage() {
         .eq("customer_id", customerData.id)
         .order("created_at", { ascending: false });
 
-      if (ordersError) {
-        setError("Couldn't load your order history.");
-      } else {
-        setOrders(ordersData || []);
-      }
-
-      setDataLoading(false);
+        if (ordersError) {
+          setError("Couldn't load your order history.");
+        } else {
+          setOrders(ordersData || []);
+        }
+  
+        const { data: vouchersData } = await supabase
+          .from("vouchers")
+          .select("id, amount, is_used, expires_at, source")
+          .eq("customer_id", customerData.id)
+          .order("expires_at", { ascending: true });
+  
+        setVouchers(vouchersData || []);
+  
+        setDataLoading(false);
     }
 
     fetchAccountData();
@@ -119,11 +136,14 @@ export default function AccountPage() {
             <p><span className="text-on-surface">Email:</span> {customer.email}</p>
             <p><span className="text-on-surface">Phone:</span> {customer.phone}</p>
             <p><span className="text-on-surface">Orders placed:</span> {customer.orders_count}</p>
-            {customer.orders_count < 5 && (
-              <p className="text-primary mt-1">
-                🎉 {5 - customer.orders_count} more order{5 - customer.orders_count === 1 ? "" : "s"} until free delivery runs out!
-              </p>
-            )}
+            <p>
+              <span className="text-on-surface">Your referral code:</span>{" "}
+              <span className="font-mono font-semibold text-primary">{customer.referral_code}</span>
+            </p>
+            <p className="font-label-md text-label-md text-on-surface-variant">
+              Share this with friends — they enter it at checkout on their first order.
+            </p>
+         
           </div>
           <button
             onClick={signOut}
@@ -133,6 +153,40 @@ export default function AccountPage() {
           </button>
         </section>
       )}
+
+<section className="mb-stack-md">
+        <h2 className="font-headline-md text-headline-md text-on-surface mb-3">My Vouchers</h2>
+        {vouchers.length === 0 ? (
+          <p className="font-body-sm text-body-sm text-on-surface-variant">
+            No vouchers yet.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {vouchers.map((v) => {
+              const expired = new Date(v.expires_at) < new Date();
+              const status = v.is_used ? "Used" : expired ? "Expired" : "Active";
+              const statusColor =
+                status === "Active" ? "text-green-600" : "text-on-surface-variant";
+              return (
+                <div
+                  key={v.id}
+                  className="border border-outline-variant/30 rounded-xl px-4 py-3 flex justify-between items-center"
+                >
+                  <div>
+                    <p className="font-body-md text-body-md text-on-surface">
+                      Rs. {v.amount.toLocaleString()} off
+                    </p>
+                    <p className="font-label-md text-label-md text-on-surface-variant">
+                      Expires {new Date(v.expires_at).toLocaleDateString()} · {v.source}
+                    </p>
+                  </div>
+                  <span className={`font-label-md text-label-md ${statusColor}`}>{status}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       <section>
         <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Order History</h2>

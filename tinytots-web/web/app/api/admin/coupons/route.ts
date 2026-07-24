@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
 
 // GET /api/admin/coupons - Fetch all coupons and referrals overview
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const denied = await requireAdmin(req, "canManageCoupons");
+  if (denied) return denied;
+
   try {
     const { data: coupons, error: couponsError } = await supabaseAdmin
       .from("coupons")
@@ -34,6 +38,9 @@ export async function GET() {
 
 // POST /api/admin/coupons - Create a new coupon code
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin(req, "canManageCoupons");
+  if (denied) return denied;
+
   try {
     const body = await req.json();
     const {
@@ -91,6 +98,9 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/admin/coupons - Toggle status or update coupon
 export async function PATCH(req: NextRequest) {
+  const denied = await requireAdmin(req, "canManageCoupons");
+  if (denied) return denied;
+
   try {
     const body = await req.json();
     const { id, is_active } = body;

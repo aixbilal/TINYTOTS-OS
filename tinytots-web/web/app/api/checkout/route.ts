@@ -17,8 +17,6 @@ const COD_ALLOWED_CITIES = [
   "sheikhupura",
 ];
 
-const DELIVERY_FEE = 249;
-const FREE_DELIVERY_ORDER_LIMIT = 5;
 
 function calculateCodTier(orderTotal: number) {
   if (orderTotal < 5000) {
@@ -46,6 +44,8 @@ export async function POST(request: NextRequest) {
       guest_name,
       guest_phone,
       coupon_code,
+      voucher_id,
+      referral_code,
     } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -193,22 +193,56 @@ export async function POST(request: NextRequest) {
    }
  }
 
-    // Delivery fee: free for first 5 orders per signed-in customer, else Rs. 249.
-    // Guests always pay delivery.
-    let deliveryFee = DELIVERY_FEE;
-    if (customer_id) {
-      const { data: customer } = await supabase
+  // Voucher validation — must belong to this customer, be unused, and not expired
+  let voucherAmount = 0;
+  let validatedVoucherId: number | null = null;
+  if (voucher_id && customer_id) {
+    const { data: voucher } = await supabase
+      .from("vouchers")
+      .select("*")
+      .eq("id", voucher_id)
+      .eq("customer_id", customer_id)
+      .eq("is_used", false)
+      .single();
+
+    if (voucher) {
+      const notExpired = new Date(voucher.expires_at) > new Date();
+      if (notExpired) {
+        voucherAmount = voucher.amount;
+        validatedVoucherId = voucher.id;
+      }
+    }
+  }
+
+// Referral validation — only for logged-in customers on their first order,
+    // code must belong to a different existing customer.
+    let validatedReferrerId: number | null = null;
+    if (referral_code && customer_id) {
+      const { data: referringCustomer } = await supabase
         .from("customers")
-        .select("orders_count")
+        .select("id, orders_count")
         .eq("id", customer_id)
         .single();
 
-      if (customer && customer.orders_count < FREE_DELIVERY_ORDER_LIMIT) {
-        deliveryFee = 0;
+      const isFirstOrder = referringCustomer?.orders_count === 0;
+
+      if (isFirstOrder) {
+        const { data: referrer } = await supabase
+          .from("customers")
+          .select("id")
+          .eq("referral_code", referral_code.trim().toUpperCase())
+          .single();
+
+        if (referrer && referrer.id !== customer_id) {
+          validatedReferrerId = referrer.id;
+        }
       }
     }
 
-    const total = subtotal + deliveryFee - discountTotal;
+    // Delivery fee: free for everyone, always.
+    const deliveryFee = 0;
+
+    const total = Math.max(0, subtotal + deliveryFee - discountTotal - voucherAmount);
 
     // COD tier logic
     let codTier: string | null = null;
@@ -240,6 +274,7 @@ export async function POST(request: NextRequest) {
           discount_total: discountTotal,
           total,
           coupon_code: appliedCouponCode,
+          voucher_id: validatedVoucherId,
         },
       ])
       .select()
@@ -249,10 +284,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: orderError.message }, { status: 500 });
       }
   
-      // Insert order_items — this triggers the deduct_stock_order function automatically
-      if (appliedCouponCode) {
-        await supabase.rpc("increment_coupon_uses", { p_code: appliedCouponCode });
-      }
+// Increment coupon usage count now that the order is confirmed created
+if (appliedCouponCode) {
+  await supabase.rpc("increment_coupon_uses", { p_code: appliedCouponCode });
+}
+
+// Mark voucher as used now that the order is confirmed created
+if (validatedVoucherId) {
+  await supabase.from("vouchers").update({ is_used: true }).eq("id", validatedVoucherId);
+}
   
       // Insert order_items — this triggers the deduct_stock_order function automatically
     const itemsToInsert = orderItems.map((item) => ({
@@ -264,11 +304,26 @@ export async function POST(request: NextRequest) {
       .from("order_items")
       .insert(itemsToInsert);
 
-    if (itemsError) {
-      // Roll back the order if items failed to insert, to avoid an orphaned empty order
-      await supabase.from("orders").delete().eq("id", order.id);
-      return NextResponse.json({ error: itemsError.message }, { status: 500 });
-    }
+      if (itemsError) {
+        // Roll back the order if items failed to insert, to avoid an orphaned empty order
+        await supabase.from("orders").delete().eq("id", order.id);
+        return NextResponse.json({ error: itemsError.message }, { status: 500 });
+      }
+  
+ // Link the referral now that the referee's first order is confirmed placed.
+      // Reward stays unissued (reward_triggered: false) until admin approves it.
+      if (validatedReferrerId && customer_id) {
+        const { error: referralInsertError } = await supabase.from("referrals").insert({
+          referrer_customer_id: validatedReferrerId,
+          referee_customer_id: customer_id,
+          referral_code: referral_code.trim().toUpperCase(),
+          reward_triggered: false,
+        });
+
+        if (referralInsertError) {
+          console.error("Referral link failed for order", order.id, referralInsertError.message);
+        }
+      }
 
     return NextResponse.json(
       {

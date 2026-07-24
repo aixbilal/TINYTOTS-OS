@@ -21,7 +21,7 @@ function isValidPakPhone(phone: string) {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, total, appliedCoupon, clearCart } = useCart();
+  const { items, subtotal, total, appliedCoupon, appliedVoucher, clearCart } = useCart();
   const { user } = useAuth();
 
   const [guestName, setGuestName] = useState("");
@@ -29,6 +29,8 @@ export default function CheckoutPage() {
   const [shippingAddress, setShippingAddress] = useState("");
   const [shippingCity, setShippingCity] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [referralCode, setReferralCode] = useState("");
+  const [ordersCount, setOrdersCount] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -38,11 +40,14 @@ export default function CheckoutPage() {
     if (!user) return;
     supabase
       .from("customers")
-      .select("id")
+      .select("id, orders_count")
       .eq("auth_user_id", user.id)
       .single()
       .then(({ data }) => {
-        if (data) setCustomerId(data.id);
+        if (data) {
+          setCustomerId(data.id);
+          setOrdersCount(data.orders_count);
+        }
       });
 }, [user]);
 
@@ -92,6 +97,8 @@ export default function CheckoutPage() {
           guest_name: user ? undefined : guestName.trim(),
           guest_phone: user ? undefined : guestPhone.trim(),
           coupon_code: appliedCoupon?.code,
+          voucher_id: appliedVoucher?.id,
+          referral_code: referralCode.trim() || undefined,
         }),
       });
 
@@ -184,6 +191,25 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          {user && ordersCount === 0 && (
+            <div>
+              <h2 className="font-headline-md text-headline-md text-on-surface mb-3">
+                Referral code (optional)
+              </h2>
+              <input
+                type="text"
+                placeholder="Enter a friend's referral code"
+                value={referralCode}
+                onChange={(e) => setReferralCode(sanitize(e.target.value.toUpperCase(), 20))}
+                maxLength={20}
+                className={inputClass(false)}
+              />
+              <p className="font-label-md text-label-md text-on-surface-variant mt-1">
+                First-time customers only — your friend gets a reward once this order is placed.
+              </p>
+            </div>
+          )}
+
           <div>
             <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Payment method</h2>
             <div className="flex flex-col gap-2">
@@ -241,6 +267,13 @@ export default function CheckoutPage() {
             <div className="flex justify-between font-body-md text-body-md text-primary">
               <span>Discount ({appliedCoupon.code})</span>
               <span>− Rs. {appliedCoupon.discountAmount.toLocaleString()}</span>
+            </div>
+          )}
+
+          {appliedVoucher && (
+            <div className="flex justify-between font-body-md text-body-md text-primary">
+              <span>Voucher</span>
+              <span>− Rs. {appliedVoucher.amount.toLocaleString()}</span>
             </div>
           )}
 

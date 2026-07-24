@@ -2,10 +2,11 @@
 
 import { useCart } from "@/lib/cart-context";
 import CouponInput from "@/components/CouponInput";
+import VoucherVault from "@/components/VoucherVault";
 import Link from "next/link";
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, subtotal, appliedCoupon, total } = useCart();
+  const { items, updateQuantity, removeItem, subtotal, appliedCoupon, appliedVoucher, total } = useCart();
 
   if (items.length === 0) {
     return (
@@ -98,6 +99,8 @@ export default function CartPage() {
           <CouponInput />
         </div>
 
+        <VoucherVault />
+
         <div className="flex flex-col gap-2 pt-3 border-t border-outline-variant/30">
           <div className="flex justify-between font-body-md text-body-md text-on-surface-variant">
             <span>Subtotal</span>
@@ -108,6 +111,13 @@ export default function CartPage() {
             <div className="flex justify-between font-body-md text-body-md text-primary">
               <span>Discount ({appliedCoupon.code})</span>
               <span>− Rs. {appliedCoupon.discountAmount.toLocaleString()}</span>
+            </div>
+          )}
+
+          {appliedVoucher && (
+            <div className="flex justify-between font-body-md text-body-md text-primary">
+              <span>Voucher</span>
+              <span>− Rs. {appliedVoucher.amount.toLocaleString()}</span>
             </div>
           )}
 

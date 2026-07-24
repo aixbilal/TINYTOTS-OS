@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { adminFetch } from "@/lib/admin-fetch";
 
 interface Coupon {
   id: string;
@@ -33,7 +34,7 @@ export default function AdminCouponsPage() {
   const fetchCoupons = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/coupons");
+      const res = await adminFetch("/api/admin/coupons");
       const data = await res.json();
       if (res.ok) {
         setCoupons(data.coupons || []);
@@ -55,7 +56,7 @@ export default function AdminCouponsPage() {
     setErrorMsg("");
 
     try {
-      const res = await fetch("/api/admin/coupons", {
+      const res = await adminFetch("/api/admin/coupons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -91,7 +92,7 @@ export default function AdminCouponsPage() {
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch("/api/admin/coupons", {
+      const res = await adminFetch("/api/admin/coupons", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, is_active: !currentStatus }),
@@ -149,9 +150,9 @@ export default function AdminCouponsPage() {
                   <td className="px-6 py-4">
                     {c.discount_type === "percentage"
                       ? `${c.value}% OFF`
-                      : `$${c.value} OFF`}
+                      : `Rs. ${c.value} OFF`}
                   </td>
-                  <td className="px-6 py-4">{c.min_spend > 0 ? `$${c.min_spend}` : "None"}</td>
+                  <td className="px-6 py-4">{c.min_spend > 0 ? `Rs. ${c.min_spend}` : "None"}</td>
                   <td className="px-6 py-4">
                     {c.uses_count || 0} {c.max_uses ? `/ ${c.max_uses}` : "uses"}
                   </td>
@@ -224,7 +225,7 @@ export default function AdminCouponsPage() {
                     className="w-full border rounded-md px-3 py-2 text-sm"
                   >
                     <option value="percentage">Percentage (%)</option>
-                    <option value="flat">Flat Amount ($)</option>
+                    <option value="flat">Flat Amount (Rs.)</option>
                   </select>
                 </div>
                 <div>
@@ -233,7 +234,7 @@ export default function AdminCouponsPage() {
                     type="number"
                     step="0.01"
                     required
-                    placeholder={discountType === "percentage" ? "20" : "10.00"}
+                    placeholder={discountType === "percentage" ? "20" : "100"}
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
                     className="w-full border rounded-md px-3 py-2 text-sm"
@@ -244,12 +245,12 @@ export default function AdminCouponsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Min Spend ($)
+                    Min Spend (Rs.)
                   </label>
                   <input
                     type="number"
                     step="0.01"
-                    placeholder="0.00"
+                    placeholder="0"
                     value={minSpend}
                     onChange={(e) => setMinSpend(e.target.value)}
                     className="w-full border rounded-md px-3 py-2 text-sm"

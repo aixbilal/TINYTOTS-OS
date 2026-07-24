@@ -20,6 +20,12 @@ export type AppliedCoupon = {
   discountAmount: number;
 };
 
+export type AppliedVoucher = {
+  id: number;
+  amount: number;
+  expiresAt: string;
+};
+
 type CartContextType = {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "quantity">, quantity: number) => void;
@@ -31,6 +37,9 @@ type CartContextType = {
   appliedCoupon: AppliedCoupon | null;
   applyCoupon: (coupon: AppliedCoupon) => void;
   clearCoupon: () => void;
+  appliedVoucher: AppliedVoucher | null;
+  applyVoucher: (voucher: AppliedVoucher) => void;
+  clearVoucher: () => void;
   total: number;
 };
 
@@ -39,6 +48,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [appliedVoucher, setAppliedVoucher] = useState<AppliedVoucher | null>(null);
 
   function addItem(item: Omit<CartItem, "quantity">, quantity: number) {
     setItems((prev) => {
@@ -72,6 +82,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   function clearCart() {
     setItems([]);
     setAppliedCoupon(null);
+    setAppliedVoucher(null);
   }
 
   function applyCoupon(coupon: AppliedCoupon) {
@@ -82,9 +93,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setAppliedCoupon(null);
   }
 
+  function applyVoucher(voucher: AppliedVoucher) {
+    setAppliedVoucher(voucher);
+  }
+
+  function clearVoucher() {
+    setAppliedVoucher(null);
+  }
+
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const subtotal = items.reduce((sum, i) => sum + i.quantity * i.price, 0);
-  const total = Math.max(0, subtotal - (appliedCoupon?.discountAmount ?? 0));
+  const total = Math.max(
+    0,
+    subtotal - (appliedCoupon?.discountAmount ?? 0) - (appliedVoucher?.amount ?? 0)
+  );
 
   return (
     <CartContext.Provider
@@ -99,6 +121,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         appliedCoupon,
         applyCoupon,
         clearCoupon,
+        appliedVoucher,
+        applyVoucher,
+        clearVoucher,
         total,
       }}
     >
