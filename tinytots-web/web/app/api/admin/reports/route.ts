@@ -111,14 +111,13 @@ export async function GET(req: NextRequest) {
         .slice(0, 10);
     }
 
-    // ---- Low stock alert (not time-bound, always current) ----
-    const { data: lowStockVariants } = await supabaseAdmin
-      .from("variants")
-      .select("id, sku, stock, reorder_level, products(name)")
-      .filter("stock", "lte", "reorder_level")
-      .eq("status", "active")
-      .order("stock", { ascending: true })
-      .limit(15);
+ // ---- Low stock alert (not time-bound, always current) ----
+ const { data: lowStockVariants, error: lowStockError } = await supabaseAdmin
+ .rpc("get_low_stock_variants", { limit_count: 15 });
+
+if (lowStockError) {
+ console.error("Low stock RPC failed:", lowStockError.message);
+}
 
     return NextResponse.json({
       sales: {

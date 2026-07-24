@@ -59,6 +59,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         {can(admin.role, "canManageOrders") && navItem("/admin/reports", "Reports")}
         {can(admin.role, "canManageDiscounts") && navItem("/admin/discounts", "Discounts")}
         {can(admin.role, "canManageCoupons") && navItem("/admin/coupons", "Coupons")}
+        {can(admin.role, "canManageReferrals") && navItem("/admin/referrals", "Referrals")}
         {can(admin.role, "canHandleComplaints") && navItem("/admin/complaints", "Complaints")}
         {can(admin.role, "canManageTeam") && navItem("/admin/team", "Team")}
 

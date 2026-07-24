@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
+
+const issueRewardSchema = z.object({
+  referral_id: z.union([z.string(), z.number()]),
+});
 
 const VOUCHER_AMOUNT = 100;
 const VOUCHER_VALID_DAYS = 30;
@@ -11,11 +16,14 @@ export async function POST(req: NextRequest) {
   if (authError) return authError;
 
   try {
-    const { referral_id } = await req.json();
+    const rawBody = await req.json();
+    const parsed = issueRewardSchema.safeParse(rawBody);
 
-    if (!referral_id) {
-      return NextResponse.json({ error: "Missing referral_id" }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Missing or invalid referral_id" }, { status: 400 });
     }
+
+    const { referral_id } = parsed.data;
 
     const { data: referral, error: referralError } = await supabaseAdmin
       .from("referrals")

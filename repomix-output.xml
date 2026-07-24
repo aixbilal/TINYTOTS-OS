@@ -284,8 +284,10 @@ tinytots-web/
       admin-auth-context.tsx
       admin-fetch.ts
       admin-permissions.ts
+      ai-photo-prompts.ts
       auth-context.tsx
       cart-context.tsx
+      gemini-client.ts
       require-admin.ts
       supabase-admin.ts
       supabase.ts
@@ -295,6 +297,8 @@ tinytots-web/
       next.svg
       vercel.svg
       window.svg
+    scripts/
+      test-shirt.JPG
     stitch_tinytots_premium_e_commerce_platform (1)/
       stitch_tinytots_premium_e_commerce_platform/
         premium_juvenile_editorial_1/
@@ -10492,6 +10496,72 @@ export async function adminFetch(url: string, options: RequestInit = {}) {
 }
 </file>
 
+<file path="tinytots-web/web/lib/ai-photo-prompts.ts">
+// Builds the instruction text sent to Gemini alongside the raw garment image.
+// Each "shotType" is a separate, independent call — not one big multi-image
+// request — so calls can run in parallel and never hit the single-image-drop
+// issue a combined prompt caused in earlier testing.
+
+export type ShotType =
+  | "studio"
+  | "lifestyle_front"
+  | "lifestyle_action"
+  | "detail"
+  | "back"
+  | "group_hero";
+
+interface PromptContext {
+  shotType: ShotType;
+  colorName?: string;       // e.g. "Red" — used for multi-variant batches
+  isGroupShot?: boolean;    // true only for the one combinator image
+}
+
+const BASE_ROLE = `You are an elite e-commerce product photographer and art director
+for TINYTOTS children's apparel. Completely remove hangers, tags, background
+clutter, and wrinkles from the source image. Maintain 100% exact design fidelity:
+same colors, stripe/pattern order, collar/ribbing color, sleeve length, fabric
+texture, and logo placement as the source photo. Do not invent or alter the
+design in any way.`;
+
+const SHOT_PROMPTS: Record<ShotType, string> = {
+  studio: `Generate ONE image: a clean e-commerce studio product shot using an
+invisible-mannequin / ghost-mannequin technique. Calm, minimalist beige or
+pastel studio backdrop, soft diffused lighting, no hangers, no shadows from
+hardware. High resolution, ultra-detailed fabric texture.`,
+
+  lifestyle_front: `Generate ONE image: a photorealistic lifestyle photo of a
+diverse child model wearing this exact garment, front-facing, in a bright
+minimalist indoor studio or playroom setting. Natural joyful expression,
+85mm lens look, soft natural lighting, photorealistic skin texture.`,
+
+  lifestyle_action: `Generate ONE image: a candid lifestyle photo of a child
+model wearing this exact garment in an outdoor, sunlit park or garden setting,
+mid-play or walking. Shallow depth of field, natural golden-hour lighting.`,
+
+  detail: `Generate ONE image: a macro close-up shot focusing on the fabric
+texture, collar/neckline, and any logo or print detail of this garment, worn
+by a child model. Crisp focus, shallow depth of field.`,
+
+  back: `Generate ONE image: a photorealistic lifestyle shot of a child model
+shown from the back or 3/4 angle, wearing this exact garment, so the back
+design/construction is visible. Same calm aesthetic background style as the
+other shots.`,
+
+  group_hero: `Generate ONE hero image: multiple child models standing
+together side-by-side, each wearing a different colorway of this exact
+garment style, arranged naturally in a clean, calm studio or lifestyle
+setting. All colorways must be clearly visible and distinct.`,
+};
+
+export function buildPrompt(ctx: PromptContext): string {
+  const colorLine = ctx.colorName
+    ? `\n\nThis specific image must show the "${ctx.colorName}" colorway only.`
+    : "";
+
+  return `${BASE_ROLE}\n\n${SHOT_PROMPTS[ctx.shotType]}${colorLine}`;
+}
+</file>
+
 <file path="tinytots-web/web/lib/auth-context.tsx">
 "use client";
 
@@ -10543,6 +10613,20 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }
+</file>
+
+<file path="tinytots-web/web/lib/gemini-client.ts">
+import { GoogleGenAI } from "@google/genai";
+
+const apiKey = process.env.GEMINI_API_KEY!;
+
+if (!apiKey) {
+  throw new Error("Missing GEMINI_API_KEY environment variable");
+}
+
+export const gemini = new GoogleGenAI({ apiKey });
+
+export const IMAGE_MODEL = "gemini-2.5-flash-image";
 </file>
 
 <file path="tinytots-web/web/lib/require-admin.ts">
@@ -70271,45 +70355,6 @@ export default function AddToCart({
 }
 </file>
 
-<file path="tinytots-web/web/package.json">
-{
-  "name": "tinytots",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev -p 3001",
-    "build": "next build",
-    "start": "next start -p 3001",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "@supabase/ssr": "^0.12.2",
-    "@supabase/supabase-js": "^2.110.5",
-    "express": "^5.2.1",
-    "isomorphic-dompurify": "^3.18.0",
-    "next": "16.2.9",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "react-image-crop": "^11.1.2",
-    "react-quill-new": "^3.8.3",
-    "undici": "^8.8.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@tailwindcss/typography": "^0.5.20",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "cross-env": "^10.1.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.9",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  },
-  "description": "This is a Next.js project."
-}
-</file>
-
 <file path="tinytots-web/web/app/api/checkout/route.ts">
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
@@ -71320,6 +71365,46 @@ export default async function Home() {
       </section>
     </main>
   );
+}
+</file>
+
+<file path="tinytots-web/web/package.json">
+{
+  "name": "tinytots",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@google/genai": "^2.13.0",
+    "@supabase/ssr": "^0.12.2",
+    "@supabase/supabase-js": "^2.110.5",
+    "express": "^5.2.1",
+    "isomorphic-dompurify": "^3.18.0",
+    "next": "16.2.9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-image-crop": "^11.1.2",
+    "react-quill-new": "^3.8.3",
+    "undici": "^8.8.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.20",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "description": "This is a Next.js project."
 }
 </file>
 

@@ -211,7 +211,7 @@ export default function AdminReferralsPage() {
                     <td className="px-6 py-4">
                       {v.customer?.full_name || v.customer?.phone || "—"}
                     </td>
-                    <td className="px-6 py-4">${v.amount}</td>
+                    <td className="px-6 py-4">Rs. {v.amount}</td>
                     <td className="px-6 py-4 capitalize">{v.source}</td>
                     <td className="px-6 py-4">
                       <span

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
+
+const voucherPatchSchema = z.object({
+  voucher_id: z.union([z.string(), z.number()]),
+  is_used: z.boolean(),
+});
 
 // GET /api/admin/referrals - Fetch all referrals (with referrer/referee names) + all vouchers
 export async function GET(req: NextRequest) {
@@ -50,15 +56,19 @@ export async function PATCH(req: NextRequest) {
   if (authError) return authError;
 
   try {
-    const body = await req.json();
-    const { voucher_id, is_used } = body;
-
-    if (!voucher_id || typeof is_used !== "boolean") {
+    const rawBody = await req.json();
+    const parsed = voucherPatchSchema.safeParse(rawBody);
+    
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "voucher_id and is_used are required" },
+        {
+          error: parsed.error.issues.map((issue) => issue.message).join(", "),
+        },
         { status: 400 }
       );
     }
+    
+    const { voucher_id, is_used } = parsed.data;
 
     const { data: voucher, error } = await supabaseAdmin
       .from("vouchers")
