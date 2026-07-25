@@ -1,7 +1,7 @@
 "use client";
 
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist_Mono, Inter, Plus_Jakarta_Sans, Geist } from "next/font/google";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -10,6 +10,10 @@ import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
 import HeaderCart from "@/components/HeaderCart";
 import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], weight: ["400", "500", "600"] });
 const plusJakarta = Plus_Jakarta_Sans({ variable: "--font-plus-jakarta", subsets: ["latin"], weight: ["600", "700"] });
@@ -20,9 +24,6 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
   const [allProducts, setAllProducts] = useState<any[] | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch the product list once when the overlay opens, then filter
-  // in-memory as the user types — this is what makes it feel instant
-  // instead of requiring Enter + a round trip on every keystroke.
   useEffect(() => {
     let cancelled = false;
     fetch("/api/products")
@@ -38,8 +39,6 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  // Close when clicking outside the dropdown, so it behaves like a normal
-  // popover instead of a full-screen modal that has to be explicitly closed.
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -65,8 +64,6 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
     return matchesCategory && haystack.includes(needle);
   });
 
-  // Group results by category so browsing (not just typed search) shows
-  // structure — e.g. hovering/clicking "Pants" narrows straight to pants.
   const grouped = filtered.reduce((acc: Record<string, any[]>, p: any) => {
     const key = p.category || "Other";
     (acc[key] = acc[key] || []).push(p);
@@ -226,59 +223,67 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   };
 
   return (
-    <html lang="en" className={`${geistMono.variable} ${inter.variable} ${plusJakarta.variable} antialiased`}>
+    <html lang="en" className={cn("antialiased", geistMono.variable, inter.variable, plusJakarta.variable, "font-sans", geist.variable)}>
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" precedence="default" />
       </head>
-      <body className="bg-surface font-body-md text-on-surface antialiased pt-[80px] min-h-screen flex flex-col">
-      <AuthProvider>
-      <CartProvider>
-          <nav className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
-            <div className="flex items-center gap-6">
-              <Link href="/" className="font-display-md text-display-md text-primary tracking-tight">TinyTots</Link>
-              <div className="hidden md:flex gap-6">
-                {navLink("/products", "Shop All")}
-                {navLink("/track-order", "Track Order")}
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <button onClick={() => setSearchOpen((o) => !o)} className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Search">
-                  <span className="material-symbols-outlined">search</span>
-                </button>
-                {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
-              </div>
-              <AccountMenu />
-              <HeaderCart />
-            </div>
-          </nav>
+      <body className="bg-surface font-body-md text-on-surface antialiased pt-[80px] min-h-screen flex flex-col overflow-x-hidden">
+        <AuthProvider>
+          <CartProvider>
+            {/* FIXED NAVBAR WRAPPER (Spans 100% width, centered inside) */}
+            <header className="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
+              <nav className="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto w-full">
+                <div className="flex items-center gap-6">
+                  <Link href="/" className="font-display-md text-display-md text-primary tracking-tight">TinyTots</Link>
+                  <div className="hidden md:flex gap-6">
+                    {navLink("/products", "Shop All")}
+                    {navLink("/blog", "Blog")}
+                    {navLink("/track-order", "Track Order")}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <button onClick={() => setSearchOpen((o) => !o)} className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Search">
+                      <span className="material-symbols-outlined">search</span>
+                    </button>
+                    {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
+                  </div>
+                  <AccountMenu />
+                  <HeaderCart />
+                </div>
+              </nav>
+            </header>
 
-          <main className="flex-grow w-full">{children}</main>
+            {/* MAIN CONTENT AREA */}
+            <main className="flex-grow w-full max-w-container-max mx-auto min-w-0 px-margin-mobile md:px-margin-desktop">
+              {children}
+            </main>
 
-          <footer className="bg-surface-container-lowest border-t border-outline-variant/20 w-full mt-stack-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[1.2fr_1fr_1fr_1.4fr] gap-bento-gap px-margin-mobile md:px-margin-desktop py-stack-lg max-w-container-max mx-auto">
-              <div className="flex flex-col gap-4">
-                <span className="font-display-lg text-display-lg text-primary">TinyTots</span>
-                <p className="font-body-sm text-body-sm text-secondary">© 2026 TinyTots Premium Kids. All rights reserved.</p>
-              </div>
-              <div className="flex flex-col gap-3">
-                <h4 className="font-headline-md text-headline-md text-on-surface">Explore</h4>
-                <Link href="/our-story" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">About Us</Link>
-              </div>
-              <div className="flex flex-col gap-3">
-                <h4 className="font-headline-md text-headline-md text-on-surface">Support</h4>
-                <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shipping Policy</Link>
-                <Link href="/track-order" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Track Order</Link>
-              </div>
-              <div className="flex flex-col gap-4 min-w-0">
-                <h4 className="font-headline-md text-headline-md text-on-surface">Join Our Newsletter</h4>
-                <div className="flex flex-col sm:flex-row rounded-lg border border-outline-variant/50 overflow-hidden sm:h-[48px]">
-                  <input className="flex-1 min-w-0 bg-transparent border-none px-4 py-3 sm:py-0 font-body-sm text-body-sm text-on-surface focus:ring-0 focus:outline-none" placeholder="Email Address" type="email" />
-                  <button className="shrink-0 bg-primary-container text-on-primary px-6 py-3 sm:py-0 font-button text-button hover:bg-primary transition-colors whitespace-nowrap">Subscribe</button>
+            {/* FOOTER */}
+            <footer className="bg-surface-container-lowest border-t border-outline-variant/20 w-full mt-stack-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[1.2fr_1fr_1fr_1.4fr] gap-bento-gap px-margin-mobile md:px-margin-desktop py-stack-lg max-w-container-max mx-auto">
+                <div className="flex flex-col gap-4">
+                  <span className="font-display-lg text-display-lg text-primary">TinyTots</span>
+                  <p className="font-body-sm text-body-sm text-secondary">© 2026 TinyTots Premium Kids. All rights reserved.</p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <h4 className="font-headline-md text-headline-md text-on-surface">Explore</h4>
+                  <Link href="/our-story" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">About Us</Link>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <h4 className="font-headline-md text-headline-md text-on-surface">Support</h4>
+                  <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shipping Policy</Link>
+                  <Link href="/track-order" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Track Order</Link>
+                </div>
+                <div className="flex flex-col gap-4 min-w-0">
+                  <h4 className="font-headline-md text-headline-md text-on-surface">Join Our Newsletter</h4>
+                  <div className="flex flex-col sm:flex-row rounded-lg border border-outline-variant/50 overflow-hidden sm:h-[48px]">
+                    <input className="flex-1 min-w-0 bg-transparent border-none px-4 py-3 sm:py-0 font-body-sm text-body-sm text-on-surface focus:ring-0 focus:outline-none" placeholder="Email Address" type="email" />
+                    <button className="shrink-0 bg-primary-container text-on-primary px-6 py-3 sm:py-0 font-button text-button hover:bg-primary transition-colors whitespace-nowrap">Subscribe</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </footer>
+            </footer>
           </CartProvider>
         </AuthProvider>
       </body>

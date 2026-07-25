@@ -61,6 +61,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         {can(admin.role, "canManageCoupons") && navItem("/admin/coupons", "Coupons")}
         {can(admin.role, "canManageReferrals") && navItem("/admin/referrals", "Referrals")}
         {can(admin.role, "canHandleComplaints") && navItem("/admin/complaints", "Complaints")}
+        {can(admin.role, "canManageBlog") && navItem("/admin/blog", "Blog")}
         {can(admin.role, "canManageTeam") && navItem("/admin/team", "Team")}
 
         <div className="mt-auto pt-4 border-t border-outline-variant/20">
