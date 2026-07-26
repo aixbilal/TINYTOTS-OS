@@ -11,6 +11,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import HeaderCart from "@/components/HeaderCart";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import { WishlistProvider } from "@/lib/wishlist-context";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -180,12 +181,19 @@ function AccountMenu() {
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-48 bg-surface border border-outline-variant/30 rounded-xl shadow-lg py-2 z-50">
-          <Link
+      <Link
             href="/account"
             onClick={() => setOpen(false)}
             className="block px-4 py-2 font-body-sm text-body-sm text-on-surface hover:bg-surface-container-low"
           >
             My Account
+          </Link>
+          <Link
+            href="/account/wishlist"
+            onClick={() => setOpen(false)}
+            className="block px-4 py-2 font-body-sm text-body-sm text-on-surface hover:bg-surface-container-low"
+          >
+            My Wishlist
           </Link>
           <button
             onClick={async () => {
@@ -228,8 +236,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" precedence="default" />
       </head>
       <body className="bg-surface font-body-md text-on-surface antialiased pt-[80px] min-h-screen flex flex-col overflow-x-hidden">
-        <AuthProvider>
+      <AuthProvider>
           <CartProvider>
+          <WishlistProvider>
             {/* FIXED NAVBAR WRAPPER (Spans 100% width, centered inside) */}
             <header className="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
               <nav className="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto w-full">
@@ -284,6 +293,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 </div>
               </div>
             </footer>
+            </WishlistProvider>
           </CartProvider>
         </AuthProvider>
       </body>

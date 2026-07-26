@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import WishlistButton from "@/components/WishlistButton";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -49,7 +50,7 @@ export default function ProductsPage() {
               href={`/products/${p.id}`}
               className="group flex flex-col rounded-xl border border-outline-variant/30 bg-surface-container-lowest overflow-hidden hover:border-primary transition-colors"
             >
-              <div className="aspect-square bg-surface-container-low overflow-hidden">
+           <div className="relative aspect-square bg-surface-container-low overflow-hidden">
                 {p.image_url ? (
                   <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                 ) : (
@@ -57,6 +58,10 @@ export default function ProductsPage() {
                     No image
                   </div>
                 )}
+                <WishlistButton
+                  productId={p.id}
+                  className="absolute top-2 right-2 bg-surface/90 backdrop-blur-sm w-8 h-8 shadow-sm"
+                />
               </div>
               <div className="p-4 flex flex-col gap-1">
                 <p className="font-body-md text-body-md text-on-surface">{p.name}</p>

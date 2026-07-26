@@ -4,6 +4,7 @@ import { useState } from "react";
 import DOMPurify from "isomorphic-dompurify";
 import ProductGallery from "./ProductGallery";
 import AddToCart from "./AddToCart";
+import WishlistButton from "./WishlistButton";
 
 type Variant = {
   id: number;
@@ -58,9 +59,12 @@ export default function ProductDetailInteractive({
       </div>
 
       <div className="min-w-0">
-        <h1 className="font-display-md text-display-md text-on-surface break-words">
-          {productName}
-        </h1>
+      <div className="flex items-start justify-between gap-3">
+          <h1 className="font-display-md text-display-md text-on-surface break-words">
+            {productName}
+          </h1>
+          <WishlistButton productId={productId} className="shrink-0 w-10 h-10 border border-outline-variant/30" />
+        </div>
         <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
           {brand} {category ? `· ${category}` : ""}
         </p>

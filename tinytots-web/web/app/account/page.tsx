@@ -162,6 +162,16 @@ export default function AccountPage() {
           Manage saved addresses →
         </Link>
       </section>
+
+      <section className="mb-stack-md">
+        <Link href="/account/addresses" className="font-body-sm text-body-sm text-primary hover:underline">
+          Manage saved addresses →
+        </Link>
+        <br />
+        <Link href="/account/wishlist" className="font-body-sm text-body-sm text-primary hover:underline">
+          View my wishlist →
+        </Link>
+      </section>
       
 <section className="mb-stack-md">
         <h2 className="font-headline-md text-headline-md text-on-surface mb-3">My Vouchers</h2>
