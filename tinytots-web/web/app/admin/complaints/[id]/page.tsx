@@ -13,8 +13,10 @@ interface ComplaintDetail {
   reporter_phone: string | null;
   type: string;
   message: string;
-  status: "open" | "in_progress" | "resolved";
+  status: string;
   admin_notes: string | null;
+  photo_url: string | null;
+  order_item_ids: number[] | null;
   resolved_at: string | null;
   created_at: string;
   customer: { id: number; full_name: string | null; phone: string; email: string | null; orders_count: number } | null;
@@ -37,6 +39,13 @@ interface ComplaintLite {
   created_at: string;
 }
 
+interface SelectedItem {
+  id: number;
+  quantity: number;
+  unit_price: number;
+  variant: { id: number; color: string | null; size: string | null; product: { name: string } | null } | null;
+}
+
 const TYPE_LABELS: Record<string, string> = {
   return: "Return",
   product_issue: "Product Issue",
@@ -48,6 +57,20 @@ const STATUS_STYLES: Record<string, string> = {
   open: "bg-red-100 text-red-800",
   in_progress: "bg-amber-100 text-amber-800",
   resolved: "bg-green-100 text-green-800",
+  approved: "bg-blue-100 text-blue-800",
+  rejected: "bg-red-100 text-red-800",
+  refunded: "bg-green-100 text-green-800",
+  exchanged: "bg-green-100 text-green-800",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  open: "Open",
+  in_progress: "In Progress",
+  resolved: "Resolved",
+  approved: "Approved",
+  rejected: "Rejected",
+  refunded: "Refunded",
+  exchanged: "Exchanged",
 };
 
 export default function ComplaintDetailPage() {
@@ -58,6 +81,7 @@ export default function ComplaintDetailPage() {
   const [complaint, setComplaint] = useState<ComplaintDetail | null>(null);
   const [otherOrders, setOtherOrders] = useState<OrderLite[]>([]);
   const [otherComplaints, setOtherComplaints] = useState<ComplaintLite[]>([]);
+  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,6 +96,7 @@ export default function ComplaintDetailPage() {
         setComplaint(data.complaint);
         setOtherOrders(data.otherOrders || []);
         setOtherComplaints(data.otherComplaints || []);
+        setSelectedItems(data.selectedItems || []);
         setNotes(data.complaint.admin_notes || "");
       } else {
         setErrorMsg(data.error || "Failed to load complaint");
@@ -88,7 +113,7 @@ export default function ComplaintDetailPage() {
     fetchDetail();
   }, [id]);
 
-  const updateStatus = async (status: ComplaintDetail["status"]) => {
+  const updateStatus = async (status: string) => {
     try {
       const res = await adminFetch(`/api/admin/complaints/${id}`, {
         method: "PATCH",
@@ -140,6 +165,8 @@ export default function ComplaintDetailPage() {
     );
   }
 
+  const isReturn = complaint.type === "return";
+
   return (
     <div className="max-w-4xl mx-auto">
       <Link href="/admin/complaints" className="text-sm text-indigo-600 underline mb-4 inline-block">
@@ -153,9 +180,9 @@ export default function ComplaintDetailPage() {
               {TYPE_LABELS[complaint.type] || complaint.type}
             </span>
             <span
-              className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${STATUS_STYLES[complaint.status]}`}
+              className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${STATUS_STYLES[complaint.status] || "bg-gray-100 text-gray-700"}`}
             >
-              {complaint.status === "in_progress" ? "In Progress" : complaint.status.charAt(0).toUpperCase() + complaint.status.slice(1)}
+              {STATUS_LABELS[complaint.status] || complaint.status}
             </span>
           </div>
           <span className="text-xs text-gray-400">
@@ -164,6 +191,35 @@ export default function ComplaintDetailPage() {
         </div>
 
         <p className="text-base text-gray-800 mb-4">{complaint.message}</p>
+
+        {complaint.photo_url && (
+          <div className="mb-4">
+            <p className="text-xs text-gray-400 uppercase mb-1">Attached photo</p>
+            <a href={complaint.photo_url} target="_blank" rel="noopener noreferrer">
+              <img
+                src={complaint.photo_url}
+                alt="Attached"
+                className="w-32 h-32 object-cover rounded-lg border border-gray-200"
+              />
+            </a>
+          </div>
+        )}
+
+        {selectedItems.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs text-gray-400 uppercase mb-1">Items concerned</p>
+            <div className="flex flex-col gap-1">
+              {selectedItems.map((item) => (
+                <div key={item.id} className="text-sm text-gray-700 border border-gray-100 rounded px-3 py-2">
+                  {item.variant?.product?.name || "Unknown product"}
+                  {item.variant?.color && ` — ${item.variant.color}`}
+                  {item.variant?.size && ` / ${item.variant.size}`}
+                  {" "}× {item.quantity} (Rs. {item.unit_price.toLocaleString()} each)
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
           <div>
@@ -187,7 +243,7 @@ export default function ComplaintDetailPage() {
           )}
         </div>
 
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-4">
           {complaint.status !== "open" && (
             <button
               onClick={() => updateStatus("open")}
@@ -204,13 +260,51 @@ export default function ComplaintDetailPage() {
               Mark In Progress
             </button>
           )}
-          {complaint.status !== "resolved" && (
-            <button
-              onClick={() => updateStatus("resolved")}
-              className="text-xs font-medium px-3 py-1.5 rounded-md bg-green-100 text-green-800 hover:bg-green-200"
-            >
-              Mark Resolved
-            </button>
+
+          {isReturn ? (
+            <>
+              {complaint.status !== "approved" && (
+                <button
+                  onClick={() => updateStatus("approved")}
+                  className="text-xs font-medium px-3 py-1.5 rounded-md bg-blue-100 text-blue-800 hover:bg-blue-200"
+                >
+                  Approve
+                </button>
+              )}
+              {complaint.status !== "rejected" && (
+                <button
+                  onClick={() => updateStatus("rejected")}
+                  className="text-xs font-medium px-3 py-1.5 rounded-md bg-red-100 text-red-800 hover:bg-red-200"
+                >
+                  Reject
+                </button>
+              )}
+              {complaint.status !== "refunded" && (
+                <button
+                  onClick={() => updateStatus("refunded")}
+                  className="text-xs font-medium px-3 py-1.5 rounded-md bg-green-100 text-green-800 hover:bg-green-200"
+                >
+                  Mark Refunded
+                </button>
+              )}
+              {complaint.status !== "exchanged" && (
+                <button
+                  onClick={() => updateStatus("exchanged")}
+                  className="text-xs font-medium px-3 py-1.5 rounded-md bg-green-100 text-green-800 hover:bg-green-200"
+                >
+                  Mark Exchanged
+                </button>
+              )}
+            </>
+          ) : (
+            complaint.status !== "resolved" && (
+              <button
+                onClick={() => updateStatus("resolved")}
+                className="text-xs font-medium px-3 py-1.5 rounded-md bg-green-100 text-green-800 hover:bg-green-200"
+              >
+                Mark Resolved
+              </button>
+            )
           )}
         </div>
 
