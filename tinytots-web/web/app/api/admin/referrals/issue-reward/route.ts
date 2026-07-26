@@ -2,15 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
+import { getSettingNumber } from "@/lib/settings";
 
 const issueRewardSchema = z.object({
   referral_id: z.union([z.string(), z.number()]),
 });
 
-const VOUCHER_AMOUNT = 100;
-const VOUCHER_VALID_DAYS = 30;
-
-// POST /api/admin/referrals/issue-reward - Manually issue the referral voucher
+// POST /api/referrals/issue-reward - Manually issue the referral voucher
 export async function POST(req: NextRequest) {
   const authError = await requireAdmin(req, "canManageReferrals");
   if (authError) return authError;
@@ -49,15 +47,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + VOUCHER_VALID_DAYS);
+    const [voucherAmount, validDays] = await Promise.all([
+      getSettingNumber("referral_voucher_amount"),
+      getSettingNumber("referral_voucher_valid_days"),
+    ]);
 
-    // 1. Create the voucher for the referrer
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + validDays);
+
     const { data: voucher, error: voucherError } = await supabaseAdmin
       .from("vouchers")
       .insert({
         customer_id: referral.referrer_customer_id,
-        amount: VOUCHER_AMOUNT,
+        amount: voucherAmount,
         is_used: false,
         source: "referral",
         expires_at: expiresAt.toISOString(),
@@ -69,14 +71,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: voucherError.message }, { status: 500 });
     }
 
-    // 2. Mark the referral as rewarded
     const { error: updateError } = await supabaseAdmin
       .from("referrals")
       .update({ reward_triggered: true })
       .eq("id", referral_id);
 
     if (updateError) {
-      // Voucher exists but the flag update failed — surfaced clearly, not swallowed
       return NextResponse.json(
         {
           error: `Voucher created (id ${voucher.id}) but failed to flag referral as rewarded: ${updateError.message}. Needs manual fix.`,

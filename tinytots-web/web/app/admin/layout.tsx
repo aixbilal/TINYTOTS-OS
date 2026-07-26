@@ -63,7 +63,8 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         {can(admin.role, "canHandleComplaints") && navItem("/admin/complaints", "Complaints")}
         {can(admin.role, "canManageBlog") && navItem("/admin/blog", "Blog")}
         {can(admin.role, "canManageTeam") && navItem("/admin/team", "Team")}
-
+        {can(admin.role, "canManageSettings") && navItem("/admin/settings", "Settings")}
+        
         <div className="mt-auto pt-4 border-t border-outline-variant/20">
           <p className="font-body-sm text-body-sm text-on-surface px-2 mb-1">{admin.name}</p>
           <p className="font-label-md text-label-md text-on-surface-variant px-2 mb-3 capitalize">{admin.role.replace("_", " ")}</p>

@@ -1,0 +1,71 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
+
+const patchSchema = z.object({
+  key: z.string().min(1),
+  value: z.string().min(1),
+});
+
+export async function GET(req: NextRequest) {
+  const authError = await requireAdmin(req, "canManageSettings");
+  if (authError) return authError;
+
+  const { data, error } = await supabaseAdmin
+    .from("app_settings")
+    .select("*")
+    .order("key", { ascending: true });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ settings: data });
+}
+
+export async function PATCH(req: NextRequest) {
+  const authError = await requireAdmin(req, "canManageSettings");
+  if (authError) return authError;
+
+  try {
+    const rawBody = await req.json();
+    const parsed = patchSchema.safeParse(rawBody);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues.map((i) => i.message).join(", ") },
+        { status: 400 }
+      );
+    }
+
+    const { key, value } = parsed.data;
+
+    if (key.includes("amount") || key.includes("days")) {
+      if (!Number.isFinite(Number(value)) || Number(value) < 0) {
+        return NextResponse.json(
+          { error: `${key} must be a non-negative number` },
+          { status: 400 }
+        );
+      }
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("app_settings")
+      .update({ value, updated_at: new Date().toISOString() })
+      .eq("key", key)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ setting: data });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to update setting" },
+      { status: 500 }
+    );
+  }
+}

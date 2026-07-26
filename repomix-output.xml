@@ -153,6 +153,10 @@ tinytots-web/
       account/
         page.tsx
       admin/
+        blog/
+          editor/
+            page.tsx
+          page.tsx
         complaints/
           [id]/
             page.tsx
@@ -183,6 +187,12 @@ tinytots-web/
         page.tsx
       api/
         admin/
+          blog/
+            [id]/
+              route.ts
+            upload-image/
+              route.ts
+            route.ts
           complaints/
             [id]/
               route.ts
@@ -241,6 +251,10 @@ tinytots-web/
           route.ts
         track-order/
           route.ts
+      blog/
+        [slug]/
+          page.tsx
+        page.tsx
       cart/
         page.tsx
       checkout/
@@ -274,6 +288,8 @@ tinytots-web/
         MarkupCalculator.tsx
         RichTextEditor.tsx
         TagInput.tsx
+      ui/
+        expandable-bento-grid.tsx
       AddToCart.tsx
       CouponInput.tsx
       HeaderCart.tsx
@@ -284,21 +300,19 @@ tinytots-web/
       admin-auth-context.tsx
       admin-fetch.ts
       admin-permissions.ts
-      ai-photo-prompts.ts
       auth-context.tsx
       cart-context.tsx
       gemini-client.ts
       require-admin.ts
       supabase-admin.ts
       supabase.ts
+      utils.ts
     public/
       file.svg
       globe.svg
       next.svg
       vercel.svg
       window.svg
-    scripts/
-      test-shirt.JPG
     stitch_tinytots_premium_e_commerce_platform (1)/
       stitch_tinytots_premium_e_commerce_platform/
         premium_juvenile_editorial_1/
@@ -520,6 +534,7 @@ tinytots-web/
     .gitignore
     AGENTS.md
     CLAUDE.md
+    components.json
     eslint.config.mjs
     next-env.d.ts
     next.config.ts
@@ -6128,6 +6143,396 @@ export default defineConfig({
 });
 </file>
 
+<file path="tinytots-web/web/app/admin/blog/editor/page.tsx">
+"use client";
+
+import React, { useEffect, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
+import { useRouter, useSearchParams } from "next/navigation";
+import { adminFetch } from "@/lib/admin-fetch";
+import DOMPurify from "dompurify";
+import "react-quill-new/dist/quill.snow.css";
+
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
+
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ align: [] }],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["link", "image"],
+    ["clean"],
+  ],
+};
+
+const quillFormats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "align",
+    "list",
+    "link",
+    "image",
+  ];
+
+export default function BlogEditorPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const postId = searchParams.get("id");
+  const isEditing = !!postId;
+
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [content, setContent] = useState("");
+  const [featuredImageUrl, setFeaturedImageUrl] = useState("");
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [isPublished, setIsPublished] = useState(false);
+  const [loading, setLoading] = useState(isEditing);
+  const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  const fetchPost = useCallback(async () => {
+    if (!postId) return;
+    setLoading(true);
+    const res = await adminFetch(`/api/admin/blog/${postId}`);
+    const data = await res.json();
+    if (res.ok) {
+      setTitle(data.post.title);
+      setAuthor(data.post.author || "");
+      setContent(data.post.content);
+      setFeaturedImageUrl(data.post.featured_image_url || "");
+      setIsPublished(data.post.is_published);
+    } else {
+      setErrorMsg(data.error || "Failed to load post");
+    }
+    setLoading(false);
+  }, [postId]);
+
+  useEffect(() => {
+    fetchPost();
+  }, [fetchPost]);
+
+  // Clean up the local object URL when it's replaced or the component unmounts,
+  // so we don't leak memory holding onto blob references.
+  useEffect(() => {
+    return () => {
+      if (localPreview) URL.revokeObjectURL(localPreview);
+    };
+  }, [localPreview]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Show the picked image instantly from the local file, before the
+    // network upload even starts — no waiting to see what was picked.
+    const objectUrl = URL.createObjectURL(file);
+    setLocalPreview(objectUrl);
+
+    setUploadingImage(true);
+    setErrorMsg("");
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await adminFetch("/api/admin/blog/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      setFeaturedImageUrl(data.url);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+      setLocalPreview(null);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+// The real, definitive fix: sanitize whatever Quill produces down to a
+  // fixed allowlist of tags with NO attributes except href/src/alt. This
+  // strips every inline style, width, class, and invisible-character
+  // wrapper that could have been carried in from a paste — regardless of
+  // where it came from or what caused it — so the database only ever
+  // stores clean, predictable HTML. No more chasing individual symptoms.
+  function sanitizeContent(html: string) {
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: [
+        "p", "br", "strong", "em", "u", "s",
+        "h1", "h2", "h3",
+        "ul", "ol", "li",
+        "a", "img",
+      ],
+      ALLOWED_ATTR: ["href", "src", "alt", "target", "rel"],
+      // Explicitly forbid the attributes that caused all of this —
+      // even if a future ALLOWED_TAGS change accidentally lets more
+      // elements through, these can never carry style/width/class again.
+      FORBID_ATTR: ["style", "class", "width", "height"],
+    }).replace(/\p{Cf}/gu, ""); // also strip any remaining invisible Unicode format chars
+  }
+  const handleSave = async (publish: boolean) => {
+    if (!title.trim() || !content.trim()) {
+      setErrorMsg("Title and content are required.");
+      return;
+    }
+
+    setSaving(true);
+    setErrorMsg("");
+    try {
+      const payload = {
+        title,
+        content,
+        author,
+        featured_image_url: featuredImageUrl,
+        is_published: publish,
+      };
+
+      const res = isEditing
+        ? await adminFetch(`/api/admin/blog/${postId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+        : await adminFetch("/api/admin/blog", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save post");
+
+      router.push("/admin/blog");
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="max-w-3xl mx-auto text-center py-12 text-gray-500">Loading...</div>;
+  }
+
+  // Prefer the instant local preview while it exists (right after picking a
+  // new file); fall back to the saved URL once that's all we have (e.g. on
+  // reopening an existing draft).
+  const displayImage = localPreview || featuredImageUrl;
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">
+        {isEditing ? "Edit Post" : "New Post"}
+      </h1>
+
+      {errorMsg && (
+        <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded">{errorMsg}</div>
+      )}
+
+      <div className="flex flex-col gap-4 mb-6">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full border rounded-md px-3 py-2 text-sm"
+            placeholder="Post title"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Author (optional)</label>
+          <input
+            type="text"
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            className="w-full border rounded-md px-3 py-2 text-sm"
+            placeholder="Author name"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Featured Image</label>
+          {displayImage && (
+            <div className="relative w-full mb-2 group">
+              <img
+                src={displayImage}
+                alt="Featured"
+                onClick={() => setLightboxOpen(true)}
+                className="w-full max-h-64 object-cover rounded-md cursor-zoom-in"
+              />
+              {uploadingImage && (
+                <div className="absolute inset-0 bg-black/40 rounded-md flex items-center justify-center">
+                  <span className="text-white text-xs font-medium">Uploading...</span>
+                </div>
+              )}
+              {!uploadingImage && (
+                <div className="absolute inset-0 rounded-md bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
+              )}
+            </div>
+          )}
+          <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} className="text-sm" />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Content</label>
+          <ReactQuill
+            theme="snow"
+            value={content}
+            onChange={setContent}
+            modules={quillModules}
+            formats={quillFormats}
+            className="bg-white"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <button
+          onClick={() => handleSave(false)}
+          disabled={saving}
+          className="px-4 py-2 border rounded-md text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          Save Draft
+        </button>
+        <button
+          onClick={() => handleSave(true)}
+          disabled={saving}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 disabled:opacity-50"
+        >
+          {saving ? "Saving..." : isPublished ? "Update & Publish" : "Publish"}
+        </button>
+      </div>
+
+      {lightboxOpen && displayImage && (
+        <div
+          onClick={() => setLightboxOpen(false)}
+          className="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-50 cursor-zoom-out"
+        >
+          <img
+            src={displayImage}
+            alt="Featured full size"
+            className="max-w-full max-h-full rounded-md"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/admin/blog/page.tsx">
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { adminFetch } from "@/lib/admin-fetch";
+
+interface Post {
+  id: number;
+  title: string;
+  slug: string;
+  author: string | null;
+  is_published: boolean;
+  published_at: string | null;
+  created_at: string;
+}
+
+export default function AdminBlogListPage() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchPosts = async () => {
+    setLoading(true);
+    const res = await adminFetch("/api/admin/blog");
+    const data = await res.json();
+    if (res.ok) setPosts(data.posts || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Delete this post permanently?")) return;
+    const res = await adminFetch(`/api/admin/blog/${id}`, { method: "DELETE" });
+    if (res.ok) setPosts((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Blog Posts</h1>
+          <p className="text-sm text-gray-500">Manage articles and updates</p>
+        </div>
+        <Link
+          href="/admin/blog/editor"
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700"
+        >
+          + New Post
+        </Link>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-gray-500">Loading...</div>
+      ) : posts.length === 0 ? (
+        <div className="bg-white rounded-lg border border-dashed border-gray-300 p-12 text-center text-gray-500">
+          No posts yet.
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
+              <tr>
+                <th className="px-6 py-3">Title</th>
+                <th className="px-6 py-3">Author</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Created</th>
+                <th className="px-6 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {posts.map((p) => (
+                <tr key={p.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 font-medium text-gray-900">{p.title}</td>
+                  <td className="px-6 py-4">{p.author || "—"}</td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${
+                        p.is_published ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {p.is_published ? "Published" : "Draft"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">{new Date(p.created_at).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 text-right space-x-3">
+                    <Link href={`/admin/blog/editor?id=${p.id}`} className="text-xs font-medium text-indigo-600 hover:underline">
+                      Edit
+                    </Link>
+                    <button onClick={() => handleDelete(p.id)} className="text-xs font-medium text-red-600 hover:underline">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+</file>
+
 <file path="tinytots-web/web/app/admin/complaints/[id]/page.tsx">
 "use client";
 
@@ -6891,309 +7296,6 @@ export default function AdminLoginPage() {
 }
 </file>
 
-<file path="tinytots-web/web/app/admin/reports/page.tsx">
-"use client";
-
-import React, { useEffect, useState, useCallback } from "react";
-import { adminFetch } from "@/lib/admin-fetch";
-
-interface ReportData {
-  sales: {
-    revenue: number;
-    orderCount: number;
-    avgOrderValue: number;
-    totalDiscountGiven: number;
-    dailyBreakdown: { day: string; count: number; revenue: number }[];
-  };
-  coupons: {
-    totalUses: number;
-    totalDiscountGiven: number;
-    breakdown: { code: string; uses: number; discountGiven: number }[];
-  };
-  vouchers: {
-    issued: number;
-    used: number;
-    redeemedInOrders: number;
-    bySource: Record<string, number>;
-  };
-  referrals: {
-    created: number;
-    rewarded: number;
-  };
-  products: {
-    topSellers: { product_id: number; name: string; quantity: number; revenue: number }[];
-  };
-  lowStock: { id: number; sku: string; stock: number; reorder_level: number; products: { name: string } }[];
-}
-
-type PresetRange = "today" | "week" | "month" | "custom";
-
-function getPresetDates(preset: PresetRange): { start: string; end: string } {
-  const now = new Date();
-  const end = new Date(now);
-  end.setHours(23, 59, 59, 999);
-
-  let start = new Date(now);
-  if (preset === "today") {
-    start.setHours(0, 0, 0, 0);
-  } else if (preset === "week") {
-    start.setDate(start.getDate() - 7);
-    start.setHours(0, 0, 0, 0);
-  } else if (preset === "month") {
-    start.setDate(1);
-    start.setHours(0, 0, 0, 0);
-  }
-
-  return { start: start.toISOString(), end: end.toISOString() };
-}
-
-export default function AdminReportsPage() {
-  const [preset, setPreset] = useState<PresetRange>("month");
-  const [customStart, setCustomStart] = useState("");
-  const [customEnd, setCustomEnd] = useState("");
-  const [data, setData] = useState<ReportData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
-
-  const fetchReport = useCallback(async () => {
-    let start: string, end: string;
-
-    if (preset === "custom") {
-      if (!customStart || !customEnd) return;
-      start = new Date(customStart).toISOString();
-      end = new Date(new Date(customEnd).setHours(23, 59, 59, 999)).toISOString();
-    } else {
-      const dates = getPresetDates(preset);
-      start = dates.start;
-      end = dates.end;
-    }
-
-    try {
-      setLoading(true);
-      setErrorMsg("");
-      const res = await adminFetch(`/api/admin/reports?start=${start}&end=${end}`);
-      const json = await res.json();
-      if (res.ok) {
-        setData(json);
-      } else {
-        setErrorMsg(json.error || "Failed to load report");
-      }
-    } catch (err) {
-      console.error("Failed to load report", err);
-      setErrorMsg("Failed to load report");
-    } finally {
-      setLoading(false);
-    }
-  }, [preset, customStart, customEnd]);
-
-  useEffect(() => {
-    fetchReport();
-  }, [fetchReport]);
-
-  const StatCard = ({ label, value }: { label: string; value: string }) => (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-      <p className="text-xs text-gray-400 uppercase mb-1">{label}</p>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-    </div>
-  );
-
-  return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-        <p className="text-sm text-gray-500">Sales, promotions, and product performance</p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 mb-6">
-        {(["today", "week", "month"] as const).map((p) => (
-          <button
-            key={p}
-            onClick={() => setPreset(p)}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-              preset === p ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {p === "today" ? "Today" : p === "week" ? "Last 7 Days" : "This Month"}
-          </button>
-        ))}
-        <button
-          onClick={() => setPreset("custom")}
-          className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-            preset === "custom" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          }`}
-        >
-          Custom
-        </button>
-        {preset === "custom" && (
-          <>
-            <input
-              type="date"
-              value={customStart}
-              onChange={(e) => setCustomStart(e.target.value)}
-              className="border border-gray-300 rounded-md px-2 py-1.5 text-xs"
-            />
-            <span className="text-xs text-gray-400">to</span>
-            <input
-              type="date"
-              value={customEnd}
-              onChange={(e) => setCustomEnd(e.target.value)}
-              className="border border-gray-300 rounded-md px-2 py-1.5 text-xs"
-            />
-          </>
-        )}
-      </div>
-
-      {errorMsg && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded">{errorMsg}</div>
-      )}
-
-      {loading ? (
-        <div className="text-center py-12 text-gray-500">Loading report...</div>
-      ) : data ? (
-        <div className="flex flex-col gap-8">
-          {/* Sales overview */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Sales Overview</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <StatCard label="Revenue" value={`Rs. ${data.sales.revenue.toLocaleString()}`} />
-              <StatCard label="Orders" value={data.sales.orderCount.toString()} />
-              <StatCard label="Avg Order Value" value={`Rs. ${Math.round(data.sales.avgOrderValue).toLocaleString()}`} />
-              <StatCard label="Discounts Given" value={`Rs. ${data.sales.totalDiscountGiven.toLocaleString()}`} />
-            </div>
-            {data.sales.dailyBreakdown.length > 0 && (
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                <table className="w-full text-left text-sm text-gray-600">
-                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-                    <tr>
-                      <th className="px-4 py-2">Date</th>
-                      <th className="px-4 py-2">Orders</th>
-                      <th className="px-4 py-2">Revenue</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {data.sales.dailyBreakdown.map((d) => (
-                      <tr key={d.day}>
-                        <td className="px-4 py-2">{d.day}</td>
-                        <td className="px-4 py-2">{d.count}</td>
-                        <td className="px-4 py-2">Rs. {d.revenue.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-
-          {/* Coupons */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Coupon Performance</h2>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <StatCard label="Total Uses" value={data.coupons.totalUses.toString()} />
-              <StatCard label="Discount Given" value={`Rs. ${data.coupons.totalDiscountGiven.toLocaleString()}`} />
-            </div>
-            {data.coupons.breakdown.length > 0 ? (
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                <table className="w-full text-left text-sm text-gray-600">
-                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-                    <tr>
-                      <th className="px-4 py-2">Code</th>
-                      <th className="px-4 py-2">Uses</th>
-                      <th className="px-4 py-2">Discount Given</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {data.coupons.breakdown.map((c) => (
-                      <tr key={c.code}>
-                        <td className="px-4 py-2 font-mono font-bold text-indigo-600">{c.code}</td>
-                        <td className="px-4 py-2">{c.uses}</td>
-                        <td className="px-4 py-2">Rs. {c.discountGiven.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">No coupons used in this period.</p>
-            )}
-          </section>
-
-          {/* Vouchers & Referrals */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Vouchers & Referrals</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard label="Vouchers Issued" value={data.vouchers.issued.toString()} />
-              <StatCard label="Vouchers Used" value={data.vouchers.used.toString()} />
-              <StatCard label="Referrals Created" value={data.referrals.created.toString()} />
-              <StatCard label="Referrals Rewarded" value={data.referrals.rewarded.toString()} />
-            </div>
-          </section>
-
-          {/* Top products */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Top Selling Products</h2>
-            {data.products.topSellers.length > 0 ? (
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                <table className="w-full text-left text-sm text-gray-600">
-                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-                    <tr>
-                      <th className="px-4 py-2">Product</th>
-                      <th className="px-4 py-2">Units Sold</th>
-                      <th className="px-4 py-2">Revenue</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {data.products.topSellers.map((p) => (
-                      <tr key={p.product_id}>
-                        <td className="px-4 py-2">{p.name}</td>
-                        <td className="px-4 py-2">{p.quantity}</td>
-                        <td className="px-4 py-2">Rs. {p.revenue.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">No sales in this period.</p>
-            )}
-          </section>
-
-          {/* Low stock alert */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Low Stock Alert</h2>
-            {data.lowStock.length > 0 ? (
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                <table className="w-full text-left text-sm text-gray-600">
-                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-                    <tr>
-                      <th className="px-4 py-2">SKU</th>
-                      <th className="px-4 py-2">Product</th>
-                      <th className="px-4 py-2">Stock</th>
-                      <th className="px-4 py-2">Reorder Level</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {data.lowStock.map((v) => (
-                      <tr key={v.id} className="text-red-600">
-                        <td className="px-4 py-2 font-mono">{v.sku}</td>
-                        <td className="px-4 py-2">{v.products?.name}</td>
-                        <td className="px-4 py-2">{v.stock}</td>
-                        <td className="px-4 py-2">{v.reorder_level}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">All stock levels healthy.</p>
-            )}
-          </section>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-</file>
-
 <file path="tinytots-web/web/app/admin/page.tsx">
 export default function AdminDashboardPage() {
     return (
@@ -7205,6 +7307,226 @@ export default function AdminDashboardPage() {
       </div>
     );
   }
+</file>
+
+<file path="tinytots-web/web/app/api/admin/blog/[id]/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
+import DOMPurify from "isomorphic-dompurify";
+
+function sanitizeContent(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ["p", "br", "strong", "em", "u", "s", "h1", "h2", "h3", "ul", "ol", "li", "a", "img"],
+    ALLOWED_ATTR: ["href", "src", "alt", "target", "rel"],
+    FORBID_ATTR: ["style", "class", "width", "height"],
+  }).replace(/\p{Cf}/gu, "");
+}
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> } | { params: { id: string } }
+) {
+  const denied = await requireAdmin(req, "canManageBlog");
+  if (denied) return denied;
+
+  const params = await (context.params as any);
+  const { data: post, error } = await supabaseAdmin
+    .from("blog_posts")
+    .select("*")
+    .eq("id", params.id)
+    .single();
+
+  if (error || !post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
+  return NextResponse.json({ post });
+}
+
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> } | { params: { id: string } }
+) {
+  const denied = await requireAdmin(req, "canManageBlog");
+  if (denied) return denied;
+
+  try {
+    const params = await (context.params as any);
+    const body = await req.json();
+    const { title, content, author, featured_image_url, is_published } = body;
+
+    const updates: Record<string, any> = {};
+    if (title !== undefined) updates.title = title.trim();
+    if (content !== undefined) updates.content = sanitizeContent(content);
+    if (author !== undefined) updates.author = author?.trim() || null;
+    if (featured_image_url !== undefined) updates.featured_image_url = featured_image_url || null;
+    if (is_published !== undefined) {
+      updates.is_published = !!is_published;
+      if (is_published) {
+        const { data: current } = await supabaseAdmin
+          .from("blog_posts")
+          .select("published_at")
+          .eq("id", params.id)
+          .single();
+        updates.published_at = current?.published_at || new Date().toISOString();
+      } else {
+        updates.published_at = null;
+      }
+    }
+
+    const { data: post, error } = await supabaseAdmin
+      .from("blog_posts")
+      .update(updates)
+      .eq("id", params.id)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ post });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "Failed to update post" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> } | { params: { id: string } }
+) {
+  const denied = await requireAdmin(req, "canManageBlog");
+  if (denied) return denied;
+
+  const params = await (context.params as any);
+  const { error } = await supabaseAdmin.from("blog_posts").delete().eq("id", params.id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true });
+}
+</file>
+
+<file path="tinytots-web/web/app/api/admin/blog/upload-image/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
+
+export async function POST(req: NextRequest) {
+  const denied = await requireAdmin(req, "canManageBlog");
+  if (denied) return denied;
+
+  try {
+    const formData = await req.formData();
+    const file = formData.get("file") as File | null;
+
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+    if (!file.type.startsWith("image/")) {
+      return NextResponse.json({ error: "File must be an image" }, { status: 400 });
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "Image must be under 5MB" }, { status: 400 });
+    }
+
+    const ext = file.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const arrayBuffer = await file.arrayBuffer();
+
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from("blog-images")
+      .upload(fileName, arrayBuffer, { contentType: file.type });
+
+    if (uploadError) {
+      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    }
+
+    const { data: publicUrlData } = supabaseAdmin.storage
+      .from("blog-images")
+      .getPublicUrl(fileName);
+
+    return NextResponse.json({ url: publicUrlData.publicUrl });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "Upload failed" }, { status: 500 });
+  }
+}
+</file>
+
+<file path="tinytots-web/web/app/api/admin/blog/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
+import DOMPurify from "isomorphic-dompurify";
+
+// The single, guaranteed gate every blog post's HTML passes through before
+// touching the database.
+function sanitizeContent(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ["p", "br", "strong", "em", "u", "s", "h1", "h2", "h3", "ul", "ol", "li", "a", "img"],
+    ALLOWED_ATTR: ["href", "src", "alt", "target", "rel"],
+    FORBID_ATTR: ["style", "class", "width", "height"],
+  }).replace(/\p{Cf}/gu, "");
+}
+
+function slugify(title: string) {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+export async function GET(req: NextRequest) {
+  const denied = await requireAdmin(req, "canManageBlog");
+  if (denied) return denied;
+
+  const { data, error } = await supabaseAdmin
+    .from("blog_posts")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ posts: data });
+}
+
+export async function POST(req: NextRequest) {
+  const denied = await requireAdmin(req, "canManageBlog");
+  if (denied) return denied;
+
+  try {
+    const body = await req.json();
+    const { title, content, author, featured_image_url, is_published } = body;
+
+    if (!title || !content) {
+      return NextResponse.json({ error: "Title and content are required" }, { status: 400 });
+    }
+
+    const cleanContent = sanitizeContent(content);
+    let slug = slugify(title);
+
+    const { data: existing } = await supabaseAdmin
+      .from("blog_posts")
+      .select("id")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (existing) slug = `${slug}-${Date.now()}`;
+
+    const { data: post, error } = await supabaseAdmin
+      .from("blog_posts")
+      .insert({
+        title: title.trim(),
+        slug,
+        content: cleanContent,
+        author: author?.trim() || null,
+        featured_image_url: featured_image_url || null,
+        is_published: !!is_published,
+        published_at: is_published ? new Date().toISOString() : null,
+      })
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ post }, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "Failed to create post" }, { status: 500 });
+  }
+}
 </file>
 
 <file path="tinytots-web/web/app/api/admin/complaints/[id]/route.ts">
@@ -8141,164 +8463,6 @@ export async function GET(request: NextRequest) {
 }
 </file>
 
-<file path="tinytots-web/web/app/api/admin/reports/route.ts">
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
-import { requireAdmin } from "@/lib/require-admin";
-
-export async function GET(req: NextRequest) {
-  const denied = await requireAdmin(req, "canManageOrders");
-  if (denied) return denied;
-
-  const { searchParams } = new URL(req.url);
-  const start = searchParams.get("start");
-  const end = searchParams.get("end");
-
-  if (!start || !end) {
-    return NextResponse.json({ error: "start and end are required" }, { status: 400 });
-  }
-
-  try {
-    // ---- Sales overview ----
-    const { data: orders, error: ordersError } = await supabaseAdmin
-      .from("orders")
-      .select("id, total, subtotal, discount_total, status, created_at, coupon_code, voucher_id")
-      .gte("created_at", start)
-      .lte("created_at", end);
-
-    if (ordersError) {
-      return NextResponse.json({ error: ordersError.message }, { status: 500 });
-    }
-
-    const validOrders = (orders || []).filter((o) => o.status !== "cancelled");
-    const revenue = validOrders.reduce((sum, o) => sum + Number(o.total), 0);
-    const orderCount = validOrders.length;
-    const avgOrderValue = orderCount > 0 ? revenue / orderCount : 0;
-    const totalDiscountGiven = validOrders.reduce((sum, o) => sum + Number(o.discount_total || 0), 0);
-
-    // Orders grouped by day, for a simple daily breakdown table
-    const byDay: Record<string, { count: number; revenue: number }> = {};
-    for (const o of validOrders) {
-      const day = new Date(o.created_at).toISOString().slice(0, 10);
-      if (!byDay[day]) byDay[day] = { count: 0, revenue: 0 };
-      byDay[day].count += 1;
-      byDay[day].revenue += Number(o.total);
-    }
-    const dailyBreakdown = Object.entries(byDay)
-      .map(([day, v]) => ({ day, ...v }))
-      .sort((a, b) => a.day.localeCompare(b.day));
-
-    // ---- Coupons ----
-    const ordersWithCoupon = validOrders.filter((o) => o.coupon_code);
-    const couponUsage: Record<string, { uses: number; discountGiven: number }> = {};
-    for (const o of ordersWithCoupon) {
-      const code = o.coupon_code as string;
-      if (!couponUsage[code]) couponUsage[code] = { uses: 0, discountGiven: 0 };
-      couponUsage[code].uses += 1;
-      couponUsage[code].discountGiven += Number(o.discount_total || 0);
-    }
-    const couponBreakdown = Object.entries(couponUsage)
-      .map(([code, v]) => ({ code, ...v }))
-      .sort((a, b) => b.uses - a.uses);
-
-    // ---- Vouchers ----
-    const { data: vouchersInRange } = await supabaseAdmin
-      .from("vouchers")
-      .select("id, amount, is_used, source, created_at")
-      .gte("created_at", start)
-      .lte("created_at", end);
-
-    const vouchersIssued = vouchersInRange?.length || 0;
-    const vouchersUsed = vouchersInRange?.filter((v) => v.is_used).length || 0;
-    const vouchersBySource: Record<string, number> = {};
-    for (const v of vouchersInRange || []) {
-      vouchersBySource[v.source] = (vouchersBySource[v.source] || 0) + 1;
-    }
-
-    const ordersWithVoucher = validOrders.filter((o) => o.voucher_id);
-    const voucherRedeemedValue = ordersWithVoucher.length; // count only; amount is on vouchers table
-
-    // ---- Referrals ----
-    const { data: referralsInRange } = await supabaseAdmin
-      .from("referrals")
-      .select("id, reward_triggered, created_at")
-      .gte("created_at", start)
-      .lte("created_at", end);
-
-    const referralsCreated = referralsInRange?.length || 0;
-    const referralsRewarded = referralsInRange?.filter((r) => r.reward_triggered).length || 0;
-
-    // ---- Products: top sellers ----
-    const orderIds = validOrders.map((o) => o.id);
-    let topProducts: { product_id: number; name: string; quantity: number; revenue: number }[] = [];
-
-    if (orderIds.length > 0) {
-      const { data: items } = await supabaseAdmin
-        .from("order_items")
-        .select("variant_id, quantity, line_total, variants(product_id, products(name))")
-        .in("order_id", orderIds);
-
-      const productAgg: Record<number, { name: string; quantity: number; revenue: number }> = {};
-      for (const item of items || []) {
-        const variant = item.variants as any;
-        const productId = variant?.product_id;
-        const name = variant?.products?.name || "Unknown";
-        if (!productId) continue;
-        if (!productAgg[productId]) productAgg[productId] = { name, quantity: 0, revenue: 0 };
-        productAgg[productId].quantity += item.quantity;
-        productAgg[productId].revenue += Number(item.line_total);
-      }
-
-      topProducts = Object.entries(productAgg)
-        .map(([product_id, v]) => ({ product_id: Number(product_id), ...v }))
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 10);
-    }
-
-    // ---- Low stock alert (not time-bound, always current) ----
-    const { data: lowStockVariants } = await supabaseAdmin
-      .from("variants")
-      .select("id, sku, stock, reorder_level, products(name)")
-      .filter("stock", "lte", "reorder_level")
-      .eq("status", "active")
-      .order("stock", { ascending: true })
-      .limit(15);
-
-    return NextResponse.json({
-      sales: {
-        revenue,
-        orderCount,
-        avgOrderValue,
-        totalDiscountGiven,
-        dailyBreakdown,
-      },
-      coupons: {
-        totalUses: ordersWithCoupon.length,
-        totalDiscountGiven: couponBreakdown.reduce((s, c) => s + c.discountGiven, 0),
-        breakdown: couponBreakdown,
-      },
-      vouchers: {
-        issued: vouchersIssued,
-        used: vouchersUsed,
-        redeemedInOrders: voucherRedeemedValue,
-        bySource: vouchersBySource,
-      },
-      referrals: {
-        created: referralsCreated,
-        rewarded: referralsRewarded,
-      },
-      products: {
-        topSellers: topProducts,
-      },
-      lowStock: lowStockVariants || [],
-    });
-  } catch (err: any) {
-    console.error("Reports API error:", err);
-    return NextResponse.json({ error: err.message || "Failed to generate report" }, { status: 500 });
-  }
-}
-</file>
-
 <file path="tinytots-web/web/app/api/admin/team/route.ts">
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -8836,6 +9000,185 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ data: order }, { status: 200 });
+}
+</file>
+
+<file path="tinytots-web/web/app/blog/[slug]/page.tsx">
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+export const dynamic = "force-dynamic";
+
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
+  const { data: post } = await supabaseAdmin
+    .from("blog_posts")
+    .select("id, title, author, content, featured_image_url, published_at, is_published")
+    .eq("slug", slug)
+    .single();
+
+  if (!post || !post.is_published) {
+    notFound();
+  }
+
+  return (
+    <div className="w-full max-w-full overflow-x-hidden py-8 px-4 sm:px-6">
+      <article className="w-full max-w-3xl mx-auto">
+        {/* Navigation Link */}
+        <Link
+          href="/blog"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mb-6"
+        >
+          ← Back to Blog
+        </Link>
+
+        {/* 1. Featured Image ABOVE Title */}
+        {post.featured_image_url && (
+          <div className="mb-6 rounded-2xl overflow-hidden border border-outline-variant/20 shadow-sm">
+            <img
+              src={post.featured_image_url}
+              alt={post.title}
+              className="w-full h-auto max-h-[420px] object-cover"
+            />
+          </div>
+        )}
+
+        {/* 2. Header: Title & Metadata */}
+        <header className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight leading-tight mb-2">
+            {post.title}
+          </h1>
+
+          <p className="text-xs sm:text-sm text-primary uppercase tracking-wider font-semibold">
+            By {post.author || "TinyTots Editorial"} ·{" "}
+            {post.published_at
+              ? new Date(post.published_at).toLocaleDateString()
+              : ""}
+          </p>
+        </header>
+
+        {/* 3. Text Content (Controlled Size) */}
+        <div
+          className="w-full text-on-surface text-base leading-relaxed space-y-4 pt-2
+break-words [&_*]:max-w-full [&_*]:box-border
+            [&_p]:mb-4 [&_p]:leading-relaxed
+            [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-2
+            [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-2
+            [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2
+            [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2
+            [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
+            [&_strong]:font-semibold [&_strong]:text-on-surface
+[&_a]:text-primary [&_a]:underline [&_a]:break-all
+            [&_img]:rounded-xl [&_img]:my-6 [&_img]:h-auto"
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
+      </article>
+    </div>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/blog/page.tsx">
+import Link from "next/link";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+export const dynamic = "force-dynamic";
+function getPlainTextExcerpt(htmlContent: string, maxLength: number = 130) {
+  if (!htmlContent) return "";
+  const withoutTags = htmlContent.replace(/<[^>]+>/g, "");
+  const decoded = withoutTags
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (decoded.length <= maxLength) return decoded;
+  return decoded.substring(0, maxLength) + "...";
+}
+export default async function BlogPage() {
+  const { data: posts } = await supabaseAdmin
+    .from("blog_posts")
+    .select("id, title, slug, author, content, featured_image_url, published_at, is_published")
+    .eq("is_published", true)
+    .order("published_at", { ascending: false });
+
+  return (
+    <div className="w-full min-h-screen py-10 px-4 sm:px-6 max-w-4xl mx-auto">
+      {/* Page Header */}
+      <div className="mb-10 text-center sm:text-left">
+        <h1 className="text-3xl sm:text-5xl font-bold text-on-surface tracking-tight mb-3">
+          TinyTots Journal
+        </h1>
+        <p className="text-on-surface-variant text-base sm:text-lg">
+          Stories, style guides, and care tips for your little ones.
+        </p>
+      </div>
+
+      {/* Fluffy Stacked Rectangles List */}
+      <div className="flex flex-col gap-5">
+        {posts?.map((post) => (
+          <Link
+            key={post.id}
+            href={`/blog/${post.slug}`}
+            className="group flex flex-col sm:flex-row items-stretch gap-5 rounded-3xl bg-surface border border-outline-variant/30 hover:border-primary/40 hover:shadow-md transition-all p-5"
+          >
+            {/* Image Box */}
+            <div className="h-40 sm:h-36 w-full sm:w-48 rounded-2xl overflow-hidden border border-outline-variant/20 bg-surface-container-low shrink-0 flex items-center justify-center">
+              {post.featured_image_url ? (
+                <img
+                  src={post.featured_image_url}
+                  alt={post.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              ) : (
+                <span className="text-xs font-semibold text-on-surface-variant/40 uppercase tracking-widest">
+                  TinyTots
+                </span>
+              )}
+            </div>
+
+            {/* Content & Metadata Window */}
+            <div className="flex flex-col justify-between w-full min-w-0 py-0.5">
+              <div>
+                <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">
+                  By {post.author || "TinyTots Editorial"}
+                </p>
+
+                <h2 className="font-bold text-on-surface text-lg sm:text-xl leading-snug group-hover:text-primary transition-colors mb-2">
+                  {post.title}
+                </h2>
+
+                <p className="text-xs sm:text-sm text-on-surface-variant line-clamp-2 leading-relaxed">
+                  {getPlainTextExcerpt(post.content)}
+                </p>
+              </div>
+
+              {/* Bottom Footer Line */}
+              <div className="flex items-center justify-between text-xs font-medium text-on-surface-variant mt-3 pt-2.5 border-t border-outline-variant/15">
+                <span>
+                  {post.published_at
+                    ? new Date(post.published_at).toLocaleDateString()
+                    : ""}
+                </span>
+                <span className="text-primary group-hover:underline font-semibold">
+                  Read Article →
+                </span>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }
 </file>
 
@@ -10103,6 +10446,175 @@ export default function TagInput({
 }
 </file>
 
+<file path="tinytots-web/web/components/ui/expandable-bento-grid.tsx">
+'use client'
+
+import React, { useEffect, useId, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useOutsideClick } from '@/hooks/use-outside-click'
+import { X } from 'lucide-react'
+
+export interface BentoGridProps {
+    items: {
+        id: string | number
+        title: string
+        subtitle?: string
+        description?: string
+        content: React.ReactNode
+        icon?: React.ReactNode
+        className?: string
+    }[]
+}
+
+export default function ExpandableBentoGrid({ items }: BentoGridProps) {
+    const [active, setActive] = useState<(typeof items)[number] | boolean | null>(null)
+    const ref = useRef<HTMLDivElement>(null)
+    const id = useId()
+
+    useEffect(() => {
+        function onKeyDown(event: KeyboardEvent) {
+            if (event.key === 'Escape') {
+                setActive(false)
+            }
+        }
+
+        if (active && typeof active === 'object') {
+            document.body.style.overflow = 'hidden'
+        } else {
+            document.body.style.overflow = 'auto'
+        }
+
+        window.addEventListener('keydown', onKeyDown)
+        return () => window.removeEventListener('keydown', onKeyDown)
+    }, [active])
+
+    useOutsideClick(ref, () => setActive(null))
+
+    return (
+        <>
+            <AnimatePresence>
+                {active && typeof active === 'object' && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/20 h-full w-full z-[10000]"
+                    />
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {active && typeof active === 'object' ? (
+                    <div className=" fixed inset-0 top-16 grid place-items-center z-[10001] ">
+                        <motion.button
+                            key={`button-${active.title}-${id}`}
+                            layout
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0, transition: { duration: 0.05 } }}
+                            className="flex absolute top-2 right-2 md:right-10 lg:hidden items-center justify-center bg-white rounded-full h-6 w-6"
+                            onClick={() => setActive(null)}
+                        >
+                            <X className="h-4 w-4 dark:text-white text-black" />
+                            
+                        </motion.button>
+                        <motion.div
+                            layoutId={`card-${active.title}-${id}`}
+                            ref={ref}
+                            className="w-full max-w-[500px] h-full md:h-fit md:max-h-[90%] flex flex-col bg-white dark:bg-neutral-900 sm:rounded-3xl overflow-hidden"
+                        >
+                            <motion.div layoutId={`image-${active.title}-${id}`}>
+                                <div className="w-full h-40 md:h-50 lg:h-60 bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center perspective-distant transform-3d">
+                                    {active.icon ? (
+                                        <div className="scale-[2] text-blue-500">{active.icon}</div>
+                                    ) : (
+                                        <div className="w-full h-full bg-gray-200" />
+                                    )}
+                                </div>
+                            </motion.div>
+
+                            <div >
+                                <div className="flex justify-between p-4  items-center">
+                                    <div className="">
+                                        <motion.h3
+                                            layoutId={`title-${active.title}-${id}`}
+                                            className="font-bold text-neutral-700 dark:text-neutral-200 md:text-sm "
+                                        >
+                                            {active.title}
+                                        </motion.h3>
+                                        <motion.p
+                                            layoutId={`description-${active.title}-${id}`}
+                                            className="text-neutral-600 dark:text-neutral-400 text-[14px] text-balance"
+                                        >
+                                            {active.description}
+                                        </motion.p>
+                                    </div>
+
+                                    <motion.a
+                                        layoutId={`button-${active.title}-${id}`}
+                                        href="#"
+                                        target="_blank"
+                                        className="px-4 py-3 text-sm rounded-2xl font-bold bg-blue-100 dark:bg-blue-900/30 text-white"
+                                    >
+                                        Visit
+                                    </motion.a>
+                                </div>
+
+
+                             
+                                  <div className="pt-4  px-4  flex justify-center mx-auto overflow-auto">
+                                    <motion.div
+                                        layout
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="text-neutral-600 text-xs md:text-sm lg:text-base h-40 md:h-fit pb-5 flex flex-col items-start gap-4  dark:text-neutral-400 [mask:linear-gradient(to_bottom,white,white,transparent)] [scrollbar-width:none] [-ms-overflow-style:none] [-webkit-overflow-scrolling:touch]"
+                                    >
+                                        {active.content}
+                                    </motion.div>
+                                </div>
+                              </div>
+                          
+                        </motion.div>
+                    </div>
+                ) : null}
+            </AnimatePresence>
+            <ul className="max-w-4xl mx-auto w-full gap-2 lg:gap-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  items-start ">
+                {items.map((item) => (
+                    <motion.div
+                        layoutId={`card-${item.title}-${id}`}
+                        key={item.id}
+                        onClick={() => setActive(item)}
+                        className="p-4 flex flex-col md:flex-row justify-between items-center hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl cursor-pointer bg-blue-50/60 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 transition-colors"
+                    >
+                        <div className="flex gap-3 flex-row items-center justify-center mx-auto ">
+                            <motion.div layoutId={`image-${item.title}-${id}`}>
+                                <div className="h-14 w-14 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 p-1">
+                                    {item.icon}
+                                </div>
+                            </motion.div>
+                            <div className="">
+                                <motion.h3
+                                    layoutId={`title-${item.title}-${id}`}
+                                    className="font-medium  text-neutral-800 dark:text-neutral-200  text-left"
+                                >
+                                    {item.title}
+                                </motion.h3>
+                                <motion.p
+                                    layoutId={`description-${item.title}-${id}`}
+                                    className="text-neutral-600 dark:text-neutral-400 text-left  text-xs md:text-[14px]"
+                                >
+                                    {item.subtitle}
+                                </motion.p>
+                            </div>
+                        </div>
+                    </motion.div>
+                ))}
+            </ul>
+        </>
+    )
+}
+</file>
+
 <file path="tinytots-web/web/components/CouponInput.tsx">
 "use client";
 
@@ -10496,72 +11008,6 @@ export async function adminFetch(url: string, options: RequestInit = {}) {
 }
 </file>
 
-<file path="tinytots-web/web/lib/ai-photo-prompts.ts">
-// Builds the instruction text sent to Gemini alongside the raw garment image.
-// Each "shotType" is a separate, independent call — not one big multi-image
-// request — so calls can run in parallel and never hit the single-image-drop
-// issue a combined prompt caused in earlier testing.
-
-export type ShotType =
-  | "studio"
-  | "lifestyle_front"
-  | "lifestyle_action"
-  | "detail"
-  | "back"
-  | "group_hero";
-
-interface PromptContext {
-  shotType: ShotType;
-  colorName?: string;       // e.g. "Red" — used for multi-variant batches
-  isGroupShot?: boolean;    // true only for the one combinator image
-}
-
-const BASE_ROLE = `You are an elite e-commerce product photographer and art director
-for TINYTOTS children's apparel. Completely remove hangers, tags, background
-clutter, and wrinkles from the source image. Maintain 100% exact design fidelity:
-same colors, stripe/pattern order, collar/ribbing color, sleeve length, fabric
-texture, and logo placement as the source photo. Do not invent or alter the
-design in any way.`;
-
-const SHOT_PROMPTS: Record<ShotType, string> = {
-  studio: `Generate ONE image: a clean e-commerce studio product shot using an
-invisible-mannequin / ghost-mannequin technique. Calm, minimalist beige or
-pastel studio backdrop, soft diffused lighting, no hangers, no shadows from
-hardware. High resolution, ultra-detailed fabric texture.`,
-
-  lifestyle_front: `Generate ONE image: a photorealistic lifestyle photo of a
-diverse child model wearing this exact garment, front-facing, in a bright
-minimalist indoor studio or playroom setting. Natural joyful expression,
-85mm lens look, soft natural lighting, photorealistic skin texture.`,
-
-  lifestyle_action: `Generate ONE image: a candid lifestyle photo of a child
-model wearing this exact garment in an outdoor, sunlit park or garden setting,
-mid-play or walking. Shallow depth of field, natural golden-hour lighting.`,
-
-  detail: `Generate ONE image: a macro close-up shot focusing on the fabric
-texture, collar/neckline, and any logo or print detail of this garment, worn
-by a child model. Crisp focus, shallow depth of field.`,
-
-  back: `Generate ONE image: a photorealistic lifestyle shot of a child model
-shown from the back or 3/4 angle, wearing this exact garment, so the back
-design/construction is visible. Same calm aesthetic background style as the
-other shots.`,
-
-  group_hero: `Generate ONE hero image: multiple child models standing
-together side-by-side, each wearing a different colorway of this exact
-garment style, arranged naturally in a clean, calm studio or lifestyle
-setting. All colorways must be clearly visible and distinct.`,
-};
-
-export function buildPrompt(ctx: PromptContext): string {
-  const colorLine = ctx.colorName
-    ? `\n\nThis specific image must show the "${ctx.colorName}" colorway only.`
-    : "";
-
-  return `${BASE_ROLE}\n\n${SHOT_PROMPTS[ctx.shotType]}${colorLine}`;
-}
-</file>
-
 <file path="tinytots-web/web/lib/auth-context.tsx">
 "use client";
 
@@ -10629,54 +11075,6 @@ export const gemini = new GoogleGenAI({ apiKey });
 export const IMAGE_MODEL = "gemini-2.5-flash-image";
 </file>
 
-<file path="tinytots-web/web/lib/require-admin.ts">
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { supabaseAdmin } from "@/lib/supabase-admin";
-import { can, ROLE_PERMISSIONS } from "@/lib/admin-permissions";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-// Verifies the request carries a valid session AND that the session
-// belongs to an active admin_users row with the required permission.
-// Returns null if allowed, or a NextResponse to return immediately if not.
-export async function requireAdmin(
-  request: NextRequest,
-  permission?: keyof typeof ROLE_PERMISSIONS["admin"]
-) {
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.replace("Bearer ", "");
-
-  if (!token) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
-  const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
-
-  if (userError || !userData?.user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  const { data: adminRow, error: adminError } = await supabaseAdmin
-    .from("admin_users")
-    .select("role, is_active")
-    .eq("auth_user_id", userData.user.id)
-    .maybeSingle();
-
-  if (adminError || !adminRow || !adminRow.is_active) {
-    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
-  }
-
-  if (permission && !can(adminRow.role, permission)) {
-    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
-  }
-
-  return null; // allowed
-}
-</file>
-
 <file path="tinytots-web/web/lib/supabase.ts">
 import { createClient } from '@supabase/supabase-js';
 
@@ -10689,6 +11087,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+</file>
+
+<file path="tinytots-web/web/lib/utils.ts">
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 </file>
 
 <file path="tinytots-web/web/public/file.svg">
@@ -29360,6 +29767,34 @@ enabled = true
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
+</file>
+
+<file path="tinytots-web/web/components.json">
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-nova",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "lucide",
+  "rtl": false,
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "menuColor": "default",
+  "menuAccent": "subtle",
+  "registries": {}
+}
 </file>
 
 <file path="tinytots-web/web/eslint.config.mjs">
@@ -66126,251 +66561,304 @@ export default function AdminProductsPage() {
 }
 </file>
 
-<file path="tinytots-web/web/app/admin/referrals/page.tsx">
+<file path="tinytots-web/web/app/admin/reports/page.tsx">
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { adminFetch } from "@/lib/admin-fetch"; // ⚠️ confirm this path is correct
+import React, { useEffect, useState, useCallback } from "react";
+import { adminFetch } from "@/lib/admin-fetch";
 
-interface CustomerLite {
-  id: number;
-  full_name: string | null;
-  phone: string;
+interface ReportData {
+  sales: {
+    revenue: number;
+    orderCount: number;
+    avgOrderValue: number;
+    totalDiscountGiven: number;
+    dailyBreakdown: { day: string; count: number; revenue: number }[];
+  };
+  coupons: {
+    totalUses: number;
+    totalDiscountGiven: number;
+    breakdown: { code: string; uses: number; discountGiven: number }[];
+  };
+  vouchers: {
+    issued: number;
+    used: number;
+    redeemedInOrders: number;
+    bySource: Record<string, number>;
+  };
+  referrals: {
+    created: number;
+    rewarded: number;
+  };
+  products: {
+    topSellers: { product_id: number; name: string; quantity: number; revenue: number }[];
+  };
+  lowStock: { id: number; sku: string | null; stock: number; reorder_level: number; product_name: string | null }[];
 }
 
-interface Referral {
-  id: number;
-  referral_code: string;
-  reward_triggered: boolean;
-  created_at: string;
-  referrer: CustomerLite | null;
-  referee: CustomerLite | null;
+type PresetRange = "today" | "week" | "month" | "custom";
+
+function getPresetDates(preset: PresetRange): { start: string; end: string } {
+  const now = new Date();
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
+
+  let start = new Date(now);
+  if (preset === "today") {
+    start.setHours(0, 0, 0, 0);
+  } else if (preset === "week") {
+    start.setDate(start.getDate() - 7);
+    start.setHours(0, 0, 0, 0);
+  } else if (preset === "month") {
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+  }
+
+  return { start: start.toISOString(), end: end.toISOString() };
 }
 
-interface Voucher {
-  id: number;
-  customer_id: number;
-  amount: number;
-  is_used: boolean;
-  source: string;
-  expires_at: string;
-  created_at: string;
-  customer: CustomerLite | null;
-}
-
-export default function AdminReferralsPage() {
-  const [referrals, setReferrals] = useState<Referral[]>([]);
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+export default function AdminReportsPage() {
+  const [preset, setPreset] = useState<PresetRange>("month");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [issuingId, setIssuingId] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const fetchData = async () => {
+  const fetchReport = useCallback(async () => {
+    let start: string, end: string;
+
+    if (preset === "custom") {
+      if (!customStart || !customEnd) return;
+      start = new Date(customStart).toISOString();
+      end = new Date(new Date(customEnd).setHours(23, 59, 59, 999)).toISOString();
+    } else {
+      const dates = getPresetDates(preset);
+      start = dates.start;
+      end = dates.end;
+    }
+
     try {
       setLoading(true);
-      const res = await adminFetch("/api/admin/referrals");
-      const data = await res.json();
+      setErrorMsg("");
+      const res = await adminFetch(`/api/admin/reports?start=${start}&end=${end}`);
+      const json = await res.json();
       if (res.ok) {
-        setReferrals(data.referrals || []);
-        setVouchers(data.vouchers || []);
+        setData(json);
       } else {
-        setErrorMsg(data.error || "Failed to load referrals");
+        setErrorMsg(json.error || "Failed to load report");
       }
     } catch (err) {
-      console.error("Failed to load referrals", err);
-      setErrorMsg("Failed to load referrals");
+      console.error("Failed to load report", err);
+      setErrorMsg("Failed to load report");
     } finally {
       setLoading(false);
     }
-  };
+  }, [preset, customStart, customEnd]);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchReport();
+  }, [fetchReport]);
 
-  const handleIssueReward = async (referralId: number) => {
-    setIssuingId(referralId);
-    setErrorMsg("");
-    try {
-      const res = await adminFetch("/api/admin/referrals/issue-reward", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ referral_id: referralId }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to issue reward");
-      }
-      await fetchData();
-    } catch (err: any) {
-      setErrorMsg(err.message);
-    } finally {
-      setIssuingId(null);
-    }
-  };
-
-  const toggleVoucherUsed = async (voucherId: number, currentUsed: boolean) => {
-    try {
-      const res = await adminFetch("/api/admin/referrals", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voucher_id: voucherId, is_used: !currentUsed }),
-      });
-      if (res.ok) {
-        setVouchers((prev) =>
-          prev.map((v) => (v.id === voucherId ? { ...v, is_used: !currentUsed } : v))
-        );
-      }
-    } catch (err) {
-      console.error("Failed to update voucher", err);
-    }
-  };
+  const StatCard = ({ label, value }: { label: string; value: string }) => (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+      <p className="text-xs text-gray-400 uppercase mb-1">{label}</p>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
+    </div>
+  );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-10">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Referrals & Vouchers</h1>
-        <p className="text-sm text-gray-500">
-          Track customer referrals and manage reward vouchers
-        </p>
+    <div className="max-w-7xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+        <p className="text-sm text-gray-500">Sales, promotions, and product performance</p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        {(["today", "week", "month"] as const).map((p) => (
+          <button
+            key={p}
+            onClick={() => setPreset(p)}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium ${
+              preset === p ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {p === "today" ? "Today" : p === "week" ? "Last 7 Days" : "This Month"}
+          </button>
+        ))}
+        <button
+          onClick={() => setPreset("custom")}
+          className={`px-3 py-1.5 rounded-md text-xs font-medium ${
+            preset === "custom" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          Custom
+        </button>
+        {preset === "custom" && (
+          <>
+            <input
+              type="date"
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              className="border border-gray-300 rounded-md px-2 py-1.5 text-xs"
+            />
+            <span className="text-xs text-gray-400">to</span>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+              className="border border-gray-300 rounded-md px-2 py-1.5 text-xs"
+            />
+          </>
+        )}
       </div>
 
       {errorMsg && (
-        <div className="p-3 bg-red-50 text-red-700 text-sm rounded">{errorMsg}</div>
+        <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded">{errorMsg}</div>
       )}
 
-      {/* Referrals table */}
-      <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Referrals</h2>
-        {loading ? (
-          <div className="text-center py-12 text-gray-500">Loading...</div>
-        ) : referrals.length === 0 ? (
-          <div className="bg-white rounded-lg border border-dashed border-gray-300 p-12 text-center text-gray-500">
-            No referrals yet.
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-            <table className="w-full text-left text-sm text-gray-600">
-              <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider border-b">
-                <tr>
-                  <th className="px-6 py-3">Code</th>
-                  <th className="px-6 py-3">Referrer</th>
-                  <th className="px-6 py-3">Referee</th>
-                  <th className="px-6 py-3">Reward</th>
-                  <th className="px-6 py-3">Created</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {referrals.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-mono font-bold text-indigo-600">
-                      {r.referral_code}
-                    </td>
-                    <td className="px-6 py-4">
-                      {r.referrer?.full_name || r.referrer?.phone || "—"}
-                    </td>
-                    <td className="px-6 py-4">
-                      {r.referee
-                        ? r.referee.full_name || r.referee.phone
-                        : <span className="text-gray-400">Not yet redeemed</span>}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${
-                          r.reward_triggered
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {r.reward_triggered ? "Issued" : "Pending"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {new Date(r.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {!r.reward_triggered && r.referee ? (
-                        <button
-                          onClick={() => handleIssueReward(r.id)}
-                          disabled={issuingId === r.id}
-                          className="text-xs font-medium text-indigo-600 hover:text-indigo-800 underline disabled:opacity-50"
-                        >
-                          {issuingId === r.id ? "Issuing..." : "Issue Reward"}
-                        </button>
-                      ) : !r.referee ? (
-                        <span className="text-xs text-gray-400">Awaiting referee</span>
-                      ) : (
-                        <span className="text-xs text-gray-400">Done</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      {loading ? (
+        <div className="text-center py-12 text-gray-500">Loading report...</div>
+      ) : data ? (
+        <div className="flex flex-col gap-8">
+          {/* Sales overview */}
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Sales Overview</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <StatCard label="Revenue" value={`Rs. ${data.sales.revenue.toLocaleString()}`} />
+              <StatCard label="Orders" value={data.sales.orderCount.toString()} />
+              <StatCard label="Avg Order Value" value={`Rs. ${Math.round(data.sales.avgOrderValue).toLocaleString()}`} />
+              <StatCard label="Discounts Given" value={`Rs. ${data.sales.totalDiscountGiven.toLocaleString()}`} />
+            </div>
+            {data.sales.dailyBreakdown.length > 0 && (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                <table className="w-full text-left text-sm text-gray-600">
+                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
+                    <tr>
+                      <th className="px-4 py-2">Date</th>
+                      <th className="px-4 py-2">Orders</th>
+                      <th className="px-4 py-2">Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {data.sales.dailyBreakdown.map((d) => (
+                      <tr key={d.day}>
+                        <td className="px-4 py-2">{d.day}</td>
+                        <td className="px-4 py-2">{d.count}</td>
+                        <td className="px-4 py-2">Rs. {d.revenue.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
 
-      {/* Vouchers table */}
-      <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Vouchers</h2>
-        {loading ? (
-          <div className="text-center py-12 text-gray-500">Loading...</div>
-        ) : vouchers.length === 0 ? (
-          <div className="bg-white rounded-lg border border-dashed border-gray-300 p-12 text-center text-gray-500">
-            No vouchers issued yet.
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-            <table className="w-full text-left text-sm text-gray-600">
-              <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider border-b">
-                <tr>
-                  <th className="px-6 py-3">Customer</th>
-                  <th className="px-6 py-3">Amount</th>
-                  <th className="px-6 py-3">Source</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Expires</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {vouchers.map((v) => (
-                  <tr key={v.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      {v.customer?.full_name || v.customer?.phone || "—"}
-                    </td>
-                    <td className="px-6 py-4">${v.amount}</td>
-                    <td className="px-6 py-4 capitalize">{v.source}</td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${
-                          v.is_used
-                            ? "bg-gray-100 text-gray-800"
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {v.is_used ? "Used" : "Active"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {new Date(v.expires_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => toggleVoucherUsed(v.id, v.is_used)}
-                        className="text-xs font-medium text-gray-600 hover:text-gray-900 underline"
-                      >
-                        {v.is_used ? "Mark unused" : "Void"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+          {/* Coupons */}
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Coupon Performance</h2>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <StatCard label="Total Uses" value={data.coupons.totalUses.toString()} />
+              <StatCard label="Discount Given" value={`Rs. ${data.coupons.totalDiscountGiven.toLocaleString()}`} />
+            </div>
+            {data.coupons.breakdown.length > 0 ? (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                <table className="w-full text-left text-sm text-gray-600">
+                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
+                    <tr>
+                      <th className="px-4 py-2">Code</th>
+                      <th className="px-4 py-2">Uses</th>
+                      <th className="px-4 py-2">Discount Given</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {data.coupons.breakdown.map((c) => (
+                      <tr key={c.code}>
+                        <td className="px-4 py-2 font-mono font-bold text-indigo-600">{c.code}</td>
+                        <td className="px-4 py-2">{c.uses}</td>
+                        <td className="px-4 py-2">Rs. {c.discountGiven.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">No coupons used in this period.</p>
+            )}
+          </section>
+
+          {/* Vouchers & Referrals */}
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Vouchers & Referrals</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard label="Vouchers Issued" value={data.vouchers.issued.toString()} />
+              <StatCard label="Vouchers Used" value={data.vouchers.used.toString()} />
+              <StatCard label="Referrals Created" value={data.referrals.created.toString()} />
+              <StatCard label="Referrals Rewarded" value={data.referrals.rewarded.toString()} />
+            </div>
+          </section>
+
+          {/* Top products */}
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Top Selling Products</h2>
+            {data.products.topSellers.length > 0 ? (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                <table className="w-full text-left text-sm text-gray-600">
+                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
+                    <tr>
+                      <th className="px-4 py-2">Product</th>
+                      <th className="px-4 py-2">Units Sold</th>
+                      <th className="px-4 py-2">Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {data.products.topSellers.map((p) => (
+                      <tr key={p.product_id}>
+                        <td className="px-4 py-2">{p.name}</td>
+                        <td className="px-4 py-2">{p.quantity}</td>
+                        <td className="px-4 py-2">Rs. {p.revenue.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">No sales in this period.</p>
+            )}
+          </section>
+
+          {/* Low stock alert */}
+          <section>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Low Stock Alert</h2>
+            {data.lowStock.length > 0 ? (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                <table className="w-full text-left text-sm text-gray-600">
+                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
+                    <tr>
+                      <th className="px-4 py-2">SKU</th>
+                      <th className="px-4 py-2">Product</th>
+                      <th className="px-4 py-2">Stock</th>
+                      <th className="px-4 py-2">Reorder Level</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                  {data.lowStock.map((v) => (
+  <tr key={v.id} className="text-red-600">
+    <td className="px-4 py-2 font-mono">{v.sku ?? "N/A"}</td>
+    <td className="px-4 py-2">{v.product_name ?? "Unknown Product"}</td>
+    <td className="px-4 py-2">{v.stock}</td>
+    <td className="px-4 py-2">{v.reorder_level}</td>
+  </tr>
+))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">All stock levels healthy.</p>
+            )}
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -66527,139 +67015,6 @@ export default function TeamPage() {
 }
 </file>
 
-<file path="tinytots-web/web/app/api/admin/coupons/route.ts">
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
-import { requireAdmin } from "@/lib/require-admin";
-
-// GET /api/admin/coupons - Fetch all coupons and referrals overview
-export async function GET(req: NextRequest) {
-  const denied = await requireAdmin(req, "canManageCoupons");
-  if (denied) return denied;
-
-  try {
-    const { data: coupons, error: couponsError } = await supabaseAdmin
-      .from("coupons")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (couponsError) {
-      return NextResponse.json({ error: couponsError.message }, { status: 500 });
-    }
-
-    const { data: referrals, error: referralsError } = await supabaseAdmin
-      .from("referrals")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (referralsError) {
-      // If referrals table query fails, fallback safely
-      return NextResponse.json({ coupons, referrals: [] });
-    }
-
-    return NextResponse.json({ coupons, referrals });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to fetch coupons" },
-      { status: 500 }
-    );
-  }
-}
-
-// POST /api/admin/coupons - Create a new coupon code
-export async function POST(req: NextRequest) {
-  const denied = await requireAdmin(req, "canManageCoupons");
-  if (denied) return denied;
-
-  try {
-    const body = await req.json();
-    const {
-      code,
-      discount_type,
-      value,
-      min_spend,
-      max_uses,
-      is_active,
-      expires_at,
-    } = body;
-
-    if (!code || !discount_type || value === undefined) {
-      return NextResponse.json(
-        { error: "Code, discount type, and value are required" },
-        { status: 400 }
-      );
-    }
-
-    if (!["percentage", "flat"].includes(discount_type)) {
-      return NextResponse.json(
-        { error: "discount_type must be 'percentage' or 'flat'" },
-        { status: 400 }
-      );
-    }
-
-    const uppercaseCode = code.trim().toUpperCase();
-
-    const { data: coupon, error } = await supabaseAdmin
-      .from("coupons")
-      .insert({
-        code: uppercaseCode,
-        discount_type, // 'percentage' | 'flat'
-        value: parseFloat(value),
-        min_spend: min_spend ? parseFloat(min_spend) : 0,
-        max_uses: max_uses ? parseInt(max_uses, 10) : null,
-        is_active: is_active ?? true,
-        expires_at: expires_at ? new Date(expires_at).toISOString() : null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ coupon });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to create coupon" },
-      { status: 500 }
-    );
-  }
-}
-
-// PATCH /api/admin/coupons - Toggle status or update coupon
-export async function PATCH(req: NextRequest) {
-  const denied = await requireAdmin(req, "canManageCoupons");
-  if (denied) return denied;
-
-  try {
-    const body = await req.json();
-    const { id, is_active } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: "Missing coupon ID" }, { status: 400 });
-    }
-
-    const { data: coupon, error } = await supabaseAdmin
-      .from("coupons")
-      .update({ is_active })
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ coupon });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to update coupon" },
-      { status: 500 }
-    );
-  }
-}
-</file>
-
 <file path="tinytots-web/web/app/api/admin/orders/route.ts">
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -66687,176 +67042,159 @@ export async function GET(request: NextRequest) {
 }
 </file>
 
-<file path="tinytots-web/web/app/api/admin/referrals/issue-reward/route.ts">
+<file path="tinytots-web/web/app/api/admin/reports/route.ts">
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 
-const VOUCHER_AMOUNT = 100;
-const VOUCHER_VALID_DAYS = 30;
-
-// POST /api/admin/referrals/issue-reward - Manually issue the referral voucher
-export async function POST(req: NextRequest) {
-  const authError = await requireAdmin(req, "canManageReferrals");
-  if (authError) return authError;
-
-  try {
-    const { referral_id } = await req.json();
-
-    if (!referral_id) {
-      return NextResponse.json({ error: "Missing referral_id" }, { status: 400 });
-    }
-
-    const { data: referral, error: referralError } = await supabaseAdmin
-      .from("referrals")
-      .select("*")
-      .eq("id", referral_id)
-      .single();
-
-    if (referralError || !referral) {
-      return NextResponse.json({ error: "Referral not found" }, { status: 404 });
-    }
-
-    if (referral.reward_triggered) {
-      return NextResponse.json(
-        { error: "Reward already issued for this referral" },
-        { status: 400 }
-      );
-    }
-
-    if (!referral.referee_customer_id) {
-      return NextResponse.json(
-        { error: "This referral has no completed referee yet — cannot issue reward" },
-        { status: 400 }
-      );
-    }
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + VOUCHER_VALID_DAYS);
-
-    // 1. Create the voucher for the referrer
-    const { data: voucher, error: voucherError } = await supabaseAdmin
-      .from("vouchers")
-      .insert({
-        customer_id: referral.referrer_customer_id,
-        amount: VOUCHER_AMOUNT,
-        is_used: false,
-        source: "referral",
-        expires_at: expiresAt.toISOString(),
-      })
-      .select()
-      .single();
-
-    if (voucherError) {
-      return NextResponse.json({ error: voucherError.message }, { status: 500 });
-    }
-
-    // 2. Mark the referral as rewarded
-    const { error: updateError } = await supabaseAdmin
-      .from("referrals")
-      .update({ reward_triggered: true })
-      .eq("id", referral_id);
-
-    if (updateError) {
-      // Voucher exists but the flag update failed — surfaced clearly, not swallowed
-      return NextResponse.json(
-        {
-          error: `Voucher created (id ${voucher.id}) but failed to flag referral as rewarded: ${updateError.message}. Needs manual fix.`,
-        },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ voucher });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to issue reward" },
-      { status: 500 }
-    );
-  }
-}
-</file>
-
-<file path="tinytots-web/web/app/api/admin/referrals/route.ts">
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
-import { requireAdmin } from "@/lib/require-admin";
-
-// GET /api/admin/referrals - Fetch all referrals (with referrer/referee names) + all vouchers
 export async function GET(req: NextRequest) {
-  const authError = await requireAdmin(req, "canManageReferrals");
-  if (authError) return authError;
+  const denied = await requireAdmin(req, "canManageOrders");
+  if (denied) return denied;
+
+  const { searchParams } = new URL(req.url);
+  const start = searchParams.get("start");
+  const end = searchParams.get("end");
+
+  if (!start || !end) {
+    return NextResponse.json({ error: "start and end are required" }, { status: 400 });
+  }
 
   try {
-    const { data: referrals, error: referralsError } = await supabaseAdmin
-      .from("referrals")
-      .select(
-        `
-        id,
-        referral_code,
-        reward_triggered,
-        created_at,
-        referrer:customers!referrals_referrer_customer_id_fkey(id, full_name, phone),
-        referee:customers!referrals_referee_customer_id_fkey(id, full_name, phone)
-      `
-      )
-      .order("created_at", { ascending: false });
+    // ---- Sales overview ----
+    const { data: orders, error: ordersError } = await supabaseAdmin
+      .from("orders")
+      .select("id, total, subtotal, discount_total, status, created_at, coupon_code, voucher_id")
+      .gte("created_at", start)
+      .lte("created_at", end);
 
-    if (referralsError) {
-      return NextResponse.json({ error: referralsError.message }, { status: 500 });
+    if (ordersError) {
+      return NextResponse.json({ error: ordersError.message }, { status: 500 });
     }
 
-    const { data: vouchers, error: vouchersError } = await supabaseAdmin
+    const validOrders = (orders || []).filter((o) => o.status !== "cancelled");
+    const revenue = validOrders.reduce((sum, o) => sum + Number(o.total), 0);
+    const orderCount = validOrders.length;
+    const avgOrderValue = orderCount > 0 ? revenue / orderCount : 0;
+    const totalDiscountGiven = validOrders.reduce((sum, o) => sum + Number(o.discount_total || 0), 0);
+
+    // Orders grouped by day, for a simple daily breakdown table
+    const byDay: Record<string, { count: number; revenue: number }> = {};
+    for (const o of validOrders) {
+      const day = new Date(o.created_at).toISOString().slice(0, 10);
+      if (!byDay[day]) byDay[day] = { count: 0, revenue: 0 };
+      byDay[day].count += 1;
+      byDay[day].revenue += Number(o.total);
+    }
+    const dailyBreakdown = Object.entries(byDay)
+      .map(([day, v]) => ({ day, ...v }))
+      .sort((a, b) => a.day.localeCompare(b.day));
+
+    // ---- Coupons ----
+    const ordersWithCoupon = validOrders.filter((o) => o.coupon_code);
+    const couponUsage: Record<string, { uses: number; discountGiven: number }> = {};
+    for (const o of ordersWithCoupon) {
+      const code = o.coupon_code as string;
+      if (!couponUsage[code]) couponUsage[code] = { uses: 0, discountGiven: 0 };
+      couponUsage[code].uses += 1;
+      couponUsage[code].discountGiven += Number(o.discount_total || 0);
+    }
+    const couponBreakdown = Object.entries(couponUsage)
+      .map(([code, v]) => ({ code, ...v }))
+      .sort((a, b) => b.uses - a.uses);
+
+    // ---- Vouchers ----
+    const { data: vouchersInRange } = await supabaseAdmin
       .from("vouchers")
-      .select("*, customer:customers(id, full_name, phone)")
-      .order("created_at", { ascending: false });
+      .select("id, amount, is_used, source, created_at")
+      .gte("created_at", start)
+      .lte("created_at", end);
 
-    if (vouchersError) {
-      return NextResponse.json({ error: vouchersError.message }, { status: 500 });
+    const vouchersIssued = vouchersInRange?.length || 0;
+    const vouchersUsed = vouchersInRange?.filter((v) => v.is_used).length || 0;
+    const vouchersBySource: Record<string, number> = {};
+    for (const v of vouchersInRange || []) {
+      vouchersBySource[v.source] = (vouchersBySource[v.source] || 0) + 1;
     }
 
-    return NextResponse.json({ referrals, vouchers });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to fetch referrals" },
-      { status: 500 }
-    );
-  }
+    const ordersWithVoucher = validOrders.filter((o) => o.voucher_id);
+    const voucherRedeemedValue = ordersWithVoucher.length; // count only; amount is on vouchers table
+
+    // ---- Referrals ----
+    const { data: referralsInRange } = await supabaseAdmin
+      .from("referrals")
+      .select("id, reward_triggered, created_at")
+      .gte("created_at", start)
+      .lte("created_at", end);
+
+    const referralsCreated = referralsInRange?.length || 0;
+    const referralsRewarded = referralsInRange?.filter((r) => r.reward_triggered).length || 0;
+
+    // ---- Products: top sellers ----
+    const orderIds = validOrders.map((o) => o.id);
+    let topProducts: { product_id: number; name: string; quantity: number; revenue: number }[] = [];
+
+    if (orderIds.length > 0) {
+      const { data: items } = await supabaseAdmin
+        .from("order_items")
+        .select("variant_id, quantity, line_total, variants(product_id, products(name))")
+        .in("order_id", orderIds);
+
+      const productAgg: Record<number, { name: string; quantity: number; revenue: number }> = {};
+      for (const item of items || []) {
+        const variant = item.variants as any;
+        const productId = variant?.product_id;
+        const name = variant?.products?.name || "Unknown";
+        if (!productId) continue;
+        if (!productAgg[productId]) productAgg[productId] = { name, quantity: 0, revenue: 0 };
+        productAgg[productId].quantity += item.quantity;
+        productAgg[productId].revenue += Number(item.line_total);
+      }
+
+      topProducts = Object.entries(productAgg)
+        .map(([product_id, v]) => ({ product_id: Number(product_id), ...v }))
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 10);
+    }
+
+ // ---- Low stock alert (not time-bound, always current) ----
+ const { data: lowStockVariants, error: lowStockError } = await supabaseAdmin
+ .rpc("get_low_stock_variants", { limit_count: 15 });
+
+if (lowStockError) {
+ console.error("Low stock RPC failed:", lowStockError.message);
 }
 
-// PATCH /api/admin/referrals - Void/restore a voucher (mark is_used)
-export async function PATCH(req: NextRequest) {
-  const authError = await requireAdmin(req, "canManageReferrals");
-  if (authError) return authError;
-
-  try {
-    const body = await req.json();
-    const { voucher_id, is_used } = body;
-
-    if (!voucher_id || typeof is_used !== "boolean") {
-      return NextResponse.json(
-        { error: "voucher_id and is_used are required" },
-        { status: 400 }
-      );
-    }
-
-    const { data: voucher, error } = await supabaseAdmin
-      .from("vouchers")
-      .update({ is_used })
-      .eq("id", voucher_id)
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ voucher });
+    return NextResponse.json({
+      sales: {
+        revenue,
+        orderCount,
+        avgOrderValue,
+        totalDiscountGiven,
+        dailyBreakdown,
+      },
+      coupons: {
+        totalUses: ordersWithCoupon.length,
+        totalDiscountGiven: couponBreakdown.reduce((s, c) => s + c.discountGiven, 0),
+        breakdown: couponBreakdown,
+      },
+      vouchers: {
+        issued: vouchersIssued,
+        used: vouchersUsed,
+        redeemedInOrders: voucherRedeemedValue,
+        bySource: vouchersBySource,
+      },
+      referrals: {
+        created: referralsCreated,
+        rewarded: referralsRewarded,
+      },
+      products: {
+        topSellers: topProducts,
+      },
+      lowStock: lowStockVariants || [],
+    });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to update voucher" },
-      { status: 500 }
-    );
+    console.error("Reports API error:", err);
+    return NextResponse.json({ error: err.message || "Failed to generate report" }, { status: 500 });
   }
 }
 </file>
@@ -67225,59 +67563,56 @@ export default function ProductGallery({
 }
 </file>
 
-<file path="tinytots-web/web/lib/admin-permissions.ts">
-export type AdminRole = "admin" | "order_manager" | "support" | "inventory_only";
+<file path="tinytots-web/web/lib/require-admin.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { can, ROLE_PERMISSIONS } from "@/lib/admin-permissions";
+import { Agent, setGlobalDispatcher } from "undici";
 
-export const ROLE_PERMISSIONS: Record<AdminRole, {
-  canManageTeam: boolean;
-  canManageOrders: boolean;
-  canManageInventory: boolean;
-  canManageDiscounts: boolean;
-  canManageCoupons: boolean;
-  canManageReferrals: boolean;
-  canHandleComplaints: boolean;
-}> = {
-  admin: {
-    canManageTeam: true,
-    canManageOrders: true,
-    canManageInventory: true,
-    canManageDiscounts: true,
-    canManageCoupons: true,
-    canManageReferrals: true,
-    canHandleComplaints: true,
-  },
-  order_manager: {
-    canManageTeam: false,
-    canManageOrders: true,
-    canManageInventory: false,
-    canManageDiscounts: false,
-    canManageCoupons: false,
-    canManageReferrals: false,
-    canHandleComplaints: false,
-  },
-  support: {
-    canManageTeam: false,
-    canManageOrders: false,
-    canManageInventory: false,
-    canManageDiscounts: false,
-    canManageCoupons: false,
-    canManageReferrals: false,
-    canHandleComplaints: true,
-  },
-  inventory_only: {
-    canManageTeam: false,
-    canManageOrders: false,
-    canManageInventory: true,
-    canManageDiscounts: false,
-    canManageCoupons: false,
-    canManageReferrals: false,
-    canHandleComplaints: false,
-  },
-};
+// Same IPv4 fix as supabase-admin.ts — ensures it's applied even if this
+// file's supabaseAuth client is constructed before supabase-admin.ts runs.
+setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
 
-export function can(role: AdminRole | undefined, permission: keyof typeof ROLE_PERMISSIONS["admin"]) {
-  if (!role) return false;
-  return ROLE_PERMISSIONS[role][permission];
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+// Verifies the request carries a valid session AND that the session
+// belongs to an active admin_users row with the required permission.
+// Returns null if allowed, or a NextResponse to return immediately if not.
+export async function requireAdmin(
+  request: NextRequest,
+  permission?: keyof typeof ROLE_PERMISSIONS["admin"]
+) {
+  const authHeader = request.headers.get("authorization");
+  const token = authHeader?.replace("Bearer ", "");
+
+  if (!token) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+  const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+
+  if (userError || !userData?.user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const { data: adminRow, error: adminError } = await supabaseAdmin
+    .from("admin_users")
+    .select("role, is_active")
+    .eq("auth_user_id", userData.user.id)
+    .maybeSingle();
+
+  if (adminError || !adminRow || !adminRow.is_active) {
+    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  }
+
+  if (permission && !can(adminRow.role, permission)) {
+    return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  }
+
+  return null; // allowed
 }
 </file>
 
@@ -68189,93 +68524,399 @@ export default function NewProductPage() {
 }
 </file>
 
-<file path="tinytots-web/web/app/admin/layout.tsx">
+<file path="tinytots-web/web/app/admin/referrals/page.tsx">
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
-import Link from "next/link";
-import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth-context";
-import { can } from "@/lib/admin-permissions";
+import React, { useEffect, useState } from "react";
+import { adminFetch } from "@/lib/admin-fetch"; // ⚠️ confirm this path is correct
 
-function AdminShell({ children }: { children: React.ReactNode }) {
-  const { admin, loading, signOut } = useAdminAuth();
-  const pathname = usePathname();
-  const router = useRouter();
-  const isLoginPage = pathname === "/admin/login";
+interface CustomerLite {
+  id: number;
+  full_name: string | null;
+  phone: string;
+}
+
+interface Referral {
+  id: number;
+  referral_code: string;
+  reward_triggered: boolean;
+  created_at: string;
+  referrer: CustomerLite | null;
+  referee: CustomerLite | null;
+}
+
+interface Voucher {
+  id: number;
+  customer_id: number;
+  amount: number;
+  is_used: boolean;
+  source: string;
+  expires_at: string;
+  created_at: string;
+  customer: CustomerLite | null;
+}
+
+export default function AdminReferralsPage() {
+  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [issuingId, setIssuingId] = useState<number | null>(null);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const res = await adminFetch("/api/admin/referrals");
+      const data = await res.json();
+      if (res.ok) {
+        setReferrals(data.referrals || []);
+        setVouchers(data.vouchers || []);
+      } else {
+        setErrorMsg(data.error || "Failed to load referrals");
+      }
+    } catch (err) {
+      console.error("Failed to load referrals", err);
+      setErrorMsg("Failed to load referrals");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!loading && !admin && !isLoginPage) {
-      router.replace("/admin/login");
+    fetchData();
+  }, []);
+
+  const handleIssueReward = async (referralId: number) => {
+    setIssuingId(referralId);
+    setErrorMsg("");
+    try {
+      const res = await adminFetch("/api/admin/referrals/issue-reward", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ referral_id: referralId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to issue reward");
+      }
+      await fetchData();
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setIssuingId(null);
     }
-  }, [loading, admin, isLoginPage, router]);
+  };
 
-  if (isLoginPage) return <>{children}</>;
-
-  if (loading) {
-    return (
-      <main className="p-8 font-body-md text-body-md text-on-surface-variant">
-        Checking admin access...
-      </main>
-    );
-  }
-
-  if (!admin) {
-    // Redirect effect above will fire; render nothing meanwhile
-    return null;
-  }
-
-  const navItem = (href: string, label: string) => {
-    const active = pathname === href || (href !== "/admin" && pathname?.startsWith(href));
-    return (
-      <Link
-        href={href}
-        className={`block px-4 py-2 rounded-lg font-body-sm text-body-sm ${
-          active
-            ? "bg-primary-container text-on-primary"
-            : "text-on-surface-variant hover:bg-surface-container-low"
-        }`}
-      >
-        {label}
-      </Link>
-    );
+  const toggleVoucherUsed = async (voucherId: number, currentUsed: boolean) => {
+    try {
+      const res = await adminFetch("/api/admin/referrals", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voucher_id: voucherId, is_used: !currentUsed }),
+      });
+      if (res.ok) {
+        setVouchers((prev) =>
+          prev.map((v) => (v.id === voucherId ? { ...v, is_used: !currentUsed } : v))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to update voucher", err);
+    }
   };
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-60 shrink-0 border-r border-outline-variant/30 bg-surface-container-lowest p-4 flex flex-col gap-1">
-        <div className="font-display-sm text-display-sm text-primary mb-4 px-2">TinyTots Admin</div>
-        {navItem("/admin", "Dashboard")}
-        {can(admin.role, "canManageInventory") && navItem("/admin/products", "Products")}
-        {can(admin.role, "canManageOrders") && navItem("/admin/orders", "Orders")}
-        {can(admin.role, "canManageOrders") && navItem("/admin/reports", "Reports")}
-        {can(admin.role, "canManageDiscounts") && navItem("/admin/discounts", "Discounts")}
-        {can(admin.role, "canManageCoupons") && navItem("/admin/coupons", "Coupons")}
-        {can(admin.role, "canHandleComplaints") && navItem("/admin/complaints", "Complaints")}
-        {can(admin.role, "canManageTeam") && navItem("/admin/team", "Team")}
+    <div className="p-6 max-w-7xl mx-auto space-y-10">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Referrals & Vouchers</h1>
+        <p className="text-sm text-gray-500">
+          Track customer referrals and manage reward vouchers
+        </p>
+      </div>
 
-        <div className="mt-auto pt-4 border-t border-outline-variant/20">
-          <p className="font-body-sm text-body-sm text-on-surface px-2 mb-1">{admin.name}</p>
-          <p className="font-label-md text-label-md text-on-surface-variant px-2 mb-3 capitalize">{admin.role.replace("_", " ")}</p>
-          <button
-            onClick={signOut}
-            className="w-full text-left px-4 py-2 rounded-lg font-body-sm text-body-sm text-error hover:bg-surface-container-low"
-          >
-            Log out
-          </button>
-        </div>
-      </aside>
-      <main className="flex-1 p-8">{children}</main>
+      {errorMsg && (
+        <div className="p-3 bg-red-50 text-red-700 text-sm rounded">{errorMsg}</div>
+      )}
+
+      {/* Referrals table */}
+      <section>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">Referrals</h2>
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">Loading...</div>
+        ) : referrals.length === 0 ? (
+          <div className="bg-white rounded-lg border border-dashed border-gray-300 p-12 text-center text-gray-500">
+            No referrals yet.
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+            <table className="w-full text-left text-sm text-gray-600">
+              <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider border-b">
+                <tr>
+                  <th className="px-6 py-3">Code</th>
+                  <th className="px-6 py-3">Referrer</th>
+                  <th className="px-6 py-3">Referee</th>
+                  <th className="px-6 py-3">Reward</th>
+                  <th className="px-6 py-3">Created</th>
+                  <th className="px-6 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {referrals.map((r) => (
+                  <tr key={r.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 font-mono font-bold text-indigo-600">
+                      {r.referral_code}
+                    </td>
+                    <td className="px-6 py-4">
+                      {r.referrer?.full_name || r.referrer?.phone || "—"}
+                    </td>
+                    <td className="px-6 py-4">
+                      {r.referee
+                        ? r.referee.full_name || r.referee.phone
+                        : <span className="text-gray-400">Not yet redeemed</span>}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${
+                          r.reward_triggered
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {r.reward_triggered ? "Issued" : "Pending"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {new Date(r.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {!r.reward_triggered && r.referee ? (
+                        <button
+                          onClick={() => handleIssueReward(r.id)}
+                          disabled={issuingId === r.id}
+                          className="text-xs font-medium text-indigo-600 hover:text-indigo-800 underline disabled:opacity-50"
+                        >
+                          {issuingId === r.id ? "Issuing..." : "Issue Reward"}
+                        </button>
+                      ) : !r.referee ? (
+                        <span className="text-xs text-gray-400">Awaiting referee</span>
+                      ) : (
+                        <span className="text-xs text-gray-400">Done</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Vouchers table */}
+      <section>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">Vouchers</h2>
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">Loading...</div>
+        ) : vouchers.length === 0 ? (
+          <div className="bg-white rounded-lg border border-dashed border-gray-300 p-12 text-center text-gray-500">
+            No vouchers issued yet.
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+            <table className="w-full text-left text-sm text-gray-600">
+              <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider border-b">
+                <tr>
+                  <th className="px-6 py-3">Customer</th>
+                  <th className="px-6 py-3">Amount</th>
+                  <th className="px-6 py-3">Source</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Expires</th>
+                  <th className="px-6 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {vouchers.map((v) => (
+                  <tr key={v.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      {v.customer?.full_name || v.customer?.phone || "—"}
+                    </td>
+                    <td className="px-6 py-4">Rs. {v.amount}</td>
+                    <td className="px-6 py-4 capitalize">{v.source}</td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${
+                          v.is_used
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {v.is_used ? "Used" : "Active"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {new Date(v.expires_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => toggleVoucherUsed(v.id, v.is_used)}
+                        className="text-xs font-medium text-gray-600 hover:text-gray-900 underline"
+                      >
+                        {v.is_used ? "Mark unused" : "Void"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
+</file>
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AdminAuthProvider>
-      <AdminShell>{children}</AdminShell>
-    </AdminAuthProvider>
-  );
+<file path="tinytots-web/web/app/api/admin/coupons/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
+
+const couponCreateSchema = z.object({
+  code: z.string().trim().min(1).max(50),
+  discount_type: z.enum(["percentage", "flat"]),
+  value: z.coerce.number().positive(),
+  min_spend: z.coerce.number().min(0).optional(),
+  max_uses: z.coerce.number().int().positive().optional().nullable(),
+  is_active: z.boolean().optional(),
+  expires_at: z.string().datetime().optional().nullable(),
+});
+
+const couponPatchSchema = z.object({
+  id: z.union([z.string(), z.number()]),
+  is_active: z.boolean(),
+});
+
+// GET /api/admin/coupons - Fetch all coupons and referrals overview
+export async function GET(req: NextRequest) {
+  const denied = await requireAdmin(req, "canManageCoupons");
+  if (denied) return denied;
+
+  try {
+    const { data: coupons, error: couponsError } = await supabaseAdmin
+      .from("coupons")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (couponsError) {
+      return NextResponse.json({ error: couponsError.message }, { status: 500 });
+    }
+
+    const { data: referrals, error: referralsError } = await supabaseAdmin
+      .from("referrals")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (referralsError) {
+      // If referrals table query fails, fallback safely
+      return NextResponse.json({ coupons, referrals: [] });
+    }
+
+    return NextResponse.json({ coupons, referrals });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to fetch coupons" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/admin/coupons - Create a new coupon code
+export async function POST(req: NextRequest) {
+  const denied = await requireAdmin(req, "canManageCoupons");
+  if (denied) return denied;
+
+  try {
+    const rawBody = await req.json();
+    const parsed = couponCreateSchema.safeParse(rawBody);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: parsed.error.issues.map((issue) => issue.message).join(", "),
+        },
+        { status: 400 }
+      );
+    }
+
+    const { code, discount_type, value, min_spend, max_uses, is_active, expires_at } =
+      parsed.data;
+
+    const uppercaseCode = code.toUpperCase();
+
+    const { data: coupon, error } = await supabaseAdmin
+      .from("coupons")
+      .insert({
+        code: uppercaseCode,
+        discount_type,
+        value,
+        min_spend: min_spend ?? 0,
+        max_uses: max_uses ?? null,
+        is_active: is_active ?? true,
+        expires_at: expires_at ? new Date(expires_at).toISOString() : null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ coupon });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to create coupon" },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH /api/admin/coupons - Toggle status or update coupon
+export async function PATCH(req: NextRequest) {
+  const denied = await requireAdmin(req, "canManageCoupons");
+  if (denied) return denied;
+
+  try {
+    const rawBody = await req.json();
+    const parsed = couponPatchSchema.safeParse(rawBody);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: parsed.error.issues.map((issue) => issue.message).join(", "),
+        },
+        { status: 400 }
+      );
+    }
+
+    const { id, is_active } = parsed.data;
+
+    const { data: coupon, error } = await supabaseAdmin
+      .from("coupons")
+      .update({ is_active })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ coupon });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to update coupon" },
+      { status: 500 }
+    );
+  }
 }
 </file>
 
@@ -68306,6 +68947,198 @@ export async function GET(
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
   return NextResponse.json({ data }, { status: 200 });
+}
+</file>
+
+<file path="tinytots-web/web/app/api/admin/referrals/issue-reward/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
+
+const issueRewardSchema = z.object({
+  referral_id: z.union([z.string(), z.number()]),
+});
+
+const VOUCHER_AMOUNT = 100;
+const VOUCHER_VALID_DAYS = 30;
+
+// POST /api/admin/referrals/issue-reward - Manually issue the referral voucher
+export async function POST(req: NextRequest) {
+  const authError = await requireAdmin(req, "canManageReferrals");
+  if (authError) return authError;
+
+  try {
+    const rawBody = await req.json();
+    const parsed = issueRewardSchema.safeParse(rawBody);
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Missing or invalid referral_id" }, { status: 400 });
+    }
+
+    const { referral_id } = parsed.data;
+
+    const { data: referral, error: referralError } = await supabaseAdmin
+      .from("referrals")
+      .select("*")
+      .eq("id", referral_id)
+      .single();
+
+    if (referralError || !referral) {
+      return NextResponse.json({ error: "Referral not found" }, { status: 404 });
+    }
+
+    if (referral.reward_triggered) {
+      return NextResponse.json(
+        { error: "Reward already issued for this referral" },
+        { status: 400 }
+      );
+    }
+
+    if (!referral.referee_customer_id) {
+      return NextResponse.json(
+        { error: "This referral has no completed referee yet — cannot issue reward" },
+        { status: 400 }
+      );
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + VOUCHER_VALID_DAYS);
+
+    // 1. Create the voucher for the referrer
+    const { data: voucher, error: voucherError } = await supabaseAdmin
+      .from("vouchers")
+      .insert({
+        customer_id: referral.referrer_customer_id,
+        amount: VOUCHER_AMOUNT,
+        is_used: false,
+        source: "referral",
+        expires_at: expiresAt.toISOString(),
+      })
+      .select()
+      .single();
+
+    if (voucherError) {
+      return NextResponse.json({ error: voucherError.message }, { status: 500 });
+    }
+
+    // 2. Mark the referral as rewarded
+    const { error: updateError } = await supabaseAdmin
+      .from("referrals")
+      .update({ reward_triggered: true })
+      .eq("id", referral_id);
+
+    if (updateError) {
+      // Voucher exists but the flag update failed — surfaced clearly, not swallowed
+      return NextResponse.json(
+        {
+          error: `Voucher created (id ${voucher.id}) but failed to flag referral as rewarded: ${updateError.message}. Needs manual fix.`,
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ voucher });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to issue reward" },
+      { status: 500 }
+    );
+  }
+}
+</file>
+
+<file path="tinytots-web/web/app/api/admin/referrals/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
+
+const voucherPatchSchema = z.object({
+  voucher_id: z.union([z.string(), z.number()]),
+  is_used: z.boolean(),
+});
+
+// GET /api/admin/referrals - Fetch all referrals (with referrer/referee names) + all vouchers
+export async function GET(req: NextRequest) {
+  const authError = await requireAdmin(req, "canManageReferrals");
+  if (authError) return authError;
+
+  try {
+    const { data: referrals, error: referralsError } = await supabaseAdmin
+      .from("referrals")
+      .select(
+        `
+        id,
+        referral_code,
+        reward_triggered,
+        created_at,
+        referrer:customers!referrals_referrer_customer_id_fkey(id, full_name, phone),
+        referee:customers!referrals_referee_customer_id_fkey(id, full_name, phone)
+      `
+      )
+      .order("created_at", { ascending: false });
+
+    if (referralsError) {
+      return NextResponse.json({ error: referralsError.message }, { status: 500 });
+    }
+
+    const { data: vouchers, error: vouchersError } = await supabaseAdmin
+      .from("vouchers")
+      .select("*, customer:customers(id, full_name, phone)")
+      .order("created_at", { ascending: false });
+
+    if (vouchersError) {
+      return NextResponse.json({ error: vouchersError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ referrals, vouchers });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to fetch referrals" },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH /api/admin/referrals - Void/restore a voucher (mark is_used)
+export async function PATCH(req: NextRequest) {
+  const authError = await requireAdmin(req, "canManageReferrals");
+  if (authError) return authError;
+
+  try {
+    const rawBody = await req.json();
+    const parsed = voucherPatchSchema.safeParse(rawBody);
+    
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: parsed.error.issues.map((issue) => issue.message).join(", "),
+        },
+        { status: 400 }
+      );
+    }
+    
+    const { voucher_id, is_used } = parsed.data;
+
+    const { data: voucher, error } = await supabaseAdmin
+      .from("vouchers")
+      .update({ is_used })
+      .eq("id", voucher_id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ voucher });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to update voucher" },
+      { status: 500 }
+    );
+  }
 }
 </file>
 
@@ -68631,117 +69464,64 @@ export default function ProductsPage() {
 }
 </file>
 
-<file path="tinytots-web/web/app/globals.css">
-@import "tailwindcss";
-@plugin "@tailwindcss/typography";
-:root {
-  --background: #fcf9f8;
-  --foreground: #1b1c1c;
-}
+<file path="tinytots-web/web/lib/admin-permissions.ts">
+export type AdminRole = "admin" | "order_manager" | "support" | "inventory_only";
 
-@theme inline {
-  /* Colors from Stitch design system */
-  --color-primary: #9c422e;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #f2846b;
-  --color-on-primary-container: #6b1e0d;
-  --color-primary-fixed: #ffdad2;
-  --color-primary-fixed-dim: #ffb4a3;
-  --color-inverse-primary: #ffb4a3;
+export const ROLE_PERMISSIONS: Record<AdminRole, {
+  canManageTeam: boolean;
+  canManageOrders: boolean;
+  canManageInventory: boolean;
+  canManageDiscounts: boolean;
+  canManageCoupons: boolean;
+  canManageReferrals: boolean;
+  canHandleComplaints: boolean;
+  canManageBlog: boolean;
+}> = {
+  admin: {
+    canManageTeam: true,
+    canManageOrders: true,
+    canManageInventory: true,
+    canManageDiscounts: true,
+    canManageCoupons: true,
+    canManageReferrals: true,
+    canHandleComplaints: true,
+    canManageBlog: true,
+  },
+  order_manager: {
+    canManageTeam: false,
+    canManageOrders: true,
+    canManageInventory: false,
+    canManageDiscounts: false,
+    canManageCoupons: false,
+    canManageReferrals: false,
+    canHandleComplaints: false,
+    canManageBlog: false,
+  },
+  support: {
+    canManageTeam: false,
+    canManageOrders: false,
+    canManageInventory: false,
+    canManageDiscounts: false,
+    canManageCoupons: false,
+    canManageReferrals: false,
+    canHandleComplaints: true,
+    canManageBlog: false,
+  },
+  inventory_only: {
+    canManageTeam: false,
+    canManageOrders: false,
+    canManageInventory: true,
+    canManageDiscounts: false,
+    canManageCoupons: false,
+    canManageReferrals: false,
+    canHandleComplaints: false,
+    canManageBlog: false,
+  },
+};
 
-  --color-secondary: #396280;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #b2dcff;
-  --color-on-secondary-container: #38617f;
-  --color-secondary-fixed: #cae6ff;
-  --color-secondary-fixed-dim: #a2cbee;
-
-  --color-tertiary: #186c40;
-  --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #65b381;
-  --color-on-tertiary-container: #004324;
-  --color-tertiary-fixed: #a3f4bd;
-  --color-tertiary-fixed-dim: #88d7a2;
-
-  --color-error: #ba1a1a;
-  --color-on-error: #ffffff;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
-
-  --color-background: #fcf9f8;
-  --color-on-background: #1b1c1c;
-  --color-surface: #fcf9f8;
-  --color-on-surface: #1b1c1c;
-  --color-surface-variant: #e4e2e1;
-  --color-on-surface-variant: #56423e;
-  --color-surface-dim: #dcd9d9;
-  --color-surface-bright: #fcf9f8;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f6f3f2;
-  --color-surface-container: #f0eded;
-  --color-surface-container-high: #eae7e7;
-  --color-surface-container-highest: #e4e2e1;
-  --color-outline: #89726d;
-  --color-outline-variant: #dcc0bb;
-  --color-inverse-surface: #303030;
-  --color-inverse-on-surface: #f3f0f0;
-
-  /* Spacing */
-  --spacing-container-max: 1280px;
-  --spacing-margin-mobile: 20px;
-  --spacing-margin-desktop: 64px;
-  --spacing-stack-sm: 12px;
-  --spacing-stack-md: 24px;
-  --spacing-stack-lg: 48px;
-  --spacing-bento-gap: 20px;
-  --spacing-gutter: 24px;
-
-  /* Fonts */
-  --font-display-lg: "Plus Jakarta Sans", sans-serif;
-  --font-display-md: "Plus Jakarta Sans", sans-serif;
-  --font-headline-lg: "Plus Jakarta Sans", sans-serif;
-  --font-headline-md: "Plus Jakarta Sans", sans-serif;
-  --font-body-lg: "Inter", sans-serif;
-  --font-body-md: "Inter", sans-serif;
-  --font-body-sm: "Inter", sans-serif;
-  --font-label-lg: "Inter", sans-serif;
-  --font-label-md: "Inter", sans-serif;
-  --font-button: "Inter", sans-serif;
-
-  /* Font sizes (size + line-height pairs, Tailwind v4 compound syntax) */
-  --text-display-lg: 48px;
-  --text-display-lg--line-height: 1.1;
-  --text-display-md: 36px;
-  --text-display-md--line-height: 1.2;
-  --text-headline-lg: 30px;
-  --text-headline-lg--line-height: 1.3;
-  --text-headline-md: 20px;
-  --text-headline-md--line-height: 1.4;
-  --text-body-lg: 18px;
-  --text-body-lg--line-height: 1.6;
-  --text-body-md: 16px;
-  --text-body-md--line-height: 1.6;
-  --text-body-sm: 14px;
-  --text-body-sm--line-height: 1.5;
-  --text-label-lg: 14px;
-  --text-label-lg--line-height: 1;
-  --text-label-md: 12px;
-  --text-label-md--line-height: 1;
-  --text-button: 16px;
-  --text-button--line-height: 1;
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+export function can(role: AdminRole | undefined, permission: keyof typeof ROLE_PERMISSIONS["admin"]) {
+  if (!role) return false;
+  return ROLE_PERMISSIONS[role][permission];
 }
 </file>
 
@@ -69967,6 +70747,241 @@ export default function CartPage() {
 }
 </file>
 
+<file path="tinytots-web/web/app/globals.css">
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+@plugin "@tailwindcss/typography";
+
+@theme inline {
+  /* Colors from Stitch design system */
+  --color-primary: #9c422e;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #f2846b;
+  --color-on-primary-container: #6b1e0d;
+  --color-primary-fixed: #ffdad2;
+  --color-primary-fixed-dim: #ffb4a3;
+  --color-inverse-primary: #ffb4a3;
+
+  --color-secondary: #396280;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #b2dcff;
+  --color-on-secondary-container: #38617f;
+  --color-secondary-fixed: #cae6ff;
+  --color-secondary-fixed-dim: #a2cbee;
+
+  --color-tertiary: #186c40;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #65b381;
+  --color-on-tertiary-container: #004324;
+  --color-tertiary-fixed: #a3f4bd;
+  --color-tertiary-fixed-dim: #88d7a2;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-background: #fcf9f8;
+  --color-on-background: #1b1c1c;
+  --color-surface: #fcf9f8;
+  --color-on-surface: #1b1c1c;
+  --color-surface-variant: #e4e2e1;
+  --color-on-surface-variant: #56423e;
+  --color-surface-dim: #dcd9d9;
+  --color-surface-bright: #fcf9f8;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f6f3f2;
+  --color-surface-container: #f0eded;
+  --color-surface-container-high: #eae7e7;
+  --color-surface-container-highest: #e4e2e1;
+  --color-outline: #89726d;
+  --color-outline-variant: #dcc0bb;
+  --color-inverse-surface: #303030;
+  --color-inverse-on-surface: #f3f0f0;
+
+  /* Spacing */
+  --spacing-container-max: 1280px;
+  --spacing-margin-mobile: 20px;
+  --spacing-margin-desktop: 64px;
+  --spacing-stack-sm: 12px;
+  --spacing-stack-md: 24px;
+  --spacing-stack-lg: 48px;
+  --spacing-bento-gap: 20px;
+  --spacing-gutter: 24px;
+
+  /* Fonts */
+  --font-display-lg: "Plus Jakarta Sans", sans-serif;
+  --font-display-md: "Plus Jakarta Sans", sans-serif;
+  --font-headline-lg: "Plus Jakarta Sans", sans-serif;
+  --font-headline-md: "Plus Jakarta Sans", sans-serif;
+  --font-body-lg: "Inter", sans-serif;
+  --font-body-md: "Inter", sans-serif;
+  --font-body-sm: "Inter", sans-serif;
+  --font-label-lg: "Inter", sans-serif;
+  --font-label-md: "Inter", sans-serif;
+  --font-button: "Inter", sans-serif;
+
+  /* Font sizes (size + line-height pairs, Tailwind v4 compound syntax) */
+  --text-display-lg: 48px;
+  --text-display-lg--line-height: 1.1;
+  --text-display-md: 36px;
+  --text-display-md--line-height: 1.2;
+  --text-headline-lg: 30px;
+  --text-headline-lg--line-height: 1.3;
+  --text-headline-md: 20px;
+  --text-headline-md--line-height: 1.4;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 1.6;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 1.6;
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.5;
+  --text-label-lg: 14px;
+  --text-label-lg--line-height: 1;
+  --text-label-md: 12px;
+  --text-label-md--line-height: 1;
+  --text-button: 16px;
+  --text-button--line-height: 1;
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.blog-content,
+.blog-content * {
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  hyphens: none !important;
+  white-space: normal !important;
+  max-width: 100% !important;
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+</file>
+
 <file path="tinytots-web/web/app/admin/products/[id]/page.tsx">
 "use client";
 
@@ -70219,6 +71234,98 @@ export default function EditProductPage() {
 
       {error && <p className="font-label-md text-label-md text-error mt-4">{error}</p>}
     </div>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/admin/layout.tsx">
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import Link from "next/link";
+import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth-context";
+import { can } from "@/lib/admin-permissions";
+
+function AdminShell({ children }: { children: React.ReactNode }) {
+  const { admin, loading, signOut } = useAdminAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+  const isLoginPage = pathname === "/admin/login";
+
+  useEffect(() => {
+    if (!loading && !admin && !isLoginPage) {
+      router.replace("/admin/login");
+    }
+  }, [loading, admin, isLoginPage, router]);
+
+  if (isLoginPage) return <>{children}</>;
+
+  if (loading) {
+    return (
+      <main className="p-8 font-body-md text-body-md text-on-surface-variant">
+        Checking admin access...
+      </main>
+    );
+  }
+
+  if (!admin) {
+    // Redirect effect above will fire; render nothing meanwhile
+    return null;
+  }
+
+  const navItem = (href: string, label: string) => {
+    const active = pathname === href || (href !== "/admin" && pathname?.startsWith(href));
+    return (
+      <Link
+        href={href}
+        className={`block px-4 py-2 rounded-lg font-body-sm text-body-sm ${
+          active
+            ? "bg-primary-container text-on-primary"
+            : "text-on-surface-variant hover:bg-surface-container-low"
+        }`}
+      >
+        {label}
+      </Link>
+    );
+  };
+
+  return (
+    <div className="flex min-h-screen">
+      <aside className="w-60 shrink-0 border-r border-outline-variant/30 bg-surface-container-lowest p-4 flex flex-col gap-1">
+        <div className="font-display-sm text-display-sm text-primary mb-4 px-2">TinyTots Admin</div>
+        {navItem("/admin", "Dashboard")}
+        {can(admin.role, "canManageInventory") && navItem("/admin/products", "Products")}
+        {can(admin.role, "canManageOrders") && navItem("/admin/orders", "Orders")}
+        {can(admin.role, "canManageOrders") && navItem("/admin/reports", "Reports")}
+        {can(admin.role, "canManageDiscounts") && navItem("/admin/discounts", "Discounts")}
+        {can(admin.role, "canManageCoupons") && navItem("/admin/coupons", "Coupons")}
+        {can(admin.role, "canManageReferrals") && navItem("/admin/referrals", "Referrals")}
+        {can(admin.role, "canHandleComplaints") && navItem("/admin/complaints", "Complaints")}
+        {can(admin.role, "canManageBlog") && navItem("/admin/blog", "Blog")}
+        {can(admin.role, "canManageTeam") && navItem("/admin/team", "Team")}
+
+        <div className="mt-auto pt-4 border-t border-outline-variant/20">
+          <p className="font-body-sm text-body-sm text-on-surface px-2 mb-1">{admin.name}</p>
+          <p className="font-label-md text-label-md text-on-surface-variant px-2 mb-3 capitalize">{admin.role.replace("_", " ")}</p>
+          <button
+            onClick={signOut}
+            className="w-full text-left px-4 py-2 rounded-lg font-body-sm text-body-sm text-error hover:bg-surface-container-low"
+          >
+            Log out
+          </button>
+        </div>
+      </aside>
+      <main className="flex-1 p-8">{children}</main>
+    </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminAuthProvider>
+      <AdminShell>{children}</AdminShell>
+    </AdminAuthProvider>
   );
 }
 </file>
@@ -71368,46 +72475,6 @@ export default async function Home() {
 }
 </file>
 
-<file path="tinytots-web/web/package.json">
-{
-  "name": "tinytots",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev -p 3001",
-    "build": "next build",
-    "start": "next start -p 3001",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "@google/genai": "^2.13.0",
-    "@supabase/ssr": "^0.12.2",
-    "@supabase/supabase-js": "^2.110.5",
-    "express": "^5.2.1",
-    "isomorphic-dompurify": "^3.18.0",
-    "next": "16.2.9",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "react-image-crop": "^11.1.2",
-    "react-quill-new": "^3.8.3",
-    "undici": "^8.8.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@tailwindcss/typography": "^0.5.20",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "cross-env": "^10.1.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.9",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  },
-  "description": "This is a Next.js project."
-}
-</file>
-
 <file path="tinytots-app/electron-app/src/components/Inventory/ProductFormModal.jsx">
 import { useMemo, useState, useEffect } from "react";
 import { X, Plus } from "lucide-react";
@@ -71805,6 +72872,56 @@ function LabeledInput({ label, required, ...props }) {
       />
     </div>
   );
+}
+</file>
+
+<file path="tinytots-web/web/package.json">
+{
+  "name": "tinytots",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.6.0",
+    "@supabase/ssr": "^0.12.2",
+    "@supabase/supabase-js": "^2.110.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dompurify": "^3.4.12",
+    "express": "^5.2.1",
+    "framer-motion": "^12.42.2",
+    "isomorphic-dompurify": "^3.19.0",
+    "lucide-react": "^1.26.0",
+    "next": "16.2.9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-image-crop": "^11.1.2",
+    "react-quill-new": "^3.8.3",
+    "shadcn": "^4.14.1",
+    "tailwind-merge": "^3.6.0",
+    "tw-animate-css": "^1.4.0",
+    "undici": "^8.8.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.20",
+    "@types/dompurify": "^3.0.5",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "description": "This is a Next.js project."
 }
 </file>
 
@@ -73971,7 +75088,7 @@ app.listen(PORT, () => {
 "use client";
 
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist_Mono, Inter, Plus_Jakarta_Sans, Geist } from "next/font/google";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -73980,6 +75097,10 @@ import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
 import HeaderCart from "@/components/HeaderCart";
 import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], weight: ["400", "500", "600"] });
 const plusJakarta = Plus_Jakarta_Sans({ variable: "--font-plus-jakarta", subsets: ["latin"], weight: ["600", "700"] });
@@ -73990,9 +75111,6 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
   const [allProducts, setAllProducts] = useState<any[] | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch the product list once when the overlay opens, then filter
-  // in-memory as the user types — this is what makes it feel instant
-  // instead of requiring Enter + a round trip on every keystroke.
   useEffect(() => {
     let cancelled = false;
     fetch("/api/products")
@@ -74008,8 +75126,6 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  // Close when clicking outside the dropdown, so it behaves like a normal
-  // popover instead of a full-screen modal that has to be explicitly closed.
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -74035,8 +75151,6 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
     return matchesCategory && haystack.includes(needle);
   });
 
-  // Group results by category so browsing (not just typed search) shows
-  // structure — e.g. hovering/clicking "Pants" narrows straight to pants.
   const grouped = filtered.reduce((acc: Record<string, any[]>, p: any) => {
     const key = p.category || "Other";
     (acc[key] = acc[key] || []).push(p);
@@ -74196,59 +75310,67 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   };
 
   return (
-    <html lang="en" className={`${geistMono.variable} ${inter.variable} ${plusJakarta.variable} antialiased`}>
+    <html lang="en" className={cn("antialiased", geistMono.variable, inter.variable, plusJakarta.variable, "font-sans", geist.variable)}>
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" precedence="default" />
       </head>
-      <body className="bg-surface font-body-md text-on-surface antialiased pt-[80px] min-h-screen flex flex-col">
-      <AuthProvider>
-      <CartProvider>
-          <nav className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
-            <div className="flex items-center gap-6">
-              <Link href="/" className="font-display-md text-display-md text-primary tracking-tight">TinyTots</Link>
-              <div className="hidden md:flex gap-6">
-                {navLink("/products", "Shop All")}
-                {navLink("/track-order", "Track Order")}
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <button onClick={() => setSearchOpen((o) => !o)} className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Search">
-                  <span className="material-symbols-outlined">search</span>
-                </button>
-                {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
-              </div>
-              <AccountMenu />
-              <HeaderCart />
-            </div>
-          </nav>
+      <body className="bg-surface font-body-md text-on-surface antialiased pt-[80px] min-h-screen flex flex-col overflow-x-hidden">
+        <AuthProvider>
+          <CartProvider>
+            {/* FIXED NAVBAR WRAPPER (Spans 100% width, centered inside) */}
+            <header className="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
+              <nav className="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto w-full">
+                <div className="flex items-center gap-6">
+                  <Link href="/" className="font-display-md text-display-md text-primary tracking-tight">TinyTots</Link>
+                  <div className="hidden md:flex gap-6">
+                    {navLink("/products", "Shop All")}
+                    {navLink("/blog", "Blog")}
+                    {navLink("/track-order", "Track Order")}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <button onClick={() => setSearchOpen((o) => !o)} className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Search">
+                      <span className="material-symbols-outlined">search</span>
+                    </button>
+                    {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
+                  </div>
+                  <AccountMenu />
+                  <HeaderCart />
+                </div>
+              </nav>
+            </header>
 
-          <main className="flex-grow w-full">{children}</main>
+            {/* MAIN CONTENT AREA */}
+            <main className="flex-grow w-full max-w-container-max mx-auto min-w-0 px-margin-mobile md:px-margin-desktop">
+              {children}
+            </main>
 
-          <footer className="bg-surface-container-lowest border-t border-outline-variant/20 w-full mt-stack-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[1.2fr_1fr_1fr_1.4fr] gap-bento-gap px-margin-mobile md:px-margin-desktop py-stack-lg max-w-container-max mx-auto">
-              <div className="flex flex-col gap-4">
-                <span className="font-display-lg text-display-lg text-primary">TinyTots</span>
-                <p className="font-body-sm text-body-sm text-secondary">© 2026 TinyTots Premium Kids. All rights reserved.</p>
-              </div>
-              <div className="flex flex-col gap-3">
-                <h4 className="font-headline-md text-headline-md text-on-surface">Explore</h4>
-                <Link href="/our-story" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">About Us</Link>
-              </div>
-              <div className="flex flex-col gap-3">
-                <h4 className="font-headline-md text-headline-md text-on-surface">Support</h4>
-                <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shipping Policy</Link>
-                <Link href="/track-order" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Track Order</Link>
-              </div>
-              <div className="flex flex-col gap-4 min-w-0">
-                <h4 className="font-headline-md text-headline-md text-on-surface">Join Our Newsletter</h4>
-                <div className="flex flex-col sm:flex-row rounded-lg border border-outline-variant/50 overflow-hidden sm:h-[48px]">
-                  <input className="flex-1 min-w-0 bg-transparent border-none px-4 py-3 sm:py-0 font-body-sm text-body-sm text-on-surface focus:ring-0 focus:outline-none" placeholder="Email Address" type="email" />
-                  <button className="shrink-0 bg-primary-container text-on-primary px-6 py-3 sm:py-0 font-button text-button hover:bg-primary transition-colors whitespace-nowrap">Subscribe</button>
+            {/* FOOTER */}
+            <footer className="bg-surface-container-lowest border-t border-outline-variant/20 w-full mt-stack-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[1.2fr_1fr_1fr_1.4fr] gap-bento-gap px-margin-mobile md:px-margin-desktop py-stack-lg max-w-container-max mx-auto">
+                <div className="flex flex-col gap-4">
+                  <span className="font-display-lg text-display-lg text-primary">TinyTots</span>
+                  <p className="font-body-sm text-body-sm text-secondary">© 2026 TinyTots Premium Kids. All rights reserved.</p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <h4 className="font-headline-md text-headline-md text-on-surface">Explore</h4>
+                  <Link href="/our-story" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">About Us</Link>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <h4 className="font-headline-md text-headline-md text-on-surface">Support</h4>
+                  <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shipping Policy</Link>
+                  <Link href="/track-order" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Track Order</Link>
+                </div>
+                <div className="flex flex-col gap-4 min-w-0">
+                  <h4 className="font-headline-md text-headline-md text-on-surface">Join Our Newsletter</h4>
+                  <div className="flex flex-col sm:flex-row rounded-lg border border-outline-variant/50 overflow-hidden sm:h-[48px]">
+                    <input className="flex-1 min-w-0 bg-transparent border-none px-4 py-3 sm:py-0 font-body-sm text-body-sm text-on-surface focus:ring-0 focus:outline-none" placeholder="Email Address" type="email" />
+                    <button className="shrink-0 bg-primary-container text-on-primary px-6 py-3 sm:py-0 font-button text-button hover:bg-primary transition-colors whitespace-nowrap">Subscribe</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </footer>
+            </footer>
           </CartProvider>
         </AuthProvider>
       </body>
