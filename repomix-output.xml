@@ -181,6 +181,8 @@ tinytots-web/
           page.tsx
         reports/
           page.tsx
+        settings/
+          page.tsx
         team/
           page.tsx
         layout.tsx
@@ -224,6 +226,8 @@ tinytots-web/
               route.ts
             route.ts
           reports/
+            route.ts
+          settings/
             route.ts
           team/
             [id]/
@@ -304,6 +308,7 @@ tinytots-web/
       cart-context.tsx
       gemini-client.ts
       require-admin.ts
+      settings.ts
       supabase-admin.ts
       supabase.ts
       utils.ts
@@ -510,6 +515,7 @@ tinytots-web/
         20260723_product_images.sql
         20260723100000_product_images_storage.sql
         20260723200000_product_image_variants.sql
+        20260726_handle_new_user_settings_voucher.sql
       snippets/
         Untitled query 131.sql
         Untitled query 174.sql
@@ -7296,6 +7302,147 @@ export default function AdminLoginPage() {
 }
 </file>
 
+<file path="tinytots-web/web/app/admin/settings/page.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import { adminFetch } from "@/lib/admin-fetch";
+
+type Setting = {
+  key: string;
+  value: string;
+  description: string | null;
+  updated_at: string;
+};
+
+const LABELS: Record<string, string> = {
+  signup_voucher_amount: "Signup Voucher Amount (Rs.)",
+  referral_voucher_amount: "Referral Reward Amount (Rs.)",
+  referral_voucher_valid_days: "Referral Voucher Validity (days)",
+};
+
+export default function SettingsPage() {
+  const [settings, setSettings] = useState<Setting[]>([]);
+  const [editValues, setEditValues] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successKey, setSuccessKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  async function loadSettings() {
+    setLoading(true);
+    setError(null);
+    try {
+        const res = await adminFetch("/api/admin/settings");
+        const data = await res.json();
+        setSettings(data.settings);
+      const initial: Record<string, string> = {};
+      for (const s of data.settings) initial[s.key] = s.value;
+      setEditValues(initial);
+    } catch (err: any) {
+      setError(err.message || "Failed to load settings");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave(key: string) {
+    setSavingKey(key);
+    setError(null);
+    setSuccessKey(null);
+    try {
+      const value = editValues[key];
+      const res = await adminFetch("/api/admin/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ key, value }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to save");
+      }
+      setSuccessKey(key);
+      await loadSettings();
+      setTimeout(() => setSuccessKey(null), 2000);
+    } catch (err: any) {
+      setError(err.message || `Failed to update ${key}`);
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  if (loading) {
+    return <div className="p-6 text-on-surface-variant">Loading settings...</div>;
+  }
+
+  return (
+    <div className="p-6 max-w-2xl">
+      <h1 className="text-2xl font-semibold text-on-surface mb-1">Settings</h1>
+      <p className="text-on-surface-variant text-sm mb-6">
+        Control voucher and reward amounts used across the storefront and admin panel.
+      </p>
+
+      {error && (
+        <div className="mb-4 rounded-lg border border-error bg-error/10 px-4 py-3 text-error text-sm">
+          {error}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4">
+        {settings.map((setting) => {
+          const isDirty = editValues[setting.key] !== setting.value;
+          const isSaving = savingKey === setting.key;
+          const justSaved = successKey === setting.key;
+
+          return (
+            <div
+              key={setting.key}
+              className="border border-outline-variant rounded-xl p-4 bg-surface-container-lowest"
+            >
+              <label className="block text-sm font-medium text-on-surface mb-1">
+                {LABELS[setting.key] ?? setting.key}
+              </label>
+              {setting.description && (
+                <p className="text-xs text-on-surface-variant mb-3">{setting.description}</p>
+              )}
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min={0}
+                  value={editValues[setting.key] ?? ""}
+                  onChange={(e) =>
+                    setEditValues((prev) => ({ ...prev, [setting.key]: e.target.value }))
+                  }
+                  className="w-40 border border-outline-variant rounded-lg px-3 py-2 bg-surface text-on-surface text-sm focus:outline-none focus:border-primary"
+                />
+                <button
+                  onClick={() => handleSave(setting.key)}
+                  disabled={!isDirty || isSaving || !editValues[setting.key]}
+                  className="px-4 py-2 rounded-lg bg-primary-container text-on-primary text-sm font-medium hover:bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </button>
+                {justSaved && (
+                  <span className="text-sm text-green-600">Saved</span>
+                )}
+              </div>
+
+              <p className="text-xs text-on-surface-variant mt-2">
+                Last updated: {new Date(setting.updated_at).toLocaleString()}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+</file>
+
 <file path="tinytots-web/web/app/admin/page.tsx">
 export default function AdminDashboardPage() {
     return (
@@ -8460,6 +8607,80 @@ export async function GET(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ data }, { status: 200 });
+}
+</file>
+
+<file path="tinytots-web/web/app/api/admin/settings/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
+
+const patchSchema = z.object({
+  key: z.string().min(1),
+  value: z.string().min(1),
+});
+
+export async function GET(req: NextRequest) {
+  const authError = await requireAdmin(req, "canManageSettings");
+  if (authError) return authError;
+
+  const { data, error } = await supabaseAdmin
+    .from("app_settings")
+    .select("*")
+    .order("key", { ascending: true });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ settings: data });
+}
+
+export async function PATCH(req: NextRequest) {
+  const authError = await requireAdmin(req, "canManageSettings");
+  if (authError) return authError;
+
+  try {
+    const rawBody = await req.json();
+    const parsed = patchSchema.safeParse(rawBody);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues.map((i) => i.message).join(", ") },
+        { status: 400 }
+      );
+    }
+
+    const { key, value } = parsed.data;
+
+    if (key.includes("amount") || key.includes("days")) {
+      if (!Number.isFinite(Number(value)) || Number(value) < 0) {
+        return NextResponse.json(
+          { error: `${key} must be a non-negative number` },
+          { status: 400 }
+        );
+      }
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("app_settings")
+      .update({ value, updated_at: new Date().toISOString() })
+      .eq("key", key)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ setting: data });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to update setting" },
+      { status: 500 }
+    );
+  }
 }
 </file>
 
@@ -11073,6 +11294,36 @@ if (!apiKey) {
 export const gemini = new GoogleGenAI({ apiKey });
 
 export const IMAGE_MODEL = "gemini-2.5-flash-image";
+</file>
+
+<file path="tinytots-web/web/lib/settings.ts">
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+const DEFAULTS: Record<string, string> = {
+  referral_voucher_amount: "100",
+  referral_voucher_valid_days: "30",
+  signup_voucher_amount: "200",
+};
+
+export async function getSetting(key: string): Promise<string> {
+  const { data, error } = await supabaseAdmin
+    .from("app_settings")
+    .select("value")
+    .eq("key", key)
+    .single();
+
+  if (error || !data) {
+    return DEFAULTS[key] ?? "0";
+  }
+
+  return data.value;
+}
+
+export async function getSettingNumber(key: string): Promise<number> {
+  const raw = await getSetting(key);
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : Number(DEFAULTS[key] ?? "0");
+}
 </file>
 
 <file path="tinytots-web/web/lib/supabase.ts">
@@ -29195,6 +29446,45 @@ CREATE POLICY "Public can view image-variant links" ON public.product_image_vari
 FOR SELECT USING (true);
 
 -- Writes only via service_role, same pattern as product_images itself.
+</file>
+
+<file path="tinytots-web/web/supabase/migrations/20260726_handle_new_user_settings_voucher.sql">
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+DECLARE
+    new_customer_id bigint;
+    new_referral_code text;
+    signup_voucher_amount numeric;
+BEGIN
+    IF (NEW.raw_user_meta_data->>'is_admin_created')::boolean IS TRUE THEN
+        RETURN NEW;
+    END IF;
+
+    new_referral_code := upper(substr(md5(random()::text || NEW.id::text), 1, 8));
+
+    INSERT INTO public.customers (auth_user_id, email, full_name, phone, referral_code)
+    VALUES (
+        NEW.id,
+        NEW.email,
+        NEW.raw_user_meta_data->>'full_name',
+        NEW.raw_user_meta_data->>'phone',
+        new_referral_code
+    )
+    RETURNING id INTO new_customer_id;
+
+    -- Pull the signup voucher amount from app_settings instead of a hardcoded value,
+    -- falling back to 200 if the setting row is ever missing.
+    SELECT COALESCE(
+        (SELECT value::numeric FROM public.app_settings WHERE key = 'signup_voucher_amount'),
+        200
+    ) INTO signup_voucher_amount;
+
+    INSERT INTO public.vouchers (customer_id, amount, is_used, source, expires_at)
+    VALUES (new_customer_id, signup_voucher_amount, false, 'signup', now() + interval '30 days');
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 </file>
 
 <file path="tinytots-web/web/supabase/snippets/Untitled query 131.sql">
@@ -68950,104 +69240,6 @@ export async function GET(
 }
 </file>
 
-<file path="tinytots-web/web/app/api/admin/referrals/issue-reward/route.ts">
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import { supabaseAdmin } from "@/lib/supabase-admin";
-import { requireAdmin } from "@/lib/require-admin";
-
-const issueRewardSchema = z.object({
-  referral_id: z.union([z.string(), z.number()]),
-});
-
-const VOUCHER_AMOUNT = 100;
-const VOUCHER_VALID_DAYS = 30;
-
-// POST /api/admin/referrals/issue-reward - Manually issue the referral voucher
-export async function POST(req: NextRequest) {
-  const authError = await requireAdmin(req, "canManageReferrals");
-  if (authError) return authError;
-
-  try {
-    const rawBody = await req.json();
-    const parsed = issueRewardSchema.safeParse(rawBody);
-
-    if (!parsed.success) {
-      return NextResponse.json({ error: "Missing or invalid referral_id" }, { status: 400 });
-    }
-
-    const { referral_id } = parsed.data;
-
-    const { data: referral, error: referralError } = await supabaseAdmin
-      .from("referrals")
-      .select("*")
-      .eq("id", referral_id)
-      .single();
-
-    if (referralError || !referral) {
-      return NextResponse.json({ error: "Referral not found" }, { status: 404 });
-    }
-
-    if (referral.reward_triggered) {
-      return NextResponse.json(
-        { error: "Reward already issued for this referral" },
-        { status: 400 }
-      );
-    }
-
-    if (!referral.referee_customer_id) {
-      return NextResponse.json(
-        { error: "This referral has no completed referee yet — cannot issue reward" },
-        { status: 400 }
-      );
-    }
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + VOUCHER_VALID_DAYS);
-
-    // 1. Create the voucher for the referrer
-    const { data: voucher, error: voucherError } = await supabaseAdmin
-      .from("vouchers")
-      .insert({
-        customer_id: referral.referrer_customer_id,
-        amount: VOUCHER_AMOUNT,
-        is_used: false,
-        source: "referral",
-        expires_at: expiresAt.toISOString(),
-      })
-      .select()
-      .single();
-
-    if (voucherError) {
-      return NextResponse.json({ error: voucherError.message }, { status: 500 });
-    }
-
-    // 2. Mark the referral as rewarded
-    const { error: updateError } = await supabaseAdmin
-      .from("referrals")
-      .update({ reward_triggered: true })
-      .eq("id", referral_id);
-
-    if (updateError) {
-      // Voucher exists but the flag update failed — surfaced clearly, not swallowed
-      return NextResponse.json(
-        {
-          error: `Voucher created (id ${voucher.id}) but failed to flag referral as rewarded: ${updateError.message}. Needs manual fix.`,
-        },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ voucher });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to issue reward" },
-      { status: 500 }
-    );
-  }
-}
-</file>
-
 <file path="tinytots-web/web/app/api/admin/referrals/route.ts">
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -69461,67 +69653,6 @@ export default function ProductsPage() {
       </div>
     </main>
   );
-}
-</file>
-
-<file path="tinytots-web/web/lib/admin-permissions.ts">
-export type AdminRole = "admin" | "order_manager" | "support" | "inventory_only";
-
-export const ROLE_PERMISSIONS: Record<AdminRole, {
-  canManageTeam: boolean;
-  canManageOrders: boolean;
-  canManageInventory: boolean;
-  canManageDiscounts: boolean;
-  canManageCoupons: boolean;
-  canManageReferrals: boolean;
-  canHandleComplaints: boolean;
-  canManageBlog: boolean;
-}> = {
-  admin: {
-    canManageTeam: true,
-    canManageOrders: true,
-    canManageInventory: true,
-    canManageDiscounts: true,
-    canManageCoupons: true,
-    canManageReferrals: true,
-    canHandleComplaints: true,
-    canManageBlog: true,
-  },
-  order_manager: {
-    canManageTeam: false,
-    canManageOrders: true,
-    canManageInventory: false,
-    canManageDiscounts: false,
-    canManageCoupons: false,
-    canManageReferrals: false,
-    canHandleComplaints: false,
-    canManageBlog: false,
-  },
-  support: {
-    canManageTeam: false,
-    canManageOrders: false,
-    canManageInventory: false,
-    canManageDiscounts: false,
-    canManageCoupons: false,
-    canManageReferrals: false,
-    canHandleComplaints: true,
-    canManageBlog: false,
-  },
-  inventory_only: {
-    canManageTeam: false,
-    canManageOrders: false,
-    canManageInventory: true,
-    canManageDiscounts: false,
-    canManageCoupons: false,
-    canManageReferrals: false,
-    canHandleComplaints: false,
-    canManageBlog: false,
-  },
-};
-
-export function can(role: AdminRole | undefined, permission: keyof typeof ROLE_PERMISSIONS["admin"]) {
-  if (!role) return false;
-  return ROLE_PERMISSIONS[role][permission];
 }
 </file>
 
@@ -70605,6 +70736,104 @@ function StockOverview({ variants }) {
 }
 </file>
 
+<file path="tinytots-web/web/app/api/admin/referrals/issue-reward/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
+import { getSettingNumber } from "@/lib/settings";
+
+const issueRewardSchema = z.object({
+  referral_id: z.union([z.string(), z.number()]),
+});
+
+// POST /api/referrals/issue-reward - Manually issue the referral voucher
+export async function POST(req: NextRequest) {
+  const authError = await requireAdmin(req, "canManageReferrals");
+  if (authError) return authError;
+
+  try {
+    const rawBody = await req.json();
+    const parsed = issueRewardSchema.safeParse(rawBody);
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Missing or invalid referral_id" }, { status: 400 });
+    }
+
+    const { referral_id } = parsed.data;
+
+    const { data: referral, error: referralError } = await supabaseAdmin
+      .from("referrals")
+      .select("*")
+      .eq("id", referral_id)
+      .single();
+
+    if (referralError || !referral) {
+      return NextResponse.json({ error: "Referral not found" }, { status: 404 });
+    }
+
+    if (referral.reward_triggered) {
+      return NextResponse.json(
+        { error: "Reward already issued for this referral" },
+        { status: 400 }
+      );
+    }
+
+    if (!referral.referee_customer_id) {
+      return NextResponse.json(
+        { error: "This referral has no completed referee yet — cannot issue reward" },
+        { status: 400 }
+      );
+    }
+
+    const [voucherAmount, validDays] = await Promise.all([
+      getSettingNumber("referral_voucher_amount"),
+      getSettingNumber("referral_voucher_valid_days"),
+    ]);
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + validDays);
+
+    const { data: voucher, error: voucherError } = await supabaseAdmin
+      .from("vouchers")
+      .insert({
+        customer_id: referral.referrer_customer_id,
+        amount: voucherAmount,
+        is_used: false,
+        source: "referral",
+        expires_at: expiresAt.toISOString(),
+      })
+      .select()
+      .single();
+
+    if (voucherError) {
+      return NextResponse.json({ error: voucherError.message }, { status: 500 });
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from("referrals")
+      .update({ reward_triggered: true })
+      .eq("id", referral_id);
+
+    if (updateError) {
+      return NextResponse.json(
+        {
+          error: `Voucher created (id ${voucher.id}) but failed to flag referral as rewarded: ${updateError.message}. Needs manual fix.`,
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ voucher });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to issue reward" },
+      { status: 500 }
+    );
+  }
+}
+</file>
+
 <file path="tinytots-web/web/app/cart/page.tsx">
 "use client";
 
@@ -70982,6 +71211,72 @@ export default function CartPage() {
 }
 </file>
 
+<file path="tinytots-web/web/lib/admin-permissions.ts">
+export type AdminRole = "admin" | "order_manager" | "support" | "inventory_only";
+
+export const ROLE_PERMISSIONS: Record<AdminRole, {
+  canManageTeam: boolean;
+  canManageOrders: boolean;
+  canManageInventory: boolean;
+  canManageDiscounts: boolean;
+  canManageCoupons: boolean;
+  canManageReferrals: boolean;
+  canHandleComplaints: boolean;
+  canManageBlog: boolean;
+  canManageSettings: boolean;
+}> = {
+  admin: {
+    canManageTeam: true,
+    canManageOrders: true,
+    canManageInventory: true,
+    canManageDiscounts: true,
+    canManageCoupons: true,
+    canManageReferrals: true,
+    canHandleComplaints: true,
+    canManageBlog: true,
+    canManageSettings: true,
+  },
+  order_manager: {
+    canManageTeam: false,
+    canManageOrders: true,
+    canManageInventory: false,
+    canManageDiscounts: false,
+    canManageCoupons: false,
+    canManageReferrals: false,
+    canHandleComplaints: false,
+    canManageBlog: false,
+    canManageSettings: false,
+  },
+  support: {
+    canManageTeam: false,
+    canManageOrders: false,
+    canManageInventory: false,
+    canManageDiscounts: false,
+    canManageCoupons: false,
+    canManageReferrals: false,
+    canHandleComplaints: true,
+    canManageBlog: false,
+    canManageSettings: false,
+  },
+  inventory_only: {
+    canManageTeam: false,
+    canManageOrders: false,
+    canManageInventory: true,
+    canManageDiscounts: false,
+    canManageCoupons: false,
+    canManageReferrals: false,
+    canHandleComplaints: false,
+    canManageBlog: false,
+    canManageSettings: false,
+  },
+};
+
+export function can(role: AdminRole | undefined, permission: keyof typeof ROLE_PERMISSIONS["admin"]) {
+  if (!role) return false;
+  return ROLE_PERMISSIONS[role][permission];
+}
+</file>
+
 <file path="tinytots-web/web/app/admin/products/[id]/page.tsx">
 "use client";
 
@@ -71238,98 +71533,6 @@ export default function EditProductPage() {
 }
 </file>
 
-<file path="tinytots-web/web/app/admin/layout.tsx">
-"use client";
-
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
-import Link from "next/link";
-import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth-context";
-import { can } from "@/lib/admin-permissions";
-
-function AdminShell({ children }: { children: React.ReactNode }) {
-  const { admin, loading, signOut } = useAdminAuth();
-  const pathname = usePathname();
-  const router = useRouter();
-  const isLoginPage = pathname === "/admin/login";
-
-  useEffect(() => {
-    if (!loading && !admin && !isLoginPage) {
-      router.replace("/admin/login");
-    }
-  }, [loading, admin, isLoginPage, router]);
-
-  if (isLoginPage) return <>{children}</>;
-
-  if (loading) {
-    return (
-      <main className="p-8 font-body-md text-body-md text-on-surface-variant">
-        Checking admin access...
-      </main>
-    );
-  }
-
-  if (!admin) {
-    // Redirect effect above will fire; render nothing meanwhile
-    return null;
-  }
-
-  const navItem = (href: string, label: string) => {
-    const active = pathname === href || (href !== "/admin" && pathname?.startsWith(href));
-    return (
-      <Link
-        href={href}
-        className={`block px-4 py-2 rounded-lg font-body-sm text-body-sm ${
-          active
-            ? "bg-primary-container text-on-primary"
-            : "text-on-surface-variant hover:bg-surface-container-low"
-        }`}
-      >
-        {label}
-      </Link>
-    );
-  };
-
-  return (
-    <div className="flex min-h-screen">
-      <aside className="w-60 shrink-0 border-r border-outline-variant/30 bg-surface-container-lowest p-4 flex flex-col gap-1">
-        <div className="font-display-sm text-display-sm text-primary mb-4 px-2">TinyTots Admin</div>
-        {navItem("/admin", "Dashboard")}
-        {can(admin.role, "canManageInventory") && navItem("/admin/products", "Products")}
-        {can(admin.role, "canManageOrders") && navItem("/admin/orders", "Orders")}
-        {can(admin.role, "canManageOrders") && navItem("/admin/reports", "Reports")}
-        {can(admin.role, "canManageDiscounts") && navItem("/admin/discounts", "Discounts")}
-        {can(admin.role, "canManageCoupons") && navItem("/admin/coupons", "Coupons")}
-        {can(admin.role, "canManageReferrals") && navItem("/admin/referrals", "Referrals")}
-        {can(admin.role, "canHandleComplaints") && navItem("/admin/complaints", "Complaints")}
-        {can(admin.role, "canManageBlog") && navItem("/admin/blog", "Blog")}
-        {can(admin.role, "canManageTeam") && navItem("/admin/team", "Team")}
-
-        <div className="mt-auto pt-4 border-t border-outline-variant/20">
-          <p className="font-body-sm text-body-sm text-on-surface px-2 mb-1">{admin.name}</p>
-          <p className="font-label-md text-label-md text-on-surface-variant px-2 mb-3 capitalize">{admin.role.replace("_", " ")}</p>
-          <button
-            onClick={signOut}
-            className="w-full text-left px-4 py-2 rounded-lg font-body-sm text-body-sm text-error hover:bg-surface-container-low"
-          >
-            Log out
-          </button>
-        </div>
-      </aside>
-      <main className="flex-1 p-8">{children}</main>
-    </div>
-  );
-}
-
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AdminAuthProvider>
-      <AdminShell>{children}</AdminShell>
-    </AdminAuthProvider>
-  );
-}
-</file>
-
 <file path="tinytots-web/web/components/AddToCart.tsx">
 "use client";
 
@@ -71458,6 +71661,99 @@ export default function AddToCart({
         {added ? "Added ✓" : "Add to Cart"}
       </button>
     </div>
+  );
+}
+</file>
+
+<file path="tinytots-web/web/app/admin/layout.tsx">
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import Link from "next/link";
+import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth-context";
+import { can } from "@/lib/admin-permissions";
+
+function AdminShell({ children }: { children: React.ReactNode }) {
+  const { admin, loading, signOut } = useAdminAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+  const isLoginPage = pathname === "/admin/login";
+
+  useEffect(() => {
+    if (!loading && !admin && !isLoginPage) {
+      router.replace("/admin/login");
+    }
+  }, [loading, admin, isLoginPage, router]);
+
+  if (isLoginPage) return <>{children}</>;
+
+  if (loading) {
+    return (
+      <main className="p-8 font-body-md text-body-md text-on-surface-variant">
+        Checking admin access...
+      </main>
+    );
+  }
+
+  if (!admin) {
+    // Redirect effect above will fire; render nothing meanwhile
+    return null;
+  }
+
+  const navItem = (href: string, label: string) => {
+    const active = pathname === href || (href !== "/admin" && pathname?.startsWith(href));
+    return (
+      <Link
+        href={href}
+        className={`block px-4 py-2 rounded-lg font-body-sm text-body-sm ${
+          active
+            ? "bg-primary-container text-on-primary"
+            : "text-on-surface-variant hover:bg-surface-container-low"
+        }`}
+      >
+        {label}
+      </Link>
+    );
+  };
+
+  return (
+    <div className="flex min-h-screen">
+      <aside className="w-60 shrink-0 border-r border-outline-variant/30 bg-surface-container-lowest p-4 flex flex-col gap-1">
+        <div className="font-display-sm text-display-sm text-primary mb-4 px-2">TinyTots Admin</div>
+        {navItem("/admin", "Dashboard")}
+        {can(admin.role, "canManageInventory") && navItem("/admin/products", "Products")}
+        {can(admin.role, "canManageOrders") && navItem("/admin/orders", "Orders")}
+        {can(admin.role, "canManageOrders") && navItem("/admin/reports", "Reports")}
+        {can(admin.role, "canManageDiscounts") && navItem("/admin/discounts", "Discounts")}
+        {can(admin.role, "canManageCoupons") && navItem("/admin/coupons", "Coupons")}
+        {can(admin.role, "canManageReferrals") && navItem("/admin/referrals", "Referrals")}
+        {can(admin.role, "canHandleComplaints") && navItem("/admin/complaints", "Complaints")}
+        {can(admin.role, "canManageBlog") && navItem("/admin/blog", "Blog")}
+        {can(admin.role, "canManageTeam") && navItem("/admin/team", "Team")}
+        {can(admin.role, "canManageSettings") && navItem("/admin/settings", "Settings")}
+        
+        <div className="mt-auto pt-4 border-t border-outline-variant/20">
+          <p className="font-body-sm text-body-sm text-on-surface px-2 mb-1">{admin.name}</p>
+          <p className="font-label-md text-label-md text-on-surface-variant px-2 mb-3 capitalize">{admin.role.replace("_", " ")}</p>
+          <button
+            onClick={signOut}
+            className="w-full text-left px-4 py-2 rounded-lg font-body-sm text-body-sm text-error hover:bg-surface-container-low"
+          >
+            Log out
+          </button>
+        </div>
+      </aside>
+      <main className="flex-1 p-8">{children}</main>
+    </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminAuthProvider>
+      <AdminShell>{children}</AdminShell>
+    </AdminAuthProvider>
   );
 }
 </file>

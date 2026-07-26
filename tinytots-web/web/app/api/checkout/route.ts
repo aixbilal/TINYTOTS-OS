@@ -284,14 +284,35 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: orderError.message }, { status: 500 });
       }
   
-// Increment coupon usage count now that the order is confirmed created
+// Increment coupon usage count now that the order is confirmed created.
+// Logged, not thrown — a failure here shouldn't fail an already-placed order,
+// but silent drift in uses_count is worse than a log line telling us it happened.
 if (appliedCouponCode) {
-  await supabase.rpc("increment_coupon_uses", { p_code: appliedCouponCode });
+  const { error: couponIncrementError } = await supabase.rpc("increment_coupon_uses", {
+    p_code: appliedCouponCode,
+  });
+  if (couponIncrementError) {
+    console.error(
+      `Order ${order.id}: failed to increment uses_count for coupon ${appliedCouponCode}:`,
+      couponIncrementError.message
+    );
+  }
 }
 
-// Mark voucher as used now that the order is confirmed created
+// Mark voucher as used now that the order is confirmed created.
+// Same reasoning — log, don't throw, but never let this fail invisibly:
+// an unflagged voucher stays valid and could be reused elsewhere.
 if (validatedVoucherId) {
-  await supabase.from("vouchers").update({ is_used: true }).eq("id", validatedVoucherId);
+  const { error: voucherFlagError } = await supabase
+    .from("vouchers")
+    .update({ is_used: true })
+    .eq("id", validatedVoucherId);
+  if (voucherFlagError) {
+    console.error(
+      `Order ${order.id}: failed to flag voucher ${validatedVoucherId} as used:`,
+      voucherFlagError.message
+    );
+  }
 }
   
       // Insert order_items — this triggers the deduct_stock_order function automatically

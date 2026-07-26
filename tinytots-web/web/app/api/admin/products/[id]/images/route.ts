@@ -176,9 +176,27 @@ export async function POST(
     }
 
     if (variantIds.length > 0) {
-      await supabaseAdmin.from("product_image_variants").insert(
-        variantIds.map((variantId) => ({ image_id: inserted.id, variant_id: variantId }))
-      );
+      const { error: variantLinkError } = await supabaseAdmin
+        .from("product_image_variants")
+        .insert(variantIds.map((variantId) => ({ image_id: inserted.id, variant_id: variantId })));
+
+      if (variantLinkError) {
+        // The image itself was created successfully, so we don't fail the
+        // whole request — but silently returning success while the
+        // variant links are missing would hide a real data gap.
+        console.error(
+          `Image ${inserted.id}: failed to link variants [${variantIds.join(", ")}]:`,
+          variantLinkError.message
+        );
+        return NextResponse.json(
+          {
+            success: true,
+            warning: `Image uploaded, but failed to link it to ${variantIds.length} variant(s). You may need to re-select variants for this image.`,
+            data: { ...inserted, url: publicUrlFor(storagePath), variant_ids: [] },
+          },
+          { status: 201 }
+        );
+      }
     }
 
     return NextResponse.json(
