@@ -10,6 +10,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, {
   canHandleComplaints: boolean;
   canManageBlog: boolean;
   canManageSettings: boolean;
+  canManageHelp: boolean;
 }> = {
   admin: {
     canManageTeam: true,
@@ -21,6 +22,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, {
     canHandleComplaints: true,
     canManageBlog: true,
     canManageSettings: true,
+    canManageHelp: true,
   },
   order_manager: {
     canManageTeam: false,
@@ -32,6 +34,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, {
     canHandleComplaints: false,
     canManageBlog: false,
     canManageSettings: false,
+    canManageHelp: false,
   },
   support: {
     canManageTeam: false,
@@ -43,6 +46,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, {
     canHandleComplaints: true,
     canManageBlog: false,
     canManageSettings: false,
+    canManageHelp: true,
   },
   inventory_only: {
     canManageTeam: false,
@@ -54,6 +58,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, {
     canHandleComplaints: false,
     canManageBlog: false,
     canManageSettings: false,
+    canManageHelp: false,
   },
 };
 

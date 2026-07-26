@@ -151,6 +151,8 @@ tinytots-web/
   web/
     app/
       account/
+        add-phone/
+          page.tsx
         page.tsx
       admin/
         blog/
@@ -247,14 +249,13 @@ tinytots-web/
           [id]/
             route.ts
           route.ts
-        referrals/
-          issue-reward/
-            route.ts
-          route.ts
         test-db/
           route.ts
         track-order/
           route.ts
+      auth/
+        callback/
+          page.tsx
       blog/
         [slug]/
           page.tsx
@@ -516,6 +517,7 @@ tinytots-web/
         20260723100000_product_images_storage.sql
         20260723200000_product_image_variants.sql
         20260726_handle_new_user_settings_voucher.sql
+        20260726060000_fix_referral_code_unique.sql
       snippets/
         Untitled query 131.sql
         Untitled query 174.sql
@@ -6149,6 +6151,119 @@ export default defineConfig({
 });
 </file>
 
+<file path="tinytots-web/web/app/account/add-phone/page.tsx">
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+
+function isValidPakPhone(phone: string) {
+  const digits = phone.replace(/[\s-]/g, "");
+  return /^(03\d{9}|\+923\d{9})$/.test(digits);
+}
+
+export default function AddPhonePage() {
+  const router = useRouter();
+  const [phone, setPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    async function checkExisting() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.replace("/login");
+        return;
+      }
+      const { data: customer } = await supabase
+        .from("customers")
+        .select("phone")
+        .eq("auth_user_id", session.user.id)
+        .single();
+
+      if (customer?.phone) {
+        router.replace("/account");
+      } else {
+        setChecking(false);
+      }
+    }
+    checkExisting();
+  }, [router]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (!isValidPakPhone(phone)) {
+      setError("Enter a valid Pakistani mobile number, e.g. 03001234567.");
+      return;
+    }
+
+    setSubmitting(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      router.replace("/login");
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from("customers")
+      .update({ phone: phone.trim() })
+      .eq("auth_user_id", session.user.id);
+
+    if (updateError) {
+      if (updateError.message.toLowerCase().includes("duplicate")) {
+        setError("This phone number is already linked to another account.");
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+      setSubmitting(false);
+      return;
+    }
+
+    router.replace("/account");
+  }
+
+  if (checking) {
+    return (
+      <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
+        <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <h1 className="font-display-md text-display-md text-on-surface mb-2">One last step</h1>
+      <p className="font-body-md text-body-md text-on-surface-variant mb-stack-md">
+        Add your phone number so we can process orders, referrals, and vouchers on your account.
+      </p>
+
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
+        <input
+          type="tel"
+          placeholder="Phone number (e.g. 03001234567)"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="w-full border border-outline-variant rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary transition-colors"
+        />
+        {error && <p className="font-label-md text-label-md text-error">{error}</p>}
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
+        >
+          {submitting ? "Saving..." : "Continue"}
+        </button>
+      </form>
+    </main>
+  );
+}
+</file>
+
 <file path="tinytots-web/web/app/admin/blog/editor/page.tsx">
 "use client";
 
@@ -7204,245 +7319,6 @@ export default function DiscountsPage() {
 }
 </file>
 
-<file path="tinytots-web/web/app/admin/login/page.tsx">
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-
-export default function AdminLoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setServerError(null);
-
-    if (!email.trim() || !password) {
-      setServerError("Please enter your email and password.");
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-
-      if (error || !data.session) {
-        setServerError("Incorrect email or password.");
-        setSubmitting(false);
-        return;
-      }
-
-      // Confirm this user is actually an active admin before letting them in
-      const { data: adminRow } = await supabase
-        .from("admin_users")
-        .select("id, is_active")
-        .eq("auth_user_id", data.session.user.id)
-        .maybeSingle();
-
-      if (!adminRow || !adminRow.is_active) {
-        await supabase.auth.signOut();
-        setServerError("This account does not have admin access.");
-        setSubmitting(false);
-        return;
-      }
-
-      router.push("/admin");
-      router.refresh();
-    } catch {
-      setServerError("Network error. Please try again.");
-      setSubmitting(false);
-    }
-  }
-
-  const inputClass =
-    "w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors";
-
-  return (
-    <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Admin Login</h1>
-
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
-        <input
-          type="email"
-          placeholder="Admin email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={inputClass}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={inputClass}
-        />
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
-        >
-          {submitting ? "Logging in..." : "Log in"}
-        </button>
-
-        {serverError && (
-          <p className="font-label-md text-label-md text-error mt-1">{serverError}</p>
-        )}
-      </form>
-    </main>
-  );
-}
-</file>
-
-<file path="tinytots-web/web/app/admin/settings/page.tsx">
-"use client";
-
-import { useEffect, useState } from "react";
-import { adminFetch } from "@/lib/admin-fetch";
-
-type Setting = {
-  key: string;
-  value: string;
-  description: string | null;
-  updated_at: string;
-};
-
-const LABELS: Record<string, string> = {
-  signup_voucher_amount: "Signup Voucher Amount (Rs.)",
-  referral_voucher_amount: "Referral Reward Amount (Rs.)",
-  referral_voucher_valid_days: "Referral Voucher Validity (days)",
-};
-
-export default function SettingsPage() {
-  const [settings, setSettings] = useState<Setting[]>([]);
-  const [editValues, setEditValues] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [savingKey, setSavingKey] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [successKey, setSuccessKey] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  async function loadSettings() {
-    setLoading(true);
-    setError(null);
-    try {
-        const res = await adminFetch("/api/admin/settings");
-        const data = await res.json();
-        setSettings(data.settings);
-      const initial: Record<string, string> = {};
-      for (const s of data.settings) initial[s.key] = s.value;
-      setEditValues(initial);
-    } catch (err: any) {
-      setError(err.message || "Failed to load settings");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleSave(key: string) {
-    setSavingKey(key);
-    setError(null);
-    setSuccessKey(null);
-    try {
-      const value = editValues[key];
-      const res = await adminFetch("/api/admin/settings", {
-        method: "PATCH",
-        body: JSON.stringify({ key, value }),
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Failed to save");
-      }
-      setSuccessKey(key);
-      await loadSettings();
-      setTimeout(() => setSuccessKey(null), 2000);
-    } catch (err: any) {
-      setError(err.message || `Failed to update ${key}`);
-    } finally {
-      setSavingKey(null);
-    }
-  }
-
-  if (loading) {
-    return <div className="p-6 text-on-surface-variant">Loading settings...</div>;
-  }
-
-  return (
-    <div className="p-6 max-w-2xl">
-      <h1 className="text-2xl font-semibold text-on-surface mb-1">Settings</h1>
-      <p className="text-on-surface-variant text-sm mb-6">
-        Control voucher and reward amounts used across the storefront and admin panel.
-      </p>
-
-      {error && (
-        <div className="mb-4 rounded-lg border border-error bg-error/10 px-4 py-3 text-error text-sm">
-          {error}
-        </div>
-      )}
-
-      <div className="flex flex-col gap-4">
-        {settings.map((setting) => {
-          const isDirty = editValues[setting.key] !== setting.value;
-          const isSaving = savingKey === setting.key;
-          const justSaved = successKey === setting.key;
-
-          return (
-            <div
-              key={setting.key}
-              className="border border-outline-variant rounded-xl p-4 bg-surface-container-lowest"
-            >
-              <label className="block text-sm font-medium text-on-surface mb-1">
-                {LABELS[setting.key] ?? setting.key}
-              </label>
-              {setting.description && (
-                <p className="text-xs text-on-surface-variant mb-3">{setting.description}</p>
-              )}
-
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  min={0}
-                  value={editValues[setting.key] ?? ""}
-                  onChange={(e) =>
-                    setEditValues((prev) => ({ ...prev, [setting.key]: e.target.value }))
-                  }
-                  className="w-40 border border-outline-variant rounded-lg px-3 py-2 bg-surface text-on-surface text-sm focus:outline-none focus:border-primary"
-                />
-                <button
-                  onClick={() => handleSave(setting.key)}
-                  disabled={!isDirty || isSaving || !editValues[setting.key]}
-                  className="px-4 py-2 rounded-lg bg-primary-container text-on-primary text-sm font-medium hover:bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {isSaving ? "Saving..." : "Save"}
-                </button>
-                {justSaved && (
-                  <span className="text-sm text-green-600">Saved</span>
-                )}
-              </div>
-
-              <p className="text-xs text-on-surface-variant mt-2">
-                Last updated: {new Date(setting.updated_at).toLocaleString()}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-</file>
-
 <file path="tinytots-web/web/app/admin/page.tsx">
 export default function AdminDashboardPage() {
     return (
@@ -8279,316 +8155,6 @@ export async function PUT(
 }
 </file>
 
-<file path="tinytots-web/web/app/api/admin/products/[id]/images/route.ts">
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
-import { requireAdmin } from "@/lib/require-admin";
-
-const BUCKET = "product-images";
-const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB, matches bucket config
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
-function publicUrlFor(storagePath: string) {
-  const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(storagePath);
-  return data.publicUrl;
-}
-
-// Keeps products.image_url pointing at whichever image is currently primary
-// for this product. Called after every insert/delete/set-primary so existing
-// code that reads products.image_url directly (storefront PDP, POS
-// ProductCard, admin list view) always stays correct without changes there.
-async function syncPrimaryImageUrl(productId: string) {
-  const { data: primary } = await supabaseAdmin
-    .from("product_images")
-    .select("storage_path")
-    .eq("product_id", productId)
-    .eq("is_primary", true)
-    .maybeSingle();
-
-  const imageUrl = primary ? publicUrlFor(primary.storage_path) : null;
-
-  const { error } = await supabaseAdmin
-    .from("products")
-    .update({ image_url: imageUrl })
-    .eq("id", productId);
-
-  if (error) {
-    // This was previously swallowed silently, which is exactly why the
-    // image_url mismatch was invisible. Now it'll show in the server
-    // terminal (npm run dev) if it happens again.
-    console.error(`syncPrimaryImageUrl FAILED for product ${productId}:`, error);
-  } else {
-    console.log(`syncPrimaryImageUrl OK for product ${productId}: image_url = ${imageUrl}`);
-  }
-}
-
-// GET /api/admin/products/[id]/images — list all images for a product
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const denied = await requireAdmin(request, "canManageInventory");
-  if (denied) return denied;
-
-  const { id } = await params;
-
-  const { data, error } = await supabaseAdmin
-    .from("product_images")
-    .select("id, storage_path, is_primary, sort_order, created_at")
-    .eq("product_id", id)
-    .order("sort_order", { ascending: true });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  const withUrls = await Promise.all(
-    (data || []).map(async (img) => {
-      const { data: links } = await supabaseAdmin
-        .from("product_image_variants")
-        .select("variant_id")
-        .eq("image_id", img.id);
-      return {
-        ...img,
-        url: publicUrlFor(img.storage_path),
-        variant_ids: (links || []).map((l) => l.variant_id),
-      };
-    })
-  );
-
-  return NextResponse.json({ data: withUrls }, { status: 200 });
-}
-
-// POST /api/admin/products/[id]/images — upload a new image
-// Expects multipart/form-data with a "file" field, and optional "is_primary" ("true"/"false")
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const denied = await requireAdmin(request, "canManageInventory");
-  if (denied) return denied;
-
-  const { id: productId } = await params;
-
-  try {
-    const formData = await request.formData();
-    const file = formData.get("file") as File | null;
-    const makePrimary = formData.get("is_primary") === "true";
-    // Optional: comma-separated variant ids this image applies to (e.g. all
-    // "Sea Green" variants regardless of size). Omit/empty = applies to the
-    // whole product (shown for every variant), matching pre-existing images.
-    const variantIdsRaw = formData.get("variant_ids") as string | null;
-    const variantIds = variantIdsRaw
-      ? variantIdsRaw.split(",").map((v) => v.trim()).filter(Boolean)
-      : [];
-
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
-    }
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json(
-        { error: "Only JPEG, PNG, or WebP images are allowed" },
-        { status: 400 }
-      );
-    }
-    if (file.size > MAX_FILE_BYTES) {
-      return NextResponse.json({ error: "Image must be under 5MB" }, { status: 400 });
-    }
-
-    // Verify the product actually exists before writing anything
-    const { data: product, error: productError } = await supabaseAdmin
-      .from("products")
-      .select("id")
-      .eq("id", productId)
-      .single();
-
-    if (productError || !product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 });
-    }
-
-    const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-    const storagePath = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-
-    const arrayBuffer = await file.arrayBuffer();
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from(BUCKET)
-      .upload(storagePath, arrayBuffer, { contentType: file.type, upsert: false });
-
-    if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 500 });
-    }
-
-    // If this is the first image for the product, or the caller asked for it,
-    // make it primary. Unset any existing primary first (DB has a unique
-    // index enforcing only one primary per product).
-    const { count: existingCount } = await supabaseAdmin
-      .from("product_images")
-      .select("id", { count: "exact", head: true })
-      .eq("product_id", productId);
-
-    const shouldBePrimary = makePrimary || !existingCount;
-
-    if (shouldBePrimary) {
-      await supabaseAdmin
-        .from("product_images")
-        .update({ is_primary: false })
-        .eq("product_id", productId)
-        .eq("is_primary", true);
-    }
-
-    const { data: inserted, error: insertError } = await supabaseAdmin
-      .from("product_images")
-      .insert([
-        {
-          product_id: productId,
-          storage_path: storagePath,
-          is_primary: shouldBePrimary,
-          sort_order: existingCount ?? 0,
-        },
-      ])
-      .select()
-      .single();
-
-    if (insertError) {
-      // Roll back the uploaded file so we don't leave orphaned storage objects
-      await supabaseAdmin.storage.from(BUCKET).remove([storagePath]);
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
-    }
-
-    if (shouldBePrimary) {
-      await syncPrimaryImageUrl(productId);
-    }
-
-    if (variantIds.length > 0) {
-      await supabaseAdmin.from("product_image_variants").insert(
-        variantIds.map((variantId) => ({ image_id: inserted.id, variant_id: variantId }))
-      );
-    }
-
-    return NextResponse.json(
-      { success: true, data: { ...inserted, url: publicUrlFor(storagePath), variant_ids: variantIds } },
-      { status: 201 }
-    );
-  } catch (err: any) {
-    console.error("POST /api/admin/products/[id]/images crashed:", err);
-    return NextResponse.json({ error: err?.message || "Unexpected server error" }, { status: 500 });
-  }
-}
-
-// PATCH /api/admin/products/[id]/images — set primary image, or reorder
-// Body: { image_id, action: "set_primary" } OR { order: [image_id, image_id, ...] }
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const denied = await requireAdmin(request, "canManageInventory");
-  if (denied) return denied;
-
-  const { id: productId } = await params;
-
-  try {
-    const body = await request.json();
-
-    if (body.action === "set_primary" && body.image_id) {
-      await supabaseAdmin
-        .from("product_images")
-        .update({ is_primary: false })
-        .eq("product_id", productId)
-        .eq("is_primary", true);
-
-      const { error } = await supabaseAdmin
-        .from("product_images")
-        .update({ is_primary: true })
-        .eq("id", body.image_id)
-        .eq("product_id", productId);
-
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-      await syncPrimaryImageUrl(productId);
-      return NextResponse.json({ success: true }, { status: 200 });
-    }
-
-    if (Array.isArray(body.order)) {
-      // body.order is an array of image ids in the desired display order
-      for (let i = 0; i < body.order.length; i++) {
-        await supabaseAdmin
-          .from("product_images")
-          .update({ sort_order: i })
-          .eq("id", body.order[i])
-          .eq("product_id", productId);
-      }
-      return NextResponse.json({ success: true }, { status: 200 });
-    }
-
-    return NextResponse.json(
-      { error: "Provide either { action: 'set_primary', image_id } or { order: [...] }" },
-      { status: 400 }
-    );
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Invalid request body" }, { status: 400 });
-  }
-}
-
-// DELETE /api/admin/products/[id]/images?image_id=123
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const denied = await requireAdmin(request, "canManageInventory");
-  if (denied) return denied;
-
-  const { id: productId } = await params;
-  const imageId = request.nextUrl.searchParams.get("image_id");
-
-  if (!imageId) {
-    return NextResponse.json({ error: "image_id query param is required" }, { status: 400 });
-  }
-
-  const { data: image, error: fetchError } = await supabaseAdmin
-    .from("product_images")
-    .select("id, storage_path, is_primary")
-    .eq("id", imageId)
-    .eq("product_id", productId)
-    .single();
-
-  if (fetchError || !image) {
-    return NextResponse.json({ error: "Image not found" }, { status: 404 });
-  }
-
-  const { error: deleteRowError } = await supabaseAdmin
-    .from("product_images")
-    .delete()
-    .eq("id", imageId);
-
-  if (deleteRowError) {
-    return NextResponse.json({ error: deleteRowError.message }, { status: 500 });
-  }
-
-  // Best-effort storage cleanup — the DB row is already gone either way
-  await supabaseAdmin.storage.from(BUCKET).remove([image.storage_path]);
-
-  if (image.is_primary) {
-    // Promote the next image (lowest sort_order) to primary, if any remain
-    const { data: nextImage } = await supabaseAdmin
-      .from("product_images")
-      .select("id")
-      .eq("product_id", productId)
-      .order("sort_order", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (nextImage) {
-      await supabaseAdmin
-        .from("product_images")
-        .update({ is_primary: true })
-        .eq("id", nextImage.id);
-    }
-
-    await syncPrimaryImageUrl(productId);
-  }
-
-  return NextResponse.json({ success: true }, { status: 200 });
-}
-</file>
-
 <file path="tinytots-web/web/app/api/admin/products/route.ts">
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -8935,181 +8501,6 @@ export async function POST(request: NextRequest) {
 }
 </file>
 
-<file path="tinytots-web/web/app/api/referrals/issue-reward/route.ts">
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
-// TODO: import { requireAdmin } from "@/lib/require-admin";
-
-const VOUCHER_AMOUNT = 100;
-const VOUCHER_VALID_DAYS = 30;
-
-// POST /api/admin/referrals/issue-reward - Manually issue the referral voucher
-export async function POST(req: NextRequest) {
-  try {
-    // TODO: const authError = await requireAdmin(req);
-    // TODO: if (authError) return authError;
-
-    const { referral_id } = await req.json();
-
-    if (!referral_id) {
-      return NextResponse.json({ error: "Missing referral_id" }, { status: 400 });
-    }
-
-    const { data: referral, error: referralError } = await supabaseAdmin
-      .from("referrals")
-      .select("*")
-      .eq("id", referral_id)
-      .single();
-
-    if (referralError || !referral) {
-      return NextResponse.json({ error: "Referral not found" }, { status: 404 });
-    }
-
-    if (referral.reward_triggered) {
-      return NextResponse.json(
-        { error: "Reward already issued for this referral" },
-        { status: 400 }
-      );
-    }
-
-    if (!referral.referee_customer_id) {
-      return NextResponse.json(
-        { error: "This referral has no completed referee yet — cannot issue reward" },
-        { status: 400 }
-      );
-    }
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + VOUCHER_VALID_DAYS);
-
-    // 1. Create the voucher for the referrer
-    const { data: voucher, error: voucherError } = await supabaseAdmin
-      .from("vouchers")
-      .insert({
-        customer_id: referral.referrer_customer_id,
-        amount: VOUCHER_AMOUNT,
-        is_used: false,
-        source: "referral",
-        expires_at: expiresAt.toISOString(),
-      })
-      .select()
-      .single();
-
-    if (voucherError) {
-      return NextResponse.json({ error: voucherError.message }, { status: 500 });
-    }
-
-    // 2. Mark the referral as rewarded
-    const { error: updateError } = await supabaseAdmin
-      .from("referrals")
-      .update({ reward_triggered: true })
-      .eq("id", referral_id);
-
-    if (updateError) {
-      // Voucher exists but the flag update failed — surfaced clearly, not swallowed
-      return NextResponse.json(
-        {
-          error: `Voucher created (id ${voucher.id}) but failed to flag referral as rewarded: ${updateError.message}. Needs manual fix.`,
-        },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ voucher });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to issue reward" },
-      { status: 500 }
-    );
-  }
-}
-</file>
-
-<file path="tinytots-web/web/app/api/referrals/route.ts">
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
-// TODO: import your requireAdmin guard here, e.g.:
-// import { requireAdmin } from "@/lib/require-admin";
-
-// GET /api/admin/referrals - Fetch all referrals (with referrer/referee names) + all vouchers
-export async function GET(req: NextRequest) {
-  try {
-    // TODO: const authError = await requireAdmin(req);
-    // TODO: if (authError) return authError;
-
-    const { data: referrals, error: referralsError } = await supabaseAdmin
-      .from("referrals")
-      .select(
-        `
-        id,
-        referral_code,
-        reward_triggered,
-        created_at,
-        referrer:customers!referrals_referrer_customer_id_fkey(id, full_name, phone),
-        referee:customers!referrals_referee_customer_id_fkey(id, full_name, phone)
-      `
-      )
-      .order("created_at", { ascending: false });
-
-    if (referralsError) {
-      return NextResponse.json({ error: referralsError.message }, { status: 500 });
-    }
-
-    const { data: vouchers, error: vouchersError } = await supabaseAdmin
-      .from("vouchers")
-      .select("*, customer:customers(id, full_name, phone)")
-      .order("created_at", { ascending: false });
-
-    if (vouchersError) {
-      return NextResponse.json({ error: vouchersError.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ referrals, vouchers });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to fetch referrals" },
-      { status: 500 }
-    );
-  }
-}
-
-// PATCH /api/admin/referrals - Void/restore a voucher (mark is_used)
-export async function PATCH(req: NextRequest) {
-  try {
-    // TODO: const authError = await requireAdmin(req);
-    // TODO: if (authError) return authError;
-
-    const body = await req.json();
-    const { voucher_id, is_used } = body;
-
-    if (!voucher_id || typeof is_used !== "boolean") {
-      return NextResponse.json(
-        { error: "voucher_id and is_used are required" },
-        { status: 400 }
-      );
-    }
-
-    const { data: voucher, error } = await supabaseAdmin
-      .from("vouchers")
-      .update({ is_used })
-      .eq("id", voucher_id)
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ voucher });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to update voucher" },
-      { status: 500 }
-    );
-  }
-}
-</file>
-
 <file path="tinytots-web/web/app/api/test-db/route.ts">
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
@@ -9221,6 +8612,60 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ data: order }, { status: 200 });
+}
+</file>
+
+<file path="tinytots-web/web/app/auth/callback/page.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+
+export default function AuthCallbackPage() {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function handleCallback() {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (cancelled) return;
+
+      if (sessionError || !session) {
+        setError("Sign-in failed. Please try again.");
+        setTimeout(() => router.replace("/login"), 2000);
+        return;
+      }
+
+      const { data: customer } = await supabase
+        .from("customers")
+        .select("phone")
+        .eq("auth_user_id", session.user.id)
+        .single();
+
+      if (!customer?.phone) {
+        router.replace("/account/add-phone");
+      } else {
+        router.replace("/account");
+      }
+    }
+
+    handleCallback();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  return (
+    <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
+      <p className="font-body-md text-body-md text-on-surface-variant">
+        {error ?? "Signing you in..."}
+      </p>
+    </main>
+  );
 }
 </file>
 
@@ -9914,170 +9359,6 @@ export default function ResetPasswordPage() {
         </button>
 
         {serverError && <p className="font-label-md text-label-md text-error mt-1">{serverError}</p>}
-      </form>
-    </main>
-  );
-}
-</file>
-
-<file path="tinytots-web/web/app/signup/page.tsx">
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase";
-
-const MAX_LEN = { name: 80, phone: 20, email: 100, password: 72 };
-
-function isValidPakPhone(phone: string) {
-  const digits = phone.replace(/[\s-]/g, "");
-  return /^(03\d{9}|\+923\d{9})$/.test(digits);
-}
-
-export default function SignupPage() {
-  const router = useRouter();
-
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [signupComplete, setSignupComplete] = useState(false);
-
-  function validate() {
-    const errs: Record<string, string> = {};
-    if (!fullName.trim()) errs.fullName = "Please enter your full name.";
-    if (!email.trim()) errs.email = "Please enter your email.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = "Enter a valid email address.";
-    if (!phone.trim()) errs.phone = "Phone number is required.";
-    else if (!isValidPakPhone(phone)) errs.phone = "Enter a valid number, e.g. 03001234567.";
-    if (password.length < 8) errs.password = "Password must be at least 8 characters.";
-    setFieldErrors(errs);
-    return Object.keys(errs).length === 0;
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setServerError(null);
-    if (!validate()) return;
-
-    setSubmitting(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            full_name: fullName.trim(),
-            phone: phone.trim(),
-          },
-        },
-      });
-
-      if (error) {
-        setServerError(error.message);
-        setSubmitting(false);
-        return;
-      }
-
-      setSignupComplete(true);
-    } catch {
-      setServerError("Network error. Please try again.");
-      setSubmitting(false);
-    }
-  }
-
-  const inputClass = (hasError: boolean) =>
-    `w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none transition-colors ${
-      hasError ? "border-error focus:border-error" : "border-outline-variant focus:border-primary"
-    }`;
-
-  const FieldError = ({ msg }: { msg?: string }) =>
-    msg ? <p className="font-label-md text-label-md text-error mt-1">{msg}</p> : null;
-
-  if (signupComplete) {
-    return (
-      <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
-        <h1 className="font-display-md text-display-md text-on-surface mb-4">Check your email</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant">
-          We&apos;ve sent a confirmation link to <strong>{email}</strong>. Click it to activate your account, then come back and log in.
-        </p>
-        <Link href="/login" className="inline-block mt-6 text-primary hover:underline font-body-sm text-body-sm">
-          Go to login
-        </Link>
-      </main>
-    );
-  }
-
-  return (
-    <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Create your account</h1>
-
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
-        <div>
-          <input
-            type="text"
-            placeholder="Full name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value.slice(0, MAX_LEN.name))}
-            maxLength={MAX_LEN.name}
-            className={inputClass(!!fieldErrors.fullName)}
-          />
-          <FieldError msg={fieldErrors.fullName} />
-        </div>
-
-        <div>
-          <input
-            type="email"
-            placeholder="Email address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value.slice(0, MAX_LEN.email))}
-            maxLength={MAX_LEN.email}
-            className={inputClass(!!fieldErrors.email)}
-          />
-          <FieldError msg={fieldErrors.email} />
-        </div>
-
-        <div>
-          <input
-            type="tel"
-            placeholder="Phone number (e.g. 03001234567)"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value.slice(0, MAX_LEN.phone))}
-            maxLength={MAX_LEN.phone}
-            className={inputClass(!!fieldErrors.phone)}
-          />
-          <FieldError msg={fieldErrors.phone} />
-        </div>
-
-        <div>
-          <input
-            type="password"
-            placeholder="Password (min 8 characters)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value.slice(0, MAX_LEN.password))}
-            maxLength={MAX_LEN.password}
-            className={inputClass(!!fieldErrors.password)}
-          />
-          <FieldError msg={fieldErrors.password} />
-        </div>
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
-        >
-          {submitting ? "Creating account..." : "Sign up"}
-        </button>
-        <FieldError msg={serverError ?? undefined} />
-
-        <p className="font-body-sm text-body-sm text-on-surface-variant text-center mt-2">
-          Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline">Log in</Link>
-        </p>
       </form>
     </main>
   );
@@ -29485,6 +28766,14 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+</file>
+
+<file path="tinytots-web/web/supabase/migrations/20260726060000_fix_referral_code_unique.sql">
+ALTER TABLE public.referrals DROP CONSTRAINT IF EXISTS referrals_referral_code_key;
+
+CREATE UNIQUE INDEX IF NOT EXISTS referrals_referee_customer_unique
+  ON public.referrals (referee_customer_id)
+  WHERE referee_customer_id IS NOT NULL;
 </file>
 
 <file path="tinytots-web/web/supabase/snippets/Untitled query 131.sql">
@@ -66490,6 +65779,138 @@ export default function AdminCouponsPage() {
 }
 </file>
 
+<file path="tinytots-web/web/app/admin/login/page.tsx">
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+
+export default function AdminLoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setServerError(null);
+
+    if (!email.trim() || !password) {
+      setServerError("Please enter your email and password.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error || !data.session) {
+        setServerError("Incorrect email or password.");
+        setSubmitting(false);
+        return;
+      }
+
+      // Confirm this user is actually an active admin before letting them in
+      const { data: adminRow } = await supabase
+        .from("admin_users")
+        .select("id, is_active")
+        .eq("auth_user_id", data.session.user.id)
+        .maybeSingle();
+
+      if (!adminRow || !adminRow.is_active) {
+        await supabase.auth.signOut();
+        setServerError("This account does not have admin access.");
+        setSubmitting(false);
+        return;
+      }
+
+      router.push("/admin");
+      router.refresh();
+    } catch {
+      setServerError("Network error. Please try again.");
+      setSubmitting(false);
+    }
+  }
+
+  async function handleGoogleLogin() {
+    setGoogleLoading(true);
+    setServerError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) {
+      setServerError("Couldn't start Google sign-in. Please try again.");
+      setGoogleLoading(false);
+    }
+  }
+
+  const inputClass =
+    "w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors";
+
+  return (
+    <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Admin Login</h1>
+
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
+        <input
+          type="email"
+          placeholder="Admin email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={inputClass}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={inputClass}
+        />
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
+        >
+          {submitting ? "Logging in..." : "Log in"}
+        </button>
+
+        {serverError && (
+          <p className="font-label-md text-label-md text-error mt-1">{serverError}</p>
+        )}
+      </form>
+      <div className="flex items-center gap-3 my-2">
+          <div className="flex-1 h-px bg-outline-variant" />
+          <span className="font-label-md text-label-md text-on-surface-variant">or</span>
+          <div className="flex-1 h-px bg-outline-variant" />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={googleLoading}
+          className="w-full py-3 rounded-xl border border-outline-variant flex items-center justify-center gap-3 font-button text-button text-on-surface hover:bg-surface-container-low transition-colors disabled:opacity-50"
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18">
+            <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>
+            <path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/>
+            <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
+          </svg>
+          Continue with Google
+        </button>
+    </main>
+  );
+}
+</file>
+
 <file path="tinytots-web/web/app/admin/orders/[id]/page.tsx">
 "use client";
 
@@ -67154,6 +66575,149 @@ export default function AdminReportsPage() {
 }
 </file>
 
+<file path="tinytots-web/web/app/admin/settings/page.tsx">
+"use client";
+
+import { useEffect, useState } from "react";
+import { adminFetch } from "@/lib/admin-fetch";
+
+type Setting = {
+  key: string;
+  value: string;
+  description: string | null;
+  updated_at: string;
+};
+
+const LABELS: Record<string, string> = {
+  signup_voucher_amount: "Signup Voucher Amount (Rs.)",
+  referral_voucher_amount: "Referral Reward Amount (Rs.)",
+  referral_voucher_valid_days: "Referral Voucher Validity (days)",
+  referee_discount_amount: "Referral Code Discount for Referee (Rs.)",
+  max_discount_percent_of_subtotal: "Max Coupon + Referral Discount (% of subtotal)",
+};
+
+export default function SettingsPage() {
+  const [settings, setSettings] = useState<Setting[]>([]);
+  const [editValues, setEditValues] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [successKey, setSuccessKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  async function loadSettings() {
+    setLoading(true);
+    setError(null);
+    try {
+        const res = await adminFetch("/api/admin/settings");
+        const data = await res.json();
+        setSettings(data.settings);
+      const initial: Record<string, string> = {};
+      for (const s of data.settings) initial[s.key] = s.value;
+      setEditValues(initial);
+    } catch (err: any) {
+      setError(err.message || "Failed to load settings");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave(key: string) {
+    setSavingKey(key);
+    setError(null);
+    setSuccessKey(null);
+    try {
+      const value = editValues[key];
+      const res = await adminFetch("/api/admin/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ key, value }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to save");
+      }
+      setSuccessKey(key);
+      await loadSettings();
+      setTimeout(() => setSuccessKey(null), 2000);
+    } catch (err: any) {
+      setError(err.message || `Failed to update ${key}`);
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  if (loading) {
+    return <div className="p-6 text-on-surface-variant">Loading settings...</div>;
+  }
+
+  return (
+    <div className="p-6 max-w-2xl">
+      <h1 className="text-2xl font-semibold text-on-surface mb-1">Settings</h1>
+      <p className="text-on-surface-variant text-sm mb-6">
+        Control voucher and reward amounts used across the storefront and admin panel.
+      </p>
+
+      {error && (
+        <div className="mb-4 rounded-lg border border-error bg-error/10 px-4 py-3 text-error text-sm">
+          {error}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4">
+        {settings.map((setting) => {
+          const isDirty = editValues[setting.key] !== setting.value;
+          const isSaving = savingKey === setting.key;
+          const justSaved = successKey === setting.key;
+
+          return (
+            <div
+              key={setting.key}
+              className="border border-outline-variant rounded-xl p-4 bg-surface-container-lowest"
+            >
+              <label className="block text-sm font-medium text-on-surface mb-1">
+                {LABELS[setting.key] ?? setting.key}
+              </label>
+              {setting.description && (
+                <p className="text-xs text-on-surface-variant mb-3">{setting.description}</p>
+              )}
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min={0}
+                  value={editValues[setting.key] ?? ""}
+                  onChange={(e) =>
+                    setEditValues((prev) => ({ ...prev, [setting.key]: e.target.value }))
+                  }
+                  className="w-40 border border-outline-variant rounded-lg px-3 py-2 bg-surface text-on-surface text-sm focus:outline-none focus:border-primary"
+                />
+                <button
+                  onClick={() => handleSave(setting.key)}
+                  disabled={!isDirty || isSaving || !editValues[setting.key]}
+                  className="px-4 py-2 rounded-lg bg-primary-container text-on-primary text-sm font-medium hover:bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </button>
+                {justSaved && (
+                  <span className="text-sm text-green-600">Saved</span>
+                )}
+              </div>
+
+              <p className="text-xs text-on-surface-variant mt-2">
+                Last updated: {new Date(setting.updated_at).toLocaleString()}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+</file>
+
 <file path="tinytots-web/web/app/admin/team/page.tsx">
 "use client";
 
@@ -67329,6 +66893,334 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ data }, { status: 200 });
+}
+</file>
+
+<file path="tinytots-web/web/app/api/admin/products/[id]/images/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
+
+const BUCKET = "product-images";
+const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB, matches bucket config
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function publicUrlFor(storagePath: string) {
+  const { data } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(storagePath);
+  return data.publicUrl;
+}
+
+// Keeps products.image_url pointing at whichever image is currently primary
+// for this product. Called after every insert/delete/set-primary so existing
+// code that reads products.image_url directly (storefront PDP, POS
+// ProductCard, admin list view) always stays correct without changes there.
+async function syncPrimaryImageUrl(productId: string) {
+  const { data: primary } = await supabaseAdmin
+    .from("product_images")
+    .select("storage_path")
+    .eq("product_id", productId)
+    .eq("is_primary", true)
+    .maybeSingle();
+
+  const imageUrl = primary ? publicUrlFor(primary.storage_path) : null;
+
+  const { error } = await supabaseAdmin
+    .from("products")
+    .update({ image_url: imageUrl })
+    .eq("id", productId);
+
+  if (error) {
+    // This was previously swallowed silently, which is exactly why the
+    // image_url mismatch was invisible. Now it'll show in the server
+    // terminal (npm run dev) if it happens again.
+    console.error(`syncPrimaryImageUrl FAILED for product ${productId}:`, error);
+  } else {
+    console.log(`syncPrimaryImageUrl OK for product ${productId}: image_url = ${imageUrl}`);
+  }
+}
+
+// GET /api/admin/products/[id]/images — list all images for a product
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
+  const { id } = await params;
+
+  const { data, error } = await supabaseAdmin
+    .from("product_images")
+    .select("id, storage_path, is_primary, sort_order, created_at")
+    .eq("product_id", id)
+    .order("sort_order", { ascending: true });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const withUrls = await Promise.all(
+    (data || []).map(async (img) => {
+      const { data: links } = await supabaseAdmin
+        .from("product_image_variants")
+        .select("variant_id")
+        .eq("image_id", img.id);
+      return {
+        ...img,
+        url: publicUrlFor(img.storage_path),
+        variant_ids: (links || []).map((l) => l.variant_id),
+      };
+    })
+  );
+
+  return NextResponse.json({ data: withUrls }, { status: 200 });
+}
+
+// POST /api/admin/products/[id]/images — upload a new image
+// Expects multipart/form-data with a "file" field, and optional "is_primary" ("true"/"false")
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
+  const { id: productId } = await params;
+
+  try {
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
+    const makePrimary = formData.get("is_primary") === "true";
+    // Optional: comma-separated variant ids this image applies to (e.g. all
+    // "Sea Green" variants regardless of size). Omit/empty = applies to the
+    // whole product (shown for every variant), matching pre-existing images.
+    const variantIdsRaw = formData.get("variant_ids") as string | null;
+    const variantIds = variantIdsRaw
+      ? variantIdsRaw.split(",").map((v) => v.trim()).filter(Boolean)
+      : [];
+
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        { error: "Only JPEG, PNG, or WebP images are allowed" },
+        { status: 400 }
+      );
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      return NextResponse.json({ error: "Image must be under 5MB" }, { status: 400 });
+    }
+
+    // Verify the product actually exists before writing anything
+    const { data: product, error: productError } = await supabaseAdmin
+      .from("products")
+      .select("id")
+      .eq("id", productId)
+      .single();
+
+    if (productError || !product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    const storagePath = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .upload(storagePath, arrayBuffer, { contentType: file.type, upsert: false });
+
+    if (uploadError) {
+      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    }
+
+    // If this is the first image for the product, or the caller asked for it,
+    // make it primary. Unset any existing primary first (DB has a unique
+    // index enforcing only one primary per product).
+    const { count: existingCount } = await supabaseAdmin
+      .from("product_images")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId);
+
+    const shouldBePrimary = makePrimary || !existingCount;
+
+    if (shouldBePrimary) {
+      await supabaseAdmin
+        .from("product_images")
+        .update({ is_primary: false })
+        .eq("product_id", productId)
+        .eq("is_primary", true);
+    }
+
+    const { data: inserted, error: insertError } = await supabaseAdmin
+      .from("product_images")
+      .insert([
+        {
+          product_id: productId,
+          storage_path: storagePath,
+          is_primary: shouldBePrimary,
+          sort_order: existingCount ?? 0,
+        },
+      ])
+      .select()
+      .single();
+
+    if (insertError) {
+      // Roll back the uploaded file so we don't leave orphaned storage objects
+      await supabaseAdmin.storage.from(BUCKET).remove([storagePath]);
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
+
+    if (shouldBePrimary) {
+      await syncPrimaryImageUrl(productId);
+    }
+
+    if (variantIds.length > 0) {
+      const { error: variantLinkError } = await supabaseAdmin
+        .from("product_image_variants")
+        .insert(variantIds.map((variantId) => ({ image_id: inserted.id, variant_id: variantId })));
+
+      if (variantLinkError) {
+        // The image itself was created successfully, so we don't fail the
+        // whole request — but silently returning success while the
+        // variant links are missing would hide a real data gap.
+        console.error(
+          `Image ${inserted.id}: failed to link variants [${variantIds.join(", ")}]:`,
+          variantLinkError.message
+        );
+        return NextResponse.json(
+          {
+            success: true,
+            warning: `Image uploaded, but failed to link it to ${variantIds.length} variant(s). You may need to re-select variants for this image.`,
+            data: { ...inserted, url: publicUrlFor(storagePath), variant_ids: [] },
+          },
+          { status: 201 }
+        );
+      }
+    }
+
+    return NextResponse.json(
+      { success: true, data: { ...inserted, url: publicUrlFor(storagePath), variant_ids: variantIds } },
+      { status: 201 }
+    );
+  } catch (err: any) {
+    console.error("POST /api/admin/products/[id]/images crashed:", err);
+    return NextResponse.json({ error: err?.message || "Unexpected server error" }, { status: 500 });
+  }
+}
+
+// PATCH /api/admin/products/[id]/images — set primary image, or reorder
+// Body: { image_id, action: "set_primary" } OR { order: [image_id, image_id, ...] }
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
+  const { id: productId } = await params;
+
+  try {
+    const body = await request.json();
+
+    if (body.action === "set_primary" && body.image_id) {
+      await supabaseAdmin
+        .from("product_images")
+        .update({ is_primary: false })
+        .eq("product_id", productId)
+        .eq("is_primary", true);
+
+      const { error } = await supabaseAdmin
+        .from("product_images")
+        .update({ is_primary: true })
+        .eq("id", body.image_id)
+        .eq("product_id", productId);
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      await syncPrimaryImageUrl(productId);
+      return NextResponse.json({ success: true }, { status: 200 });
+    }
+
+    if (Array.isArray(body.order)) {
+      // body.order is an array of image ids in the desired display order
+      for (let i = 0; i < body.order.length; i++) {
+        await supabaseAdmin
+          .from("product_images")
+          .update({ sort_order: i })
+          .eq("id", body.order[i])
+          .eq("product_id", productId);
+      }
+      return NextResponse.json({ success: true }, { status: 200 });
+    }
+
+    return NextResponse.json(
+      { error: "Provide either { action: 'set_primary', image_id } or { order: [...] }" },
+      { status: 400 }
+    );
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Invalid request body" }, { status: 400 });
+  }
+}
+
+// DELETE /api/admin/products/[id]/images?image_id=123
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
+  const { id: productId } = await params;
+  const imageId = request.nextUrl.searchParams.get("image_id");
+
+  if (!imageId) {
+    return NextResponse.json({ error: "image_id query param is required" }, { status: 400 });
+  }
+
+  const { data: image, error: fetchError } = await supabaseAdmin
+    .from("product_images")
+    .select("id, storage_path, is_primary")
+    .eq("id", imageId)
+    .eq("product_id", productId)
+    .single();
+
+  if (fetchError || !image) {
+    return NextResponse.json({ error: "Image not found" }, { status: 404 });
+  }
+
+  const { error: deleteRowError } = await supabaseAdmin
+    .from("product_images")
+    .delete()
+    .eq("id", imageId);
+
+  if (deleteRowError) {
+    return NextResponse.json({ error: deleteRowError.message }, { status: 500 });
+  }
+
+  // Best-effort storage cleanup — the DB row is already gone either way
+  await supabaseAdmin.storage.from(BUCKET).remove([image.storage_path]);
+
+  if (image.is_primary) {
+    // Promote the next image (lowest sort_order) to primary, if any remain
+    const { data: nextImage } = await supabaseAdmin
+      .from("product_images")
+      .select("id")
+      .eq("product_id", productId)
+      .order("sort_order", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (nextImage) {
+      await supabaseAdmin
+        .from("product_images")
+        .update({ is_primary: true })
+        .eq("id", nextImage.id);
+    }
+
+    await syncPrimaryImageUrl(productId);
+  }
+
+  return NextResponse.json({ success: true }, { status: 200 });
 }
 </file>
 
@@ -67561,6 +67453,204 @@ export async function DELETE(
     console.error("DELETE /api/admin/team/[id] crashed:", err);
     return NextResponse.json({ error: "Unexpected server error" }, { status: 500 });
   }
+}
+</file>
+
+<file path="tinytots-web/web/app/signup/page.tsx">
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+
+const MAX_LEN = { name: 80, phone: 20, email: 100, password: 72 };
+
+function isValidPakPhone(phone: string) {
+  const digits = phone.replace(/[\s-]/g, "");
+  return /^(03\d{9}|\+923\d{9})$/.test(digits);
+}
+
+export default function SignupPage() {
+  const router = useRouter();
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [signupComplete, setSignupComplete] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  function validate() {
+    const errs: Record<string, string> = {};
+    if (!fullName.trim()) errs.fullName = "Please enter your full name.";
+    if (!email.trim()) errs.email = "Please enter your email.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = "Enter a valid email address.";
+    if (!phone.trim()) errs.phone = "Phone number is required.";
+    else if (!isValidPakPhone(phone)) errs.phone = "Enter a valid number, e.g. 03001234567.";
+    if (password.length < 8) errs.password = "Password must be at least 8 characters.";
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setServerError(null);
+    if (!validate()) return;
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+            phone: phone.trim(),
+          },
+        },
+      });
+
+      if (error) {
+        setServerError(error.message);
+        setSubmitting(false);
+        return;
+      }
+
+      setSignupComplete(true);
+    } catch {
+      setServerError("Network error. Please try again.");
+      setSubmitting(false);
+    }
+  }
+
+  async function handleGoogleSignup() {
+    setGoogleLoading(true);
+    setServerError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) {
+      setServerError("Couldn't start Google sign-in. Please try again.");
+      setGoogleLoading(false);
+    }
+  }
+
+  const inputClass = (hasError: boolean) =>
+    `w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none transition-colors ${
+      hasError ? "border-error focus:border-error" : "border-outline-variant focus:border-primary"
+    }`;
+
+  const FieldError = ({ msg }: { msg?: string }) =>
+    msg ? <p className="font-label-md text-label-md text-error mt-1">{msg}</p> : null;
+
+  if (signupComplete) {
+    return (
+      <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
+        <h1 className="font-display-md text-display-md text-on-surface mb-4">Check your email</h1>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          We&apos;ve sent a confirmation link to <strong>{email}</strong>. Click it to activate your account, then come back and log in.
+        </p>
+        <Link href="/login" className="inline-block mt-6 text-primary hover:underline font-body-sm text-body-sm">
+          Go to login
+        </Link>
+      </main>
+    );
+  }
+
+  return (
+    <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Create your account</h1>
+
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
+        <div>
+          <input
+            type="text"
+            placeholder="Full name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value.slice(0, MAX_LEN.name))}
+            maxLength={MAX_LEN.name}
+            className={inputClass(!!fieldErrors.fullName)}
+          />
+          <FieldError msg={fieldErrors.fullName} />
+        </div>
+
+        <div>
+          <input
+            type="email"
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value.slice(0, MAX_LEN.email))}
+            maxLength={MAX_LEN.email}
+            className={inputClass(!!fieldErrors.email)}
+          />
+          <FieldError msg={fieldErrors.email} />
+        </div>
+
+        <div>
+          <input
+            type="tel"
+            placeholder="Phone number (e.g. 03001234567)"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value.slice(0, MAX_LEN.phone))}
+            maxLength={MAX_LEN.phone}
+            className={inputClass(!!fieldErrors.phone)}
+          />
+          <FieldError msg={fieldErrors.phone} />
+        </div>
+
+        <div>
+          <input
+            type="password"
+            placeholder="Password (min 8 characters)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value.slice(0, MAX_LEN.password))}
+            maxLength={MAX_LEN.password}
+            className={inputClass(!!fieldErrors.password)}
+          />
+          <FieldError msg={fieldErrors.password} />
+        </div>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
+        >
+          {submitting ? "Creating account..." : "Sign up"}
+        </button>
+        <FieldError msg={serverError ?? undefined} />
+
+        <p className="font-body-sm text-body-sm text-on-surface-variant text-center mt-2">
+          Already have an account?{" "}
+          <Link href="/login" className="text-primary hover:underline">Log in</Link>
+        </p>
+      </form>
+      <div className="flex items-center gap-3 my-2">
+          <div className="flex-1 h-px bg-outline-variant" />
+          <span className="font-label-md text-label-md text-on-surface-variant">or</span>
+          <div className="flex-1 h-px bg-outline-variant" />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleSignup}
+          disabled={googleLoading}
+          className="w-full py-3 rounded-xl border border-outline-variant flex items-center justify-center gap-3 font-button text-button text-on-surface hover:bg-surface-container-low transition-colors disabled:opacity-50"
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18">
+            <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>
+            <path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/>
+            <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
+          </svg>
+          Continue with Google
+        </button>
+    </main>
+  );
 }
 </file>
 
@@ -71758,356 +71848,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 }
 </file>
 
-<file path="tinytots-web/web/app/api/checkout/route.ts">
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
-
-// Cities where COD is currently allowed. Expand this list later
-// (e.g. add more cities, or switch to an "all Pakistan" flag) —
-// this is the only place that needs to change.
-const COD_ALLOWED_CITIES = [
-  "lahore",
-  "islamabad",
-  "rawalpindi", // twin city with Islamabad, commonly bundled in
-  "faisalabad",
-  "multan",
-  "gujranwala",
-  "sialkot",
-  "sargodha",
-  "bahawalpur",
-  "sheikhupura",
-];
-
-
-function calculateCodTier(orderTotal: number) {
-  if (orderTotal < 5000) {
-    return { cod_tier: "full_cod", cod_token_amount: 0 };
-  }
-  if (orderTotal <= 10000) {
-    return {
-      cod_tier: "token_percent",
-      cod_token_amount: Math.round(orderTotal * 0.1),
-    };
-  }
-  // above 10,000: flat Rs. 2,000 token (or full online payment, handled by payment_method choice)
-  return { cod_tier: "token_flat", cod_token_amount: 2000 };
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const {
-      items, // [{ variant_id, quantity }]
-      shipping_address,
-      shipping_city,
-      payment_method, // 'jazzcash' | 'easypaisa' | 'card' | 'cod'
-      customer_id, // optional, null for guest
-      guest_name,
-      guest_phone,
-      coupon_code,
-      voucher_id,
-      referral_code,
-    } = body;
-
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
-    }
-    if (!shipping_address || !shipping_city || !payment_method) {
-      return NextResponse.json(
-        { error: "shipping_address, shipping_city, and payment_method are required" },
-        { status: 400 }
-      );
-    }
-    if (shipping_address.trim().length < 10) {
-      return NextResponse.json(
-        { error: "Please provide a complete shipping address (house/street/area)." },
-        { status: 400 }
-      );
-    }
-    if (!["jazzcash", "easypaisa", "card", "cod"].includes(payment_method)) {
-      return NextResponse.json(
-        { error: "Invalid payment method." },
-        { status: 400 }
-      );
-    }
-    if (!customer_id && (!guest_name || !guest_phone)) {
-      return NextResponse.json(
-        { error: "guest_name and guest_phone are required for guest checkout" },
-        { status: 400 }
-      );
-    }
-    if (guest_phone) {
-      const phoneDigits = guest_phone.replace(/[\s-]/g, "");
-      const pakMobilePattern = /^(?:\+92|0)3\d{9}$/;
-      if (!pakMobilePattern.test(phoneDigits)) {
-        return NextResponse.json(
-          { error: "Please enter a valid Pakistani mobile number (e.g. 03001234567)." },
-          { status: 400 }
-        );
-      }
-    }
-    for (const cartItem of items) {
-      if (
-        !cartItem.variant_id ||
-        !Number.isInteger(cartItem.quantity) ||
-        cartItem.quantity < 1
-      ) {
-        return NextResponse.json(
-          { error: "Each item must have a valid variant_id and a quantity of at least 1." },
-          { status: 400 }
-        );
-      }
-    }
-
-    // COD city restriction
-    if (payment_method === "cod") {
-      const cityNormalized = shipping_city.trim().toLowerCase();
-      if (!COD_ALLOWED_CITIES.includes(cityNormalized)) {
-        return NextResponse.json(
-          {
-            error:
-              "Cash on Delivery is currently only available in select cities (Punjab & Islamabad). Please choose Card, JazzCash, or Easypaisa instead.",
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Fetch live variant data to validate stock and get authoritative prices
-    // (never trust prices sent from the client)
-    const variantIds = items.map((i: any) => i.variant_id);
-    const { data: variants, error: variantError } = await supabase
-    .from("variants")
-    .select("id, price, web_price, stock, product_id, cost_price")
-    .in("id", variantIds);
-
-    if (variantError) {
-      return NextResponse.json({ error: variantError.message }, { status: 500 });
-    }
-
-    // Validate stock and build order_items with authoritative prices
-    const orderItems: {
-      variant_id: number;
-      quantity: number;
-      unit_price: number;
-      unit_cost_price: number | null;
-      line_total: number;
-    }[] = [];
-
-    let subtotal = 0;
-
-    for (const cartItem of items) {
-      const variant = variants?.find((v) => v.id === cartItem.variant_id);
-      if (!variant) {
-        return NextResponse.json(
-          { error: `Variant ${cartItem.variant_id} not found` },
-          { status: 400 }
-        );
-      }
-      if (variant.stock < cartItem.quantity) {
-        return NextResponse.json(
-          {
-            error: `Insufficient stock for variant ${variant.id}. Only ${variant.stock} left.`,
-          },
-          { status: 400 }
-        );
-      }
-
-      const authoritativePrice = variant.web_price ?? variant.price;
-      const lineTotal = authoritativePrice * cartItem.quantity;
-      subtotal += lineTotal;
-
-      orderItems.push({
-        variant_id: variant.id,
-        quantity: cartItem.quantity,
-        unit_price: authoritativePrice,
-        unit_cost_price: variant.cost_price ?? null,
-        line_total: lineTotal,
-      });
-    }
-
- // Coupon validation — active, not expired, under max_uses, subtotal meets min_spend
- let discountTotal = 0;
- let appliedCouponCode: string | null = null;
- if (coupon_code) {
-   const { data: coupon } = await supabase
-     .from("coupons")
-     .select("*")
-     .eq("code", coupon_code)
-     .eq("is_active", true)
-     .single();
-
-   if (coupon) {
-     const notExpired =
-       !coupon.expires_at || new Date(coupon.expires_at) > new Date();
-     const underMaxUses =
-       coupon.max_uses === null || coupon.uses_count < coupon.max_uses;
-     const meetsMinSpend = subtotal >= (coupon.min_spend ?? 0);
-
-     if (notExpired && underMaxUses && meetsMinSpend) {
-       discountTotal =
-         coupon.discount_type === "percentage"
-           ? Math.round(subtotal * (coupon.value / 100))
-           : coupon.value;
-       appliedCouponCode = coupon.code;
-     }
-   }
- }
-
-  // Voucher validation — must belong to this customer, be unused, and not expired
-  let voucherAmount = 0;
-  let validatedVoucherId: number | null = null;
-  if (voucher_id && customer_id) {
-    const { data: voucher } = await supabase
-      .from("vouchers")
-      .select("*")
-      .eq("id", voucher_id)
-      .eq("customer_id", customer_id)
-      .eq("is_used", false)
-      .single();
-
-    if (voucher) {
-      const notExpired = new Date(voucher.expires_at) > new Date();
-      if (notExpired) {
-        voucherAmount = voucher.amount;
-        validatedVoucherId = voucher.id;
-      }
-    }
-  }
-
-// Referral validation — only for logged-in customers on their first order,
-    // code must belong to a different existing customer.
-    let validatedReferrerId: number | null = null;
-    if (referral_code && customer_id) {
-      const { data: referringCustomer } = await supabase
-        .from("customers")
-        .select("id, orders_count")
-        .eq("id", customer_id)
-        .single();
-
-      const isFirstOrder = referringCustomer?.orders_count === 0;
-
-      if (isFirstOrder) {
-        const { data: referrer } = await supabase
-          .from("customers")
-          .select("id")
-          .eq("referral_code", referral_code.trim().toUpperCase())
-          .single();
-
-        if (referrer && referrer.id !== customer_id) {
-          validatedReferrerId = referrer.id;
-        }
-      }
-    }
-
-    // Delivery fee: free for everyone, always.
-    const deliveryFee = 0;
-
-    const total = Math.max(0, subtotal + deliveryFee - discountTotal - voucherAmount);
-
-    // COD tier logic
-    let codTier: string | null = null;
-    let codTokenAmount = 0;
-    if (payment_method === "cod") {
-      const tier = calculateCodTier(total);
-      codTier = tier.cod_tier;
-      codTokenAmount = tier.cod_token_amount;
-    }
-
-    const orderNumber = `ORD-${Date.now()}`;
-
-    // Create the order
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert([
-        {
-          order_number: orderNumber,
-          customer_id: customer_id ?? null,
-          guest_name: customer_id ? null : guest_name,
-          guest_phone: customer_id ? null : guest_phone,
-          shipping_address,
-          shipping_city,
-          payment_method,
-          cod_tier: codTier,
-          cod_token_amount: codTokenAmount,
-          subtotal,
-          delivery_fee: deliveryFee,
-          discount_total: discountTotal,
-          total,
-          coupon_code: appliedCouponCode,
-          voucher_id: validatedVoucherId,
-        },
-      ])
-      .select()
-      .single();
-
-      if (orderError) {
-        return NextResponse.json({ error: orderError.message }, { status: 500 });
-      }
-  
-// Increment coupon usage count now that the order is confirmed created
-if (appliedCouponCode) {
-  await supabase.rpc("increment_coupon_uses", { p_code: appliedCouponCode });
-}
-
-// Mark voucher as used now that the order is confirmed created
-if (validatedVoucherId) {
-  await supabase.from("vouchers").update({ is_used: true }).eq("id", validatedVoucherId);
-}
-  
-      // Insert order_items — this triggers the deduct_stock_order function automatically
-    const itemsToInsert = orderItems.map((item) => ({
-      ...item,
-      order_id: order.id,
-    }));
-
-    const { error: itemsError } = await supabase
-      .from("order_items")
-      .insert(itemsToInsert);
-
-      if (itemsError) {
-        // Roll back the order if items failed to insert, to avoid an orphaned empty order
-        await supabase.from("orders").delete().eq("id", order.id);
-        return NextResponse.json({ error: itemsError.message }, { status: 500 });
-      }
-  
- // Link the referral now that the referee's first order is confirmed placed.
-      // Reward stays unissued (reward_triggered: false) until admin approves it.
-      if (validatedReferrerId && customer_id) {
-        const { error: referralInsertError } = await supabase.from("referrals").insert({
-          referrer_customer_id: validatedReferrerId,
-          referee_customer_id: customer_id,
-          referral_code: referral_code.trim().toUpperCase(),
-          reward_triggered: false,
-        });
-
-        if (referralInsertError) {
-          console.error("Referral link failed for order", order.id, referralInsertError.message);
-        }
-      }
-
-    return NextResponse.json(
-      {
-        success: true,
-        data: {
-          order_id: order.id,
-          order_number: order.order_number,
-          total: order.total,
-          cod_tier: codTier,
-          cod_token_amount: codTokenAmount,
-        },
-      },
-      { status: 201 }
-    );
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Invalid request" },
-      { status: 400 }
-    );
-  }
-}
-</file>
-
 <file path="tinytots-web/web/app/api/products/route.ts">
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
@@ -73168,6 +72908,428 @@ function LabeledInput({ label, required, ...props }) {
       />
     </div>
   );
+}
+</file>
+
+<file path="tinytots-web/web/app/api/checkout/route.ts">
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { getSettingNumber } from "@/lib/settings";
+
+// Cities where COD is currently allowed. Expand this list later
+// (e.g. add more cities, or switch to an "all Pakistan" flag) —
+// this is the only place that needs to change.
+const COD_ALLOWED_CITIES = [
+  "lahore",
+  "islamabad",
+  "rawalpindi", // twin city with Islamabad, commonly bundled in
+  "faisalabad",
+  "multan",
+  "gujranwala",
+  "sialkot",
+  "sargodha",
+  "bahawalpur",
+  "sheikhupura",
+];
+
+
+function calculateCodTier(orderTotal: number) {
+  if (orderTotal < 5000) {
+    return { cod_tier: "full_cod", cod_token_amount: 0 };
+  }
+  if (orderTotal <= 10000) {
+    return {
+      cod_tier: "token_percent",
+      cod_token_amount: Math.round(orderTotal * 0.1),
+    };
+  }
+  // above 10,000: flat Rs. 2,000 token (or full online payment, handled by payment_method choice)
+  return { cod_tier: "token_flat", cod_token_amount: 2000 };
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const {
+      items, // [{ variant_id, quantity }]
+      shipping_address,
+      shipping_city,
+      payment_method, // 'jazzcash' | 'easypaisa' | 'card' | 'cod'
+      customer_id, // optional, null for guest
+      guest_name,
+      guest_phone,
+      coupon_code,
+      voucher_id,
+      referral_code,
+    } = body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
+    }
+    if (!shipping_address || !shipping_city || !payment_method) {
+      return NextResponse.json(
+        { error: "shipping_address, shipping_city, and payment_method are required" },
+        { status: 400 }
+      );
+    }
+    if (shipping_address.trim().length < 10) {
+      return NextResponse.json(
+        { error: "Please provide a complete shipping address (house/street/area)." },
+        { status: 400 }
+      );
+    }
+    if (!["jazzcash", "easypaisa", "card", "cod"].includes(payment_method)) {
+      return NextResponse.json(
+        { error: "Invalid payment method." },
+        { status: 400 }
+      );
+    }
+    if (!customer_id && (!guest_name || !guest_phone)) {
+      return NextResponse.json(
+        { error: "guest_name and guest_phone are required for guest checkout" },
+        { status: 400 }
+      );
+    }
+    if (guest_phone) {
+      const phoneDigits = guest_phone.replace(/[\s-]/g, "");
+      const pakMobilePattern = /^(?:\+92|0)3\d{9}$/;
+      if (!pakMobilePattern.test(phoneDigits)) {
+        return NextResponse.json(
+          { error: "Please enter a valid Pakistani mobile number (e.g. 03001234567)." },
+          { status: 400 }
+        );
+      }
+    }
+    for (const cartItem of items) {
+      if (
+        !cartItem.variant_id ||
+        !Number.isInteger(cartItem.quantity) ||
+        cartItem.quantity < 1
+      ) {
+        return NextResponse.json(
+          { error: "Each item must have a valid variant_id and a quantity of at least 1." },
+          { status: 400 }
+        );
+      }
+    }
+
+    // COD city restriction
+    if (payment_method === "cod") {
+      const cityNormalized = shipping_city.trim().toLowerCase();
+      if (!COD_ALLOWED_CITIES.includes(cityNormalized)) {
+        return NextResponse.json(
+          {
+            error:
+              "Cash on Delivery is currently only available in select cities (Punjab & Islamabad). Please choose Card, JazzCash, or Easypaisa instead.",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Fetch live variant data to validate stock and get authoritative prices
+    // (never trust prices sent from the client)
+    const variantIds = items.map((i: any) => i.variant_id);
+    const { data: variants, error: variantError } = await supabase
+    .from("variants")
+    .select("id, price, web_price, stock, product_id, cost_price")
+    .in("id", variantIds);
+
+    if (variantError) {
+      return NextResponse.json({ error: variantError.message }, { status: 500 });
+    }
+
+    // Validate stock and build order_items with authoritative prices
+    const orderItems: {
+      variant_id: number;
+      quantity: number;
+      unit_price: number;
+      unit_cost_price: number | null;
+      line_total: number;
+    }[] = [];
+
+    let subtotal = 0;
+
+    for (const cartItem of items) {
+      const variant = variants?.find((v) => v.id === cartItem.variant_id);
+      if (!variant) {
+        return NextResponse.json(
+          { error: `Variant ${cartItem.variant_id} not found` },
+          { status: 400 }
+        );
+      }
+      if (variant.stock < cartItem.quantity) {
+        return NextResponse.json(
+          {
+            error: `Insufficient stock for variant ${variant.id}. Only ${variant.stock} left.`,
+          },
+          { status: 400 }
+        );
+      }
+
+      const authoritativePrice = variant.web_price ?? variant.price;
+      const lineTotal = authoritativePrice * cartItem.quantity;
+      subtotal += lineTotal;
+
+      orderItems.push({
+        variant_id: variant.id,
+        quantity: cartItem.quantity,
+        unit_price: authoritativePrice,
+        unit_cost_price: variant.cost_price ?? null,
+        line_total: lineTotal,
+      });
+    }
+
+ // Coupon validation — active, not expired, under max_uses, subtotal meets min_spend
+ let discountTotal = 0;
+ let appliedCouponCode: string | null = null;
+ if (coupon_code) {
+   const { data: coupon } = await supabase
+     .from("coupons")
+     .select("*")
+     .eq("code", coupon_code)
+     .eq("is_active", true)
+     .single();
+
+   if (coupon) {
+     const notExpired =
+       !coupon.expires_at || new Date(coupon.expires_at) > new Date();
+     const underMaxUses =
+       coupon.max_uses === null || coupon.uses_count < coupon.max_uses;
+     const meetsMinSpend = subtotal >= (coupon.min_spend ?? 0);
+
+     if (notExpired && underMaxUses && meetsMinSpend) {
+       discountTotal =
+         coupon.discount_type === "percentage"
+           ? Math.round(subtotal * (coupon.value / 100))
+           : coupon.value;
+       appliedCouponCode = coupon.code;
+     }
+   }
+ }
+
+  // Voucher validation — must belong to this customer, be unused, and not expired
+  let voucherAmount = 0;
+  let validatedVoucherId: number | null = null;
+  if (voucher_id && customer_id) {
+    const { data: voucher } = await supabase
+      .from("vouchers")
+      .select("*")
+      .eq("id", voucher_id)
+      .eq("customer_id", customer_id)
+      .eq("is_used", false)
+      .single();
+
+    if (voucher) {
+      const notExpired = new Date(voucher.expires_at) > new Date();
+      if (notExpired) {
+        voucherAmount = voucher.amount;
+        validatedVoucherId = voucher.id;
+      }
+    }
+  }
+// Referral validation — works for both logged-in customers (first order
+    // only) and guests (identified by phone, one redemption per phone ever).
+    let validatedReferrerId: number | null = null;
+    let referralReferaeePhone: string | null = null;
+
+    if (referral_code) {
+      const { data: referrer } = await supabase
+        .from("customers")
+        .select("id, phone")
+        .eq("referral_code", referral_code.trim().toUpperCase())
+        .single();
+
+      if (referrer) {
+        if (customer_id) {
+          // Logged-in path: must be their first order, and can't refer themselves.
+          const { data: referringCustomer } = await supabase
+            .from("customers")
+            .select("id, orders_count")
+            .eq("id", customer_id)
+            .single();
+
+          const isFirstOrder = referringCustomer?.orders_count === 0;
+          if (isFirstOrder && referrer.id !== customer_id) {
+            validatedReferrerId = referrer.id;
+          }
+        } else if (guest_phone) {
+          // Guest path: can't redeem your own code, and each phone can only
+          // redeem a referral once — enforced again at insert by the unique
+          // index, this check just avoids a wasted round trip.
+          const guestPhoneDigits = guest_phone.replace(/[\s-]/g, "");
+          const referrerPhoneDigits = referrer.phone?.replace(/[\s-]/g, "");
+
+          if (guestPhoneDigits !== referrerPhoneDigits) {
+            const { data: alreadyUsed } = await supabase
+              .from("referrals")
+              .select("id")
+              .eq("referee_phone", guestPhoneDigits)
+              .maybeSingle();
+
+            if (!alreadyUsed) {
+              validatedReferrerId = referrer.id;
+              referralReferaeePhone = guestPhoneDigits;
+            }
+          }
+        }
+      }
+    }
+  // Referee gets an instant discount for using a valid referral code —
+    // separate from the referrer's later admin-approved reward.
+    let refereeDiscount = 0;
+    if (validatedReferrerId) {
+      refereeDiscount = await getSettingNumber("referee_discount_amount");
+    }
+
+    // Cap coupon + referral discount together as a % of subtotal, so stacking
+    // marketing incentives can't eat the whole order. Vouchers are excluded
+    // from this cap — a voucher is already-earned customer value and always
+    // applies in full, never silently reduced.
+    const maxDiscountPercent = await getSettingNumber("max_discount_percent_of_subtotal");
+    const marketingDiscountCap = Math.round(subtotal * (maxDiscountPercent / 100));
+    const requestedMarketingDiscount = discountTotal + refereeDiscount;
+
+    if (requestedMarketingDiscount > marketingDiscountCap) {
+      // Coupon takes priority (it's the more deliberate marketing lever),
+      // referral discount absorbs the reduction, down to zero if needed.
+      const cappedCouponDiscount = Math.min(discountTotal, marketingDiscountCap);
+      const remainingForReferral = Math.max(0, marketingDiscountCap - cappedCouponDiscount);
+
+      discountTotal = cappedCouponDiscount;
+      refereeDiscount = Math.min(refereeDiscount, remainingForReferral);
+    }
+    // Delivery fee: free for everyone, always.
+    const deliveryFee = 0;
+
+    const total = Math.max(0, subtotal + deliveryFee - discountTotal - voucherAmount - refereeDiscount);
+
+    // COD tier logic
+    let codTier: string | null = null;
+    let codTokenAmount = 0;
+    if (payment_method === "cod") {
+      const tier = calculateCodTier(total);
+      codTier = tier.cod_tier;
+      codTokenAmount = tier.cod_token_amount;
+    }
+
+    const orderNumber = `ORD-${Date.now()}`;
+
+    // Create the order
+    const { data: order, error: orderError } = await supabase
+      .from("orders")
+      .insert([
+        {
+          order_number: orderNumber,
+          customer_id: customer_id ?? null,
+          guest_name: customer_id ? null : guest_name,
+          guest_phone: customer_id ? null : guest_phone,
+          shipping_address,
+          shipping_city,
+          payment_method,
+          cod_tier: codTier,
+          cod_token_amount: codTokenAmount,
+          subtotal,
+          delivery_fee: deliveryFee,
+          discount_total: discountTotal,
+          referral_discount: refereeDiscount,
+          total,
+          coupon_code: appliedCouponCode,
+          voucher_id: validatedVoucherId,
+        },
+      ])
+      .select()
+      .single();
+
+      if (orderError) {
+        return NextResponse.json({ error: orderError.message }, { status: 500 });
+      }
+  
+// Increment coupon usage count now that the order is confirmed created.
+// Logged, not thrown — a failure here shouldn't fail an already-placed order,
+// but silent drift in uses_count is worse than a log line telling us it happened.
+if (appliedCouponCode) {
+  const { error: couponIncrementError } = await supabase.rpc("increment_coupon_uses", {
+    p_code: appliedCouponCode,
+  });
+  if (couponIncrementError) {
+    console.error(
+      `Order ${order.id}: failed to increment uses_count for coupon ${appliedCouponCode}:`,
+      couponIncrementError.message
+    );
+  }
+}
+
+// Mark voucher as used now that the order is confirmed created.
+// Same reasoning — log, don't throw, but never let this fail invisibly:
+// an unflagged voucher stays valid and could be reused elsewhere.
+if (validatedVoucherId) {
+  const { error: voucherFlagError } = await supabase
+    .from("vouchers")
+    .update({ is_used: true })
+    .eq("id", validatedVoucherId);
+  if (voucherFlagError) {
+    console.error(
+      `Order ${order.id}: failed to flag voucher ${validatedVoucherId} as used:`,
+      voucherFlagError.message
+    );
+  }
+}
+  
+      // Insert order_items — this triggers the deduct_stock_order function automatically
+    const itemsToInsert = orderItems.map((item) => ({
+      ...item,
+      order_id: order.id,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from("order_items")
+      .insert(itemsToInsert);
+
+      if (itemsError) {
+        // Roll back the order if items failed to insert, to avoid an orphaned empty order
+        await supabase.from("orders").delete().eq("id", order.id);
+        return NextResponse.json({ error: itemsError.message }, { status: 500 });
+      }
+ // Link the referral now that the order is confirmed placed. Reward stays
+      // unissued (reward_triggered: false) until admin approves it. Works for
+      // both logged-in referees (referee_customer_id set now) and guests
+      // (referee_phone set now, referee_customer_id backfilled automatically
+      // by trg_link_guest_referral if/when they later create an account).
+      if (validatedReferrerId) {
+        const { error: referralInsertError } = await supabase.from("referrals").insert({
+          referrer_customer_id: validatedReferrerId,
+          referee_customer_id: customer_id ?? null,
+          referee_phone: customer_id ? null : referralReferaeePhone,
+          referral_code: referral_code.trim().toUpperCase(),
+          order_id: order.id,
+          reward_triggered: false,
+        });
+
+        if (referralInsertError) {
+          console.error("Referral link failed for order", order.id, referralInsertError.message);
+        }
+      }
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          order_id: order.id,
+          order_number: order.order_number,
+          total: order.total,
+          cod_tier: codTier,
+          cod_token_amount: codTokenAmount,
+        },
+      },
+      { status: 201 }
+    );
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Invalid request" },
+      { status: 400 }
+    );
+  }
 }
 </file>
 
