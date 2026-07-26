@@ -1,8 +1,32 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { adminFetch } from "@/lib/admin-fetch";
+import "react-quill-new/dist/quill.snow.css";
+
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
+
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["link"],
+    ["clean"],
+  ],
+};
+
+const quillFormats = [
+  "header",
+  "bold",
+  "italic",
+  "underline",
+  "strike",
+  "list",
+  "link",
+];
 
 export default function HelpEditorPage() {
   const router = useRouter();
@@ -130,16 +154,14 @@ export default function HelpEditorPage() {
 
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Content</label>
-          <textarea
+          <ReactQuill
+            theme="snow"
             value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={12}
-            className="w-full border rounded-md px-3 py-2 text-sm font-mono"
-            placeholder="Plain text or simple HTML (p, strong, em, ul/li, a) — no images needed here."
+            onChange={setContent}
+            modules={quillModules}
+            formats={quillFormats}
+            className="bg-white"
           />
-          <p className="text-xs text-gray-400 mt-1">
-            Basic HTML tags are allowed (p, strong, em, ul, ol, li, a). Content is sanitized on save.
-          </p>
         </div>
       </div>
 

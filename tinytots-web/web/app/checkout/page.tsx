@@ -35,8 +35,10 @@ export default function CheckoutPage() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [customerId, setCustomerId] = useState<number | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<{ id: number; label: string; address: string; city: string; is_default: boolean }[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | "new" | null>(null);
 
-  useEffect(() => {
+ useEffect(() => {
     if (!user) return;
     supabase
       .from("customers")
@@ -47,9 +49,28 @@ export default function CheckoutPage() {
         if (data) {
           setCustomerId(data.id);
           setOrdersCount(data.orders_count);
+
+          // Load saved addresses once we know the customer id, and
+          // pre-select the default one (or the only one) automatically.
+          supabase
+            .from("addresses")
+            .select("id, label, address, city, is_default")
+            .eq("customer_id", data.id)
+            .order("is_default", { ascending: false })
+            .then(({ data: addrs }) => {
+              if (addrs && addrs.length > 0) {
+                setSavedAddresses(addrs);
+                const defaultAddr = addrs.find((a) => a.is_default) || addrs[0];
+                setSelectedAddressId(defaultAddr.id);
+                setShippingAddress(defaultAddr.address);
+                setShippingCity(defaultAddr.city);
+              } else {
+                setSelectedAddressId("new");
+              }
+            });
         }
       });
-}, [user]);
+  }, [user]);
 
   if (items.length === 0) {
     return (
@@ -62,6 +83,20 @@ export default function CheckoutPage() {
         </Link>
       </main>
     );
+  }
+
+  function handleAddressPick(id: number | "new") {
+    setSelectedAddressId(id);
+    if (id === "new") {
+      setShippingAddress("");
+      setShippingCity("");
+      return;
+    }
+    const picked = savedAddresses.find((a) => a.id === id);
+    if (picked) {
+      setShippingAddress(picked.address);
+      setShippingCity(picked.city);
+    }
   }
 
   function validate() {
@@ -163,32 +198,75 @@ export default function CheckoutPage() {
             </div>
           </div>
   )}
-          <div>
+      <div>
             <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Shipping address</h2>
-            <div className="flex flex-col gap-3">
-              <div>
-                <textarea
-                  placeholder="Full address (house/street/area)"
-                  value={shippingAddress}
-                  onChange={(e) => setShippingAddress(sanitize(e.target.value, MAX_LEN.address))}
-                  maxLength={MAX_LEN.address}
-                  rows={3}
-                  className={inputClass(!!fieldErrors.shippingAddress)}
-                />
-                <FieldError msg={fieldErrors.shippingAddress} />
+
+            {user && savedAddresses.length > 0 && (
+              <div className="flex flex-col gap-2 mb-3">
+                {savedAddresses.map((a) => (
+                  <label
+                    key={a.id}
+                    className={`flex items-start gap-3 border rounded-lg px-4 py-3 cursor-pointer transition-colors ${
+                      selectedAddressId === a.id ? "border-primary bg-primary-container/10" : "border-outline-variant"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="savedAddress"
+                      checked={selectedAddressId === a.id}
+                      onChange={() => handleAddressPick(a.id)}
+                      className="mt-1"
+                    />
+                    <div>
+                      <p className="font-body-sm text-body-sm text-on-surface font-semibold">
+                        {a.label} {a.is_default && <span className="text-xs text-primary font-normal">(default)</span>}
+                      </p>
+                      <p className="font-label-md text-label-md text-on-surface-variant">{a.address}, {a.city}</p>
+                    </div>
+                  </label>
+                ))}
+                <label
+                  className={`flex items-center gap-3 border rounded-lg px-4 py-3 cursor-pointer transition-colors ${
+                    selectedAddressId === "new" ? "border-primary bg-primary-container/10" : "border-outline-variant"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="savedAddress"
+                    checked={selectedAddressId === "new"}
+                    onChange={() => handleAddressPick("new")}
+                  />
+                  <span className="font-body-sm text-body-sm text-on-surface">Use a different address</span>
+                </label>
               </div>
-              <div>
-                <input
-                  type="text"
-                  placeholder="City (e.g. Lahore, Islamabad, Karachi...)"
-                  value={shippingCity}
-                  onChange={(e) => setShippingCity(sanitize(e.target.value, MAX_LEN.city))}
-                  maxLength={MAX_LEN.city}
-                  className={inputClass(!!fieldErrors.shippingCity)}
-                />
-                <FieldError msg={fieldErrors.shippingCity} />
+            )}
+
+            {(!user || savedAddresses.length === 0 || selectedAddressId === "new") && (
+              <div className="flex flex-col gap-3">
+                <div>
+                  <textarea
+                    placeholder="Full address (house/street/area)"
+                    value={shippingAddress}
+                    onChange={(e) => setShippingAddress(sanitize(e.target.value, MAX_LEN.address))}
+                    maxLength={MAX_LEN.address}
+                    rows={3}
+                    className={inputClass(!!fieldErrors.shippingAddress)}
+                  />
+                  <FieldError msg={fieldErrors.shippingAddress} />
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="City (e.g. Lahore, Islamabad, Karachi...)"
+                    value={shippingCity}
+                    onChange={(e) => setShippingCity(sanitize(e.target.value, MAX_LEN.city))}
+                    maxLength={MAX_LEN.city}
+                    className={inputClass(!!fieldErrors.shippingCity)}
+                  />
+                  <FieldError msg={fieldErrors.shippingCity} />
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {user && ordersCount === 0 && (
