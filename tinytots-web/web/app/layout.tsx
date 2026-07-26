@@ -9,6 +9,7 @@ import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
 import HeaderCart from "@/components/HeaderCart";
+import MobileSubNav from "@/components/MobileSubNav";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import { WishlistProvider } from "@/lib/wishlist-context";
@@ -160,13 +161,27 @@ function AccountMenu() {
 
   if (!user) {
     return (
-      <Link
-        href="/login"
-        className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
-        title="Log in"
-      >
-        <span className="material-symbols-outlined">person</span>
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link
+          href="/login"
+          className="hidden sm:inline-block font-body-sm text-body-sm text-on-surface-variant hover:text-primary px-3 py-2 rounded-full transition-colors"
+        >
+          Sign in
+        </Link>
+        <Link
+          href="/signup"
+          className="font-body-sm text-body-sm bg-primary-container text-on-primary px-4 py-2 rounded-full hover:bg-primary transition-colors whitespace-nowrap"
+        >
+          Sign up
+        </Link>
+        <Link
+          href="/login"
+          className="sm:hidden text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
+          title="Log in"
+        >
+          <span className="material-symbols-outlined">person</span>
+        </Link>
+      </div>
     );
   }
 
@@ -263,6 +278,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </nav>
             </header>
 
+            <MobileSubNav />
+
             {/* MAIN CONTENT AREA */}
             <main className="flex-grow w-full max-w-container-max mx-auto min-w-0 px-margin-mobile md:px-margin-desktop">
               {children}
@@ -277,12 +294,18 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 </div>
                 <div className="flex flex-col gap-3">
                   <h4 className="font-headline-md text-headline-md text-on-surface">Explore</h4>
+                  <Link href="/products" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shop All</Link>
                   <Link href="/our-story" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">About Us</Link>
+                  <Link href="/blog" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Blog</Link>
                 </div>
                 <div className="flex flex-col gap-3">
                   <h4 className="font-headline-md text-headline-md text-on-surface">Support</h4>
-                  <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shipping Policy</Link>
+                  <Link href="/help" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Help Center</Link>
                   <Link href="/track-order" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Track Order</Link>
+                  <Link href="/report-issue" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Report an Issue</Link>
+                  <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shipping &amp; Returns</Link>
+                  <Link href="/privacy-policy" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Privacy Policy</Link>
+                  <Link href="/terms" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Terms &amp; Conditions</Link>
                 </div>
                 <div className="flex flex-col gap-4 min-w-0">
                   <h4 className="font-headline-md text-headline-md text-on-surface">Join Our Newsletter</h4>

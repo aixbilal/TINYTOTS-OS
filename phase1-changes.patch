@@ -1,0 +1,720 @@
+From 858f378d2f7b4f3cfc2b6d527bb689b228649d38 Mon Sep 17 00:00:00 2001
+From: Claude <assistant@anthropic.com>
+Date: Sun, 26 Jul 2026 10:48:05 +0000
+Subject: [PATCH] Phase 1 (5, 7, 8): header signup/signin buttons, mobile
+ back/home nav, admin-editable site pages
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- Header: explicit Sign in / Sign up buttons for logged-out users (item 5)
+- Item 6 (shop-by-age drawer) dropped per instruction — never built, nothing removed
+- New MobileSubNav component: mobile-only Back + Home bar under header, hidden on homepage (item 7)
+- New site_pages table + admin CRUD (canManagePages permission) so About Us, Privacy Policy,
+  Terms, and Shipping & Returns can be edited from admin without a dev — covers the online-store
+  vs physical-store wording difference for About Us (item 8)
+- New public pages: /our-story, /privacy-policy, /terms, /shipping-returns, all rendering from site_pages
+- Footer rebuilt: fixed two dead links (/our-story, /shipping-returns previously 404'd), added
+  Help Center, Report an Issue, Privacy Policy, Terms links
+- Admin nav: added 'Site Pages' link gated by canManagePages
+---
+ tinytots-web/web/app/admin/layout.tsx         |   1 +
+ .../web/app/admin/pages/[slug]/page.tsx       | 119 ++++++++++++++++++
+ tinytots-web/web/app/admin/pages/page.tsx     |  65 ++++++++++
+ .../web/app/api/admin/pages/[slug]/route.ts   |  64 ++++++++++
+ tinytots-web/web/app/api/admin/pages/route.ts |  17 +++
+ .../web/app/api/pages/[slug]/route.ts         |  23 ++++
+ tinytots-web/web/app/layout.tsx               |  39 ++++--
+ tinytots-web/web/app/our-story/page.tsx       |  31 +++++
+ tinytots-web/web/app/privacy-policy/page.tsx  |  31 +++++
+ .../web/app/shipping-returns/page.tsx         |  31 +++++
+ tinytots-web/web/app/terms/page.tsx           |  31 +++++
+ tinytots-web/web/components/MobileSubNav.tsx  |  36 ++++++
+ tinytots-web/web/lib/admin-permissions.ts     |   5 +
+ .../migrations/20260726120000_site_pages.sql  |  24 ++++
+ 14 files changed, 509 insertions(+), 8 deletions(-)
+ create mode 100644 tinytots-web/web/app/admin/pages/[slug]/page.tsx
+ create mode 100644 tinytots-web/web/app/admin/pages/page.tsx
+ create mode 100644 tinytots-web/web/app/api/admin/pages/[slug]/route.ts
+ create mode 100644 tinytots-web/web/app/api/admin/pages/route.ts
+ create mode 100644 tinytots-web/web/app/api/pages/[slug]/route.ts
+ create mode 100644 tinytots-web/web/app/our-story/page.tsx
+ create mode 100644 tinytots-web/web/app/privacy-policy/page.tsx
+ create mode 100644 tinytots-web/web/app/shipping-returns/page.tsx
+ create mode 100644 tinytots-web/web/app/terms/page.tsx
+ create mode 100644 tinytots-web/web/components/MobileSubNav.tsx
+ create mode 100644 tinytots-web/web/supabase/migrations/20260726120000_site_pages.sql
+
+diff --git a/tinytots-web/web/app/admin/layout.tsx b/tinytots-web/web/app/admin/layout.tsx
+index 6aa6305..ab382f0 100644
+--- a/tinytots-web/web/app/admin/layout.tsx
++++ b/tinytots-web/web/app/admin/layout.tsx
+@@ -66,6 +66,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
+         {can(admin.role, "canManageSettings") && navItem("/admin/settings", "Settings")}
+         {can(admin.role, "canManageBlog") && navItem("/admin/blog", "Blog")}
+ {can(admin.role, "canManageHelp") && navItem("/admin/help", "Help Center")}
++{can(admin.role, "canManagePages") && navItem("/admin/pages", "Site Pages")}
+         <div className="mt-auto pt-4 border-t border-outline-variant/20">
+           <p className="font-body-sm text-body-sm text-on-surface px-2 mb-1">{admin.name}</p>
+           <p className="font-label-md text-label-md text-on-surface-variant px-2 mb-3 capitalize">{admin.role.replace("_", " ")}</p>
+diff --git a/tinytots-web/web/app/admin/pages/[slug]/page.tsx b/tinytots-web/web/app/admin/pages/[slug]/page.tsx
+new file mode 100644
+index 0000000..43a56cc
+--- /dev/null
++++ b/tinytots-web/web/app/admin/pages/[slug]/page.tsx
+@@ -0,0 +1,119 @@
++"use client";
++
++import React, { useEffect, useState, useCallback } from "react";
++import dynamic from "next/dynamic";
++import { useRouter, useParams } from "next/navigation";
++import Link from "next/link";
++import { adminFetch } from "@/lib/admin-fetch";
++import "react-quill-new/dist/quill.snow.css";
++
++const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
++
++const quillModules = {
++  toolbar: [
++    [{ header: [1, 2, 3, false] }],
++    ["bold", "italic", "underline", "strike"],
++    [{ list: "ordered" }, { list: "bullet" }],
++    ["link"],
++    ["clean"],
++  ],
++};
++
++const quillFormats = ["header", "bold", "italic", "underline", "strike", "list", "link"];
++
++export default function SitePageEditor() {
++  const router = useRouter();
++  const params = useParams();
++  const slug = params.slug as string;
++
++  const [title, setTitle] = useState("");
++  const [content, setContent] = useState("");
++  const [loading, setLoading] = useState(true);
++  const [saving, setSaving] = useState(false);
++  const [errorMsg, setErrorMsg] = useState("");
++  const [saved, setSaved] = useState(false);
++
++  const fetchPage = useCallback(async () => {
++    setLoading(true);
++    const res = await adminFetch(`/api/admin/pages/${slug}`);
++    const data = await res.json();
++    if (res.ok) {
++      setTitle(data.page.title);
++      setContent(data.page.content);
++    } else {
++      setErrorMsg(data.error || "Failed to load page");
++    }
++    setLoading(false);
++  }, [slug]);
++
++  useEffect(() => {
++    fetchPage();
++  }, [fetchPage]);
++
++  async function handleSave() {
++    if (!title.trim() || !content.trim()) {
++      setErrorMsg("Title and content are required.");
++      return;
++    }
++
++    setSaving(true);
++    setErrorMsg("");
++    setSaved(false);
++    try {
++      const res = await adminFetch(`/api/admin/pages/${slug}`, {
++        method: "PATCH",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ title, content }),
++      });
++      const data = await res.json();
++      if (!res.ok) throw new Error(data.error || "Failed to save page");
++      setSaved(true);
++      setTimeout(() => setSaved(false), 2000);
++    } catch (err: any) {
++      setErrorMsg(err.message);
++    } finally {
++      setSaving(false);
++    }
++  }
++
++  if (loading) {
++    return <div className="max-w-3xl mx-auto text-center py-12 text-gray-500">Loading...</div>;
++  }
++
++  return (
++    <div className="max-w-3xl mx-auto">
++      <Link href="/admin/pages" className="text-sm text-indigo-600 underline mb-4 inline-block">
++        ← Back to Site Pages
++      </Link>
++
++      <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit: {title || slug}</h1>
++
++      {errorMsg && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded">{errorMsg}</div>}
++
++      <div className="flex flex-col gap-4 mb-6">
++        <div>
++          <label className="block text-xs font-medium text-gray-700 mb-1">Page title</label>
++          <input
++            type="text"
++            value={title}
++            onChange={(e) => setTitle(e.target.value)}
++            className="w-full border rounded-md px-3 py-2 text-sm"
++          />
++        </div>
++
++        <div>
++          <label className="block text-xs font-medium text-gray-700 mb-1">Content</label>
++          <ReactQuill theme="snow" value={content} onChange={setContent} modules={quillModules} formats={quillFormats} className="bg-white" />
++        </div>
++      </div>
++
++      <button
++        onClick={handleSave}
++        disabled={saving}
++        className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 disabled:opacity-50"
++      >
++        {saving ? "Saving..." : saved ? "Saved ✓" : "Save changes"}
++      </button>
++    </div>
++  );
++}
+diff --git a/tinytots-web/web/app/admin/pages/page.tsx b/tinytots-web/web/app/admin/pages/page.tsx
+new file mode 100644
+index 0000000..cf1243f
+--- /dev/null
++++ b/tinytots-web/web/app/admin/pages/page.tsx
+@@ -0,0 +1,65 @@
++"use client";
++
++import React, { useEffect, useState } from "react";
++import Link from "next/link";
++import { adminFetch } from "@/lib/admin-fetch";
++
++interface SitePage {
++  slug: string;
++  title: string;
++  updated_at: string;
++}
++
++export default function AdminPagesListPage() {
++  const [pages, setPages] = useState<SitePage[]>([]);
++  const [loading, setLoading] = useState(true);
++
++  useEffect(() => {
++    (async () => {
++      const res = await adminFetch("/api/admin/pages");
++      const data = await res.json();
++      if (res.ok) setPages(data.pages || []);
++      setLoading(false);
++    })();
++  }, []);
++
++  return (
++    <div className="max-w-3xl mx-auto">
++      <h1 className="text-2xl font-bold text-gray-900 mb-1">Site Pages</h1>
++      <p className="text-sm text-gray-500 mb-6">
++        Edit About Us, Privacy Policy, Terms, and Shipping &amp; Returns content shown on the storefront.
++      </p>
++
++      {loading ? (
++        <div className="text-center py-12 text-gray-500">Loading...</div>
++      ) : (
++        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
++          <table className="w-full text-left text-sm text-gray-600">
++            <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
++              <tr>
++                <th className="px-6 py-3">Page</th>
++                <th className="px-6 py-3">Slug</th>
++                <th className="px-6 py-3">Last updated</th>
++                <th className="px-6 py-3 text-right">Actions</th>
++              </tr>
++            </thead>
++            <tbody className="divide-y divide-gray-200">
++              {pages.map((p) => (
++                <tr key={p.slug} className="hover:bg-gray-50">
++                  <td className="px-6 py-4 font-medium text-gray-900">{p.title}</td>
++                  <td className="px-6 py-4 font-mono text-xs">{p.slug}</td>
++                  <td className="px-6 py-4">{new Date(p.updated_at).toLocaleString()}</td>
++                  <td className="px-6 py-4 text-right">
++                    <Link href={`/admin/pages/${p.slug}`} className="text-xs font-medium text-indigo-600 hover:underline">
++                      Edit
++                    </Link>
++                  </td>
++                </tr>
++              ))}
++            </tbody>
++          </table>
++        </div>
++      )}
++    </div>
++  );
++}
+diff --git a/tinytots-web/web/app/api/admin/pages/[slug]/route.ts b/tinytots-web/web/app/api/admin/pages/[slug]/route.ts
+new file mode 100644
+index 0000000..2396868
+--- /dev/null
++++ b/tinytots-web/web/app/api/admin/pages/[slug]/route.ts
+@@ -0,0 +1,64 @@
++import { NextRequest, NextResponse } from "next/server";
++import { supabaseAdmin } from "@/lib/supabase-admin";
++import { requireAdmin } from "@/lib/require-admin";
++import DOMPurify from "isomorphic-dompurify";
++
++function sanitizeContent(html: string): string {
++  return DOMPurify.sanitize(html, {
++    ALLOWED_TAGS: ["p", "br", "strong", "em", "u", "s", "h1", "h2", "h3", "ul", "ol", "li", "a"],
++    ALLOWED_ATTR: ["href", "target", "rel"],
++    FORBID_ATTR: ["style", "class", "width", "height"],
++  }).replace(/\p{Cf}/gu, "");
++}
++
++// GET /api/admin/pages/[slug] — fetch one page for editing
++export async function GET(
++  req: NextRequest,
++  context: { params: Promise<{ slug: string }> } | { params: { slug: string } }
++) {
++  const denied = await requireAdmin(req, "canManagePages");
++  if (denied) return denied;
++
++  const params = await (context.params as any);
++  const { data: page, error } = await supabaseAdmin
++    .from("site_pages")
++    .select("*")
++    .eq("slug", params.slug)
++    .single();
++
++  if (error || !page) return NextResponse.json({ error: "Page not found" }, { status: 404 });
++  return NextResponse.json({ page });
++}
++
++// PATCH /api/admin/pages/[slug] — update title/content. Pages are a fixed
++// set (seeded by migration), so this only ever updates an existing row —
++// no create/delete, deliberately, to keep footer links always valid.
++export async function PATCH(
++  req: NextRequest,
++  context: { params: Promise<{ slug: string }> } | { params: { slug: string } }
++) {
++  const denied = await requireAdmin(req, "canManagePages");
++  if (denied) return denied;
++
++  try {
++    const params = await (context.params as any);
++    const body = await req.json();
++    const { title, content } = body;
++
++    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
++    if (title !== undefined) updates.title = title.trim();
++    if (content !== undefined) updates.content = sanitizeContent(content);
++
++    const { data: page, error } = await supabaseAdmin
++      .from("site_pages")
++      .update(updates)
++      .eq("slug", params.slug)
++      .select()
++      .single();
++
++    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
++    return NextResponse.json({ page });
++  } catch (err: any) {
++    return NextResponse.json({ error: err.message || "Failed to update page" }, { status: 500 });
++  }
++}
+diff --git a/tinytots-web/web/app/api/admin/pages/route.ts b/tinytots-web/web/app/api/admin/pages/route.ts
+new file mode 100644
+index 0000000..d2c4f10
+--- /dev/null
++++ b/tinytots-web/web/app/api/admin/pages/route.ts
+@@ -0,0 +1,17 @@
++import { NextRequest, NextResponse } from "next/server";
++import { supabaseAdmin } from "@/lib/supabase-admin";
++import { requireAdmin } from "@/lib/require-admin";
++
++// GET /api/admin/pages — list all editable site pages
++export async function GET(req: NextRequest) {
++  const denied = await requireAdmin(req, "canManagePages");
++  if (denied) return denied;
++
++  const { data, error } = await supabaseAdmin
++    .from("site_pages")
++    .select("slug, title, updated_at")
++    .order("slug", { ascending: true });
++
++  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
++  return NextResponse.json({ pages: data });
++}
+diff --git a/tinytots-web/web/app/api/pages/[slug]/route.ts b/tinytots-web/web/app/api/pages/[slug]/route.ts
+new file mode 100644
+index 0000000..e66d9f7
+--- /dev/null
++++ b/tinytots-web/web/app/api/pages/[slug]/route.ts
+@@ -0,0 +1,23 @@
++import { NextRequest, NextResponse } from "next/server";
++import { supabaseAdmin } from "@/lib/supabase-admin";
++
++// GET /api/pages/[slug] — public, read-only. Used by About Us, Privacy
++// Policy, Terms, Shipping & Returns Policy pages.
++export async function GET(
++  req: NextRequest,
++  context: { params: Promise<{ slug: string }> } | { params: { slug: string } }
++) {
++  const params = await (context.params as any);
++
++  const { data: page, error } = await supabaseAdmin
++    .from("site_pages")
++    .select("slug, title, content, updated_at")
++    .eq("slug", params.slug)
++    .single();
++
++  if (error || !page) {
++    return NextResponse.json({ error: "Page not found" }, { status: 404 });
++  }
++
++  return NextResponse.json({ page });
++}
+diff --git a/tinytots-web/web/app/layout.tsx b/tinytots-web/web/app/layout.tsx
+index 186e7f4..d2a151a 100644
+--- a/tinytots-web/web/app/layout.tsx
++++ b/tinytots-web/web/app/layout.tsx
+@@ -9,6 +9,7 @@ import "./globals.css";
+ import { CartProvider } from "@/lib/cart-context";
+ import { AuthProvider } from "@/lib/auth-context";
+ import HeaderCart from "@/components/HeaderCart";
++import MobileSubNav from "@/components/MobileSubNav";
+ import { useAuth } from "@/lib/auth-context";
+ import { cn } from "@/lib/utils";
+ import { WishlistProvider } from "@/lib/wishlist-context";
+@@ -160,13 +161,27 @@ function AccountMenu() {
+ 
+   if (!user) {
+     return (
+-      <Link
+-        href="/login"
+-        className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
+-        title="Log in"
+-      >
+-        <span className="material-symbols-outlined">person</span>
+-      </Link>
++      <div className="flex items-center gap-2">
++        <Link
++          href="/login"
++          className="hidden sm:inline-block font-body-sm text-body-sm text-on-surface-variant hover:text-primary px-3 py-2 rounded-full transition-colors"
++        >
++          Sign in
++        </Link>
++        <Link
++          href="/signup"
++          className="font-body-sm text-body-sm bg-primary-container text-on-primary px-4 py-2 rounded-full hover:bg-primary transition-colors whitespace-nowrap"
++        >
++          Sign up
++        </Link>
++        <Link
++          href="/login"
++          className="sm:hidden text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
++          title="Log in"
++        >
++          <span className="material-symbols-outlined">person</span>
++        </Link>
++      </div>
+     );
+   }
+ 
+@@ -263,6 +278,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
+               </nav>
+             </header>
+ 
++            <MobileSubNav />
++
+             {/* MAIN CONTENT AREA */}
+             <main className="flex-grow w-full max-w-container-max mx-auto min-w-0 px-margin-mobile md:px-margin-desktop">
+               {children}
+@@ -277,12 +294,18 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
+                 </div>
+                 <div className="flex flex-col gap-3">
+                   <h4 className="font-headline-md text-headline-md text-on-surface">Explore</h4>
++                  <Link href="/products" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shop All</Link>
+                   <Link href="/our-story" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">About Us</Link>
++                  <Link href="/blog" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Blog</Link>
+                 </div>
+                 <div className="flex flex-col gap-3">
+                   <h4 className="font-headline-md text-headline-md text-on-surface">Support</h4>
+-                  <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shipping Policy</Link>
++                  <Link href="/help" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Help Center</Link>
+                   <Link href="/track-order" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Track Order</Link>
++                  <Link href="/report-issue" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Report an Issue</Link>
++                  <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shipping &amp; Returns</Link>
++                  <Link href="/privacy-policy" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Privacy Policy</Link>
++                  <Link href="/terms" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Terms &amp; Conditions</Link>
+                 </div>
+                 <div className="flex flex-col gap-4 min-w-0">
+                   <h4 className="font-headline-md text-headline-md text-on-surface">Join Our Newsletter</h4>
+diff --git a/tinytots-web/web/app/our-story/page.tsx b/tinytots-web/web/app/our-story/page.tsx
+new file mode 100644
+index 0000000..b2e7dd3
+--- /dev/null
++++ b/tinytots-web/web/app/our-story/page.tsx
+@@ -0,0 +1,31 @@
++import { supabaseAdmin } from "@/lib/supabase-admin";
++
++export const dynamic = "force-dynamic";
++
++export default async function Page() {
++  const { data: page } = await supabaseAdmin
++    .from("site_pages")
++    .select("title, content")
++    .eq("slug", "our-story")
++    .single();
++
++  return (
++    <div className="w-full max-w-full overflow-x-hidden py-8 px-4 sm:px-6">
++      <article className="w-full max-w-2xl mx-auto">
++        <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight leading-tight mb-6">
++          {page?.title || "our-story"}
++        </h1>
++        <div
++          className="w-full text-on-surface text-base leading-relaxed space-y-4
++            break-words [&_*]:max-w-full [&_*]:box-border
++            [&_p]:mb-4 [&_p]:leading-relaxed
++            [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2
++            [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
++            [&_strong]:font-semibold [&_strong]:text-on-surface
++            [&_a]:text-primary [&_a]:underline [&_a]:break-all"
++          dangerouslySetInnerHTML={{ __html: page?.content || "<p>Content coming soon.</p>" }}
++        />
++      </article>
++    </div>
++  );
++}
+diff --git a/tinytots-web/web/app/privacy-policy/page.tsx b/tinytots-web/web/app/privacy-policy/page.tsx
+new file mode 100644
+index 0000000..48e15c1
+--- /dev/null
++++ b/tinytots-web/web/app/privacy-policy/page.tsx
+@@ -0,0 +1,31 @@
++import { supabaseAdmin } from "@/lib/supabase-admin";
++
++export const dynamic = "force-dynamic";
++
++export default async function Page() {
++  const { data: page } = await supabaseAdmin
++    .from("site_pages")
++    .select("title, content")
++    .eq("slug", "privacy-policy")
++    .single();
++
++  return (
++    <div className="w-full max-w-full overflow-x-hidden py-8 px-4 sm:px-6">
++      <article className="w-full max-w-2xl mx-auto">
++        <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight leading-tight mb-6">
++          {page?.title || "privacy-policy"}
++        </h1>
++        <div
++          className="w-full text-on-surface text-base leading-relaxed space-y-4
++            break-words [&_*]:max-w-full [&_*]:box-border
++            [&_p]:mb-4 [&_p]:leading-relaxed
++            [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2
++            [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
++            [&_strong]:font-semibold [&_strong]:text-on-surface
++            [&_a]:text-primary [&_a]:underline [&_a]:break-all"
++          dangerouslySetInnerHTML={{ __html: page?.content || "<p>Content coming soon.</p>" }}
++        />
++      </article>
++    </div>
++  );
++}
+diff --git a/tinytots-web/web/app/shipping-returns/page.tsx b/tinytots-web/web/app/shipping-returns/page.tsx
+new file mode 100644
+index 0000000..2067f9f
+--- /dev/null
++++ b/tinytots-web/web/app/shipping-returns/page.tsx
+@@ -0,0 +1,31 @@
++import { supabaseAdmin } from "@/lib/supabase-admin";
++
++export const dynamic = "force-dynamic";
++
++export default async function Page() {
++  const { data: page } = await supabaseAdmin
++    .from("site_pages")
++    .select("title, content")
++    .eq("slug", "shipping-returns")
++    .single();
++
++  return (
++    <div className="w-full max-w-full overflow-x-hidden py-8 px-4 sm:px-6">
++      <article className="w-full max-w-2xl mx-auto">
++        <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight leading-tight mb-6">
++          {page?.title || "shipping-returns"}
++        </h1>
++        <div
++          className="w-full text-on-surface text-base leading-relaxed space-y-4
++            break-words [&_*]:max-w-full [&_*]:box-border
++            [&_p]:mb-4 [&_p]:leading-relaxed
++            [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2
++            [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
++            [&_strong]:font-semibold [&_strong]:text-on-surface
++            [&_a]:text-primary [&_a]:underline [&_a]:break-all"
++          dangerouslySetInnerHTML={{ __html: page?.content || "<p>Content coming soon.</p>" }}
++        />
++      </article>
++    </div>
++  );
++}
+diff --git a/tinytots-web/web/app/terms/page.tsx b/tinytots-web/web/app/terms/page.tsx
+new file mode 100644
+index 0000000..e978b59
+--- /dev/null
++++ b/tinytots-web/web/app/terms/page.tsx
+@@ -0,0 +1,31 @@
++import { supabaseAdmin } from "@/lib/supabase-admin";
++
++export const dynamic = "force-dynamic";
++
++export default async function Page() {
++  const { data: page } = await supabaseAdmin
++    .from("site_pages")
++    .select("title, content")
++    .eq("slug", "terms")
++    .single();
++
++  return (
++    <div className="w-full max-w-full overflow-x-hidden py-8 px-4 sm:px-6">
++      <article className="w-full max-w-2xl mx-auto">
++        <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight leading-tight mb-6">
++          {page?.title || "terms"}
++        </h1>
++        <div
++          className="w-full text-on-surface text-base leading-relaxed space-y-4
++            break-words [&_*]:max-w-full [&_*]:box-border
++            [&_p]:mb-4 [&_p]:leading-relaxed
++            [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2
++            [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
++            [&_strong]:font-semibold [&_strong]:text-on-surface
++            [&_a]:text-primary [&_a]:underline [&_a]:break-all"
++          dangerouslySetInnerHTML={{ __html: page?.content || "<p>Content coming soon.</p>" }}
++        />
++      </article>
++    </div>
++  );
++}
+diff --git a/tinytots-web/web/components/MobileSubNav.tsx b/tinytots-web/web/components/MobileSubNav.tsx
+new file mode 100644
+index 0000000..0aa4e43
+--- /dev/null
++++ b/tinytots-web/web/components/MobileSubNav.tsx
+@@ -0,0 +1,36 @@
++"use client";
++
++import { useRouter, usePathname } from "next/navigation";
++import Link from "next/link";
++
++// Small mobile-only sub-bar with a Back and Home button, shown under the
++// main header on every page except the homepage (where "back"/"home"
++// don't mean anything useful). Desktop already has full nav, so this is
++// md:hidden.
++export default function MobileSubNav() {
++  const router = useRouter();
++  const pathname = usePathname();
++
++  if (pathname === "/") return null;
++
++  return (
++    <div className="md:hidden flex items-center gap-2 px-margin-mobile py-2 border-b border-outline-variant/20 bg-surface/80 backdrop-blur-md">
++      <button
++        onClick={() => router.back()}
++        aria-label="Go back"
++        className="flex items-center gap-1 text-on-surface-variant hover:text-primary px-2 py-1 rounded-lg"
++      >
++        <span className="material-symbols-outlined text-[20px]">arrow_back</span>
++        <span className="font-label-md text-label-md">Back</span>
++      </button>
++      <Link
++        href="/"
++        aria-label="Go home"
++        className="flex items-center gap-1 text-on-surface-variant hover:text-primary px-2 py-1 rounded-lg"
++      >
++        <span className="material-symbols-outlined text-[20px]">home</span>
++        <span className="font-label-md text-label-md">Home</span>
++      </Link>
++    </div>
++  );
++}
+diff --git a/tinytots-web/web/lib/admin-permissions.ts b/tinytots-web/web/lib/admin-permissions.ts
+index bd11bd0..77cb73e 100644
+--- a/tinytots-web/web/lib/admin-permissions.ts
++++ b/tinytots-web/web/lib/admin-permissions.ts
+@@ -11,6 +11,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, {
+   canManageBlog: boolean;
+   canManageSettings: boolean;
+   canManageHelp: boolean;
++  canManagePages: boolean;
+ }> = {
+   admin: {
+     canManageTeam: true,
+@@ -23,6 +24,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, {
+     canManageBlog: true,
+     canManageSettings: true,
+     canManageHelp: true,
++    canManagePages: true,
+   },
+   order_manager: {
+     canManageTeam: false,
+@@ -35,6 +37,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, {
+     canManageBlog: false,
+     canManageSettings: false,
+     canManageHelp: false,
++    canManagePages: false,
+   },
+   support: {
+     canManageTeam: false,
+@@ -47,6 +50,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, {
+     canManageBlog: false,
+     canManageSettings: false,
+     canManageHelp: true,
++    canManagePages: false,
+   },
+   inventory_only: {
+     canManageTeam: false,
+@@ -59,6 +63,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, {
+     canManageBlog: false,
+     canManageSettings: false,
+     canManageHelp: false,
++    canManagePages: false,
+   },
+ };
+ 
+diff --git a/tinytots-web/web/supabase/migrations/20260726120000_site_pages.sql b/tinytots-web/web/supabase/migrations/20260726120000_site_pages.sql
+new file mode 100644
+index 0000000..988a529
+--- /dev/null
++++ b/tinytots-web/web/supabase/migrations/20260726120000_site_pages.sql
+@@ -0,0 +1,24 @@
++-- Admin-editable static content pages (About Us, Privacy Policy, Terms,
++-- Shipping & Returns Policy). Store owner can edit wording without a dev,
++-- since content like "About Us" differs for the online store vs the
++-- physical shop, and policies change over time.
++create table if not exists public.site_pages (
++  slug text primary key,
++  title text not null,
++  content text not null,
++  updated_at timestamptz default now()
++);
++
++alter table public.site_pages enable row level security;
++
++create policy "Public can view site pages" on public.site_pages
++for select using (true);
++
++-- No insert/update/delete policies — only service-role (supabaseAdmin) writes.
++
++insert into public.site_pages (slug, title, content) values
++  ('our-story', 'Our Story', '<p>Write your About Us content here from the admin panel.</p>'),
++  ('privacy-policy', 'Privacy Policy', '<p>Write your Privacy Policy content here from the admin panel.</p>'),
++  ('terms', 'Terms & Conditions', '<p>Write your Terms & Conditions here from the admin panel.</p>'),
++  ('shipping-returns', 'Shipping & Returns Policy', '<p>Write your Shipping & Returns Policy here from the admin panel.</p>')
++on conflict (slug) do nothing;
+-- 
+2.43.0
+
