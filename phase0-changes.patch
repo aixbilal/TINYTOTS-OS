@@ -1,0 +1,202 @@
+From 9fd066bf734d9a8d0d709272053d83496650a950 Mon Sep 17 00:00:00 2001
+From: Claude <assistant@anthropic.com>
+Date: Sun, 26 Jul 2026 10:37:57 +0000
+Subject: [PATCH] Phase 0: remove low-stock from reports, add shared password
+ complexity validation, tune receipt padding
+
+- Remove get_low_stock_variants RPC call, response field, and UI table from admin reports
+- Add lib/validate-password.ts (min 8 chars + upper + lower + digit + _ + @), wire into signup and reset-password
+- Confirmed free delivery already unconditional for all orders (deliveryFee = 0), no change needed
+- Increase receipt.css padding (8px -> 10/12/20px) for safer thermal print margins
+---
+ .../electron-app/src/receipts/receipt.css     |  2 +-
+ tinytots-web/web/app/admin/reports/page.tsx   | 31 -------------------
+ .../web/app/api/admin/reports/route.ts        |  9 ------
+ tinytots-web/web/app/reset-password/page.tsx  |  8 +++--
+ tinytots-web/web/app/signup/page.tsx          |  7 +++--
+ tinytots-web/web/lib/validate-password.ts     | 19 ++++++++++++
+ 6 files changed, 30 insertions(+), 46 deletions(-)
+ create mode 100644 tinytots-web/web/lib/validate-password.ts
+
+diff --git a/tinytots-app/electron-app/src/receipts/receipt.css b/tinytots-app/electron-app/src/receipts/receipt.css
+index f2724d2..ae486e6 100644
+--- a/tinytots-app/electron-app/src/receipts/receipt.css
++++ b/tinytots-app/electron-app/src/receipts/receipt.css
+@@ -20,7 +20,7 @@ body {
+ .receipt {
+   width: 80mm;
+   max-width: 80mm;
+-  padding: 8px;
++  padding: 10px 12px 20px 12px;
+   margin: 0 auto;
+   font-size: 11px;
+   line-height: 1.35;
+diff --git a/tinytots-web/web/app/admin/reports/page.tsx b/tinytots-web/web/app/admin/reports/page.tsx
+index 7206d5f..269753c 100644
+--- a/tinytots-web/web/app/admin/reports/page.tsx
++++ b/tinytots-web/web/app/admin/reports/page.tsx
+@@ -29,7 +29,6 @@ interface ReportData {
+   products: {
+     topSellers: { product_id: number; name: string; quantity: number; revenue: number }[];
+   };
+-  lowStock: { id: number; sku: string | null; stock: number; reorder_level: number; product_name: string | null }[];
+ }
+ 
+ type PresetRange = "today" | "week" | "month" | "custom";
+@@ -263,36 +262,6 @@ export default function AdminReportsPage() {
+             )}
+           </section>
+ 
+-          {/* Low stock alert */}
+-          <section>
+-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Low Stock Alert</h2>
+-            {data.lowStock.length > 0 ? (
+-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+-                <table className="w-full text-left text-sm text-gray-600">
+-                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
+-                    <tr>
+-                      <th className="px-4 py-2">SKU</th>
+-                      <th className="px-4 py-2">Product</th>
+-                      <th className="px-4 py-2">Stock</th>
+-                      <th className="px-4 py-2">Reorder Level</th>
+-                    </tr>
+-                  </thead>
+-                  <tbody className="divide-y divide-gray-100">
+-                  {data.lowStock.map((v) => (
+-  <tr key={v.id} className="text-red-600">
+-    <td className="px-4 py-2 font-mono">{v.sku ?? "N/A"}</td>
+-    <td className="px-4 py-2">{v.product_name ?? "Unknown Product"}</td>
+-    <td className="px-4 py-2">{v.stock}</td>
+-    <td className="px-4 py-2">{v.reorder_level}</td>
+-  </tr>
+-))}
+-                  </tbody>
+-                </table>
+-              </div>
+-            ) : (
+-              <p className="text-sm text-gray-400">All stock levels healthy.</p>
+-            )}
+-          </section>
+         </div>
+       ) : null}
+     </div>
+diff --git a/tinytots-web/web/app/api/admin/reports/route.ts b/tinytots-web/web/app/api/admin/reports/route.ts
+index 0c0f8ef..3ae1a91 100644
+--- a/tinytots-web/web/app/api/admin/reports/route.ts
++++ b/tinytots-web/web/app/api/admin/reports/route.ts
+@@ -111,14 +111,6 @@ export async function GET(req: NextRequest) {
+         .slice(0, 10);
+     }
+ 
+- // ---- Low stock alert (not time-bound, always current) ----
+- const { data: lowStockVariants, error: lowStockError } = await supabaseAdmin
+- .rpc("get_low_stock_variants", { limit_count: 15 });
+-
+-if (lowStockError) {
+- console.error("Low stock RPC failed:", lowStockError.message);
+-}
+-
+     return NextResponse.json({
+       sales: {
+         revenue,
+@@ -145,7 +137,6 @@ if (lowStockError) {
+       products: {
+         topSellers: topProducts,
+       },
+-      lowStock: lowStockVariants || [],
+     });
+   } catch (err: any) {
+     console.error("Reports API error:", err);
+diff --git a/tinytots-web/web/app/reset-password/page.tsx b/tinytots-web/web/app/reset-password/page.tsx
+index 0bee212..714da59 100644
+--- a/tinytots-web/web/app/reset-password/page.tsx
++++ b/tinytots-web/web/app/reset-password/page.tsx
+@@ -3,6 +3,7 @@
+ import { useState, useEffect } from "react";
+ import { useRouter } from "next/navigation";
+ import { supabase } from "@/lib/supabase";
++import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
+ 
+ export default function ResetPasswordPage() {
+   const router = useRouter();
+@@ -31,8 +32,9 @@ export default function ResetPasswordPage() {
+     e.preventDefault();
+     setServerError(null);
+ 
+-    if (password.length < 8) {
+-      setServerError("Password must be at least 8 characters.");
++    const passwordError = validatePassword(password);
++    if (passwordError) {
++      setServerError(passwordError);
+       return;
+     }
+     if (password !== confirmPassword) {
+@@ -77,7 +79,7 @@ export default function ResetPasswordPage() {
+       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
+         <input
+           type="password"
+-          placeholder="New password (min 8 characters)"
++          placeholder={PASSWORD_HINT}
+           value={password}
+           onChange={(e) => setPassword(e.target.value)}
+           className="w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors"
+diff --git a/tinytots-web/web/app/signup/page.tsx b/tinytots-web/web/app/signup/page.tsx
+index dfb9196..d79e8db 100644
+--- a/tinytots-web/web/app/signup/page.tsx
++++ b/tinytots-web/web/app/signup/page.tsx
+@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
+ import Link from "next/link";
+ import { supabase } from "@/lib/supabase";
+ 
++import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
++
+ const MAX_LEN = { name: 80, phone: 20, email: 100, password: 72 };
+ 
+ function isValidPakPhone(phone: string) {
+@@ -32,7 +34,8 @@ export default function SignupPage() {
+     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = "Enter a valid email address.";
+     if (!phone.trim()) errs.phone = "Phone number is required.";
+     else if (!isValidPakPhone(phone)) errs.phone = "Enter a valid number, e.g. 03001234567.";
+-    if (password.length < 8) errs.password = "Password must be at least 8 characters.";
++    const passwordError = validatePassword(password);
++    if (passwordError) errs.password = passwordError;
+     setFieldErrors(errs);
+     return Object.keys(errs).length === 0;
+   }
+@@ -147,7 +150,7 @@ export default function SignupPage() {
+         <div>
+           <input
+             type="password"
+-            placeholder="Password (min 8 characters)"
++            placeholder={PASSWORD_HINT}
+             value={password}
+             onChange={(e) => setPassword(e.target.value.slice(0, MAX_LEN.password))}
+             maxLength={MAX_LEN.password}
+diff --git a/tinytots-web/web/lib/validate-password.ts b/tinytots-web/web/lib/validate-password.ts
+new file mode 100644
+index 0000000..7916577
+--- /dev/null
++++ b/tinytots-web/web/lib/validate-password.ts
+@@ -0,0 +1,19 @@
++// Shared password policy — used everywhere a customer or admin sets/changes
++// a password (signup, reset password, account settings, etc). Keep this in
++// sync across every password form; don't duplicate the regex inline.
++//
++// Required: min 8 chars, at least one lowercase, one uppercase, one digit,
++// one underscore (_), and one at symbol (@).
++
++export function validatePassword(password: string): string | null {
++  if (password.length < 8) return "Password must be at least 8 characters.";
++  if (!/[a-z]/.test(password)) return "Password must include a lowercase letter.";
++  if (!/[A-Z]/.test(password)) return "Password must include an uppercase letter.";
++  if (!/[0-9]/.test(password)) return "Password must include a number.";
++  if (!/_/.test(password)) return "Password must include an underscore (_).";
++  if (!/@/.test(password)) return "Password must include an @ symbol.";
++  return null; // valid
++}
++
++export const PASSWORD_HINT =
++  "Min 8 characters, with uppercase, lowercase, a number, an underscore (_), and an @ symbol.";
+-- 
+2.43.0
+

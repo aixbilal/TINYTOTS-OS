@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -31,8 +32,9 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setServerError(null);
 
-    if (password.length < 8) {
-      setServerError("Password must be at least 8 characters.");
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setServerError(passwordError);
       return;
     }
     if (password !== confirmPassword) {
@@ -77,7 +79,7 @@ export default function ResetPasswordPage() {
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
         <input
           type="password"
-          placeholder="New password (min 8 characters)"
+          placeholder={PASSWORD_HINT}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors"

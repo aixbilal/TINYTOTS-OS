@@ -29,7 +29,6 @@ interface ReportData {
   products: {
     topSellers: { product_id: number; name: string; quantity: number; revenue: number }[];
   };
-  lowStock: { id: number; sku: string | null; stock: number; reorder_level: number; product_name: string | null }[];
 }
 
 type PresetRange = "today" | "week" | "month" | "custom";
@@ -263,36 +262,6 @@ export default function AdminReportsPage() {
             )}
           </section>
 
-          {/* Low stock alert */}
-          <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Low Stock Alert</h2>
-            {data.lowStock.length > 0 ? (
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                <table className="w-full text-left text-sm text-gray-600">
-                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-                    <tr>
-                      <th className="px-4 py-2">SKU</th>
-                      <th className="px-4 py-2">Product</th>
-                      <th className="px-4 py-2">Stock</th>
-                      <th className="px-4 py-2">Reorder Level</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                  {data.lowStock.map((v) => (
-  <tr key={v.id} className="text-red-600">
-    <td className="px-4 py-2 font-mono">{v.sku ?? "N/A"}</td>
-    <td className="px-4 py-2">{v.product_name ?? "Unknown Product"}</td>
-    <td className="px-4 py-2">{v.stock}</td>
-    <td className="px-4 py-2">{v.reorder_level}</td>
-  </tr>
-))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">All stock levels healthy.</p>
-            )}
-          </section>
         </div>
       ) : null}
     </div>

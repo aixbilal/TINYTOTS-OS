@@ -111,14 +111,6 @@ export async function GET(req: NextRequest) {
         .slice(0, 10);
     }
 
- // ---- Low stock alert (not time-bound, always current) ----
- const { data: lowStockVariants, error: lowStockError } = await supabaseAdmin
- .rpc("get_low_stock_variants", { limit_count: 15 });
-
-if (lowStockError) {
- console.error("Low stock RPC failed:", lowStockError.message);
-}
-
     return NextResponse.json({
       sales: {
         revenue,
@@ -145,7 +137,6 @@ if (lowStockError) {
       products: {
         topSellers: topProducts,
       },
-      lowStock: lowStockVariants || [],
     });
   } catch (err: any) {
     console.error("Reports API error:", err);

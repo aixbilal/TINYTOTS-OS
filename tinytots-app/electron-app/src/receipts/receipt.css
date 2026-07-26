@@ -20,7 +20,7 @@ body {
 .receipt {
   width: 80mm;
   max-width: 80mm;
-  padding: 8px;
+  padding: 10px 12px 20px 12px;
   margin: 0 auto;
   font-size: 11px;
   line-height: 1.35;

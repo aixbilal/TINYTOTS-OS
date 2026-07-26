@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
+import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
+
 const MAX_LEN = { name: 80, phone: 20, email: 100, password: 72 };
 
 function isValidPakPhone(phone: string) {
@@ -32,7 +34,8 @@ export default function SignupPage() {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = "Enter a valid email address.";
     if (!phone.trim()) errs.phone = "Phone number is required.";
     else if (!isValidPakPhone(phone)) errs.phone = "Enter a valid number, e.g. 03001234567.";
-    if (password.length < 8) errs.password = "Password must be at least 8 characters.";
+    const passwordError = validatePassword(password);
+    if (passwordError) errs.password = passwordError;
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -147,7 +150,7 @@ export default function SignupPage() {
         <div>
           <input
             type="password"
-            placeholder="Password (min 8 characters)"
+            placeholder={PASSWORD_HINT}
             value={password}
             onChange={(e) => setPassword(e.target.value.slice(0, MAX_LEN.password))}
             maxLength={MAX_LEN.password}
