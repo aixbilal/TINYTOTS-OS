@@ -4,6 +4,7 @@ const DEFAULTS: Record<string, string> = {
   referral_voucher_amount: "100",
   referral_voucher_valid_days: "30",
   signup_voucher_amount: "200",
+  cod_city_mode: "list",
 };
 
 export async function getSetting(key: string): Promise<string> {

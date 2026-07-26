@@ -27,7 +27,8 @@ interface ReportData {
     rewarded: number;
   };
   products: {
-    topSellers: { product_id: number; name: string; quantity: number; revenue: number }[];
+    topSellers: { product_id: number; name: string; quantity: number; revenue: number; webMarkupProfit: number }[];
+    totalWebMarkupProfit: number;
   };
 }
 
@@ -164,7 +165,15 @@ export default function AdminReportsPage() {
               <StatCard label="Orders" value={data.sales.orderCount.toString()} />
               <StatCard label="Avg Order Value" value={`Rs. ${Math.round(data.sales.avgOrderValue).toLocaleString()}`} />
               <StatCard label="Discounts Given" value={`Rs. ${data.sales.totalDiscountGiven.toLocaleString()}`} />
+              <StatCard
+                label="Web Markup Profit"
+                value={`Rs. ${data.products.totalWebMarkupProfit.toLocaleString()}`}
+              />
             </div>
+            <p className="text-xs text-gray-400 mb-4 -mt-2">
+              Web Markup Profit is extra margin earned from selling online at a higher price than in-store (POS),
+              on top of normal cost-price profit.
+            </p>
             {data.sales.dailyBreakdown.length > 0 && (
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
                 <table className="w-full text-left text-sm text-gray-600">

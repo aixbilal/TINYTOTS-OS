@@ -84,25 +84,42 @@ export async function GET(req: NextRequest) {
     const referralsCreated = referralsInRange?.length || 0;
     const referralsRewarded = referralsInRange?.filter((r) => r.reward_triggered).length || 0;
 
-    // ---- Products: top sellers ----
+    // ---- Products: top sellers + web markup profit ----
+    // Every row in `orders` is a website order (POS sales live in the
+    // separate `sales`/`sale_items` tables), so unit_price here is always
+    // the web selling price. variants.price is the in-store POS price.
+    // The difference per line is the extra margin earned specifically from
+    // selling online at a markup over the in-store price — not the same as
+    // gross profit vs cost_price, which is a separate figure.
     const orderIds = validOrders.map((o) => o.id);
-    let topProducts: { product_id: number; name: string; quantity: number; revenue: number }[] = [];
+    let topProducts: { product_id: number; name: string; quantity: number; revenue: number; webMarkupProfit: number }[] = [];
+    let totalWebMarkupProfit = 0;
 
     if (orderIds.length > 0) {
       const { data: items } = await supabaseAdmin
         .from("order_items")
-        .select("variant_id, quantity, line_total, variants(product_id, products(name))")
+        .select("variant_id, quantity, line_total, unit_price, variants(product_id, price, products(name))")
         .in("order_id", orderIds);
 
-      const productAgg: Record<number, { name: string; quantity: number; revenue: number }> = {};
+      const productAgg: Record<number, { name: string; quantity: number; revenue: number; webMarkupProfit: number }> = {};
       for (const item of items || []) {
         const variant = item.variants as any;
         const productId = variant?.product_id;
         const name = variant?.products?.name || "Unknown";
         if (!productId) continue;
-        if (!productAgg[productId]) productAgg[productId] = { name, quantity: 0, revenue: 0 };
+        if (!productAgg[productId]) productAgg[productId] = { name, quantity: 0, revenue: 0, webMarkupProfit: 0 };
+
+        const posPrice = Number(variant?.price ?? 0);
+        const webPrice = Number(item.unit_price ?? 0);
+        // Only count as markup profit if the web price is actually higher
+        // than the current POS price — never let it go negative, e.g. if a
+        // POS price was raised after an order was already placed.
+        const lineMarkup = Math.max(0, webPrice - posPrice) * item.quantity;
+
         productAgg[productId].quantity += item.quantity;
         productAgg[productId].revenue += Number(item.line_total);
+        productAgg[productId].webMarkupProfit += lineMarkup;
+        totalWebMarkupProfit += lineMarkup;
       }
 
       topProducts = Object.entries(productAgg)
@@ -136,6 +153,7 @@ export async function GET(req: NextRequest) {
       },
       products: {
         topSellers: topProducts,
+        totalWebMarkupProfit,
       },
     });
   } catch (err: any) {

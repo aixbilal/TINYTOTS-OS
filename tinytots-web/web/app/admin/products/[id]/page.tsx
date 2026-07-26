@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploader from "@/components/admin/ImageUploader";
+import CategorySelect from "@/components/admin/CategorySelect";
 import { adminFetch } from "@/lib/admin-fetch";
 
 type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number; reorder_level: number; web_price_locked: boolean; web_round_to: number };
@@ -191,7 +192,7 @@ export default function EditProductPage() {
 </div>
         <div className="grid grid-cols-2 gap-4">
           <input value={product.brand ?? ""} onChange={(e) => updateField("brand", e.target.value)} className={inputClass} placeholder="Brand" />
-          <input value={product.category ?? ""} onChange={(e) => updateField("category", e.target.value)} className={inputClass} placeholder="Category" />
+          <CategorySelect value={product.category ?? ""} onChange={(v) => updateField("category", v)} className={inputClass} />
         </div>
 
         <div>

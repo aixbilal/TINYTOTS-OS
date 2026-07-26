@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import TagInput from "@/components/admin/TagInput";
 import MarkupCalculator from "@/components/admin/MarkupCalculator";
+import CategorySelect from "@/components/admin/CategorySelect";
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -109,7 +110,7 @@ export default function NewProductPage() {
           <input placeholder="Product name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
           <input placeholder="SKU" value={sku} onChange={(e) => setSku(e.target.value)} className={inputClass} />
           <input placeholder="Brand" value={brand} onChange={(e) => setBrand(e.target.value)} className={inputClass} />
-          <input placeholder="Category (Shirts, Pants...)" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} />
+          <CategorySelect value={category} onChange={setCategory} className={inputClass} />
         </div>
 
         <div>

@@ -34,8 +34,25 @@ async function getProducts() {
   return data;
 }
 
+// Admin-editable hero banner and Trending Now heading, with hardcoded
+// fallbacks matching the original design in case the row is ever missing.
+const HOMEPAGE_DEFAULTS = {
+  hero_image_url:
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuDcHOEBpwtxoe3pT3NNiOQoUlZSPXHZXzjeoQOBkGcnwMqk8LNEfS_BLaNFvbDX-hie2mEl7T0RXcYZiRo62Rvdf50WGU9U4BD5oXHj7_E-gwRRFNXsBN-fTWavIdwpKxC17urnpJTVwBoPKRa1I79HkhFnqTLljxe6--Z6Hlwkbqweez3itoFTvxizLNFwL3tMrsZt3LeJQ-PBMbb1EiJJB23UvYLpk3iw905UJTcODCR79jbCm2P_w_RYfYB_hiR-KWOI441C-kke",
+  hero_headline: "Playful Designs for Little Pioneers",
+  hero_subtext: "Ethically crafted, modern essentials for every stage of your child's early journey.",
+  hero_button_text: "Shop New Arrivals",
+  hero_button_link: "#trending",
+  trending_heading: "Trending Now",
+};
+
+async function getHomepageContent() {
+  const { data } = await supabase.from("homepage_content").select("*").eq("id", 1).single();
+  return data || HOMEPAGE_DEFAULTS;
+}
+
 export default async function Home() {
-  const products = await getProducts();
+  const [products, content] = await Promise.all([getProducts(), getHomepageContent()]);
 
   return (
     <main className="max-w-container-max mx-auto md:px-margin-desktop px-margin-mobile">
@@ -44,23 +61,22 @@ export default async function Home() {
         <div
           className="absolute inset-0 bg-cover bg-center w-full h-full z-0"
           style={{
-            backgroundImage:
-              "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDcHOEBpwtxoe3pT3NNiOQoUlZSPXHZXzjeoQOBkGcnwMqk8LNEfS_BLaNFvbDX-hie2mEl7T0RXcYZiRo62Rvdf50WGU9U4BD5oXHj7_E-gwRRFNXsBN-fTWavIdwpKxC17urnpJTVwBoPKRa1I79HkhFnqTLljxe6--Z6Hlwkbqweez3itoFTvxizLNFwL3tMrsZt3LeJQ-PBMbb1EiJJB23UvYLpk3iw905UJTcODCR79jbCm2P_w_RYfYB_hiR-KWOI441C-kke')",
+            backgroundImage: `url('${content.hero_image_url}')`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-surface/80 to-surface/20 z-10" />
         <div className="relative z-20 max-w-2xl px-6 flex flex-col items-center">
           <h1 className="font-display-lg text-display-lg md:text-[64px] leading-tight text-on-surface mb-6">
-            Playful Designs for Little Pioneers
+            {content.hero_headline}
           </h1>
           <p className="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-lg">
-            Ethically crafted, modern essentials for every stage of your child&apos;s early journey.
+            {content.hero_subtext}
           </p>
           <Link
-            href="#trending"
+            href={content.hero_button_link}
             className="bg-primary-container text-on-primary font-button text-button h-[56px] px-8 rounded-lg hover:bg-primary transition-colors duration-300 flex items-center"
           >
-            Shop New Arrivals
+            {content.hero_button_text}
           </Link>
         </div>
       </section>
@@ -78,7 +94,7 @@ export default async function Home() {
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-primary">local_shipping</span>
             <span className="font-label-md text-label-md text-on-surface-variant uppercase">
-              Free Delivery on First Order
+              Free Delivery on All Orders
             </span>
           </div>
           <div className="hidden md:block w-px h-6 bg-outline-variant/30" />
@@ -115,7 +131,7 @@ export default async function Home() {
       {/* Trending now — real product data */}
       <section id="trending" className="mb-stack-lg">
       <div className="flex justify-between items-end mb-stack-md">
-  <h2 className="font-headline-lg text-on-surface">Trending Now</h2>
+  <h2 className="font-headline-lg text-on-surface">{content.trending_heading}</h2>
   <Link href="/products" className="font-body-sm text-body-sm text-primary hover:underline">
     View All
   </Link>

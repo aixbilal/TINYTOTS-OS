@@ -1,22 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
-import { getSettingNumber } from "@/lib/settings";
-
-// Cities where COD is currently allowed. Expand this list later
-// (e.g. add more cities, or switch to an "all Pakistan" flag) —
-// this is the only place that needs to change.
-const COD_ALLOWED_CITIES = [
-  "lahore",
-  "islamabad",
-  "rawalpindi", // twin city with Islamabad, commonly bundled in
-  "faisalabad",
-  "multan",
-  "gujranwala",
-  "sialkot",
-  "sargodha",
-  "bahawalpur",
-  "sheikhupura",
-];
+import { getSettingNumber, getSetting } from "@/lib/settings";
 
 
 function calculateCodTier(orderTotal: number) {
@@ -99,17 +83,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // COD city restriction
+    // COD city restriction — driven by app_settings.cod_city_mode instead of
+    // a hardcoded array. "all_pakistan" skips the check entirely; "list"
+    // (default) checks against the admin-managed shipping_cities table.
     if (payment_method === "cod") {
-      const cityNormalized = shipping_city.trim().toLowerCase();
-      if (!COD_ALLOWED_CITIES.includes(cityNormalized)) {
-        return NextResponse.json(
-          {
-            error:
-              "Cash on Delivery is currently only available in select cities (Punjab & Islamabad). Please choose Card, JazzCash, or Easypaisa instead.",
-          },
-          { status: 400 }
-        );
+      const codCityMode = await getSetting("cod_city_mode");
+      if (codCityMode !== "all_pakistan") {
+        const cityNormalized = shipping_city.trim().toLowerCase();
+        const { data: allowedCity } = await supabase
+          .from("shipping_cities")
+          .select("id")
+          .eq("name", cityNormalized)
+          .maybeSingle();
+
+        if (!allowedCity) {
+          return NextResponse.json(
+            {
+              error:
+                "Cash on Delivery is currently only available in select cities. Please choose Card, JazzCash, or Easypaisa instead.",
+            },
+            { status: 400 }
+          );
+        }
       }
     }
 
