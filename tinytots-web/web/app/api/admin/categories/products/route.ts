@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
+
+// GET /api/admin/categories/products
+// Returns every active product with its id/name/sku/category, for the
+// category → product assignment UI. Kept separate from
+// /api/admin/products (which requires canManageDiscounts) since this is
+// gated on canManageInventory like the rest of the categories admin.
+export async function GET(request: NextRequest) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
+  const { data, error } = await supabaseAdmin
+    .from("products")
+    .select("id, name, sku, category")
+    .eq("is_active", true)
+    .order("name", { ascending: true });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ products: data });
+}
+
+// PATCH /api/admin/categories/products
+// Body: { productIds: number[], category: string | null }
+// Bulk-sets products.category for the given product ids in one call.
+// category: null / "" unassigns (clears the product's category).
+export async function PATCH(request: NextRequest) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
+  try {
+    const body = await request.json();
+    const productIds = Array.isArray(body.productIds) ? body.productIds : [];
+    const category = body.category === undefined ? undefined : (body.category || null);
+
+    if (productIds.length === 0) {
+      return NextResponse.json({ error: "productIds is required" }, { status: 400 });
+    }
+    if (category === undefined) {
+      return NextResponse.json({ error: "category is required (use null to unassign)" }, { status: 400 });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("products")
+      .update({ category })
+      .in("id", productIds)
+      .select("id, name, category");
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ products: data });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "Failed to assign products" }, { status: 500 });
+  }
+}
