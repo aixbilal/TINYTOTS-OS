@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
-import { useEffect } from "react";
 
 const MAX_LEN = { name: 80, phone: 20, message: 1000 };
 
@@ -16,6 +15,12 @@ function isValidPakPhone(phone: string) {
   return /^(03\d{9}|\+923\d{9})$/.test(digits);
 }
 
+type OrderItemOption = {
+  id: number;
+  quantity: number;
+  variant: { color: string | null; size: string | null; product: { name: string } | null } | null;
+};
+
 export default function ReportIssuePage() {
   const { user } = useAuth();
   const [customerId, setCustomerId] = useState<number | null>(null);
@@ -23,8 +28,13 @@ export default function ReportIssuePage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [orderNumber, setOrderNumber] = useState("");
+  const [orderId, setOrderId] = useState<number | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItemOption[]>([]);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<number>>(new Set());
   const [type, setType] = useState("other");
   const [message, setMessage] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +51,52 @@ export default function ReportIssuePage() {
         if (data) setCustomerId(data.id);
       });
   }, [user]);
+
+  // Look up the order and its items whenever the order number changes and
+  // the person is reporting a return — only returns need item selection.
+  useEffect(() => {
+    setOrderId(null);
+    setOrderItems([]);
+    setSelectedItemIds(new Set());
+
+    if (type !== "return" || !orderNumber.trim()) return;
+
+    const timeout = setTimeout(async () => {
+      const { data: order } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("order_number", orderNumber.trim())
+        .single();
+
+      if (!order) return;
+      setOrderId(order.id);
+
+      const { data: items } = await supabase
+        .from("order_items")
+        .select("id, quantity, variant:variants(color, size, product:products(name))")
+        .eq("order_id", order.id);
+
+        setOrderItems((items || []) as unknown as OrderItemOption[]);
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [orderNumber, type]);
+
+  function toggleItem(id: number) {
+    setSelectedItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  }
 
   function validate() {
     const errs: Record<string, string> = {};
@@ -61,14 +117,31 @@ export default function ReportIssuePage() {
 
     setSubmitting(true);
     try {
-      let order_id: number | undefined;
-      if (orderNumber.trim()) {
+      let photo_url: string | undefined;
+      if (photoFile) {
+        const formData = new FormData();
+        formData.append("file", photoFile);
+        const uploadRes = await fetch("/api/complaints/upload-photo", {
+          method: "POST",
+          body: formData,
+        });
+        const uploadJson = await uploadRes.json();
+        if (!uploadRes.ok) {
+          setError(uploadJson.error || "Failed to upload photo. Please try again.");
+          setSubmitting(false);
+          return;
+        }
+        photo_url = uploadJson.url;
+      }
+
+      let resolvedOrderId = orderId ?? undefined;
+      if (!resolvedOrderId && orderNumber.trim()) {
         const { data: order } = await supabase
           .from("orders")
           .select("id")
           .eq("order_number", orderNumber.trim())
           .single();
-        if (order) order_id = order.id;
+        if (order) resolvedOrderId = order.id;
       }
 
       const res = await fetch("/api/complaints", {
@@ -76,11 +149,13 @@ export default function ReportIssuePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_id: user ? customerId : undefined,
-          order_id,
+          order_id: resolvedOrderId,
           reporter_name: user ? undefined : name.trim(),
           reporter_phone: user ? undefined : phone.trim(),
           type,
           message: message.trim(),
+          order_item_ids: Array.from(selectedItemIds),
+          photo_url,
         }),
       });
 
@@ -113,6 +188,13 @@ export default function ReportIssuePage() {
         <h1 className="font-display-md text-display-md text-on-surface mb-4">Thank you</h1>
         <p className="font-body-md text-body-md text-on-surface-variant">
           We've received your report and our team will get back to you soon.
+          {user && " You can track its status in "}
+          {user && (
+            <a href="/account/returns" className="text-primary hover:underline">
+              My Returns & Reports
+            </a>
+          )}
+          {user && "."}
         </p>
       </main>
     );
@@ -155,19 +237,6 @@ export default function ReportIssuePage() {
 
         <div>
           <label className="font-headline-md text-headline-md text-on-surface mb-2 block">
-            Order number (optional)
-          </label>
-          <input
-            type="text"
-            placeholder="e.g. ORD-1784875796185"
-            value={orderNumber}
-            onChange={(e) => setOrderNumber(e.target.value.trim())}
-            className={inputClass(false)}
-          />
-        </div>
-
-        <div>
-          <label className="font-headline-md text-headline-md text-on-surface mb-2 block">
             What's this about?
           </label>
           <select
@@ -184,6 +253,47 @@ export default function ReportIssuePage() {
 
         <div>
           <label className="font-headline-md text-headline-md text-on-surface mb-2 block">
+            Order number {type === "return" ? "" : "(optional)"}
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. ORD-1784875796185"
+            value={orderNumber}
+            onChange={(e) => setOrderNumber(e.target.value.trim())}
+            className={inputClass(false)}
+          />
+        </div>
+
+        {type === "return" && orderItems.length > 0 && (
+          <div>
+            <label className="font-headline-md text-headline-md text-on-surface mb-2 block">
+              Which item(s)?
+            </label>
+            <div className="flex flex-col gap-2">
+              {orderItems.map((item) => (
+                <label
+                  key={item.id}
+                  className="flex items-center gap-3 border border-outline-variant rounded-lg px-4 py-3 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedItemIds.has(item.id)}
+                    onChange={() => toggleItem(item.id)}
+                  />
+                  <span className="font-body-sm text-body-sm text-on-surface">
+                    {item.variant?.product?.name || "Item"}
+                    {item.variant?.color && ` — ${item.variant.color}`}
+                    {item.variant?.size && ` / ${item.variant.size}`}
+                    {` × ${item.quantity}`}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <label className="font-headline-md text-headline-md text-on-surface mb-2 block">
             Describe your issue
           </label>
           <textarea
@@ -195,6 +305,21 @@ export default function ReportIssuePage() {
             className={inputClass(!!fieldErrors.message)}
           />
           <FieldError msg={fieldErrors.message} />
+        </div>
+
+        <div>
+          <label className="font-headline-md text-headline-md text-on-surface mb-2 block">
+            Photo (optional)
+          </label>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handlePhotoChange}
+            className="font-body-sm text-body-sm text-on-surface-variant"
+          />
+          {photoPreview && (
+            <img src={photoPreview} alt="Preview" className="mt-2 w-24 h-24 object-cover rounded-lg" />
+          )}
         </div>
 
         <div>

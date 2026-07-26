@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 
-// GET /api/admin/complaints/[id] - full detail: the complaint, plus the
-// customer's other orders and other complaints, for context.
+const VALID_STATUSES = ["open", "in_progress", "resolved", "approved", "rejected", "refunded", "exchanged"];
+
+// GET /api/admin/complaints/[id] - full detail: the complaint, its selected
+// order items (for returns), plus the customer's other orders and other
+// complaints, for context.
 export async function GET(
     req: NextRequest,
     context: { params: Promise<{ id: string }> } | { params: { id: string } }
@@ -27,6 +30,8 @@ export async function GET(
       message,
       status,
       admin_notes,
+      photo_url,
+      order_item_ids,
       resolved_at,
       created_at,
       customer:customers(id, full_name, phone, email, orders_count),
@@ -42,6 +47,15 @@ export async function GET(
 
   let otherOrders: any[] = [];
   let otherComplaints: any[] = [];
+  let selectedItems: any[] = [];
+
+  if (complaint.order_item_ids && complaint.order_item_ids.length > 0) {
+    const { data: items } = await supabaseAdmin
+      .from("order_items")
+      .select("id, quantity, unit_price, variant:variants(id, color, size, product:products(name))")
+      .in("id", complaint.order_item_ids);
+    selectedItems = items || [];
+  }
 
   if (complaint.customer_id) {
     const { data: orders } = await supabaseAdmin
@@ -62,7 +76,7 @@ export async function GET(
     otherComplaints = complaints || [];
   }
 
-  return NextResponse.json({ complaint, otherOrders, otherComplaints });
+  return NextResponse.json({ complaint, otherOrders, otherComplaints, selectedItems });
 }
 
 // PATCH /api/admin/complaints/[id] - update status and/or admin notes
@@ -80,11 +94,12 @@ export async function PATCH(
 
     const updates: Record<string, any> = {};
     if (status) {
-      if (!["open", "in_progress", "resolved"].includes(status)) {
+      if (!VALID_STATUSES.includes(status)) {
         return NextResponse.json({ error: "Invalid status" }, { status: 400 });
       }
       updates.status = status;
-      updates.resolved_at = status === "resolved" ? new Date().toISOString() : null;
+      const isTerminal = ["resolved", "refunded", "exchanged", "rejected"].includes(status);
+      updates.resolved_at = isTerminal ? new Date().toISOString() : null;
     }
     if (admin_notes !== undefined) {
       updates.admin_notes = admin_notes;

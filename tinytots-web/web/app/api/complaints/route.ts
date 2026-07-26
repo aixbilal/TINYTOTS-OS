@@ -7,7 +7,7 @@ const MAX_MESSAGE_LEN = 1000;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { customer_id, order_id, reporter_name, reporter_phone, type, message } = body;
+    const { customer_id, order_id, reporter_name, reporter_phone, type, message, order_item_ids, photo_url } = body;
 
     if (!message || typeof message !== "string" || !message.trim()) {
       return NextResponse.json({ error: "Please describe your issue." }, { status: 400 });
@@ -41,15 +41,17 @@ export async function POST(req: NextRequest) {
     }
 
     const { data: complaint, error } = await supabaseAdmin
-      .from("complaints")
-      .insert({
-        customer_id: customer_id ?? null,
-        order_id: order_id ?? null,
-        reporter_name: reporter_name?.trim() || null,
-        reporter_phone: reporter_phone?.trim() || null,
-        type: type || "other",
-        message: message.trim(),
-      })
+    .from("complaints")
+    .insert({
+      customer_id: customer_id ?? null,
+      order_id: order_id ?? null,
+      reporter_name: reporter_name?.trim() || null,
+      reporter_phone: reporter_phone?.trim() || null,
+      type: type || "other",
+      message: message.trim(),
+      order_item_ids: Array.isArray(order_item_ids) ? order_item_ids : [],
+      photo_url: photo_url || null,
+    })
       .select()
       .single();
 
