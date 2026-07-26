@@ -14,6 +14,8 @@ const LABELS: Record<string, string> = {
   signup_voucher_amount: "Signup Voucher Amount (Rs.)",
   referral_voucher_amount: "Referral Reward Amount (Rs.)",
   referral_voucher_valid_days: "Referral Voucher Validity (days)",
+  referee_discount_amount: "Referral Code Discount for Referee (Rs.)",
+  max_discount_percent_of_subtotal: "Max Coupon + Referral Discount (% of subtotal)",
 };
 
 export default function SettingsPage() {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { getSettingNumber } from "@/lib/settings";
 
 // Cities where COD is currently allowed. Expand this list later
 // (e.g. add more cities, or switch to an "all Pakistan" flag) —
@@ -213,36 +214,81 @@ export async function POST(request: NextRequest) {
       }
     }
   }
-
-// Referral validation — only for logged-in customers on their first order,
-    // code must belong to a different existing customer.
+// Referral validation — works for both logged-in customers (first order
+    // only) and guests (identified by phone, one redemption per phone ever).
     let validatedReferrerId: number | null = null;
-    if (referral_code && customer_id) {
-      const { data: referringCustomer } = await supabase
+    let referralReferaeePhone: string | null = null;
+
+    if (referral_code) {
+      const { data: referrer } = await supabase
         .from("customers")
-        .select("id, orders_count")
-        .eq("id", customer_id)
+        .select("id, phone")
+        .eq("referral_code", referral_code.trim().toUpperCase())
         .single();
 
-      const isFirstOrder = referringCustomer?.orders_count === 0;
+      if (referrer) {
+        if (customer_id) {
+          // Logged-in path: must be their first order, and can't refer themselves.
+          const { data: referringCustomer } = await supabase
+            .from("customers")
+            .select("id, orders_count")
+            .eq("id", customer_id)
+            .single();
 
-      if (isFirstOrder) {
-        const { data: referrer } = await supabase
-          .from("customers")
-          .select("id")
-          .eq("referral_code", referral_code.trim().toUpperCase())
-          .single();
+          const isFirstOrder = referringCustomer?.orders_count === 0;
+          if (isFirstOrder && referrer.id !== customer_id) {
+            validatedReferrerId = referrer.id;
+          }
+        } else if (guest_phone) {
+          // Guest path: can't redeem your own code, and each phone can only
+          // redeem a referral once — enforced again at insert by the unique
+          // index, this check just avoids a wasted round trip.
+          const guestPhoneDigits = guest_phone.replace(/[\s-]/g, "");
+          const referrerPhoneDigits = referrer.phone?.replace(/[\s-]/g, "");
 
-        if (referrer && referrer.id !== customer_id) {
-          validatedReferrerId = referrer.id;
+          if (guestPhoneDigits !== referrerPhoneDigits) {
+            const { data: alreadyUsed } = await supabase
+              .from("referrals")
+              .select("id")
+              .eq("referee_phone", guestPhoneDigits)
+              .maybeSingle();
+
+            if (!alreadyUsed) {
+              validatedReferrerId = referrer.id;
+              referralReferaeePhone = guestPhoneDigits;
+            }
+          }
         }
       }
     }
+  // Referee gets an instant discount for using a valid referral code —
+    // separate from the referrer's later admin-approved reward.
+    let refereeDiscount = 0;
+    if (validatedReferrerId) {
+      refereeDiscount = await getSettingNumber("referee_discount_amount");
+    }
 
+    // Cap coupon + referral discount together as a % of subtotal, so stacking
+    // marketing incentives can't eat the whole order. Vouchers are excluded
+    // from this cap — a voucher is already-earned customer value and always
+    // applies in full, never silently reduced.
+    const maxDiscountPercent = await getSettingNumber("max_discount_percent_of_subtotal");
+    const marketingDiscountCap = Math.round(subtotal * (maxDiscountPercent / 100));
+    const requestedMarketingDiscount = discountTotal + refereeDiscount;
+
+    if (requestedMarketingDiscount > marketingDiscountCap) {
+      // Coupon takes priority (it's the more deliberate marketing lever),
+      // referral discount absorbs the reduction, down to zero if needed.
+      const cappedCouponDiscount = Math.min(discountTotal, marketingDiscountCap);
+      const remainingForReferral = Math.max(0, marketingDiscountCap - cappedCouponDiscount);
+
+      discountTotal = cappedCouponDiscount;
+      refereeDiscount = Math.min(refereeDiscount, remainingForReferral);
+    }
     // Delivery fee: free for everyone, always.
     const deliveryFee = 0;
 
-    const total = Math.max(0, subtotal + deliveryFee - discountTotal - voucherAmount);
+    const total = Math.max(0, subtotal + deliveryFee - discountTotal - voucherAmount - refereeDiscount);
 
     // COD tier logic
     let codTier: string | null = null;
@@ -272,6 +318,7 @@ export async function POST(request: NextRequest) {
           subtotal,
           delivery_fee: deliveryFee,
           discount_total: discountTotal,
+          referral_discount: refereeDiscount,
           total,
           coupon_code: appliedCouponCode,
           voucher_id: validatedVoucherId,
@@ -330,14 +377,18 @@ if (validatedVoucherId) {
         await supabase.from("orders").delete().eq("id", order.id);
         return NextResponse.json({ error: itemsError.message }, { status: 500 });
       }
-  
- // Link the referral now that the referee's first order is confirmed placed.
-      // Reward stays unissued (reward_triggered: false) until admin approves it.
-      if (validatedReferrerId && customer_id) {
+ // Link the referral now that the order is confirmed placed. Reward stays
+      // unissued (reward_triggered: false) until admin approves it. Works for
+      // both logged-in referees (referee_customer_id set now) and guests
+      // (referee_phone set now, referee_customer_id backfilled automatically
+      // by trg_link_guest_referral if/when they later create an account).
+      if (validatedReferrerId) {
         const { error: referralInsertError } = await supabase.from("referrals").insert({
           referrer_customer_id: validatedReferrerId,
-          referee_customer_id: customer_id,
+          referee_customer_id: customer_id ?? null,
+          referee_phone: customer_id ? null : referralReferaeePhone,
           referral_code: referral_code.trim().toUpperCase(),
+          order_id: order.id,
           reward_triggered: false,
         });
 
