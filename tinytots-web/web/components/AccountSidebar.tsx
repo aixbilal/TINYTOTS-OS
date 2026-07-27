@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/account#orders", label: "Orders & Returns", icon: "local_shipping" },
   { href: "/account/addresses", label: "Saved Addresses", icon: "location_on" },
   { href: "/account/wishlist", label: "Wishlist", icon: "favorite" },
+  { href: "/account/settings", label: "Login & Security", icon: "lock" },
 ];
 
 export default function AccountSidebar({ name }: { name?: string | null }) {
