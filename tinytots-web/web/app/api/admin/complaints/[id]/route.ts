@@ -35,6 +35,7 @@ export async function GET(
       photo_url,
       order_item_ids,
       refund_method,
+      preferred_refund_method,
       voucher_id,
       resolved_at,
       created_at,

@@ -18,6 +18,7 @@ interface ComplaintDetail {
   photo_url: string | null;
   order_item_ids: number[] | null;
   refund_method: string | null;
+  preferred_refund_method: string | null;
   voucher_id: number | null;
   resolved_at: string | null;
   created_at: string;
@@ -253,6 +254,12 @@ export default function ComplaintDetailPage() {
 
         {errorMsg && (
           <p className="text-xs font-medium text-red-700 bg-red-50 px-3 py-2 rounded-md mb-3">{errorMsg}</p>
+        )}
+        {complaint.preferred_refund_method && !complaint.voucher_id && (
+          <p className="text-xs font-medium text-blue-800 bg-blue-50 px-3 py-2 rounded-md mb-3">
+            Customer requested:{" "}
+            {complaint.preferred_refund_method === "voucher" ? "Store Credit Voucher" : "Original Payment Method"}
+          </p>
         )}
         <div className="flex flex-wrap gap-2 mb-4">
           {complaint.status !== "open" && (

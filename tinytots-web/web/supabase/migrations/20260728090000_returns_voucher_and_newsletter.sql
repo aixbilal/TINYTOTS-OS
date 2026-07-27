@@ -23,6 +23,16 @@ CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
 );
 ALTER TABLE public.newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 
+-- Customer's requested refund method at submission time (distinct from
+-- complaints.refund_method, which is the admin's final decision once the
+-- return is actually processed).
+ALTER TABLE public.complaints
+  ADD COLUMN IF NOT EXISTS preferred_refund_method text;
+
+ALTER TABLE public.complaints DROP CONSTRAINT IF EXISTS complaints_preferred_refund_method_check;
+ALTER TABLE public.complaints ADD CONSTRAINT complaints_preferred_refund_method_check
+  CHECK (preferred_refund_method IS NULL OR preferred_refund_method = ANY (ARRAY['voucher', 'original_payment']));
+
 -- Admin-selected product IDs for the homepage "Trending Now" section.
 -- NULL/empty means fall back to the default (most recent) products.
 ALTER TABLE public.homepage_content

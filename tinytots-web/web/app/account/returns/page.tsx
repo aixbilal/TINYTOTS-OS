@@ -233,7 +233,7 @@ export default function MyReturnsPage() {
           message,
           order_item_ids: Array.from(selectedItemIds),
           photo_url,
-          refund_method: refundMethod,
+          preferred_refund_method: refundMethod,
         }),
       });
 
