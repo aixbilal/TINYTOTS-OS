@@ -29,6 +29,15 @@ export async function PATCH(req: NextRequest) {
       "hero_button_text",
       "hero_button_link",
       "trending_heading",
+      "meadow_image_url",
+      "meadow_badge_text",
+      "meadow_heading",
+      "meadow_button_text",
+      "meadow_link",
+      "boys_image_url",
+      "boys_link",
+      "girls_image_url",
+      "girls_link",
     ];
 
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };

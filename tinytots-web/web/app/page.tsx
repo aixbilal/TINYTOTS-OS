@@ -46,10 +46,16 @@ const HOMEPAGE_DEFAULTS = {
   trending_heading: "Trending Now",
   meadow_image_url:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuD8Kx1YOh37r9_tpddrRx-z8ThyZ74VSqpZ8NqUnuAkyKpMprUo6QvWwqSSsEAdqYjmB8_VspVcq243mW9a22_3h2uBkoj0HsGYa9zMowQLOW9MHk0XF5DbcrXkdkT-N_-7h5kT9AGG2BKHkZ6lR4Z-1-JuIolvhibU6NmMriHSQUJDGTJf97EnY-lHUWEAB0lC50ARUK0xVIRuln4l0asI6-ON9Q36p900XcyxhlFoKFDQGDSKpihL40rJhWsAylmx-xlFJabMaUOM",
+  meadow_badge_text: "Spring Collection",
+  meadow_heading: "The Meadow Edit",
+  meadow_button_text: "Explore Collection",
+  meadow_link: "/products",
   boys_image_url:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuBOxH5NNX2M4TZ_MpabUd6iR43Lqhl4mFUPL1vygsT6U1bIZ5Wap_3XSxsXwMWuTpJtQjGi1xQUQ0xlBJTfeIdLJbliy7pXKJo4yrKNaOC-9z47-0vKeKtG0yMUAieIJkIQzShvCusjWv4HMiprijPupQmRH7maK_H1bGvYeJOQPSB6-Vvc2ST4xCIh72JtiSddsb8tEqrSymHPvPcFy4cFJ4xxnkl7A9vkWZEQ12bIJVnmM-Pu-aPA1yPpjf6jsWkS9BLBw74821_i",
+  boys_link: "/products",
   girls_image_url:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuAex1tG2uv7lMIPIdDrPkL8txTXP-5lNjCD9jng7kNs6OcH_Ky94n8BWlY6cuBw71fG3Y01Wk_cRUvqnae2Q0zgpo5_zC77fJXWem1322uBxd60gIILFisAPS8wpWKA21VbKHRG7-aJ41OJBfx8Za033flnWypc0wBXWIfw6Z0DtvlSFrUpW0waIQ7CT6yae7FvGXNj0ydtDn_RlUQCdvs-59xozzxbXO0S77lPanQ7IV2gjCXPsPIhHgv2Vr3i3DLgN9EgUgj0WR_s",
+  girls_link: "/products",
 };
 
 async function getHomepageContent() {
@@ -192,7 +198,7 @@ export default async function Home() {
       <section className="mb-stack-lg">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap h-auto md:h-[500px]">
           <Link
-            href="/products?collection=meadow-edit"
+            href={content.meadow_link ?? HOMEPAGE_DEFAULTS.meadow_link}
             className="md:col-span-2 relative rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[300px]"
           >
             <div
@@ -202,17 +208,19 @@ export default async function Home() {
             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300" />
             <div className="absolute bottom-6 left-6 right-6 z-10 flex flex-col items-start">
               <span className="bg-surface-container-lowest/90 backdrop-blur text-on-surface font-label-md text-label-md px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
-                Spring Collection
+                {content.meadow_badge_text ?? HOMEPAGE_DEFAULTS.meadow_badge_text}
               </span>
-              <h3 className="font-display-md text-display-md text-white mb-4">The Meadow Edit</h3>
+              <h3 className="font-display-md text-display-md text-white mb-4">
+                {content.meadow_heading ?? HOMEPAGE_DEFAULTS.meadow_heading}
+              </h3>
               <span className="bg-white text-on-surface font-button text-button px-6 py-2 rounded-lg group-hover:bg-surface-container-low transition-colors inline-block">
-                Explore Collection
+                {content.meadow_button_text ?? HOMEPAGE_DEFAULTS.meadow_button_text}
               </span>
             </div>
           </Link>
           <div className="flex flex-col gap-bento-gap">
             <Link
-              href="/products?category=boys"
+              href={content.boys_link ?? HOMEPAGE_DEFAULTS.boys_link}
               className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[200px]"
             >
               <div
@@ -228,7 +236,7 @@ export default async function Home() {
               </div>
             </Link>
             <Link
-              href="/products?category=girls"
+              href={content.girls_link ?? HOMEPAGE_DEFAULTS.girls_link}
               className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[200px]"
             >
               <div

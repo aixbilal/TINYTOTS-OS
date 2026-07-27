@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import AccountSidebar from "@/components/AccountSidebar";
 
 const MAX_MESSAGE_LEN = 1000;
+const REASONS = ["Size / Fit Issue", "Damaged in Transit", "Incorrect Variant", "Changed my mind", "Other"];
 
 type ReturnItem = {
   id: number;
@@ -18,31 +19,19 @@ type ReturnItem = {
   order: { id: number; order_number: string } | null;
 };
 
-type OrderOption = {
-  id: number;
-  order_number: string;
-  status: string;
-  created_at: string;
-};
-
-type OrderItemOption = {
+type Order = { id: number; order_number: string; status: string; created_at: string };
+type OrderItemRow = {
   id: number;
   quantity: number;
-  variant: { color: string | null; size: string | null; product: { name: string } | null } | null;
+  variant: { color: string | null; size: string | null; price: number; product: { name: string; image_url: string | null } | null } | null;
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  open: "Submitted",
-  in_progress: "Being reviewed",
-  approved: "Approved",
-  rejected: "Rejected",
-  refunded: "Refunded",
-  exchanged: "Exchanged",
-  resolved: "Resolved",
+  open: "Submitted", in_progress: "Being reviewed", approved: "Approved",
+  rejected: "Rejected", refunded: "Refunded", exchanged: "Exchanged", resolved: "Resolved",
 };
-
 const STATUS_PILL: Record<string, string> = {
-  open: "bg-surface-container-high text-on-surface-variant border-outline/10",
+  open: "bg-surface-container-high text-on-surface-variant border-on-surface/5",
   in_progress: "bg-primary-container/20 text-on-primary-container border-primary-container/30",
   approved: "bg-secondary-container/20 text-on-secondary-container border-secondary-container/30",
   rejected: "bg-error-container/40 text-on-error-container border-error-container",
@@ -50,9 +39,9 @@ const STATUS_PILL: Record<string, string> = {
   exchanged: "bg-tertiary-container/20 text-on-tertiary-container border-tertiary-container/30",
   resolved: "bg-tertiary-container/20 text-on-tertiary-container border-tertiary-container/30",
 };
-
-// Only orders in these statuses are eligible to be returned.
 const RETURNABLE_STATUSES = ["shipped", "delivered"];
+
+const STEPS = ["Lookup", "Select Items", "Review"];
 
 export default function MyReturnsPage() {
   const router = useRouter();
@@ -61,22 +50,25 @@ export default function MyReturnsPage() {
   const [customerName, setCustomerName] = useState<string | null>(null);
 
   const [items, setItems] = useState<ReturnItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showWizard, setShowWizard] = useState(false);
 
-  // Start-a-return form state
-  const [showForm, setShowForm] = useState(false);
-  const [eligibleOrders, setEligibleOrders] = useState<OrderOption[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
-  const [orderItems, setOrderItems] = useState<OrderItemOption[]>([]);
+  // Wizard state
+  const [step, setStep] = useState(1);
+  const [orderNumber, setOrderNumber] = useState("");
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItemRow[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<number>>(new Set());
-  const [reason, setReason] = useState("");
-  const [message, setMessage] = useState("");
+  const [reasons, setReasons] = useState<Record<number, string>>({});
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [refundMethod, setRefundMethod] = useState<"voucher" | "original_payment">("voucher");
+  const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/login");
@@ -84,7 +76,6 @@ export default function MyReturnsPage() {
 
   useEffect(() => {
     if (!user) return;
-
     supabase
       .from("customers")
       .select("id, full_name")
@@ -94,15 +85,12 @@ export default function MyReturnsPage() {
         setCustomerId(data?.id ?? null);
         setCustomerName(data?.full_name ?? null);
       });
-
-    loadReturns();
+    loadHistory();
   }, [user]);
 
-  async function loadReturns() {
-    setLoading(true);
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+  async function loadHistory() {
+    setHistoryLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
     const res = await fetch("/api/account/returns", {
       headers: { Authorization: `Bearer ${session.access_token}` },
@@ -110,54 +98,95 @@ export default function MyReturnsPage() {
     const json = await res.json();
     if (res.ok) setItems(json.complaints || []);
     else setError(json.error || "Failed to load");
-    setLoading(false);
+    setHistoryLoading(false);
   }
 
-  async function openForm() {
-    setShowForm(true);
-    setFormError(null);
-    if (!customerId) return;
-    setOrdersLoading(true);
-    const { data } = await supabase
-      .from("orders")
-      .select("id, order_number, status, created_at")
-      .eq("customer_id", customerId)
-      .in("status", RETURNABLE_STATUSES)
-      .order("created_at", { ascending: false });
-    setEligibleOrders(data || []);
-    setOrdersLoading(false);
-  }
-
-  function closeForm() {
-    setShowForm(false);
-    setSelectedOrderId(null);
+  function startWizard() {
+    setShowWizard(true);
+    setStep(1);
+    setOrderNumber("");
+    setOrder(null);
     setOrderItems([]);
     setSelectedItemIds(new Set());
-    setReason("");
-    setMessage("");
+    setReasons({});
     setPhotoFile(null);
     setPhotoPreview(null);
-    setFormError(null);
+    setRefundMethod("voucher");
+    setNote("");
+    setLookupError(null);
+    setSubmitError(null);
   }
 
-  async function selectOrder(orderId: number) {
-    setSelectedOrderId(orderId);
-    setSelectedItemIds(new Set());
-    setOrderItems([]);
-    const { data } = await supabase
+  function closeWizard() {
+    setShowWizard(false);
+  }
+
+  async function handleLookup(e: React.FormEvent) {
+    e.preventDefault();
+    setLookupError(null);
+    if (!orderNumber.trim() || !customerId) return;
+
+    setLookingUp(true);
+    const { data: foundOrder } = await supabase
+      .from("orders")
+      .select("id, order_number, status, created_at")
+      .eq("order_number", orderNumber.trim())
+      .eq("customer_id", customerId)
+      .single();
+
+    if (!foundOrder) {
+      setLookupError("We couldn't find that order on your account. Double-check the order number.");
+      setLookingUp(false);
+      return;
+    }
+    if (!RETURNABLE_STATUSES.includes(foundOrder.status)) {
+      setLookupError("This order isn't eligible for return yet — it needs to be shipped or delivered first.");
+      setLookingUp(false);
+      return;
+    }
+
+    const { data: rows } = await supabase
       .from("order_items")
-      .select("id, quantity, variant:variants(color, size, product:products(name))")
-      .eq("order_id", orderId);
-    setOrderItems((data || []) as unknown as OrderItemOption[]);
+      .select("id, quantity, variant:variants(color, size, price, product:products(name, image_url))")
+      .eq("order_id", foundOrder.id);
+
+    setOrder(foundOrder);
+    setOrderItems((rows || []) as unknown as OrderItemRow[]);
+    setLookingUp(false);
+    setStep(2);
   }
 
   function toggleItem(id: number) {
     setSelectedItemIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        setReasons((r) => {
+          const copy = { ...r };
+          delete copy[id];
+          return copy;
+        });
+      } else next.add(id);
       return next;
     });
+  }
+
+  function setReason(id: number, reason: string) {
+    setReasons((prev) => ({ ...prev, [id]: reason }));
+  }
+
+  function goToReview() {
+    if (selectedItemIds.size === 0) {
+      setLookupError("Please select at least one item to return.");
+      return;
+    }
+    const missingReason = Array.from(selectedItemIds).some((id) => !reasons[id]);
+    if (missingReason) {
+      setLookupError("Please choose a reason for each selected item.");
+      return;
+    }
+    setLookupError(null);
+    setStep(3);
   }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -167,69 +196,59 @@ export default function MyReturnsPage() {
     setPhotoPreview(URL.createObjectURL(file));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setFormError(null);
-
-    if (!selectedOrderId) {
-      setFormError("Please select the order you'd like to return.");
-      return;
-    }
-    if (selectedItemIds.size === 0) {
-      setFormError("Please select at least one item to return.");
-      return;
-    }
-    if (!message.trim()) {
-      setFormError("Please tell us briefly why you're returning this.");
-      return;
-    }
-
+  async function handleSubmit() {
+    if (!order || !customerId) return;
     setSubmitting(true);
+    setSubmitError(null);
+
     try {
       let photo_url: string | undefined;
       if (photoFile) {
         const formData = new FormData();
         formData.append("file", photoFile);
-        const uploadRes = await fetch("/api/complaints/upload-photo", {
-          method: "POST",
-          body: formData,
-        });
+        const uploadRes = await fetch("/api/complaints/upload-photo", { method: "POST", body: formData });
         const uploadJson = await uploadRes.json();
         if (!uploadRes.ok) {
-          setFormError(uploadJson.error || "Failed to upload photo. Please try again.");
+          setSubmitError(uploadJson.error || "Failed to upload photo.");
           setSubmitting(false);
           return;
         }
         photo_url = uploadJson.url;
       }
 
-      const fullMessage = reason ? `[${reason}] ${message.trim()}` : message.trim();
+      const itemLines = Array.from(selectedItemIds).map((id) => {
+        const item = orderItems.find((i) => i.id === id);
+        const name = item?.variant?.product?.name || "Item";
+        return `${name} (${reasons[id]})`;
+      });
+      const message = `Return request for ${itemLines.join(", ")}.${note.trim() ? ` Note: ${note.trim()}` : ""}`;
 
       const res = await fetch("/api/complaints", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_id: customerId,
-          order_id: selectedOrderId,
+          order_id: order.id,
           type: "return",
-          message: fullMessage,
+          message,
           order_item_ids: Array.from(selectedItemIds),
           photo_url,
+          refund_method: refundMethod,
         }),
       });
 
       const json = await res.json();
       if (!res.ok) {
-        setFormError(json.error || "Something went wrong. Please try again.");
+        setSubmitError(json.error || "Something went wrong. Please try again.");
         setSubmitting(false);
         return;
       }
 
       setSubmitting(false);
-      closeForm();
-      loadReturns();
+      setShowWizard(false);
+      loadHistory();
     } catch {
-      setFormError("Network error. Please try again.");
+      setSubmitError("Network error. Please try again.");
       setSubmitting(false);
     }
   }
@@ -237,14 +256,13 @@ export default function MyReturnsPage() {
   const inputClass =
     "w-full border rounded-lg px-4 py-3 bg-surface text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors";
 
-  if (authLoading || loading) {
+  if (authLoading || historyLoading) {
     return (
       <main className="max-w-container-max mx-auto py-stack-lg">
         <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
       </main>
     );
   }
-
   if (!user) return null;
 
   return (
@@ -256,12 +274,12 @@ export default function MyReturnsPage() {
           <div>
             <h1 className="font-display-md text-display-md text-on-surface">Returns & Refunds</h1>
             <p className="font-body-md text-body-md text-on-surface-variant mt-2">
-              Track the status of every return, exchange, or issue you've reported.
+              We want you to be completely happy with your TinyTots order. Let's get this sorted.
             </p>
           </div>
-          {!showForm && (
+          {!showWizard && (
             <button
-              onClick={openForm}
+              onClick={startWizard}
               className="bg-primary-container text-on-primary font-button text-button h-12 px-6 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm whitespace-nowrap"
             >
               <span className="material-symbols-outlined">assignment_return</span> Start a Return
@@ -271,126 +289,204 @@ export default function MyReturnsPage() {
 
         {error && <p className="font-label-md text-label-md text-error">{error}</p>}
 
-        {/* Start-a-return form */}
-        {showForm && (
-          <form
-            onSubmit={handleSubmit}
-            className="border border-outline-variant/30 rounded-2xl p-6 bg-surface-container-lowest flex flex-col gap-4"
-          >
+        {/* Wizard */}
+        {showWizard && (
+          <div className="border border-on-surface/5 rounded-2xl bg-surface-container-lowest p-6 md:p-8 flex flex-col gap-stack-md">
             <div className="flex items-center justify-between">
-              <h2 className="font-headline-md text-headline-md text-on-surface">Start a Return</h2>
-              <button
-                type="button"
-                onClick={closeForm}
-                className="text-on-surface-variant hover:text-on-surface"
-                aria-label="Close"
-              >
+              {/* Stepper */}
+              <div className="flex items-center gap-3">
+                {STEPS.map((label, i) => {
+                  const num = i + 1;
+                  const done = step > num;
+                  const active = step === num;
+                  return (
+                    <div key={label} className="flex items-center gap-2">
+                      <div
+                        className={`w-7 h-7 rounded-full flex items-center justify-center font-label-md text-label-md font-semibold shrink-0 ${
+                          done
+                            ? "bg-primary text-on-primary"
+                            : active
+                            ? "bg-primary-container text-on-primary-container border-2 border-primary"
+                            : "bg-surface-container-high text-on-surface-variant"
+                        }`}
+                      >
+                        {done ? <span className="material-symbols-outlined text-[16px]">check</span> : num}
+                      </div>
+                      <span className={`font-label-md text-label-md hidden sm:inline ${active ? "text-primary font-semibold" : "text-on-surface-variant"}`}>
+                        {label}
+                      </span>
+                      {i < STEPS.length - 1 && <div className="w-8 sm:w-12 h-px bg-outline-variant/40" />}
+                    </div>
+                  );
+                })}
+              </div>
+              <button onClick={closeWizard} className="text-on-surface-variant hover:text-on-surface" aria-label="Close">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
-            <div>
-              <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
-                Which order is this for?
-              </label>
-              {ordersLoading ? (
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Loading your orders...</p>
-              ) : eligibleOrders.length === 0 ? (
-                <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  You don't have any shipped or delivered orders eligible for return right now.
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {eligibleOrders.map((o) => (
-                    <label
-                      key={o.id}
-                      className={`flex items-center justify-between gap-3 border rounded-xl px-4 py-3 cursor-pointer transition-colors ${
-                        selectedOrderId === o.id
-                          ? "border-primary bg-primary-container/10"
-                          : "border-outline-variant/30 hover:bg-surface-container-low"
-                      }`}
-                    >
-                      <span className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="order"
-                          checked={selectedOrderId === o.id}
-                          onChange={() => selectOrder(o.id)}
-                        />
-                        <span className="font-body-sm text-body-sm text-on-surface">{o.order_number}</span>
-                      </span>
-                      <span className="font-label-md text-label-md text-on-surface-variant">
-                        {new Date(o.created_at).toLocaleDateString()}
-                      </span>
-                    </label>
-                  ))}
+            {/* Step 1: Lookup */}
+            {step === 1 && (
+              <form onSubmit={handleLookup} className="flex flex-col gap-4 max-w-md">
+                <div>
+                  <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
+                    Enter your order number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. ORD-1784875796185"
+                    value={orderNumber}
+                    onChange={(e) => setOrderNumber(e.target.value.trim())}
+                    className={inputClass}
+                  />
                 </div>
-              )}
-            </div>
+                {lookupError && <p className="font-label-md text-label-md text-error">{lookupError}</p>}
+                <button
+                  type="submit"
+                  disabled={lookingUp || !orderNumber.trim()}
+                  className="self-start bg-primary-container text-on-primary font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {lookingUp ? "Looking up..." : "Find Order"}
+                </button>
+              </form>
+            )}
 
-            {selectedOrderId && orderItems.length > 0 && (
-              <div>
-                <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
-                  Which item(s) are you returning?
-                </label>
-                <div className="flex flex-col gap-2">
-                  {orderItems.map((item) => (
-                    <label
-                      key={item.id}
-                      className="flex items-center gap-3 border border-outline-variant/30 rounded-lg px-4 py-3 cursor-pointer hover:bg-surface-container-low transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedItemIds.has(item.id)}
-                        onChange={() => toggleItem(item.id)}
-                      />
-                      <span className="font-body-sm text-body-sm text-on-surface">
-                        {item.variant?.product?.name || "Item"}
-                        {item.variant?.color && ` — ${item.variant.color}`}
-                        {item.variant?.size && ` / ${item.variant.size}`}
-                        {` × ${item.quantity}`}
-                      </span>
-                    </label>
-                  ))}
+            {/* Step 2: Select Items */}
+            {step === 2 && order && (
+              <div className="flex flex-col gap-stack-md">
+                <div className="border border-on-surface/5 rounded-xl px-5 py-4 flex justify-between items-center bg-surface-container-low">
+                  <div>
+                    <p className="font-label-md text-label-md text-tertiary uppercase tracking-wider mb-1">Order Validated</p>
+                    <p className="font-headline-md text-headline-md text-on-surface">Order #{order.order_number}</p>
+                    <p className="font-label-md text-label-md text-on-surface-variant">
+                      Placed on {new Date(order.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <button onClick={() => setStep(1)} className="font-label-md text-label-md text-primary hover:underline">
+                    Change Order
+                  </button>
                 </div>
+
+                <div>
+                  <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Select items to return</h2>
+                  <div className="flex flex-col gap-3">
+                    {orderItems.map((item) => {
+                      const checked = selectedItemIds.has(item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          className={`border rounded-xl p-4 flex flex-col md:flex-row md:items-center gap-4 transition-colors ${
+                            checked ? "border-primary bg-primary-container/5" : "border-outline-variant/30"
+                          }`}
+                        >
+                          <label className="flex items-center gap-4 flex-grow cursor-pointer">
+                            <input type="checkbox" checked={checked} onChange={() => toggleItem(item.id)} className="w-5 h-5 accent-primary shrink-0" />
+                            {item.variant?.product?.image_url && (
+                              <img src={item.variant.product.image_url} alt="" className="w-16 h-16 object-cover rounded-lg border border-outline-variant/20 shrink-0" />
+                            )}
+                            <div className={`min-w-0 ${!checked ? "opacity-70" : ""}`}>
+                              <p className="font-body-md text-body-md text-on-surface font-medium">
+                                {item.variant?.product?.name || "Item"}
+                              </p>
+                              <p className="font-label-md text-label-md text-on-surface-variant">
+                                {[item.variant?.color, item.variant?.size].filter(Boolean).join(" • ")}
+                              </p>
+                              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                                Rs. {item.variant?.price?.toLocaleString()}
+                              </p>
+                            </div>
+                          </label>
+                          <div className={`w-full md:w-56 shrink-0 ${!checked ? "opacity-50 pointer-events-none" : ""}`}>
+                            <label className="font-label-md text-label-md text-on-surface-variant mb-1 block">Reason for return</label>
+                            <select
+                              value={reasons[item.id] || ""}
+                              onChange={(e) => setReason(item.id, e.target.value)}
+                              disabled={!checked}
+                              className={inputClass}
+                            >
+                              <option value="">Select reason</option>
+                              {REASONS.map((r) => (
+                                <option key={r} value={r}>{r}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {lookupError && <p className="font-label-md text-label-md text-error">{lookupError}</p>}
+
+                <button
+                  onClick={goToReview}
+                  className="self-start bg-primary-container text-on-primary font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
+                >
+                  Continue to Review
+                </button>
               </div>
             )}
 
-            {selectedOrderId && (
-              <>
+            {/* Step 3: Review */}
+            {step === 3 && order && (
+              <div className="flex flex-col gap-stack-md">
                 <div>
-                  <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
-                    Reason
-                  </label>
-                  <select value={reason} onChange={(e) => setReason(e.target.value)} className={inputClass}>
-                    <option value="">Select a reason</option>
-                    <option value="Wrong size">Wrong size</option>
-                    <option value="Wrong item received">Wrong item received</option>
-                    <option value="Damaged / defective">Damaged / defective</option>
-                    <option value="Not as described">Not as described</option>
-                    <option value="Changed my mind">Changed my mind</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <h2 className="font-headline-md text-headline-md text-on-surface mb-3">
+                    How would you like your refund?
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button
+                      onClick={() => setRefundMethod("voucher")}
+                      className={`text-left rounded-xl p-5 border-2 transition-all ${
+                        refundMethod === "voucher"
+                          ? "border-primary-container bg-primary-container/5"
+                          : "border-outline-variant/30 hover:border-outline-variant"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="material-symbols-outlined text-primary">storefront</span>
+                        <span className="font-label-md text-label-md text-tertiary bg-tertiary-container/20 px-2 py-0.5 rounded-full">
+                          Instant Processing
+                        </span>
+                      </div>
+                      <p className="font-headline-md text-headline-md text-on-surface mb-1">Store Credit Voucher</p>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">
+                        Receive a digital voucher as soon as your return ships.
+                      </p>
+                    </button>
+                    <button
+                      onClick={() => setRefundMethod("original_payment")}
+                      className={`text-left rounded-xl p-5 border-2 transition-all ${
+                        refundMethod === "original_payment"
+                          ? "border-primary-container bg-primary-container/5"
+                          : "border-outline-variant/30 hover:border-outline-variant"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="material-symbols-outlined text-primary">credit_card</span>
+                      </div>
+                      <p className="font-headline-md text-headline-md text-on-surface mb-1">Original Payment Method</p>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">
+                        Refunded to your original payment method. Takes 5–7 business days after inspection.
+                      </p>
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
-                    Tell us more
+                    Anything else we should know? (optional)
                   </label>
                   <textarea
-                    placeholder="Add any details that will help us process this quickly..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value.slice(0, MAX_MESSAGE_LEN))}
-                    maxLength={MAX_MESSAGE_LEN}
-                    rows={4}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value.slice(0, MAX_MESSAGE_LEN))}
+                    rows={3}
                     className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
-                    Photo (optional)
-                  </label>
+                  <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">Photo (optional)</label>
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
@@ -398,61 +494,49 @@ export default function MyReturnsPage() {
                     className="font-body-sm text-body-sm text-on-surface-variant"
                   />
                   {photoPreview && (
-                    <img
-                      src={photoPreview}
-                      alt="Preview"
-                      className="mt-2 w-24 h-24 object-cover rounded-lg border border-outline-variant/20"
-                    />
+                    <img src={photoPreview} alt="Preview" className="mt-2 w-24 h-24 object-cover rounded-lg border border-outline-variant/20" />
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 mt-1">
+                <p className="font-label-md text-label-md text-on-surface-variant border-t border-outline-variant/20 pt-4">
+                  By submitting this request, you agree to our{" "}
+                  <a href="/shipping-returns" className="text-primary hover:underline">Return Policy</a>.
+                </p>
+
+                {submitError && <p className="font-label-md text-label-md text-error">{submitError}</p>}
+
+                <div className="flex items-center gap-3">
                   <button
-                    type="submit"
+                    onClick={handleSubmit}
                     disabled={submitting}
-                    className="bg-primary-container text-on-primary font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="bg-primary-container text-on-primary font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
                   >
                     {submitting ? "Submitting..." : "Submit Return Request"}
+                    {!submitting && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}
                   </button>
-                  <button
-                    type="button"
-                    onClick={closeForm}
-                    className="font-button text-button text-on-surface-variant hover:underline"
-                  >
-                    Cancel
+                  <button onClick={() => setStep(2)} className="font-button text-button text-on-surface-variant hover:underline">
+                    Back
                   </button>
                 </div>
-              </>
+              </div>
             )}
-
-            {formError && <p className="font-label-md text-label-md text-error">{formError}</p>}
-          </form>
+          </div>
         )}
 
         {/* History */}
-        {items.length === 0 ? (
-          !showForm && (
-            <div className="border border-dashed border-outline-variant/40 rounded-2xl p-10 flex flex-col items-center text-center gap-3 bg-surface-container-lowest">
-              <span className="material-symbols-outlined text-[40px] text-on-surface-variant">inventory_2</span>
-              <p className="font-body-md text-body-md text-on-surface-variant">No returns or reports yet.</p>
-              <button onClick={openForm} className="font-body-sm text-body-sm text-primary hover:underline">
-                Start a return →
-              </button>
-            </div>
-          )
-        ) : (
+        {!showWizard && items.length === 0 && (
+          <div className="border border-dashed border-outline-variant/40 rounded-2xl p-10 flex flex-col items-center text-center gap-3 bg-surface-container-lowest">
+            <span className="material-symbols-outlined text-[40px] text-on-surface-variant">inventory_2</span>
+            <p className="font-body-md text-body-md text-on-surface-variant">No returns or reports yet.</p>
+          </div>
+        )}
+
+        {!showWizard && items.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-bento-gap">
             {items.map((c) => (
-              <div
-                key={c.id}
-                className="border border-outline-variant/20 rounded-2xl p-6 bg-surface-container-lowest flex flex-col gap-3"
-              >
+              <div key={c.id} className="border border-on-surface/5 rounded-2xl p-6 bg-surface-container-lowest flex flex-col gap-3">
                 <div className="flex justify-between items-start gap-3">
-                  <span
-                    className={`px-3 py-1 rounded-full font-label-md text-label-md border ${
-                      STATUS_PILL[c.status] ?? "bg-surface-container-high text-on-surface-variant border-outline/10"
-                    }`}
-                  >
+                  <span className={`px-3 py-1 rounded-full font-label-md text-label-md border ${STATUS_PILL[c.status] ?? "bg-surface-container-high text-on-surface-variant border-on-surface/5"}`}>
                     {STATUS_LABELS[c.status] || c.status}
                   </span>
                   <span className="font-label-md text-label-md text-on-surface-variant whitespace-nowrap">
@@ -461,16 +545,10 @@ export default function MyReturnsPage() {
                 </div>
                 <p className="font-body-sm text-body-md text-on-surface">{c.message}</p>
                 {c.order && (
-                  <p className="font-label-md text-label-md text-on-surface-variant font-mono">
-                    Order: {c.order.order_number}
-                  </p>
+                  <p className="font-label-md text-label-md text-on-surface-variant font-mono">Order: {c.order.order_number}</p>
                 )}
                 {c.photo_url && (
-                  <img
-                    src={c.photo_url}
-                    alt="Attached photo"
-                    className="w-20 h-20 object-cover rounded-xl border border-outline-variant/20"
-                  />
+                  <img src={c.photo_url} alt="Attached photo" className="w-20 h-20 object-cover rounded-xl border border-outline-variant/20" />
                 )}
               </div>
             ))}

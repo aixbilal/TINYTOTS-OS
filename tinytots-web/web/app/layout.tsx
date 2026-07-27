@@ -147,6 +147,155 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
   );
 }
 
+function MegaMenu() {
+  const [open, setOpen] = useState(false);
+  const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open || categories.length > 0) return;
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((json) => setCategories(json.categories || []))
+      .catch(() => setCategories([]));
+  }, [open, categories.length]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const MenuLink = ({ href, label }: { href: string; label: string }) => (
+    <Link
+      href={href}
+      onClick={() => setOpen(false)}
+      className="block px-3 py-2 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors"
+    >
+      {label}
+    </Link>
+  );
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className={`flex items-center gap-1 font-body-md text-body-md pb-1 transition-colors border-b-2 ${
+          open ? "text-primary border-primary" : "text-on-surface-variant hover:text-primary border-transparent"
+        }`}
+      >
+        Menu
+        <span className="material-symbols-outlined text-[20px]">{open ? "expand_less" : "expand_more"}</span>
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-2 w-[640px] max-w-[90vw] bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-6 z-[100] grid grid-cols-3 gap-6">
+          {/* Column 1: Shopping */}
+          <div>
+            <p className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-primary">storefront</span> Shop
+            </p>
+            <div className="flex flex-col">
+              <MenuLink href="/products" label="Shop All" />
+              {categories.map((c) => (
+                <MenuLink key={c.slug} href={`/collections/${c.slug}`} label={c.name} />
+              ))}
+            </div>
+          </div>
+
+          {/* Column 2: My TinyTots */}
+          <div>
+            <p className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-primary">person</span> My TinyTots
+            </p>
+            <div className="flex flex-col">
+              <MenuLink href="/account" label="My Account" />
+              <MenuLink href="/account/wishlist" label="Wishlist" />
+              <MenuLink href="/track-order" label="Track Order" />
+              <MenuLink href="/account/returns" label="Returns & Refunds" />
+            </div>
+          </div>
+
+          {/* Column 3: Company / Info */}
+          <div>
+            <p className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-primary">info</span> More
+            </p>
+            <div className="flex flex-col">
+              <MenuLink href="/blog" label="Blog" />
+              <MenuLink href="/our-story" label="Our Story" />
+              <MenuLink href="/size-guide" label="Size Guide" />
+              <MenuLink href="/help" label="Help Center" />
+              <MenuLink href="/contact" label="Contact Us" />
+              <MenuLink href="/shipping-returns" label="Shipping & Returns" />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
+
+  useEffect(() => {
+    if (!open || categories.length > 0) return;
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((json) => setCategories(json.categories || []))
+      .catch(() => setCategories([]));
+  }, [open, categories.length]);
+
+  if (!open) return null;
+
+  const MenuLink = ({ href, label, icon }: { href: string; label: string; icon?: string }) => (
+    <Link
+      href={href}
+      onClick={onClose}
+      className="flex items-center gap-3 px-3 py-3 rounded-lg font-body-md text-body-md text-on-surface hover:bg-surface-container-low transition-colors"
+    >
+      {icon && <span className="material-symbols-outlined text-[20px] text-on-surface-variant">{icon}</span>}
+      {label}
+    </Link>
+  );
+
+  return (
+    <div className="md:hidden fixed inset-0 top-[80px] bg-surface z-[90] overflow-y-auto">
+      <div className="px-margin-mobile py-6 flex flex-col gap-6">
+        <div>
+          <p className="font-label-lg text-label-lg text-primary font-semibold uppercase tracking-wider mb-1 px-3">Shop</p>
+          <MenuLink href="/" label="Home" icon="home" />
+          <MenuLink href="/products" label="Shop All" icon="storefront" />
+          {categories.map((c) => (
+            <MenuLink key={c.slug} href={`/collections/${c.slug}`} label={c.name} />
+          ))}
+        </div>
+        <div>
+          <p className="font-label-lg text-label-lg text-primary font-semibold uppercase tracking-wider mb-1 px-3">My TinyTots</p>
+          <MenuLink href="/account" label="My Account" icon="person" />
+          <MenuLink href="/account/wishlist" label="Wishlist" icon="favorite" />
+          <MenuLink href="/track-order" label="Track Order" icon="local_shipping" />
+          <MenuLink href="/account/returns" label="Returns & Refunds" icon="assignment_return" />
+        </div>
+        <div>
+          <p className="font-label-lg text-label-lg text-primary font-semibold uppercase tracking-wider mb-1 px-3">More</p>
+          <MenuLink href="/blog" label="Blog" icon="article" />
+          <MenuLink href="/our-story" label="Our Story" icon="auto_stories" />
+          <MenuLink href="/size-guide" label="Size Guide" icon="straighten" />
+          <MenuLink href="/help" label="Help Center" icon="help" />
+          <MenuLink href="/contact" label="Contact Us" icon="mail" />
+          <MenuLink href="/shipping-returns" label="Shipping & Returns" icon="local_shipping" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AccountMenu() {
   const { user, loading, signOut } = useAuth();
   const [open, setOpen] = useState(false);
@@ -227,23 +376,12 @@ function AccountMenu() {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  const navLink = (href: string, label: string) => {
-    const active = pathname === href || (href !== "/" && pathname?.startsWith(href));
-    return (
-      <Link
-        href={href}
-        className={`font-body-md text-body-md pb-1 transition-colors ${
-          active
-            ? "text-primary font-bold border-b-2 border-primary"
-            : "text-on-surface-variant hover:text-primary border-b-2 border-transparent"
-        }`}
-      >
-        {label}
-      </Link>
-    );
-  };
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   return (
     <html lang="en" className={cn("antialiased", geistMono.variable, inter.variable, plusJakarta.variable, "font-sans", geist.variable)}>
@@ -258,11 +396,28 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <header className="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
               <nav className="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto w-full">
                 <div className="flex items-center gap-6">
+                  <button
+                    onClick={() => setMobileMenuOpen((o) => !o)}
+                    className="md:hidden text-on-surface-variant hover:text-primary p-2 -ml-2 rounded-full flex items-center justify-center"
+                    aria-label="Menu"
+                  >
+                    <span className="material-symbols-outlined">{mobileMenuOpen ? "close" : "menu"}</span>
+                  </button>
                   <Link href="/" className="font-display-md text-display-md text-primary tracking-tight">TinyTots</Link>
-                  <div className="hidden md:flex gap-6">
-                    {navLink("/products", "Shop All")}
-                    {navLink("/blog", "Blog")}
-                    {navLink("/track-order", "Track Order")}
+                  <div className="hidden md:flex items-center gap-6">
+                    <Link
+                      href="/"
+                      title="Home"
+                      className={`flex items-center gap-1 font-body-md text-body-md pb-1 transition-colors border-b-2 ${
+                        pathname === "/"
+                          ? "text-primary font-bold border-primary"
+                          : "text-on-surface-variant hover:text-primary border-transparent"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[20px]">home</span>
+                      Home
+                    </Link>
+                    <MegaMenu />
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -278,7 +433,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               </nav>
             </header>
 
-            <MobileSubNav />
+            <MobileMenu open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+            {!mobileMenuOpen && <MobileSubNav />}
 
             {/* MAIN CONTENT AREA */}
             <main className="flex-grow w-full max-w-container-max mx-auto min-w-0 px-margin-mobile md:px-margin-desktop">
@@ -301,7 +457,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 <div className="flex flex-col gap-3">
                   <h4 className="font-headline-md text-headline-md text-on-surface">Support</h4>
                   <Link href="/help" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Help Center</Link>
+                  <Link href="/contact" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Contact Us</Link>
+                  <Link href="/size-guide" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Size Guide</Link>
                   <Link href="/track-order" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Track Order</Link>
+                  <Link href="/account/returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Returns & Refunds</Link>
                   <Link href="/report-issue" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Report an Issue</Link>
                   <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shipping &amp; Returns</Link>
                   <Link href="/privacy-policy" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Privacy Policy</Link>
