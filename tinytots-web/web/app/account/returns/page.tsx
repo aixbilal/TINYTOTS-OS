@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
+import AccountSidebar from "@/components/AccountSidebar";
 
 type ReturnItem = {
   id: number;
@@ -26,19 +27,20 @@ const STATUS_LABELS: Record<string, string> = {
   resolved: "Resolved",
 };
 
-const STATUS_STYLES: Record<string, string> = {
-  open: "bg-gray-100 text-gray-700",
-  in_progress: "bg-amber-100 text-amber-800",
-  approved: "bg-blue-100 text-blue-800",
-  rejected: "bg-red-100 text-red-800",
-  refunded: "bg-green-100 text-green-800",
-  exchanged: "bg-green-100 text-green-800",
-  resolved: "bg-green-100 text-green-800",
+const STATUS_PILL: Record<string, string> = {
+  open: "bg-surface-container-high text-on-surface-variant border-outline/10",
+  in_progress: "bg-primary-container/20 text-on-primary-container border-primary-container/30",
+  approved: "bg-secondary-container/20 text-on-secondary-container border-secondary-container/30",
+  rejected: "bg-error-container/40 text-on-error-container border-error-container",
+  refunded: "bg-tertiary-container/20 text-on-tertiary-container border-tertiary-container/30",
+  exchanged: "bg-tertiary-container/20 text-on-tertiary-container border-tertiary-container/30",
+  resolved: "bg-tertiary-container/20 text-on-tertiary-container border-tertiary-container/30",
 };
 
 export default function MyReturnsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const [customerName, setCustomerName] = useState<string | null>(null);
   const [items, setItems] = useState<ReturnItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +51,13 @@ export default function MyReturnsPage() {
 
   useEffect(() => {
     if (!user) return;
+    supabase
+      .from("customers")
+      .select("full_name")
+      .eq("auth_user_id", user.id)
+      .single()
+      .then(({ data }) => setCustomerName(data?.full_name ?? null));
+
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -64,7 +73,7 @@ export default function MyReturnsPage() {
 
   if (authLoading || loading) {
     return (
-      <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <main className="max-w-container-max mx-auto py-stack-lg">
         <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
       </main>
     );
@@ -73,48 +82,74 @@ export default function MyReturnsPage() {
   if (!user) return null;
 
   return (
-    <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <Link href="/account" className="text-sm font-medium text-primary hover:underline mb-4 inline-block">
-        ← Back to account
-      </Link>
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">My Returns & Reports</h1>
+    <main className="max-w-container-max mx-auto w-full py-stack-lg flex flex-col md:flex-row gap-gutter">
+      <AccountSidebar name={customerName} />
 
-      {error && <p className="font-label-md text-label-md text-error mb-4">{error}</p>}
-
-      {items.length === 0 ? (
-        <p className="font-body-sm text-body-sm text-on-surface-variant">
-          No returns or reports yet.{" "}
-          <Link href="/report-issue" className="text-primary hover:underline">
-            Report an issue
+      <section className="flex-grow flex flex-col gap-stack-md min-w-0">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="font-display-md text-display-md text-on-surface">Returns & Refunds</h1>
+            <p className="font-body-md text-body-md text-on-surface-variant mt-2">
+              Track the status of every return, exchange, or issue you've reported.
+            </p>
+          </div>
+          <Link
+            href="/report-issue"
+            className="bg-primary-container text-on-primary font-button text-button h-12 px-6 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm whitespace-nowrap"
+          >
+            <span className="material-symbols-outlined">add</span> Report an Issue
           </Link>
-        </p>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {items.map((c) => (
-            <div key={c.id} className="border border-outline-variant/30 rounded-xl p-4">
-              <div className="flex justify-between items-start mb-2">
-                <span
-                  className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${
-                    STATUS_STYLES[c.status] || "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {STATUS_LABELS[c.status] || c.status}
-                </span>
-                <span className="text-xs text-on-surface-variant">
-                  {new Date(c.created_at).toLocaleDateString()}
-                </span>
-              </div>
-              <p className="font-body-sm text-body-sm text-on-surface mb-1">{c.message}</p>
-              {c.order && (
-                <p className="text-xs text-on-surface-variant font-mono">Order: {c.order.order_number}</p>
-              )}
-              {c.photo_url && (
-                <img src={c.photo_url} alt="Attached photo" className="mt-2 w-24 h-24 object-cover rounded-lg" />
-              )}
-            </div>
-          ))}
         </div>
-      )}
+
+        {error && <p className="font-label-md text-label-md text-error">{error}</p>}
+
+        {items.length === 0 ? (
+          <div className="border border-dashed border-outline-variant/40 rounded-2xl p-10 flex flex-col items-center text-center gap-3 bg-surface-container-lowest">
+            <span className="material-symbols-outlined text-[40px] text-on-surface-variant">inventory_2</span>
+            <p className="font-body-md text-body-md text-on-surface-variant">
+              No returns or reports yet.
+            </p>
+            <Link href="/report-issue" className="font-body-sm text-body-sm text-primary hover:underline">
+              Report an issue →
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-bento-gap">
+            {items.map((c) => (
+              <div
+                key={c.id}
+                className="border border-outline-variant/20 rounded-2xl p-6 bg-surface-container-lowest flex flex-col gap-3"
+              >
+                <div className="flex justify-between items-start gap-3">
+                  <span
+                    className={`px-3 py-1 rounded-full font-label-md text-label-md border ${
+                      STATUS_PILL[c.status] ?? "bg-surface-container-high text-on-surface-variant border-outline/10"
+                    }`}
+                  >
+                    {STATUS_LABELS[c.status] || c.status}
+                  </span>
+                  <span className="font-label-md text-label-md text-on-surface-variant whitespace-nowrap">
+                    {new Date(c.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="font-body-sm text-body-md text-on-surface">{c.message}</p>
+                {c.order && (
+                  <p className="font-label-md text-label-md text-on-surface-variant font-mono">
+                    Order: {c.order.order_number}
+                  </p>
+                )}
+                {c.photo_url && (
+                  <img
+                    src={c.photo_url}
+                    alt="Attached photo"
+                    className="w-20 h-20 object-cover rounded-xl border border-outline-variant/20"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </main>
   );
 }
