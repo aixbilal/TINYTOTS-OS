@@ -18,7 +18,7 @@ export default function AccountSidebar({ name }: { name?: string | null }) {
   const initial = (name?.trim()?.[0] || "T").toUpperCase();
 
   return (
-    <aside className="hidden md:flex flex-col w-64 shrink-0 bg-surface-container-low rounded-2xl p-6 h-fit sticky top-28 border border-outline/10">
+    <aside className="hidden md:flex flex-col w-64 shrink-0 bg-surface-container-low rounded-2xl p-6 h-fit sticky top-28 border border-on-surface/5">
       <div className="flex items-center gap-4 mb-8">
         <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-display-md text-headline-md">
           {initial}
@@ -42,7 +42,7 @@ export default function AccountSidebar({ name }: { name?: string | null }) {
               href={link.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-body-sm text-body-sm ${
                 active
-                  ? "bg-surface border border-outline/10 text-primary font-label-lg font-semibold shadow-sm"
+                  ? "bg-surface border border-on-surface/5 text-primary font-label-lg font-semibold shadow-sm"
                   : "text-on-surface-variant hover:bg-surface-container-high"
               }`}
             >

@@ -135,18 +135,18 @@ export default function AccountPage() {
 
       <div className="flex-grow flex flex-col gap-stack-md w-full min-w-0">
         {/* Welcome Header */}
-        <div className="bg-surface-container-lowest rounded-2xl p-8 border border-outline/10 shadow-sm relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="bg-surface-container-lowest rounded-2xl p-8 border border-on-surface/5 shadow-sm relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary-container/20 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-secondary-container/20 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10">
-            <h1 className="font-display-lg text-headline-lg md:text-display-lg text-on-surface mb-2">
+            <h1 className="font-display-lg text-headline-lg-mobile md:text-display-lg text-on-surface mb-2">
               Welcome back, {firstName}.
             </h1>
             <p className="font-body-md text-body-md text-on-surface-variant">
               Here is what is happening with your TinyTots account today.
             </p>
           </div>
-          <div className="relative z-10 bg-surface-container-low rounded-xl p-4 flex items-center gap-4 border border-outline/10 min-w-[200px]">
+          <div className="relative z-10 bg-surface-container-low rounded-xl p-4 flex items-center gap-4 border border-on-surface/5 min-w-[200px]">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
                 redeem
@@ -168,7 +168,7 @@ export default function AccountPage() {
         {/* Bento Row: Latest Order + Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-bento-gap" id="orders">
           {/* Latest Order Card */}
-          <div className="bg-surface-container-lowest rounded-2xl p-6 border border-outline/10 shadow-sm flex flex-col justify-between">
+          <div className="bg-surface-container-lowest rounded-2xl p-6 border border-on-surface/5 shadow-sm flex flex-col justify-between">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="font-headline-md text-headline-md text-on-surface mb-1">Latest Order</h2>
@@ -181,7 +181,7 @@ export default function AccountPage() {
               {latestOrder && (
                 <span
                   className={`px-3 py-1 rounded-full font-label-md text-label-md flex items-center gap-1 border ${
-                    STATUS_PILL[latestOrder.status] ?? "bg-surface-container-high text-on-surface-variant border-outline/10"
+                    STATUS_PILL[latestOrder.status] ?? "bg-surface-container-high text-on-surface-variant border-on-surface/5"
                   }`}
                 >
                   <span className="material-symbols-outlined text-[14px]">local_shipping</span>
@@ -221,7 +221,7 @@ export default function AccountPage() {
           </div>
 
           {/* Quick Links Card */}
-          <div className="bg-surface-container-lowest rounded-2xl p-6 border border-outline/10 shadow-sm flex flex-col justify-between">
+          <div className="bg-surface-container-lowest rounded-2xl p-6 border border-on-surface/5 shadow-sm flex flex-col justify-between">
             <div className="mb-6">
               <h2 className="font-headline-md text-headline-md text-on-surface mb-1">Quick Actions</h2>
               <p className="font-body-sm text-body-sm text-on-surface-variant">Manage your recent activity.</p>
@@ -229,7 +229,7 @@ export default function AccountPage() {
             <div className="grid grid-cols-2 gap-4">
               <Link
                 href="/account/wishlist"
-                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-outline/10 hover:border-primary/50 hover:bg-surface-container-low transition-all group text-center h-28"
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-on-surface/5 hover:border-primary/50 hover:bg-surface-container-low transition-all group text-center h-28"
               >
                 <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors text-[28px]">
                   favorite
@@ -238,7 +238,7 @@ export default function AccountPage() {
               </Link>
               <Link
                 href="/track-order"
-                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-outline/10 hover:border-primary/50 hover:bg-surface-container-low transition-all group text-center h-28"
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-on-surface/5 hover:border-primary/50 hover:bg-surface-container-low transition-all group text-center h-28"
               >
                 <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors text-[28px]">
                   inventory_2
@@ -251,7 +251,7 @@ export default function AccountPage() {
 
         {/* Profile */}
         {customer && (
-          <section className="bg-surface-container-lowest rounded-2xl p-6 border border-outline/10 shadow-sm">
+          <section className="bg-surface-container-lowest rounded-2xl p-6 border border-on-surface/5 shadow-sm">
             <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Profile</h2>
             <div className="flex flex-col gap-1 font-body-sm text-body-sm text-on-surface-variant">
               <p><span className="text-on-surface">Name:</span> {customer.full_name}</p>
@@ -281,7 +281,7 @@ export default function AccountPage() {
         )}
 
         {/* Vouchers */}
-        <section className="bg-surface-container-lowest rounded-2xl p-6 border border-outline/10 shadow-sm">
+        <section className="bg-surface-container-lowest rounded-2xl p-6 border border-on-surface/5 shadow-sm">
           <h2 className="font-headline-md text-headline-md text-on-surface mb-3">My Vouchers</h2>
           {vouchers.length === 0 ? (
             <p className="font-body-sm text-body-sm text-on-surface-variant">No vouchers yet.</p>
@@ -295,7 +295,7 @@ export default function AccountPage() {
                 return (
                   <div
                     key={v.id}
-                    className="border border-outline/10 rounded-xl px-4 py-3 flex justify-between items-center"
+                    className="border border-on-surface/5 rounded-xl px-4 py-3 flex justify-between items-center"
                   >
                     <div>
                       <p className="font-body-md text-body-md text-on-surface">
@@ -314,7 +314,7 @@ export default function AccountPage() {
         </section>
 
         {/* Order History */}
-        <section className="bg-surface-container-lowest rounded-2xl p-6 border border-outline/10 shadow-sm">
+        <section className="bg-surface-container-lowest rounded-2xl p-6 border border-on-surface/5 shadow-sm">
           <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Order History</h2>
           {orders.length === 0 ? (
             <p className="font-body-sm text-body-sm text-on-surface-variant">
@@ -326,7 +326,7 @@ export default function AccountPage() {
                 <Link
                   key={order.id}
                   href={`/order-confirmation/${order.order_number}`}
-                  className="border border-outline/10 rounded-xl p-4 flex justify-between items-center hover:border-primary transition-colors"
+                  className="border border-on-surface/5 rounded-xl p-4 flex justify-between items-center hover:border-primary transition-colors"
                 >
                   <div>
                     <p className="font-body-md text-body-md text-on-surface">{order.order_number}</p>
