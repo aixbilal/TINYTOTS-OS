@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
     const { data: vouchers, error: vouchersError } = await supabaseAdmin
       .from("vouchers")
       .select("*, customer:customers(id, full_name, phone)")
+      .eq("source", "referral")
       .order("created_at", { ascending: false });
 
     if (vouchersError) {

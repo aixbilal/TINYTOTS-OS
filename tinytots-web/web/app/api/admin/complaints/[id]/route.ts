@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
+import { getSettingNumber } from "@/lib/settings";
 
 const VALID_STATUSES = ["open", "in_progress", "resolved", "approved", "rejected", "refunded", "exchanged"];
+const VALID_REFUND_METHODS = ["voucher", "original_payment", "bank_transfer"];
 
 // GET /api/admin/complaints/[id] - full detail: the complaint, its selected
 // order items (for returns), plus the customer's other orders and other
@@ -32,10 +34,13 @@ export async function GET(
       admin_notes,
       photo_url,
       order_item_ids,
+      refund_method,
+      voucher_id,
       resolved_at,
       created_at,
       customer:customers(id, full_name, phone, email, orders_count),
-      order:orders(id, order_number, total, status, created_at)
+      order:orders(id, order_number, total, status, created_at),
+      voucher:vouchers(id, amount, is_used, expires_at)
     `
     )
     .eq("id", id)
@@ -90,7 +95,7 @@ export async function PATCH(
     try {
       const params = await (context.params as any);
       const body = await req.json();
-    const { status, admin_notes } = body;
+    const { status, admin_notes, refund_method } = body;
 
     const updates: Record<string, any> = {};
     if (status) {
@@ -103,6 +108,87 @@ export async function PATCH(
     }
     if (admin_notes !== undefined) {
       updates.admin_notes = admin_notes;
+    }
+    if (refund_method !== undefined) {
+      if (refund_method !== null && !VALID_REFUND_METHODS.includes(refund_method)) {
+        return NextResponse.json({ error: "Invalid refund_method" }, { status: 400 });
+      }
+      updates.refund_method = refund_method;
+    }
+
+    // Issuing a voucher only makes sense when we're actually setting the
+    // complaint to refunded via voucher right now.
+    const shouldIssueVoucher = status === "refunded" && refund_method === "voucher";
+
+    if (shouldIssueVoucher) {
+      const { data: existing } = await supabaseAdmin
+        .from("complaints")
+        .select("id, customer_id, order_id, voucher_id, order_item_ids")
+        .eq("id", params.id)
+        .single();
+
+      if (!existing) {
+        return NextResponse.json({ error: "Complaint not found" }, { status: 404 });
+      }
+      if (existing.voucher_id) {
+        return NextResponse.json(
+          { error: "A voucher has already been issued for this complaint." },
+          { status: 400 }
+        );
+      }
+      if (!existing.customer_id) {
+        return NextResponse.json(
+          { error: "This report has no linked customer account — cannot issue a voucher." },
+          { status: 400 }
+        );
+      }
+
+      // Refund amount: sum of the returned line items if selected, else the
+      // full order total.
+      let amount = 0;
+      if (existing.order_item_ids?.length) {
+        const { data: items } = await supabaseAdmin
+          .from("order_items")
+          .select("quantity, unit_price")
+          .in("id", existing.order_item_ids);
+        amount = (items || []).reduce((sum, it: any) => sum + it.quantity * Number(it.unit_price), 0);
+      } else if (existing.order_id) {
+        const { data: order } = await supabaseAdmin
+          .from("orders")
+          .select("total")
+          .eq("id", existing.order_id)
+          .single();
+        amount = Number(order?.total || 0);
+      }
+
+      if (amount <= 0) {
+        return NextResponse.json(
+          { error: "Could not determine a refund amount for this return." },
+          { status: 400 }
+        );
+      }
+
+      const validDays = await getSettingNumber("return_refund_voucher_valid_days");
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + validDays);
+
+      const { data: voucher, error: voucherError } = await supabaseAdmin
+        .from("vouchers")
+        .insert({
+          customer_id: existing.customer_id,
+          amount,
+          is_used: false,
+          source: "return_refund",
+          expires_at: expiresAt.toISOString(),
+        })
+        .select()
+        .single();
+
+      if (voucherError) {
+        return NextResponse.json({ error: voucherError.message }, { status: 500 });
+      }
+
+      updates.voucher_id = voucher.id;
     }
 
     const { data: complaint, error } = await supabaseAdmin

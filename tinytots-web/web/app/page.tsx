@@ -8,24 +8,38 @@ import Link from "next/link";
 // full rebuild.
 export const dynamic = "force-dynamic";
 
-async function getProducts() {
+const PRODUCT_SELECT = `
+  id,
+  name,
+  sku,
+  brand,
+  image_url,
+  variants (
+    id,
+    price,
+    web_price,
+    stock
+  )
+`;
+
+async function getProducts(trendingProductIds: number[] | null | undefined) {
+  if (trendingProductIds && trendingProductIds.length > 0) {
+    const { data, error } = await supabase
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .eq("is_active", true)
+      .in("id", trendingProductIds);
+
+    if (!error && data && data.length > 0) {
+      // Preserve the admin-chosen order rather than whatever order Postgres returns.
+      const byId = new Map(data.map((p: any) => [p.id, p]));
+      return trendingProductIds.map((id) => byId.get(id)).filter(Boolean);
+    }
+  }
+
   const { data, error } = await supabase
     .from("products")
-    .select(
-      `
-      id,
-      name,
-      sku,
-      brand,
-      image_url,
-    variants (
-  id,
-  price,
-  web_price,
-  stock
-)
-    `
-    )
+    .select(PRODUCT_SELECT)
     .eq("is_active", true)
     .order("created_at", { ascending: false })
     .limit(4);
@@ -64,7 +78,8 @@ async function getHomepageContent() {
 }
 
 export default async function Home() {
-  const [products, content] = await Promise.all([getProducts(), getHomepageContent()]);
+  const content = await getHomepageContent();
+  const products = await getProducts(content.trending_product_ids);
 
   return (
     <main className="max-w-container-max mx-auto md:px-margin-desktop px-margin-mobile">

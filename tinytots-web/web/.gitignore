@@ -18,3 +18,4 @@ test-*.js
 reset-password.mjs
 d66de0a (feat: discount campaign tool, storefront price display, admin route fixes)
 .next/
+tsconfig.tsbuildinfo

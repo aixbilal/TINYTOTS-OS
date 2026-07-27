@@ -6,7 +6,8 @@ import { useAuth } from "@/lib/auth-context";
 
 const LINKS = [
   { href: "/account", label: "Profile & Settings", icon: "person" },
-  { href: "/account#orders", label: "Orders & Returns", icon: "local_shipping" },
+  { href: "/account#orders", label: "Orders", icon: "local_shipping" },
+  { href: "/account/returns", label: "Returns & Refunds", icon: "assignment_return" },
   { href: "/account/addresses", label: "Saved Addresses", icon: "location_on" },
   { href: "/account/wishlist", label: "Wishlist", icon: "favorite" },
   { href: "/account/settings", label: "Login & Security", icon: "lock" },

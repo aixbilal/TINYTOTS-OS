@@ -1,0 +1,31 @@
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// POST /api/newsletter - subscribe an email from the footer form
+export async function POST(req: NextRequest) {
+  try {
+    const { email } = await req.json();
+
+    if (!email || typeof email !== "string" || !EMAIL_RE.test(email.trim())) {
+      return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
+    }
+
+    const { error } = await supabaseAdmin
+      .from("newsletter_subscribers")
+      .insert({ email: email.trim().toLowerCase() });
+
+    if (error) {
+      // Unique violation -> already subscribed, treat as success.
+      if (error.code === "23505") {
+        return NextResponse.json({ ok: true, already_subscribed: true });
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "Failed to subscribe." }, { status: 500 });
+  }
+}

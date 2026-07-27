@@ -75,7 +75,7 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
   return (
     <div
       ref={containerRef}
-      className="absolute top-full right-0 mt-2 w-full max-w-md bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-4 z-[100]"
+      className="fixed left-4 right-4 top-[72px] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-full sm:max-w-md bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-4 z-[100]"
     >
       <input
         autoFocus
@@ -374,6 +374,63 @@ function AccountMenu() {
   );
 }
 
+function NewsletterForm() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("loading");
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setStatus("error");
+        setErrorMsg(json.error || "Something went wrong. Please try again.");
+        return;
+      }
+      setStatus("success");
+      setEmail("");
+    } catch {
+      setStatus("error");
+      setErrorMsg("Network error. Please try again.");
+    }
+  }
+
+  if (status === "success") {
+    return <p className="font-body-sm text-body-sm text-secondary">Thanks for subscribing! 🎉</p>;
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+      <div className="flex flex-col sm:flex-row rounded-lg border border-outline-variant/50 overflow-hidden sm:h-[48px]">
+        <input
+          className="flex-1 min-w-0 bg-transparent border-none px-4 py-3 sm:py-0 font-body-sm text-body-sm text-on-surface focus:ring-0 focus:outline-none"
+          placeholder="Email Address"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <button
+          type="submit"
+          disabled={status === "loading"}
+          className="shrink-0 bg-primary-container text-on-primary px-6 py-3 sm:py-0 font-button text-button hover:bg-primary transition-colors whitespace-nowrap disabled:opacity-60"
+        >
+          {status === "loading" ? "Subscribing..." : "Subscribe"}
+        </button>
+      </div>
+      {status === "error" && <p className="font-label-md text-label-md text-error">{errorMsg}</p>}
+    </form>
+  );
+}
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -443,9 +500,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
             {/* FOOTER */}
             <footer className="bg-surface-container-lowest border-t border-outline-variant/20 w-full mt-stack-lg">
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[1.2fr_1fr_1fr_1.4fr] gap-bento-gap px-margin-mobile md:px-margin-desktop py-stack-lg max-w-container-max mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-bento-gap px-margin-mobile md:px-margin-desktop py-stack-lg max-w-container-max mx-auto">
                 <div className="flex flex-col gap-4">
                   <span className="font-display-lg text-display-lg text-primary">TinyTots</span>
+                  <a href="mailto:support@tinytotsofficial.com" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">
+                    support@tinytotsofficial.com
+                  </a>
                   <p className="font-body-sm text-body-sm text-secondary">© 2026 TinyTots Premium Kids. All rights reserved.</p>
                 </div>
                 <div className="flex flex-col gap-3">
@@ -462,16 +522,16 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                   <Link href="/track-order" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Track Order</Link>
                   <Link href="/account/returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Returns & Refunds</Link>
                   <Link href="/report-issue" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Report an Issue</Link>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <h4 className="font-headline-md text-headline-md text-on-surface">Legal</h4>
                   <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shipping &amp; Returns</Link>
                   <Link href="/privacy-policy" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Privacy Policy</Link>
                   <Link href="/terms" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Terms &amp; Conditions</Link>
                 </div>
                 <div className="flex flex-col gap-4 min-w-0">
                   <h4 className="font-headline-md text-headline-md text-on-surface">Join Our Newsletter</h4>
-                  <div className="flex flex-col sm:flex-row rounded-lg border border-outline-variant/50 overflow-hidden sm:h-[48px]">
-                    <input className="flex-1 min-w-0 bg-transparent border-none px-4 py-3 sm:py-0 font-body-sm text-body-sm text-on-surface focus:ring-0 focus:outline-none" placeholder="Email Address" type="email" />
-                    <button className="shrink-0 bg-primary-container text-on-primary px-6 py-3 sm:py-0 font-button text-button hover:bg-primary transition-colors whitespace-nowrap">Subscribe</button>
-                  </div>
+                  <NewsletterForm />
                 </div>
               </div>
             </footer>

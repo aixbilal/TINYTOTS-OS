@@ -22,6 +22,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: Parameters<typeof can>[1]
   { prefix: "/admin/discounts", permission: "canManageDiscounts" },
   { prefix: "/admin/coupons", permission: "canManageCoupons" },
   { prefix: "/admin/referrals", permission: "canManageReferrals" },
+  { prefix: "/admin/vouchers", permission: "canManageReferrals" },
   { prefix: "/admin/complaints", permission: "canHandleComplaints" },
   { prefix: "/admin/blog", permission: "canManageBlog" },
   { prefix: "/admin/team", permission: "canManageTeam" },
@@ -95,6 +96,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         {can(admin.role, "canManageDiscounts") && navItem("/admin/discounts", "Discounts")}
         {can(admin.role, "canManageCoupons") && navItem("/admin/coupons", "Coupons")}
         {can(admin.role, "canManageReferrals") && navItem("/admin/referrals", "Referrals")}
+        {can(admin.role, "canManageReferrals") && navItem("/admin/vouchers", "Vouchers")}
         {can(admin.role, "canHandleComplaints") && navItem("/admin/complaints", "Complaints")}
         {can(admin.role, "canManageBlog") && navItem("/admin/blog", "Blog")}
         {navItem("/admin/account", "My Account")}

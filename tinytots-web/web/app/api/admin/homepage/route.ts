@@ -6,14 +6,17 @@ export async function GET(req: NextRequest) {
   const denied = await requireAdmin(req, "canManageSettings");
   if (denied) return denied;
 
-  const { data, error } = await supabaseAdmin
-    .from("homepage_content")
-    .select("*")
-    .eq("id", 1)
-    .single();
+  const [{ data: content, error }, { data: products }] = await Promise.all([
+    supabaseAdmin.from("homepage_content").select("*").eq("id", 1).single(),
+    supabaseAdmin
+      .from("products")
+      .select("id, name, image_url")
+      .eq("is_active", true)
+      .order("name", { ascending: true }),
+  ]);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ content: data });
+  return NextResponse.json({ content, products: products || [] });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -43,6 +46,9 @@ export async function PATCH(req: NextRequest) {
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };
     for (const field of allowedFields) {
       if (body[field] !== undefined) updates[field] = String(body[field]).trim();
+    }
+    if (Array.isArray(body.trending_product_ids)) {
+      updates.trending_product_ids = body.trending_product_ids.map((id: any) => Number(id));
     }
 
     const { data, error } = await supabaseAdmin

@@ -17,10 +17,13 @@ interface ComplaintDetail {
   admin_notes: string | null;
   photo_url: string | null;
   order_item_ids: number[] | null;
+  refund_method: string | null;
+  voucher_id: number | null;
   resolved_at: string | null;
   created_at: string;
   customer: { id: number; full_name: string | null; phone: string; email: string | null; orders_count: number } | null;
   order: { id: number; order_number: string; total: number; status: string; created_at: string } | null;
+  voucher: { id: number; amount: number; is_used: boolean; expires_at: string } | null;
 }
 
 interface OrderLite {
@@ -113,19 +116,24 @@ export default function ComplaintDetailPage() {
     fetchDetail();
   }, [id]);
 
-  const updateStatus = async (status: string) => {
+  const updateStatus = async (status: string, refund_method?: string) => {
+    setErrorMsg("");
     try {
       const res = await adminFetch(`/api/admin/complaints/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(refund_method ? { status, refund_method } : { status }),
       });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
         setComplaint((prev) => (prev ? { ...prev, ...data.complaint } : prev));
+        fetchDetail(); // re-pull to get the joined voucher row
+      } else {
+        setErrorMsg(data.error || "Failed to update status");
       }
     } catch (err) {
       console.error("Failed to update status", err);
+      setErrorMsg("Failed to update status");
     }
   };
 
@@ -243,6 +251,9 @@ export default function ComplaintDetailPage() {
           )}
         </div>
 
+        {errorMsg && (
+          <p className="text-xs font-medium text-red-700 bg-red-50 px-3 py-2 rounded-md mb-3">{errorMsg}</p>
+        )}
         <div className="flex flex-wrap gap-2 mb-4">
           {complaint.status !== "open" && (
             <button
@@ -279,13 +290,27 @@ export default function ComplaintDetailPage() {
                   Reject
                 </button>
               )}
-              {complaint.status !== "refunded" && (
-                <button
-                  onClick={() => updateStatus("refunded")}
-                  className="text-xs font-medium px-3 py-1.5 rounded-md bg-green-100 text-green-800 hover:bg-green-200"
-                >
-                  Mark Refunded
-                </button>
+              {complaint.status !== "refunded" && !complaint.voucher_id && (
+                <>
+                  <button
+                    onClick={() => updateStatus("refunded", "voucher")}
+                    className="text-xs font-medium px-3 py-1.5 rounded-md bg-green-100 text-green-800 hover:bg-green-200"
+                  >
+                    Refund via Voucher
+                  </button>
+                  <button
+                    onClick={() => updateStatus("refunded", "original_payment")}
+                    className="text-xs font-medium px-3 py-1.5 rounded-md bg-green-50 text-green-700 hover:bg-green-100"
+                  >
+                    Refund to Original Payment
+                  </button>
+                </>
+              )}
+              {complaint.status === "refunded" && complaint.voucher_id && (
+                <span className="text-xs font-medium px-3 py-1.5 rounded-md bg-green-100 text-green-800">
+                  Voucher issued: Rs. {complaint.voucher?.amount?.toLocaleString() ?? "—"}
+                  {complaint.voucher?.is_used ? " (used)" : " (unused)"}
+                </span>
               )}
               {complaint.status !== "exchanged" && (
                 <button
