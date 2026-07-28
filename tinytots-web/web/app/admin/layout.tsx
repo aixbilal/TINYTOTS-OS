@@ -28,6 +28,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: Parameters<typeof can>[1]
   { prefix: "/admin/team", permission: "canManageTeam" },
   { prefix: "/admin/settings", permission: "canManageSettings" },
   { prefix: "/admin/homepage", permission: "canManageSettings" },
+  { prefix: "/admin/testimonials", permission: "canManageSettings" },
   { prefix: "/admin/shipping-cities", permission: "canManageSettings" },
   { prefix: "/admin/help", permission: "canManageHelp" },
   { prefix: "/admin/pages", permission: "canManagePages" },
@@ -142,6 +143,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         {navItem("/admin/account", "My Account")}
         {can(admin.role, "canManageTeam") && navItem("/admin/team", "Team")}
         {can(admin.role, "canManageSettings") && navItem("/admin/homepage", "Homepage")}
+        {can(admin.role, "canManageSettings") && navItem("/admin/testimonials", "Testimonials")}
         {can(admin.role, "canManageSettings") && navItem("/admin/shipping-cities", "Delivery Cities")}
         {can(admin.role, "canManageSettings") && navItem("/admin/settings", "Settings")}
         {can(admin.role, "canManageHelp") && navItem("/admin/help", "Help Center")}

@@ -272,11 +272,23 @@ export default function CollectionPage() {
                   <Link key={p.id} href={`/products/${p.id}`} className="group cursor-pointer">
                     <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-outline-variant/30 mb-3 bg-surface-container-lowest">
                       {p.image_url ? (
-                        <img
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          src={p.image_url}
-                          alt={p.name}
-                        />
+                        <>
+                          <img
+                            className={`w-full h-full object-cover transition-opacity duration-300 ${
+                              (p as any).secondary_image_url ? "group-hover:opacity-0" : "group-hover:scale-105 transition-transform duration-500"
+                            }`}
+                            src={p.image_url}
+                            alt={p.name}
+                          />
+                          {(p as any).secondary_image_url && (
+                            <img
+                              className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                              src={(p as any).secondary_image_url}
+                              alt=""
+                              aria-hidden="true"
+                            />
+                          )}
+                        </>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-on-surface-variant text-sm">
                           No image

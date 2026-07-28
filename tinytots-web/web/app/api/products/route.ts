@@ -23,6 +23,7 @@ export async function GET(request: Request) {
       brand,
       category,
       image_url,
+      product_images ( storage_path, is_primary, sort_order ),
       variants ( id, color, size, price, web_price, stock ) 
     `
     )
@@ -36,11 +37,25 @@ export async function GET(request: Request) {
     query = query.order("created_at", { ascending: false });
   }
 
-  const { data: products, error } = await query;
+  const { data: rawProducts, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // Pick a non-primary gallery image (lowest sort_order) to power the
+  // hover-flip effect on product cards, and drop the raw join from the
+  // response shape callers already rely on.
+  const products = (rawProducts || []).map((p: any) => {
+    const gallery = (p.product_images || [])
+      .filter((img: any) => !img.is_primary)
+      .sort((a: any, b: any) => a.sort_order - b.sort_order);
+    const secondary = gallery[0]
+      ? supabase.storage.from("product-images").getPublicUrl(gallery[0].storage_path).data.publicUrl
+      : null;
+    const { product_images, ...rest } = p;
+    return { ...rest, secondary_image_url: secondary };
+  });
 
   // Preserve the admin-chosen order when filtering by explicit ids.
   if (idsParam && products) {

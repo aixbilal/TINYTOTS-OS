@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
+import TestimonialsCarousel from "@/components/TestimonialsCarousel";
 
 // Same root cause and fix as app/products/[id]/page.tsx and
 // app/api/products/route.ts — without this, Next.js caches this Server
@@ -15,6 +16,7 @@ const PRODUCT_SELECT = `
   sku,
   brand,
   image_url,
+  product_images ( storage_path, is_primary, sort_order ),
   variants (
     id,
     price,
@@ -22,6 +24,19 @@ const PRODUCT_SELECT = `
     stock
   )
 `;
+
+function withSecondaryImage(products: any[]) {
+  return (products || []).map((p) => {
+    const gallery = (p.product_images || [])
+      .filter((img: any) => !img.is_primary)
+      .sort((a: any, b: any) => a.sort_order - b.sort_order);
+    const secondary = gallery[0]
+      ? supabase.storage.from("product-images").getPublicUrl(gallery[0].storage_path).data.publicUrl
+      : null;
+    const { product_images, ...rest } = p;
+    return { ...rest, secondary_image_url: secondary };
+  });
+}
 
 async function getProducts(productIds: number[] | null | undefined) {
   if (productIds && productIds.length > 0) {
@@ -33,7 +48,7 @@ async function getProducts(productIds: number[] | null | undefined) {
 
     if (!error && data && data.length > 0) {
       // Preserve the admin-chosen order rather than whatever order Postgres returns.
-      const byId = new Map(data.map((p: any) => [p.id, p]));
+      const byId = new Map(withSecondaryImage(data).map((p: any) => [p.id, p]));
       return productIds.map((id) => byId.get(id)).filter(Boolean);
     }
   }
@@ -46,7 +61,7 @@ async function getProducts(productIds: number[] | null | undefined) {
     .limit(8);
 
   if (error) return [];
-  return data;
+  return withSecondaryImage(data);
 }
 
 // Shared resolver for any section driven by the By Category / By Products
@@ -217,6 +232,8 @@ export default async function Home() {
           ]}
         />
       </section>
+
+      <TestimonialsCarousel />
 
       {/* Bento Grid Promotional Area */}
       <section className="mb-stack-lg">

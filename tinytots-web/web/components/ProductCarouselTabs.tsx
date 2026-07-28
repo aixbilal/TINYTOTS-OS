@@ -7,6 +7,7 @@ interface Product {
   id: number;
   name: string;
   image_url: string | null;
+  secondary_image_url?: string | null;
   variants: { price: number; web_price: number | null; stock: number }[];
 }
 
@@ -30,11 +31,23 @@ function ProductCard({ product }: { product: Product }) {
           </div>
         )}
         {product.image_url ? (
-          <img
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            src={product.image_url}
-            alt={product.name}
-          />
+          <>
+            <img
+              className={`w-full h-full object-cover transition-opacity duration-300 ${
+                product.secondary_image_url ? "group-hover:opacity-0" : "group-hover:scale-105 transition-transform duration-500"
+              }`}
+              src={product.image_url}
+              alt={product.name}
+            />
+            {product.secondary_image_url && (
+              <img
+                className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                src={product.secondary_image_url}
+                alt=""
+                aria-hidden="true"
+              />
+            )}
+          </>
         ) : (
           <div className="w-full h-full bg-surface-container flex items-center justify-center text-on-surface-variant text-sm">
             No image
