@@ -21,7 +21,9 @@ ALTER TABLE public.homepage_content
 
 ALTER TABLE public.homepage_content DROP CONSTRAINT IF EXISTS homepage_content_selection_types_check;
 ALTER TABLE public.homepage_content ADD CONSTRAINT homepage_content_selection_types_check
-  CHECK (trending_selection_type = ANY (ARRAY['products', 'category']))
-  AND (meadow_selection_type = ANY (ARRAY['products', 'category']))
-  AND (boys_selection_type = ANY (ARRAY['products', 'category']))
-  AND (girls_selection_type = ANY (ARRAY['products', 'category']));
+  CHECK (
+    (trending_selection_type = ANY (ARRAY['products', 'category']))
+    AND (meadow_selection_type = ANY (ARRAY['products', 'category']))
+    AND (boys_selection_type = ANY (ARRAY['products', 'category']))
+    AND (girls_selection_type = ANY (ARRAY['products', 'category']))
+  );
