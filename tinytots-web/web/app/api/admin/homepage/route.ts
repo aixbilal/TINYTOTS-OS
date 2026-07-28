@@ -32,6 +32,7 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const textFields = [
       "hero_image_url",
+      "hero_image_url_mobile",
       "hero_headline",
       "hero_subtext",
       "hero_button_text",

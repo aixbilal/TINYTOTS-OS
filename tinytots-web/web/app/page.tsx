@@ -53,6 +53,7 @@ async function getProducts(trendingProductIds: number[] | null | undefined) {
 const HOMEPAGE_DEFAULTS = {
   hero_image_url:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuDcHOEBpwtxoe3pT3NNiOQoUlZSPXHZXzjeoQOBkGcnwMqk8LNEfS_BLaNFvbDX-hie2mEl7T0RXcYZiRo62Rvdf50WGU9U4BD5oXHj7_E-gwRRFNXsBN-fTWavIdwpKxC17urnpJTVwBoPKRa1I79HkhFnqTLljxe6--Z6Hlwkbqweez3itoFTvxizLNFwL3tMrsZt3LeJQ-PBMbb1EiJJB23UvYLpk3iw905UJTcODCR79jbCm2P_w_RYfYB_hiR-KWOI441C-kke",
+  hero_image_url_mobile: "",
   hero_headline: "Playful Designs for Little Pioneers",
   hero_subtext: "Ethically crafted, modern essentials for every stage of your child's early journey.",
   hero_button_text: "Shop New Arrivals",
@@ -112,19 +113,25 @@ export default async function Home() {
   return (
     <main className="max-w-container-max mx-auto md:px-margin-desktop px-margin-mobile">
       {/* Hero */}
-      <section className="relative w-full h-[500px] md:h-[700px] rounded-[16px] overflow-hidden mb-stack-lg border border-outline-variant/30 flex items-center justify-center text-center">
+      <section className="relative w-full h-[420px] md:h-[700px] rounded-[16px] overflow-hidden mb-stack-lg border border-outline-variant/30 flex items-center justify-center text-center">
         <div
-          className="absolute inset-0 bg-cover bg-center w-full h-full z-0"
+          className="absolute inset-0 bg-cover bg-center w-full h-full z-0 md:hidden"
+          style={{
+            backgroundImage: `url('${content.hero_image_url_mobile || content.hero_image_url}')`,
+          }}
+        />
+        <div
+          className="absolute inset-0 bg-cover bg-center w-full h-full z-0 hidden md:block"
           style={{
             backgroundImage: `url('${content.hero_image_url}')`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-surface/80 to-surface/20 z-10" />
         <div className="relative z-20 max-w-2xl px-6 flex flex-col items-center">
-          <h1 className="font-display-lg text-display-lg md:text-[64px] leading-tight text-on-surface mb-6">
+          <h1 className="font-display-lg text-[40px] md:text-[64px] leading-tight text-on-surface mb-4 md:mb-6">
             {content.hero_headline}
           </h1>
-          <p className="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-lg">
+          <p className="font-body-lg text-body-md md:text-body-lg text-on-surface-variant mb-6 md:mb-8 max-w-lg">
             {content.hero_subtext}
           </p>
           <Link

@@ -6,6 +6,7 @@ import { adminFetch } from "@/lib/admin-fetch";
 
 interface HomepageContent {
   hero_image_url: string;
+  hero_image_url_mobile: string;
   hero_headline: string;
   hero_subtext: string;
   hero_button_text: string;
@@ -49,7 +50,8 @@ const FIELD_GROUPS: { title: string; fields: { key: keyof HomepageContent; label
   {
     title: "Hero Banner",
     fields: [
-      { key: "hero_image_url", label: "Hero image URL" },
+      { key: "hero_image_url", label: "Hero image URL (desktop)" },
+      { key: "hero_image_url_mobile", label: "Hero image URL (mobile — optional, falls back to desktop image if blank)" },
       { key: "hero_headline", label: "Headline" },
       { key: "hero_subtext", label: "Subtext", type: "textarea" },
       { key: "hero_button_text", label: "Button text" },
