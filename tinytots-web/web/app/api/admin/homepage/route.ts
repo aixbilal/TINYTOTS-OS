@@ -2,21 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 
+const SELECTION_TYPE_FIELDS = ["trending_selection_type", "meadow_selection_type", "boys_selection_type", "girls_selection_type"];
+const CATEGORY_FIELDS = ["trending_category", "meadow_category", "boys_category", "girls_category"];
+const PRODUCT_ID_FIELDS = ["trending_product_ids", "meadow_product_ids", "boys_product_ids", "girls_product_ids"];
+
 export async function GET(req: NextRequest) {
   const denied = await requireAdmin(req, "canManageSettings");
   if (denied) return denied;
 
-  const [{ data: content, error }, { data: products }] = await Promise.all([
+  const [{ data: content, error }, { data: products }, { data: categories }] = await Promise.all([
     supabaseAdmin.from("homepage_content").select("*").eq("id", 1).single(),
     supabaseAdmin
       .from("products")
-      .select("id, name, image_url")
+      .select("id, name, image_url, category")
       .eq("is_active", true)
       .order("name", { ascending: true }),
+    supabaseAdmin.from("categories").select("name, slug").order("display_order", { ascending: true }).order("name", { ascending: true }),
   ]);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ content, products: products || [] });
+  return NextResponse.json({ content, products: products || [], categories: categories || [] });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -25,7 +30,7 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const allowedFields = [
+    const textFields = [
       "hero_image_url",
       "hero_headline",
       "hero_subtext",
@@ -44,11 +49,17 @@ export async function PATCH(req: NextRequest) {
     ];
 
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };
-    for (const field of allowedFields) {
+    for (const field of textFields) {
       if (body[field] !== undefined) updates[field] = String(body[field]).trim();
     }
-    if (Array.isArray(body.trending_product_ids)) {
-      updates.trending_product_ids = body.trending_product_ids.map((id: any) => Number(id));
+    for (const field of SELECTION_TYPE_FIELDS) {
+      if (body[field] === "products" || body[field] === "category") updates[field] = body[field];
+    }
+    for (const field of CATEGORY_FIELDS) {
+      if (body[field] !== undefined) updates[field] = body[field] ? String(body[field]).trim() : null;
+    }
+    for (const field of PRODUCT_ID_FIELDS) {
+      if (Array.isArray(body[field])) updates[field] = body[field].map((id: any) => Number(id));
     }
 
     const { data, error } = await supabaseAdmin

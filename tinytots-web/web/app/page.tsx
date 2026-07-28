@@ -77,9 +77,37 @@ async function getHomepageContent() {
   return data || HOMEPAGE_DEFAULTS;
 }
 
+// Resolve a section's click-through link from its admin-chosen selection:
+// a category takes you to the existing /collections/[slug] page, specific
+// products take you to /products?ids=1,2,3 (Shop All, filtered), and if
+// nothing is selected we fall back to whatever manual link is stored.
+function sectionLink(
+  selectionType: string | null | undefined,
+  category: string | null | undefined,
+  productIds: number[] | null | undefined,
+  fallbackLink: string
+) {
+  if (selectionType === "category" && category) return `/collections/${category}`;
+  if (selectionType === "products" && productIds && productIds.length > 0) {
+    return `/products?ids=${productIds.join(",")}`;
+  }
+  return fallbackLink;
+}
+
 export default async function Home() {
   const content = await getHomepageContent();
-  const products = await getProducts(content.trending_product_ids);
+  const trendingIds =
+    content.trending_selection_type === "category" && content.trending_category
+      ? (
+          await supabase
+            .from("products")
+            .select("id")
+            .eq("is_active", true)
+            .eq("category", content.trending_category)
+            .limit(12)
+        ).data?.map((p: any) => p.id) ?? null
+      : content.trending_product_ids;
+  const products = await getProducts(trendingIds);
 
   return (
     <main className="max-w-container-max mx-auto md:px-margin-desktop px-margin-mobile">
@@ -131,27 +159,6 @@ export default async function Home() {
               Easy 7-Day Returns
             </span>
           </div>
-        </div>
-      </section>
-
-      {/* Shop by age — static for now, needs age_bracket filtering wired up later */}
-      <section className="mb-stack-lg">
-        <div className="flex justify-between items-end mb-stack-sm">
-          <h2 className="font-headline-lg text-on-surface">Shop by Age</h2>
-        </div>
-        <div className="flex overflow-x-auto gap-4 no-scrollbar pb-2">
-          {["Newborn", "0–1yr", "1–3yr", "3–6yr", "6–9yr"].map((label, i) => (
-            <button
-              key={label}
-              className={`flex-shrink-0 font-button text-button px-6 py-3 rounded-full border transition-all ${
-                i === 0
-                  ? "bg-primary-container text-on-primary border-primary-container"
-                  : "bg-surface-container-lowest text-on-surface-variant border-outline-variant/30 hover:bg-surface-container-low"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
         </div>
       </section>
 
@@ -213,7 +220,12 @@ export default async function Home() {
       <section className="mb-stack-lg">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap h-auto md:h-[500px]">
           <Link
-            href={content.meadow_link ?? HOMEPAGE_DEFAULTS.meadow_link}
+            href={sectionLink(
+              content.meadow_selection_type,
+              content.meadow_category,
+              content.meadow_product_ids,
+              content.meadow_link ?? HOMEPAGE_DEFAULTS.meadow_link
+            )}
             className="md:col-span-2 relative rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[300px]"
           >
             <div
@@ -235,7 +247,12 @@ export default async function Home() {
           </Link>
           <div className="flex flex-col gap-bento-gap">
             <Link
-              href={content.boys_link ?? HOMEPAGE_DEFAULTS.boys_link}
+              href={sectionLink(
+                content.boys_selection_type,
+                content.boys_category,
+                content.boys_product_ids,
+                content.boys_link ?? HOMEPAGE_DEFAULTS.boys_link
+              )}
               className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[200px]"
             >
               <div
@@ -251,7 +268,12 @@ export default async function Home() {
               </div>
             </Link>
             <Link
-              href={content.girls_link ?? HOMEPAGE_DEFAULTS.girls_link}
+              href={sectionLink(
+                content.girls_selection_type,
+                content.girls_category,
+                content.girls_product_ids,
+                content.girls_link ?? HOMEPAGE_DEFAULTS.girls_link
+              )}
               className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[200px]"
             >
               <div

@@ -1,16 +1,79 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import WishlistButton from "@/components/WishlistButton";
 
-export default function ProductsPage() {
+function CategoriesDropdown() {
+  const [open, setOpen] = useState(false);
+  const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!open || categories.length > 0) return;
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((json) => setCategories(json.categories || []))
+      .catch(() => setCategories([]));
+  }, [open, categories.length]);
+
+  function show() {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setOpen(true);
+  }
+  function scheduleHide() {
+    closeTimer.current = setTimeout(() => setOpen(false), 150);
+  }
+
+  return (
+    <div className="relative inline-block" onMouseEnter={show} onMouseLeave={scheduleHide}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 font-button text-button px-4 py-2 rounded-full border border-outline-variant/40 bg-surface-container-lowest text-on-surface hover:bg-surface-container-low transition-colors"
+      >
+        <span className="material-symbols-outlined text-[18px]">storefront</span>
+        Categories
+        <span className="material-symbols-outlined text-[18px]">{open ? "expand_less" : "expand_more"}</span>
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-2 w-64 max-h-96 overflow-y-auto bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-2 z-[80]">
+          <Link
+            href="/products"
+            className="block px-3 py-2 rounded-lg font-body-md text-body-md text-primary bg-primary-container/20 hover:bg-primary-container/30 transition-colors"
+          >
+            Shop All
+          </Link>
+          {categories.map((c) => (
+            <Link
+              key={c.slug}
+              href={`/collections/${c.slug}`}
+              className="block px-3 py-2 rounded-lg font-body-md text-body-md text-on-surface hover:bg-surface-container-low transition-colors"
+            >
+              {c.name}
+            </Link>
+          ))}
+          {categories.length === 0 && (
+            <p className="px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">Loading categories...</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProductsContent() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const ids = searchParams.get("ids");
 
   useEffect(() => {
-    fetch("/api/products")
+    const url = ids ? `/api/products?ids=${ids}` : "/api/products";
+    setLoading(true);
+    fetch(url)
       .then((res) => res.json())
       .then((json) => {
         if (json.error) throw new Error(json.error);
@@ -18,11 +81,14 @@ export default function ProductsPage() {
       })
       .catch(() => setError("Couldn't load products right now. Please try again shortly."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [ids]);
 
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Shop All</h1>
+      <h1 className="font-display-md text-display-md text-on-surface mb-stack-sm">Shop All</h1>
+      <div className="mb-stack-md">
+        <CategoriesDropdown />
+      </div>
 
       {loading && (
         <p className="font-body-md text-body-md text-on-surface-variant">Loading products...</p>
@@ -92,5 +158,13 @@ export default function ProductsPage() {
         })}
       </div>
     </main>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg" />}>
+      <ProductsContent />
+    </Suspense>
   );
 }

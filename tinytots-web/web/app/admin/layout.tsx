@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth-context";
 import { can } from "@/lib/admin-permissions";
@@ -43,6 +43,11 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isLoginPage = pathname === "/admin/login";
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!loading && !admin && !isLoginPage) {
@@ -86,8 +91,43 @@ function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="w-60 shrink-0 border-r border-outline-variant/30 bg-surface-container-lowest p-4 flex flex-col gap-1">
-        <div className="font-display-sm text-display-sm text-primary mb-4 px-2">TinyTots Admin</div>
+      {/* Mobile top bar with hamburger trigger */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 border-b border-outline-variant/30 bg-surface-container-lowest">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open admin menu"
+          className="p-2 -ml-2 rounded-lg hover:bg-surface-container-low"
+        >
+          <span className="material-symbols-outlined text-[24px] text-on-surface">menu</span>
+        </button>
+        <span className="font-display-sm text-display-sm text-primary">TinyTots Admin</span>
+        <div className="w-8" />
+      </div>
+
+      {/* Backdrop, mobile only, while drawer is open */}
+      {sidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/40 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`w-64 shrink-0 border-r border-outline-variant/30 bg-surface-container-lowest p-4 flex flex-col gap-1 overflow-y-auto
+          fixed inset-y-0 left-0 z-50 transition-transform duration-200
+          md:static md:translate-x-0 md:z-auto
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        <div className="flex items-center justify-between mb-4 px-2">
+          <span className="font-display-sm text-display-sm text-primary">TinyTots Admin</span>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close admin menu"
+            className="md:hidden p-1 rounded-lg hover:bg-surface-container-low"
+          >
+            <span className="material-symbols-outlined text-[22px] text-on-surface-variant">close</span>
+          </button>
+        </div>
         {navItem("/admin", "Dashboard")}
         {can(admin.role, "canManageInventory") && navItem("/admin/products", "Products")}
         {can(admin.role, "canManageInventory") && navItem("/admin/categories", "Categories")}
@@ -104,8 +144,8 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         {can(admin.role, "canManageSettings") && navItem("/admin/homepage", "Homepage")}
         {can(admin.role, "canManageSettings") && navItem("/admin/shipping-cities", "Delivery Cities")}
         {can(admin.role, "canManageSettings") && navItem("/admin/settings", "Settings")}
-{can(admin.role, "canManageHelp") && navItem("/admin/help", "Help Center")}
-{can(admin.role, "canManagePages") && navItem("/admin/pages", "Site Pages")}
+        {can(admin.role, "canManageHelp") && navItem("/admin/help", "Help Center")}
+        {can(admin.role, "canManagePages") && navItem("/admin/pages", "Site Pages")}
         <div className="mt-auto pt-4 border-t border-outline-variant/20">
           <p className="font-body-sm text-body-sm text-on-surface px-2 mb-1">{admin.name}</p>
           <p className="font-label-md text-label-md text-on-surface-variant px-2 mb-3 capitalize">{admin.role.replace("_", " ")}</p>
@@ -117,7 +157,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </aside>
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-4 md:p-8 pt-16 md:pt-8 min-w-0">
         {accessDenied ? (
           <div className="max-w-md">
             <h1 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h1>

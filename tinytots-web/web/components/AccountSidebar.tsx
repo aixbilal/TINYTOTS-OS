@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 
 const LINKS = [
@@ -13,14 +14,15 @@ const LINKS = [
   { href: "/account/settings", label: "Login & Security", icon: "lock" },
 ];
 
-export default function AccountSidebar({ name }: { name?: string | null }) {
-  const pathname = usePathname();
-  const { signOut } = useAuth();
-
+function SidebarLinks({ name, pathname, signOut, onNavigate }: {
+  name?: string | null;
+  pathname: string | null;
+  signOut: () => void;
+  onNavigate?: () => void;
+}) {
   const initial = (name?.trim()?.[0] || "T").toUpperCase();
-
   return (
-    <aside className="hidden md:flex flex-col w-64 shrink-0 bg-surface-container-low rounded-2xl p-6 h-fit sticky top-28 border border-on-surface/5">
+    <>
       <div className="flex items-center gap-4 mb-8">
         <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-display-md text-headline-md">
           {initial}
@@ -42,6 +44,7 @@ export default function AccountSidebar({ name }: { name?: string | null }) {
             <Link
               key={link.href}
               href={link.href}
+              onClick={onNavigate}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-body-sm text-body-sm ${
                 active
                   ? "bg-surface border border-on-surface/5 text-primary font-label-lg font-semibold shadow-sm"
@@ -66,6 +69,51 @@ export default function AccountSidebar({ name }: { name?: string | null }) {
           Logout
         </button>
       </nav>
-    </aside>
+    </>
+  );
+}
+
+export default function AccountSidebar({ name }: { name?: string | null }) {
+  const pathname = usePathname();
+  const { signOut } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      {/* Desktop sidebar, unchanged */}
+      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-surface-container-low rounded-2xl p-6 h-fit sticky top-28 border border-on-surface/5">
+        <SidebarLinks name={name} pathname={pathname} signOut={signOut} />
+      </aside>
+
+      {/* Mobile: a trigger bar + off-canvas drawer, since the sidebar itself is hidden below md */}
+      <div className="md:hidden mb-4">
+        <button
+          onClick={() => setOpen(true)}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-surface-container-low border border-on-surface/5 font-body-sm text-body-sm text-on-surface"
+        >
+          <span className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[20px]">menu</span>
+            Account Menu
+          </span>
+          <span className="material-symbols-outlined text-[20px] text-on-surface-variant">chevron_right</span>
+        </button>
+      </div>
+
+      {open && (
+        <div className="md:hidden fixed inset-0 z-[110] flex">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+          <div className="relative w-72 max-w-[85vw] h-full bg-surface-container-low p-6 overflow-y-auto">
+            <button
+              onClick={() => setOpen(false)}
+              aria-label="Close account menu"
+              className="absolute top-4 right-4 p-1 rounded-lg hover:bg-surface-container-high"
+            >
+              <span className="material-symbols-outlined text-[22px] text-on-surface-variant">close</span>
+            </button>
+            <SidebarLinks name={name} pathname={pathname} signOut={signOut} onNavigate={() => setOpen(false)} />
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -8,8 +8,11 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 // cause and fix as the PDP (app/products/[id]/page.tsx).
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const { data: products, error } = await supabase
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const idsParam = searchParams.get("ids");
+
+  let query = supabase
     .from("products")
     .select(
       `
@@ -23,11 +26,27 @@ export async function GET() {
       variants ( id, color, size, price, web_price, stock ) 
     `
     )
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
+    .eq("is_active", true);
+
+  if (idsParam) {
+    const ids = idsParam.split(",").map((id) => Number(id)).filter((id) => Number.isFinite(id));
+    if (ids.length === 0) return NextResponse.json({ data: [] }, { status: 200 });
+    query = query.in("id", ids);
+  } else {
+    query = query.order("created_at", { ascending: false });
+  }
+
+  const { data: products, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Preserve the admin-chosen order when filtering by explicit ids.
+  if (idsParam && products) {
+    const ids = idsParam.split(",").map((id) => Number(id));
+    const byId = new Map(products.map((p: any) => [p.id, p]));
+    return NextResponse.json({ data: ids.map((id) => byId.get(id)).filter(Boolean) }, { status: 200 });
   }
 
   return NextResponse.json({ data: products }, { status: 200 });
