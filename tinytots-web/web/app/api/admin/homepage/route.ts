@@ -54,6 +54,7 @@ export async function PATCH(req: NextRequest) {
     const textFields = [
       "hero_image_url",
       "hero_image_url_mobile",
+      "hero_video_url",
       "hero_headline",
       "hero_subtext",
       "hero_button_text",

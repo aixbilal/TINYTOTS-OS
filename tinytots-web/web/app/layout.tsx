@@ -10,6 +10,7 @@ import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
 import HeaderCart from "@/components/HeaderCart";
 import MobileSubNav from "@/components/MobileSubNav";
+import UgcFeed from "@/components/UgcFeed";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import { WishlistProvider } from "@/lib/wishlist-context";
@@ -591,6 +592,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </main>
 
             {/* FOOTER */}
+            <UgcFeed />
             <footer className="bg-surface-container-lowest border-t border-outline-variant/20 w-full mt-stack-lg">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-bento-gap px-margin-mobile md:px-margin-desktop py-stack-lg max-w-container-max mx-auto">
                 <div className="flex flex-col gap-4">

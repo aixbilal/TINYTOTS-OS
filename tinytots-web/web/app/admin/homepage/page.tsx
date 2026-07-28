@@ -7,6 +7,7 @@ import { adminFetch } from "@/lib/admin-fetch";
 interface HomepageContent {
   hero_image_url: string;
   hero_image_url_mobile: string;
+  hero_video_url: string;
   hero_headline: string;
   hero_subtext: string;
   hero_button_text: string;
@@ -62,6 +63,7 @@ const FIELD_GROUPS: { title: string; fields: { key: keyof HomepageContent; label
     fields: [
       { key: "hero_image_url", label: "Hero image URL (desktop)" },
       { key: "hero_image_url_mobile", label: "Hero image URL (mobile — optional, falls back to desktop image if blank)" },
+      { key: "hero_video_url", label: "Hero video URL (desktop only, optional — overrides the desktop image when set, e.g. an .mp4 link)" },
       { key: "hero_headline", label: "Headline" },
       { key: "hero_subtext", label: "Subtext", type: "textarea" },
       { key: "hero_button_text", label: "Button text" },

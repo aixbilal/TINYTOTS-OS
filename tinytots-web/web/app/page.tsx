@@ -90,6 +90,7 @@ const HOMEPAGE_DEFAULTS = {
   hero_image_url:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuDcHOEBpwtxoe3pT3NNiOQoUlZSPXHZXzjeoQOBkGcnwMqk8LNEfS_BLaNFvbDX-hie2mEl7T0RXcYZiRo62Rvdf50WGU9U4BD5oXHj7_E-gwRRFNXsBN-fTWavIdwpKxC17urnpJTVwBoPKRa1I79HkhFnqTLljxe6--Z6Hlwkbqweez3itoFTvxizLNFwL3tMrsZt3LeJQ-PBMbb1EiJJB23UvYLpk3iw905UJTcODCR79jbCm2P_w_RYfYB_hiR-KWOI441C-kke",
   hero_image_url_mobile: "",
+  hero_video_url: "",
   hero_headline: "Playful Designs for Little Pioneers",
   hero_subtext: "Ethically crafted, modern essentials for every stage of your child's early journey.",
   hero_button_text: "Shop New Arrivals",
@@ -155,12 +156,24 @@ export default async function Home() {
             backgroundImage: `url('${content.hero_image_url_mobile || content.hero_image_url}')`,
           }}
         />
-        <div
-          className="absolute inset-0 bg-cover bg-center w-full h-full z-0 hidden md:block"
-          style={{
-            backgroundImage: `url('${content.hero_image_url}')`,
-          }}
-        />
+        {content.hero_video_url ? (
+          <video
+            className="absolute inset-0 w-full h-full object-cover z-0 hidden md:block"
+            src={content.hero_video_url}
+            autoPlay
+            muted
+            loop
+            playsInline
+            poster={content.hero_image_url}
+          />
+        ) : (
+          <div
+            className="absolute inset-0 bg-cover bg-center w-full h-full z-0 hidden md:block"
+            style={{
+              backgroundImage: `url('${content.hero_image_url}')`,
+            }}
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-surface/80 to-surface/20 z-10" />
         <div className="relative z-20 max-w-2xl px-6 flex flex-col items-center">
           <h1 className="font-display-lg text-[40px] md:text-[64px] leading-tight text-on-surface mb-4 md:mb-6">
