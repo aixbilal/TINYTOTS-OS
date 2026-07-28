@@ -2,9 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 
-const SELECTION_TYPE_FIELDS = ["trending_selection_type", "meadow_selection_type", "boys_selection_type", "girls_selection_type"];
-const CATEGORY_FIELDS = ["trending_category", "meadow_category", "boys_category", "girls_category"];
-const PRODUCT_ID_FIELDS = ["trending_product_ids", "meadow_product_ids", "boys_product_ids", "girls_product_ids"];
+const SELECTION_TYPE_FIELDS = [
+  "trending_selection_type",
+  "newarrivals_selection_type",
+  "bestsellers_selection_type",
+  "meadow_selection_type",
+  "boys_selection_type",
+  "girls_selection_type",
+];
+const CATEGORY_FIELDS = [
+  "trending_category",
+  "newarrivals_category",
+  "bestsellers_category",
+  "meadow_category",
+  "boys_category",
+  "girls_category",
+];
+const PRODUCT_ID_FIELDS = [
+  "trending_product_ids",
+  "newarrivals_product_ids",
+  "bestsellers_product_ids",
+  "meadow_product_ids",
+  "boys_product_ids",
+  "girls_product_ids",
+];
 
 export async function GET(req: NextRequest) {
   const denied = await requireAdmin(req, "canManageSettings");
@@ -61,6 +82,24 @@ export async function PATCH(req: NextRequest) {
     }
     for (const field of PRODUCT_ID_FIELDS) {
       if (Array.isArray(body[field])) updates[field] = body[field].map((id: any) => Number(id));
+    }
+    if (body.announcement_enabled !== undefined) {
+      updates.announcement_enabled = Boolean(body.announcement_enabled);
+    }
+    if (body.announcement_text !== undefined) {
+      updates.announcement_text = String(body.announcement_text).trim();
+    }
+    if (body.announcement_link !== undefined) {
+      updates.announcement_link = String(body.announcement_link).trim();
+    }
+    if (Array.isArray(body.usp_items)) {
+      updates.usp_items = body.usp_items
+        .filter((item: any) => item && typeof item === "object")
+        .map((item: any) => ({
+          icon: String(item.icon || "star").trim(),
+          title: String(item.title || "").trim(),
+          description: String(item.description || "").trim(),
+        }));
     }
 
     const { data, error } = await supabaseAdmin

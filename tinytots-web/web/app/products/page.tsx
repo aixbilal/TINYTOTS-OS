@@ -38,7 +38,7 @@ function CategoriesDropdown() {
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-2 w-64 max-h-96 overflow-y-auto bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-2 z-[80]">
+        <div className="absolute top-full right-0 mt-2 w-64 max-h-96 overflow-y-auto bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-2 z-[80]">
           <Link
             href="/products"
             className="block px-3 py-2 rounded-lg font-body-md text-body-md text-primary bg-primary-container/20 hover:bg-primary-container/30 transition-colors"
@@ -85,8 +85,8 @@ function ProductsContent() {
 
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-sm">Shop All</h1>
-      <div className="mb-stack-md">
+      <div className="flex items-center justify-between mb-stack-md">
+        <h1 className="font-display-md text-display-md text-on-surface">Shop All</h1>
         <CategoriesDropdown />
       </div>
 

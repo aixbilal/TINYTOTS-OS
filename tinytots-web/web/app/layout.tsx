@@ -147,6 +147,80 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
   );
 }
 
+function AnnouncementBar({ data }: { data: { enabled: boolean; text: string; link: string } | null }) {
+  if (!data?.enabled || !data.text) return null;
+
+  const content = (
+    <p className="font-label-md text-label-md text-center py-2 px-4 truncate">{data.text}</p>
+  );
+
+  return (
+    <div className="bg-primary-container text-on-primary w-full">
+      {data.link ? (
+        <Link href={data.link} className="block hover:opacity-90 transition-opacity">
+          {content}
+        </Link>
+      ) : (
+        content
+      )}
+    </div>
+  );
+}
+
+function ShopMenu() {
+  const [open, setOpen] = useState(false);
+  const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!open || categories.length > 0) return;
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((json) => setCategories(json.categories || []))
+      .catch(() => setCategories([]));
+  }, [open, categories.length]);
+
+  function show() {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setOpen(true);
+  }
+  function scheduleHide() {
+    closeTimer.current = setTimeout(() => setOpen(false), 150);
+  }
+
+  return (
+    <div className="relative" onMouseEnter={show} onMouseLeave={scheduleHide}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 font-body-md text-body-md pb-1 transition-colors border-b-2 text-on-surface-variant hover:text-primary border-transparent"
+      >
+        <span className="material-symbols-outlined text-[20px]">storefront</span>
+        Shop
+        <span className="material-symbols-outlined text-[18px]">{open ? "expand_less" : "expand_more"}</span>
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-2 w-64 max-h-96 overflow-y-auto bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-2 z-[100]">
+          <Link
+            href="/products"
+            className="block px-3 py-2 rounded-lg font-body-md text-body-md text-primary bg-primary-container/20 hover:bg-primary-container/30 transition-colors"
+          >
+            Shop All
+          </Link>
+          {categories.map((c) => (
+            <Link
+              key={c.slug}
+              href={`/collections/${c.slug}`}
+              className="block px-3 py-2 rounded-lg font-body-md text-body-md text-on-surface hover:bg-surface-container-low transition-colors"
+            >
+              {c.name}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MegaMenu() {
   const [open, setOpen] = useState(false);
   const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
@@ -240,7 +314,7 @@ function MegaMenu() {
   );
 }
 
-function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MobileMenu({ open, onClose, topOffset }: { open: boolean; onClose: () => void; topOffset: number }) {
   const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
 
   useEffect(() => {
@@ -265,7 +339,7 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   );
 
   return (
-    <div className="md:hidden fixed inset-0 top-[80px] bg-surface z-[90] overflow-y-auto">
+    <div className="md:hidden fixed inset-x-0 bottom-0 bg-surface z-[90] overflow-y-auto" style={{ top: topOffset }}>
       <div className="px-margin-mobile py-6 flex flex-col gap-6">
         <div>
           <p className="font-label-lg text-label-lg text-primary font-semibold uppercase tracking-wider mb-1 px-3">Shop</p>
@@ -434,6 +508,20 @@ function NewsletterForm() {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [announcement, setAnnouncement] = useState<{ enabled: boolean; text: string; link: string } | null>(null);
+  const headerWrapRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(80);
+
+  useEffect(() => {
+    fetch("/api/announcement")
+      .then((res) => res.json())
+      .then(setAnnouncement)
+      .catch(() => setAnnouncement(null));
+  }, []);
+
+  useEffect(() => {
+    if (headerWrapRef.current) setHeaderHeight(headerWrapRef.current.offsetHeight);
+  }, [announcement]);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -445,12 +533,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" precedence="default" />
       </head>
-      <body className="bg-surface font-body-md text-on-surface antialiased pt-[80px] min-h-screen flex flex-col overflow-x-hidden">
+      <body className="bg-surface font-body-md text-on-surface antialiased min-h-screen flex flex-col overflow-x-hidden" style={{ paddingTop: headerHeight }}>
       <AuthProvider>
           <CartProvider>
           <WishlistProvider>
             {/* FIXED NAVBAR WRAPPER (Spans 100% width, centered inside) */}
-            <header className="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
+            <div ref={headerWrapRef} className="fixed top-0 left-0 right-0 z-50">
+              <AnnouncementBar data={announcement} />
+              <header className="bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
               <nav className="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto w-full">
                 <div className="flex items-center gap-6">
                   <button
@@ -474,6 +564,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                       <span className="material-symbols-outlined text-[20px]">home</span>
                       Home
                     </Link>
+                    <ShopMenu />
                     <MegaMenu />
                   </div>
                 </div>
@@ -489,8 +580,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 </div>
               </nav>
             </header>
+            </div>
 
-            <MobileMenu open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+            <MobileMenu open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} topOffset={headerHeight} />
             {!mobileMenuOpen && <MobileSubNav />}
 
             {/* MAIN CONTENT AREA */}

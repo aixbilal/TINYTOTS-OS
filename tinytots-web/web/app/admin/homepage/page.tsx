@@ -15,6 +15,16 @@ interface HomepageContent {
   trending_selection_type: "products" | "category";
   trending_category: string | null;
   trending_product_ids: number[] | null;
+  newarrivals_selection_type: "products" | "category";
+  newarrivals_category: string | null;
+  newarrivals_product_ids: number[] | null;
+  bestsellers_selection_type: "products" | "category";
+  bestsellers_category: string | null;
+  bestsellers_product_ids: number[] | null;
+  announcement_enabled: boolean;
+  announcement_text: string;
+  announcement_link: string;
+  usp_items: { icon: string; title: string; description: string }[];
   meadow_image_url: string;
   meadow_badge_text: string;
   meadow_heading: string;
@@ -215,7 +225,10 @@ export default function AdminHomepagePage() {
     setContent((prev) => (prev ? { ...prev, [key]: value } : prev));
   }
 
-  function toggleProduct(field: "trending_product_ids" | "meadow_product_ids" | "boys_product_ids" | "girls_product_ids", id: number) {
+  function toggleProduct(
+    field: "trending_product_ids" | "newarrivals_product_ids" | "bestsellers_product_ids" | "meadow_product_ids" | "boys_product_ids" | "girls_product_ids",
+    id: number
+  ) {
     setContent((prev) => {
       if (!prev) return prev;
       const current = prev[field] || [];
@@ -273,6 +286,102 @@ export default function AdminHomepagePage() {
       )}
 
       <div className="flex flex-col gap-8">
+        {/* Announcement Bar */}
+        <div className="border border-gray-200 rounded-lg p-5">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">Announcement Bar</h2>
+          <label className="flex items-center gap-2 mb-4 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={content.announcement_enabled}
+              onChange={(e) => updateField("announcement_enabled", e.target.checked as any)}
+            />
+            Show announcement bar above the header
+          </label>
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Text</label>
+              <input
+                value={content.announcement_text || ""}
+                onChange={(e) => updateField("announcement_text", e.target.value)}
+                placeholder="Free shipping on orders over Rs. 3,000"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Link (optional)</label>
+              <input
+                value={content.announcement_link || ""}
+                onChange={(e) => updateField("announcement_link", e.target.value)}
+                placeholder="/products"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Why Choose TinyTots (USP icons) */}
+        <div className="border border-gray-200 rounded-lg p-5">
+          <h2 className="text-base font-semibold text-gray-900 mb-1">Why Choose TinyTots</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Icons shown just below the hero. Use any{" "}
+            <a href="https://fonts.google.com/icons" target="_blank" rel="noreferrer" className="underline">
+              Material Symbols
+            </a>{" "}
+            icon name (e.g. eco, verified, shield).
+          </p>
+          <div className="flex flex-col gap-3">
+            {(content.usp_items || []).map((item, i) => (
+              <div key={i} className="flex gap-2 items-start border border-gray-100 rounded-md p-3">
+                <input
+                  value={item.icon}
+                  onChange={(e) => {
+                    const next = [...content.usp_items];
+                    next[i] = { ...next[i], icon: e.target.value };
+                    updateField("usp_items", next);
+                  }}
+                  placeholder="icon"
+                  className="w-24 border border-gray-300 rounded-md px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                />
+                <input
+                  value={item.title}
+                  onChange={(e) => {
+                    const next = [...content.usp_items];
+                    next[i] = { ...next[i], title: e.target.value };
+                    updateField("usp_items", next);
+                  }}
+                  placeholder="Title"
+                  className="flex-1 border border-gray-300 rounded-md px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                />
+                <input
+                  value={item.description}
+                  onChange={(e) => {
+                    const next = [...content.usp_items];
+                    next[i] = { ...next[i], description: e.target.value };
+                    updateField("usp_items", next);
+                  }}
+                  placeholder="Description"
+                  className="flex-[2] border border-gray-300 rounded-md px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => updateField("usp_items", content.usp_items.filter((_, idx) => idx !== i))}
+                  className="text-red-600 hover:text-red-800 p-2"
+                  aria-label="Remove"
+                >
+                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => updateField("usp_items", [...(content.usp_items || []), { icon: "star", title: "", description: "" }])}
+              className="text-sm font-medium text-gray-700 hover:text-gray-900 self-start"
+            >
+              + Add item
+            </button>
+          </div>
+        </div>
+
         {/* Hero */}
         <div className="border border-gray-200 rounded-lg p-5">
           <h2 className="text-base font-semibold text-gray-900 mb-4">{FIELD_GROUPS[0].title}</h2>
@@ -303,6 +412,28 @@ export default function AdminHomepagePage() {
           onChangeType={(t) => updateField("trending_selection_type", t)}
           onChangeCategory={(slug) => updateField("trending_category", slug)}
           onToggleProduct={(id) => toggleProduct("trending_product_ids", id)}
+        />
+        <SectionSelector
+          label="New Arrivals"
+          selectionType={content.newarrivals_selection_type || "products"}
+          category={content.newarrivals_category}
+          productIds={content.newarrivals_product_ids}
+          categories={categories}
+          products={products}
+          onChangeType={(t) => updateField("newarrivals_selection_type", t)}
+          onChangeCategory={(slug) => updateField("newarrivals_category", slug)}
+          onToggleProduct={(id) => toggleProduct("newarrivals_product_ids", id)}
+        />
+        <SectionSelector
+          label="Bestsellers"
+          selectionType={content.bestsellers_selection_type || "products"}
+          category={content.bestsellers_category}
+          productIds={content.bestsellers_product_ids}
+          categories={categories}
+          products={products}
+          onChangeType={(t) => updateField("bestsellers_selection_type", t)}
+          onChangeCategory={(slug) => updateField("bestsellers_category", slug)}
+          onToggleProduct={(id) => toggleProduct("bestsellers_product_ids", id)}
         />
 
         {/* Meadow */}

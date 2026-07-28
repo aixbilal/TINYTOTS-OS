@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 
 // Same root cause and fix as app/products/[id]/page.tsx and
 // app/api/products/route.ts — without this, Next.js caches this Server
@@ -22,18 +23,18 @@ const PRODUCT_SELECT = `
   )
 `;
 
-async function getProducts(trendingProductIds: number[] | null | undefined) {
-  if (trendingProductIds && trendingProductIds.length > 0) {
+async function getProducts(productIds: number[] | null | undefined) {
+  if (productIds && productIds.length > 0) {
     const { data, error } = await supabase
       .from("products")
       .select(PRODUCT_SELECT)
       .eq("is_active", true)
-      .in("id", trendingProductIds);
+      .in("id", productIds);
 
     if (!error && data && data.length > 0) {
       // Preserve the admin-chosen order rather than whatever order Postgres returns.
       const byId = new Map(data.map((p: any) => [p.id, p]));
-      return trendingProductIds.map((id) => byId.get(id)).filter(Boolean);
+      return productIds.map((id) => byId.get(id)).filter(Boolean);
     }
   }
 
@@ -42,10 +43,30 @@ async function getProducts(trendingProductIds: number[] | null | undefined) {
     .select(PRODUCT_SELECT)
     .eq("is_active", true)
     .order("created_at", { ascending: false })
-    .limit(4);
+    .limit(8);
 
   if (error) return [];
   return data;
+}
+
+// Shared resolver for any section driven by the By Category / By Products
+// selection pattern (Trending Now, New Arrivals, Bestsellers, Meadow, Boys,
+// Girls all use this shape in homepage_content).
+async function getProductsForSection(
+  selectionType: string | null | undefined,
+  category: string | null | undefined,
+  productIds: number[] | null | undefined
+) {
+  if (selectionType === "category" && category) {
+    const { data } = await supabase
+      .from("products")
+      .select("id")
+      .eq("is_active", true)
+      .eq("category", category)
+      .limit(12);
+    return getProducts(data?.map((p: any) => p.id) ?? null);
+  }
+  return getProducts(productIds);
 }
 
 // Admin-editable hero banner and Trending Now heading, with hardcoded
@@ -71,6 +92,12 @@ const HOMEPAGE_DEFAULTS = {
   girls_image_url:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuAex1tG2uv7lMIPIdDrPkL8txTXP-5lNjCD9jng7kNs6OcH_Ky94n8BWlY6cuBw71fG3Y01Wk_cRUvqnae2Q0zgpo5_zC77fJXWem1322uBxd60gIILFisAPS8wpWKA21VbKHRG7-aJ41OJBfx8Za033flnWypc0wBXWIfw6Z0DtvlSFrUpW0waIQ7CT6yae7FvGXNj0ydtDn_RlUQCdvs-59xozzxbXO0S77lPanQ7IV2gjCXPsPIhHgv2Vr3i3DLgN9EgUgj0WR_s",
   girls_link: "/products",
+  usp_items: [
+    { icon: "eco", title: "Ethically Sourced", description: "Every piece is made with responsibly sourced, child-safe materials." },
+    { icon: "verified", title: "Certified Safe", description: "Fabrics tested and certified for sensitive skin." },
+    { icon: "shield", title: "Built to Last", description: "Reinforced seams and stitching made for real play." },
+    { icon: "local_shipping", title: "Easy Returns", description: "7-day hassle-free returns on every order." },
+  ],
 };
 
 async function getHomepageContent() {
@@ -97,18 +124,11 @@ function sectionLink(
 
 export default async function Home() {
   const content = await getHomepageContent();
-  const trendingIds =
-    content.trending_selection_type === "category" && content.trending_category
-      ? (
-          await supabase
-            .from("products")
-            .select("id")
-            .eq("is_active", true)
-            .eq("category", content.trending_category)
-            .limit(12)
-        ).data?.map((p: any) => p.id) ?? null
-      : content.trending_product_ids;
-  const products = await getProducts(trendingIds);
+  const [trendingProducts, newArrivalsProducts, bestsellersProducts] = await Promise.all([
+    getProductsForSection(content.trending_selection_type, content.trending_category, content.trending_product_ids),
+    getProductsForSection(content.newarrivals_selection_type, content.newarrivals_category, content.newarrivals_product_ids),
+    getProductsForSection(content.bestsellers_selection_type, content.bestsellers_category, content.bestsellers_product_ids),
+  ]);
 
   return (
     <main className="max-w-container-max mx-auto md:px-margin-desktop px-margin-mobile">
@@ -169,58 +189,33 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Trending now — real product data */}
+      {/* Why Choose TinyTots — admin-editable USP icons */}
+      {(content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items).length > 0 && (
+        <section className="mb-stack-lg">
+          <h2 className="font-headline-lg text-on-surface mb-stack-md text-center">Why Choose TinyTots</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
+            {(content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items).map(
+              (item: { icon: string; title: string; description: string }, i: number) => (
+                <div key={i} className="flex flex-col items-center text-center gap-2 p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/20">
+                  <span className="material-symbols-outlined text-primary text-[32px]">{item.icon || "star"}</span>
+                  <h3 className="font-headline-md text-headline-md text-on-surface">{item.title}</h3>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">{item.description}</p>
+                </div>
+              )
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Product carousel — New Arrivals / Bestsellers / Trending tabs */}
       <section id="trending" className="mb-stack-lg">
-      <div className="flex justify-between items-end mb-stack-md">
-  <h2 className="font-headline-lg text-on-surface">{content.trending_heading}</h2>
-  <Link href="/products" className="font-body-sm text-body-sm text-primary hover:underline">
-    View All
-  </Link>
-</div>
-
-        {products.length === 0 && (
-          <p className="text-on-surface-variant">No products available right now.</p>
-        )}
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
-          {products.map((product: any) => {
-          const prices = product.variants.map((v: any) => v.web_price ?? v.price);
-            const minPrice = prices.length ? Math.min(...prices) : 0;
-            const totalStock = product.variants.reduce(
-              (sum: number, v: any) => sum + v.stock,
-              0
-            );
-
-            return (
-              <Link key={product.id} href={`/products/${product.id}`} className="group cursor-pointer">
-                <div className="relative w-full aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 mb-4 bg-surface-container-lowest">
-                  {totalStock > 0 && totalStock <= 5 && (
-                    <div className="absolute top-2 left-2 bg-[#D9822B] text-white font-label-md text-label-md px-2 py-1 rounded-full z-10">
-                      Few Left
-                    </div>
-                  )}
-                  {product.image_url ? (
-                    <img
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      src={product.image_url}
-                      alt={product.name}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-surface-container flex items-center justify-center text-on-surface-variant text-sm">
-                      No image
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1">
-                  <h3 className="font-body-md text-body-md text-on-surface">{product.name}</h3>
-                  <p className="font-body-md text-body-md text-on-surface-variant">
-                    Rs. {minPrice.toLocaleString()}
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+        <ProductCarouselTabs
+          tabs={[
+            { key: "new-arrivals", label: "New Arrivals", products: newArrivalsProducts as any },
+            { key: "bestsellers", label: "Bestsellers", products: bestsellersProducts as any },
+            { key: "trending", label: content.trending_heading || "Trending Now", products: trendingProducts as any },
+          ]}
+        />
       </section>
 
       {/* Bento Grid Promotional Area */}
