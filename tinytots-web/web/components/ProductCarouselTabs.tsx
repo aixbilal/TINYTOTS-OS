@@ -75,19 +75,23 @@ export default function ProductCarouselTabs({ tabs }: { tabs: Tab[] }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-stack-md overflow-x-auto no-scrollbar">
-        {nonEmptyTabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveKey(tab.key)}
-            className={`shrink-0 font-button text-button px-5 py-2 rounded-full border transition-colors ${
-              active.key === tab.key
-                ? "bg-primary-container text-on-primary border-primary-container"
-                : "bg-surface-container-lowest text-on-surface-variant border-outline-variant/30 hover:bg-surface-container-low"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {nonEmptyTabs.length > 1 ? (
+          nonEmptyTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveKey(tab.key)}
+              className={`shrink-0 font-button text-button px-5 py-2 rounded-full border transition-colors ${
+                active.key === tab.key
+                  ? "bg-primary-container text-on-primary border-primary-container"
+                  : "bg-surface-container-lowest text-on-surface-variant border-outline-variant/30 hover:bg-surface-container-low"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))
+        ) : (
+          <h2 className="font-headline-lg text-on-surface">{active.label}</h2>
+        )}
         <Link
           href="/products"
           className="ml-auto shrink-0 font-body-sm text-body-sm text-primary hover:underline whitespace-nowrap"

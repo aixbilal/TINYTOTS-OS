@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import ProductDetailInteractive from "@/components/ProductDetailInteractive";
+import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 import Link from "next/link";
 
 // Without this, Next.js caches the Supabase data fetch indefinitely, so
@@ -46,6 +47,36 @@ async function getProductImages(id: string) {
   }));
 }
 
+async function getRelatedProducts(category: string | null, excludeId: string) {
+  if (!category) return [];
+  const { data, error } = await supabase
+    .from("products")
+    .select(
+      `
+      id, name, image_url,
+      product_images ( storage_path, is_primary, sort_order ),
+      variants ( price, web_price, stock )
+    `
+    )
+    .eq("category", category)
+    .eq("is_active", true)
+    .neq("id", excludeId)
+    .limit(8);
+
+  if (error || !data) return [];
+
+  return data.map((p: any) => {
+    const gallery = (p.product_images || [])
+      .filter((img: any) => !img.is_primary)
+      .sort((a: any, b: any) => a.sort_order - b.sort_order);
+    const secondary = gallery[0]
+      ? supabase.storage.from("product-images").getPublicUrl(gallery[0].storage_path).data.publicUrl
+      : null;
+    const { product_images, ...rest } = p;
+    return { ...rest, secondary_image_url: secondary };
+  });
+}
+
 export default async function ProductDetailPage({
   params,
 }: {
@@ -53,6 +84,7 @@ export default async function ProductDetailPage({
 }) {
   const { id } = await params;
   const [product, images] = await Promise.all([getProduct(id), getProductImages(id)]);
+  const relatedProducts = product ? await getRelatedProducts(product.category, id) : [];
 
   if (!product) {
     return (
@@ -96,6 +128,14 @@ export default async function ProductDetailPage({
           images={galleryImages}
         />
       </div>
+
+      {relatedProducts.length > 0 && (
+        <section className="mt-stack-lg">
+          <ProductCarouselTabs
+            tabs={[{ key: "related", label: "You Might Also Like", products: relatedProducts as any }]}
+          />
+        </section>
+      )}
     </main>
   );
 }
