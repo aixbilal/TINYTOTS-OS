@@ -23,7 +23,6 @@ const plusJakarta = Plus_Jakarta_Sans({ variable: "--font-plus-jakarta", subsets
 
 function SearchOverlay({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<any[] | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -52,20 +51,13 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
-  const categories = Array.from(
-    new Set((allProducts || []).map((p: any) => p.category).filter(Boolean))
-  ) as string[];
-
   const needle = query.trim().toLowerCase();
-  const filtered = (allProducts || []).filter((p: any) => {
-    const matchesCategory = !activeCategory || p.category === activeCategory;
-    if (!needle) return matchesCategory;
-    const haystack = [p.name, p.brand, p.sku, p.category]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-    return matchesCategory && haystack.includes(needle);
-  });
+  const filtered = needle
+    ? (allProducts || []).filter((p: any) => {
+        const haystack = [p.name, p.brand, p.sku, p.category].filter(Boolean).join(" ").toLowerCase();
+        return haystack.includes(needle);
+      })
+    : [];
 
   const grouped = filtered.reduce((acc: Record<string, any[]>, p: any) => {
     const key = p.category || "Other";
@@ -87,39 +79,15 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
         className="w-full border border-outline-variant/50 rounded-lg px-4 py-2.5 bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary mb-3"
       />
 
-      {categories.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          <button
-            onClick={() => setActiveCategory(null)}
-            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-              !activeCategory
-                ? "bg-primary-container text-on-primary border-primary-container"
-                : "border-outline-variant/50 text-on-surface-variant hover:border-primary"
-            }`}
-          >
-            All
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onMouseEnter={() => setActiveCategory(cat)}
-              onClick={() => setActiveCategory(cat)}
-              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                activeCategory === cat
-                  ? "bg-primary-container text-on-primary border-primary-container"
-                  : "border-outline-variant/50 text-on-surface-variant hover:border-primary"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      )}
-
       <div className="max-h-80 overflow-y-auto flex flex-col gap-3">
-        {Object.keys(grouped).length === 0 && (
+        {!needle && (
           <p className="font-body-sm text-body-sm text-on-surface-variant px-1 py-2">
-            {query ? `No products found for \u201c${query}\u201d.` : "No products available."}
+            Start typing to search products.
+          </p>
+        )}
+        {needle && Object.keys(grouped).length === 0 && (
+          <p className="font-body-sm text-body-sm text-on-surface-variant px-1 py-2">
+            No products found for &ldquo;{query}&rdquo;.
           </p>
         )}
 
@@ -148,10 +116,19 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
   );
 }
 
-function AnnouncementBar({ data }: { data: { enabled: boolean; text: string; link: string } | null }) {
+function AnnouncementBar({ data }: { data: { enabled: boolean; text: string; link: string; style?: string } | null }) {
   if (!data?.enabled || !data.text) return null;
 
-  const content = (
+  const isMarquee = data.style === "marquee";
+
+  const content = isMarquee ? (
+    <div className="py-2 overflow-hidden whitespace-nowrap">
+      <div className="inline-flex animate-marquee">
+        <span className="font-label-md text-label-md px-8">{data.text}</span>
+        <span className="font-label-md text-label-md px-8" aria-hidden="true">{data.text}</span>
+      </div>
+    </div>
+  ) : (
     <p className="font-label-md text-label-md text-center py-2 px-4 truncate">{data.text}</p>
   );
 
@@ -224,16 +201,7 @@ function ShopMenu() {
 
 function MegaMenu() {
   const [open, setOpen] = useState(false);
-  const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open || categories.length > 0) return;
-    fetch("/api/categories")
-      .then((res) => res.json())
-      .then((json) => setCategories(json.categories || []))
-      .catch(() => setCategories([]));
-  }, [open, categories.length]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -268,21 +236,8 @@ function MegaMenu() {
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-2 w-[640px] max-w-[90vw] bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-6 z-[100] grid grid-cols-3 gap-6">
-          {/* Column 1: Shopping */}
-          <div>
-            <p className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">storefront</span> Shop
-            </p>
-            <div className="flex flex-col">
-              <MenuLink href="/products" label="Shop All" />
-              {categories.map((c) => (
-                <MenuLink key={c.slug} href={`/collections/${c.slug}`} label={c.name} />
-              ))}
-            </div>
-          </div>
-
-          {/* Column 2: My TinyTots */}
+        <div className="absolute top-full left-0 mt-2 w-[440px] max-w-[90vw] bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-6 z-[100] grid grid-cols-2 gap-6">
+          {/* Column 1: My TinyTots */}
           <div>
             <p className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">person</span> My TinyTots
@@ -295,7 +250,7 @@ function MegaMenu() {
             </div>
           </div>
 
-          {/* Column 3: Company / Info */}
+          {/* Column 2: Company / Info */}
           <div>
             <p className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">info</span> More
@@ -509,7 +464,7 @@ function NewsletterForm() {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [announcement, setAnnouncement] = useState<{ enabled: boolean; text: string; link: string } | null>(null);
+  const [announcement, setAnnouncement] = useState<{ enabled: boolean; text: string; link: string; style?: string } | null>(null);
   const headerWrapRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(80);
 
@@ -594,37 +549,37 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             {/* FOOTER */}
             <UgcFeed />
             <footer className="bg-surface-container-lowest border-t border-outline-variant/20 w-full mt-stack-lg">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-bento-gap px-margin-mobile md:px-margin-desktop py-stack-lg max-w-container-max mx-auto">
-                <div className="flex flex-col gap-4">
-                  <span className="font-display-lg text-display-lg text-primary">TinyTots</span>
-                  <a href="mailto:support@tinytotsofficial.com" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-8 px-margin-mobile md:px-margin-desktop py-stack-md max-w-container-max mx-auto">
+                <div className="col-span-2 lg:col-span-1 flex flex-col gap-2">
+                  <span className="font-headline-lg text-headline-lg text-primary">TinyTots</span>
+                  <a href="mailto:support@tinytotsofficial.com" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">
                     support@tinytotsofficial.com
                   </a>
-                  <p className="font-body-sm text-body-sm text-secondary">© 2026 TinyTots Premium Kids. All rights reserved.</p>
+                  <p className="font-label-md text-label-md text-secondary">© 2026 TinyTots Premium Kids. All rights reserved.</p>
                 </div>
-                <div className="flex flex-col gap-3">
-                  <h4 className="font-headline-md text-headline-md text-on-surface">Explore</h4>
-                  <Link href="/products" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shop All</Link>
-                  <Link href="/our-story" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">About Us</Link>
-                  <Link href="/blog" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Blog</Link>
+                <div className="flex flex-col gap-2">
+                  <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wide">Explore</h4>
+                  <Link href="/products" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Shop All</Link>
+                  <Link href="/our-story" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">About Us</Link>
+                  <Link href="/blog" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Blog</Link>
                 </div>
-                <div className="flex flex-col gap-3">
-                  <h4 className="font-headline-md text-headline-md text-on-surface">Support</h4>
-                  <Link href="/help" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Help Center</Link>
-                  <Link href="/contact" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Contact Us</Link>
-                  <Link href="/size-guide" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Size Guide</Link>
-                  <Link href="/track-order" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Track Order</Link>
-                  <Link href="/account/returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Returns & Refunds</Link>
-                  <Link href="/report-issue" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Report an Issue</Link>
+                <div className="flex flex-col gap-2">
+                  <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wide">Support</h4>
+                  <Link href="/help" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Help Center</Link>
+                  <Link href="/contact" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Contact Us</Link>
+                  <Link href="/size-guide" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Size Guide</Link>
+                  <Link href="/track-order" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Track Order</Link>
+                  <Link href="/account/returns" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Returns & Refunds</Link>
+                  <Link href="/report-issue" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Report an Issue</Link>
                 </div>
-                <div className="flex flex-col gap-3">
-                  <h4 className="font-headline-md text-headline-md text-on-surface">Legal</h4>
-                  <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Shipping &amp; Returns</Link>
-                  <Link href="/privacy-policy" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Privacy Policy</Link>
-                  <Link href="/terms" className="font-body-sm text-body-sm text-on-surface-variant hover:text-secondary hover:underline">Terms &amp; Conditions</Link>
+                <div className="flex flex-col gap-2">
+                  <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wide">Legal</h4>
+                  <Link href="/shipping-returns" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Shipping &amp; Returns</Link>
+                  <Link href="/privacy-policy" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Privacy Policy</Link>
+                  <Link href="/terms" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Terms &amp; Conditions</Link>
                 </div>
-                <div className="flex flex-col gap-4 min-w-0">
-                  <h4 className="font-headline-md text-headline-md text-on-surface">Join Our Newsletter</h4>
+                <div className="col-span-2 lg:col-span-1 flex flex-col gap-2 min-w-0">
+                  <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wide">Join Our Newsletter</h4>
                   <NewsletterForm />
                 </div>
               </div>

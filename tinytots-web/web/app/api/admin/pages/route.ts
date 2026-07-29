@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from("site_pages")
     .select("slug, title, updated_at")
+    .neq("slug", "our-story")
     .order("slug", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

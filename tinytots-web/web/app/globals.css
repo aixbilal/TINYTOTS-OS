@@ -234,3 +234,15 @@
     @apply font-sans;
   }
 }
+/* Announcement bar marquee mode: scrolls left-to-right in a seamless loop. */
+@keyframes marquee-loop {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0%);
+  }
+}
+.animate-marquee {
+  animation: marquee-loop 18s linear infinite;
+}

@@ -1,8 +1,3 @@
-"use client";
-
-import { useState } from "react";
-import Link from "next/link";
-
 const AGE_SIZES = [
     { age: "0–3 Months", height: "50–61 cm", weight: "3–6 kg", label: "NB / 0-3M" },
     { age: "3–6 Months", height: "61–67 cm", weight: "6–8 kg", label: "3-6M" },
@@ -20,130 +15,6 @@ const AGE_SIZES = [
     { age: "3–4 Years", eu: "26–27", foot: "16–16.5 cm" },
   ];
 
-// Parses a range string like "50–61 cm" or "10.5–13 kg" into [min, max].
-function parseRange(str: string): [number, number] {
-  const nums = str.match(/[\d.]+/g)?.map(Number) || [];
-  if (nums.length === 1) return [nums[0], nums[0]];
-  return [nums[0], nums[1] ?? nums[0]];
-}
-
-function SizeFinder() {
-  const [heightCm, setHeightCm] = useState("");
-  const [weightKg, setWeightKg] = useState("");
-  const [result, setResult] = useState<{ clothing: typeof AGE_SIZES[number]; shoe: typeof SHOE_SIZES[number] | null } | null>(null);
-  const [touched, setTouched] = useState(false);
-
-  function findSize() {
-    setTouched(true);
-    const h = Number(heightCm);
-    const w = Number(weightKg);
-    if (!h && !w) {
-      setResult(null);
-      return;
-    }
-
-    // Score each clothing bracket by how well height/weight fits its range,
-    // and take the closest match rather than requiring an exact hit —
-    // real measurements rarely land perfectly inside one bracket.
-    let best = AGE_SIZES[0];
-    let bestScore = Infinity;
-    for (const row of AGE_SIZES) {
-      const [hMin, hMax] = parseRange(row.height);
-      const [wMin, wMax] = parseRange(row.weight);
-      let score = 0;
-      if (h) score += h < hMin ? hMin - h : h > hMax ? h - hMax : 0;
-      if (w) score += (w < wMin ? wMin - w : w > wMax ? w - wMax : 0) * 3; // weight is a weaker signal, still counts
-      if (score < bestScore) {
-        bestScore = score;
-        best = row;
-      }
-    }
-
-    let bestShoe: (typeof SHOE_SIZES)[number] | null = null;
-    if (h) {
-      let shoeScore = Infinity;
-      for (const row of SHOE_SIZES) {
-        const [fMin, fMax] = parseRange(row.foot);
-        // Rough proxy: shoe brackets track the same age ranges as clothing,
-        // so estimate foot fit indirectly via the clothing height match.
-        const [hMin, hMax] = parseRange(
-          row.age === "6–12 Months" ? "67–76 cm" : row.age === "1–2 Years" ? "76–86 cm" : row.age === "2–3 Years" ? "86–98 cm" : "98–104 cm"
-        );
-        const score = h < hMin ? hMin - h : h > hMax ? h - hMax : 0;
-        if (score < shoeScore) {
-          shoeScore = score;
-          bestShoe = row;
-        }
-      }
-    }
-
-    setResult({ clothing: best, shoe: bestShoe });
-  }
-
-  return (
-    <section className="mb-stack-lg bg-primary-container/10 border border-primary-container/30 rounded-2xl p-6 max-w-2xl">
-      <h2 className="font-headline-md text-headline-md text-on-surface mb-1">Find Your Child's Size</h2>
-      <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">
-        Enter your child's height and/or weight for a size recommendation.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="flex-1">
-          <label className="block font-label-md text-label-md text-on-surface-variant mb-1">Height (cm)</label>
-          <input
-            type="number"
-            min={0}
-            value={heightCm}
-            onChange={(e) => setHeightCm(e.target.value)}
-            placeholder="e.g. 80"
-            className="w-full border border-outline-variant/40 rounded-lg px-3 py-2 font-body-md text-body-md bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-        </div>
-        <div className="flex-1">
-          <label className="block font-label-md text-label-md text-on-surface-variant mb-1">Weight (kg) — optional</label>
-          <input
-            type="number"
-            min={0}
-            value={weightKg}
-            onChange={(e) => setWeightKg(e.target.value)}
-            placeholder="e.g. 11"
-            className="w-full border border-outline-variant/40 rounded-lg px-3 py-2 font-body-md text-body-md bg-surface focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-        </div>
-        <button
-          onClick={findSize}
-          className="self-end font-button text-button px-6 py-2 rounded-lg bg-primary-container text-on-primary hover:bg-primary transition-colors"
-        >
-          Find Size
-        </button>
-      </div>
-
-      {touched && !result && (
-        <p className="font-body-sm text-body-sm text-error">Enter at least a height or weight to get a recommendation.</p>
-      )}
-
-      {result && (
-        <div className="bg-surface border border-outline-variant/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-4">
-          <div>
-            <p className="font-label-md text-label-md text-on-surface-variant uppercase">Recommended Clothing Size</p>
-            <p className="font-headline-md text-headline-md text-primary">{result.clothing.label}</p>
-            {result.shoe && (
-              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-                Shoe size: EU {result.shoe.eu} ({result.shoe.foot})
-              </p>
-            )}
-          </div>
-          <Link
-            href="/products"
-            className="sm:ml-auto font-button text-button px-5 py-2 rounded-lg border border-primary-container text-primary hover:bg-primary-container/20 transition-colors text-center"
-          >
-            Shop Products
-          </Link>
-        </div>
-      )}
-    </section>
-  );
-}
-
   export default function SizeGuidePage() {
     return (
       <main className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg">
@@ -153,7 +24,10 @@ function SizeFinder() {
           weight as your primary reference — if your little one is between sizes, we recommend sizing up.
         </p>
 
-        <SizeFinder />
+        <p className="font-body-sm text-body-sm text-on-surface-variant italic mb-stack-lg max-w-2xl">
+          Note: sizes on our product pages are shown as labels only. Use the tables below as a general
+          reference alongside each product's description.
+        </p>
   
         <section className="mb-stack-lg">
           <h2 className="font-headline-lg text-on-surface mb-stack-sm">Clothing</h2>

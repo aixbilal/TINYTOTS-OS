@@ -93,6 +93,9 @@ export async function PATCH(req: NextRequest) {
     if (body.announcement_link !== undefined) {
       updates.announcement_link = String(body.announcement_link).trim();
     }
+    if (body.announcement_style === "static" || body.announcement_style === "marquee") {
+      updates.announcement_style = body.announcement_style;
+    }
     if (Array.isArray(body.usp_items)) {
       updates.usp_items = body.usp_items
         .filter((item: any) => item && typeof item === "object")

@@ -55,8 +55,8 @@ function ProductCard({ product }: { product: Product }) {
         )}
       </div>
       <div className="flex flex-col gap-1">
-        <h3 className="font-body-md text-body-md text-on-surface">{product.name}</h3>
-        <p className="font-body-md text-body-md text-on-surface-variant">Rs. {minPrice.toLocaleString()}</p>
+        <h3 className="font-body-sm md:font-body-md text-body-sm md:text-body-md text-on-surface line-clamp-1">{product.name}</h3>
+        <p className="font-body-sm md:font-body-md text-body-sm md:text-body-md text-on-surface-variant">Rs. {minPrice.toLocaleString()}</p>
       </div>
     </Link>
   );

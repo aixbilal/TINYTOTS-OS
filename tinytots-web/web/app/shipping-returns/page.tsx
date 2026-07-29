@@ -30,9 +30,33 @@ const STEPS = [
   },
 ];
 
+const SECTIONS = [
+  { id: "delivery-timelines", title: "Delivery Timelines" },
+  { id: "cash-on-delivery", title: "Cash on Delivery Terms" },
+  { id: "returns-process", title: "Return & Exchange Process" },
+];
+
 export default function ShippingReturnsPage() {
   return (
-    <main className="max-w-container-max mx-auto w-full py-stack-lg">
+    <main className="max-w-container-max mx-auto w-full py-stack-lg flex flex-col md:flex-row gap-gutter px-margin-mobile md:px-0">
+      <aside className="hidden md:block w-56 shrink-0 sticky top-28 h-fit">
+        <p className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-3">
+          Contents
+        </p>
+        <nav className="flex flex-col gap-1">
+          {SECTIONS.map((s) => (
+            <a
+              key={s.id}
+              href={`#${s.id}`}
+              className="px-3 py-2 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors"
+            >
+              {s.title}
+            </a>
+          ))}
+        </nav>
+      </aside>
+
+      <div className="flex-grow min-w-0">
       <div className="text-center max-w-2xl mx-auto mb-stack-lg">
         <h1 className="font-display-md text-display-md text-on-surface mb-3">Shipping & Returns</h1>
         <p className="font-body-md text-body-md text-on-surface-variant">
@@ -41,7 +65,7 @@ export default function ShippingReturnsPage() {
       </div>
 
       {/* Delivery timelines */}
-      <section className="mb-stack-lg">
+      <section id="delivery-timelines" className="mb-stack-lg">
         <h2 className="font-headline-lg text-on-surface mb-stack-sm">Delivery Timelines in Pakistan</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
           {TIMELINES.map((t) => (
@@ -60,7 +84,7 @@ export default function ShippingReturnsPage() {
       </section>
 
       {/* COD tiers */}
-      <section className="mb-stack-lg">
+      <section id="cash-on-delivery" className="mb-stack-lg">
         <h2 className="font-headline-lg text-on-surface mb-2">Cash on Delivery Terms</h2>
         <p className="font-body-md text-body-md text-on-surface-variant mb-stack-sm max-w-2xl">
           To keep our delivery network running smoothly, some COD orders require a small advance
@@ -82,7 +106,7 @@ export default function ShippingReturnsPage() {
       </section>
 
       {/* Returns lifecycle */}
-      <section className="mb-stack-lg">
+      <section id="returns-process" className="mb-stack-lg">
         <h2 className="font-headline-lg text-on-surface mb-stack-sm">Return & Exchange Process</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
           {STEPS.map((step, i) => (
@@ -121,6 +145,7 @@ export default function ShippingReturnsPage() {
           Visit Help Center <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
         </Link>
       </section>
+      </div>
     </main>
   );
 }

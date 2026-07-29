@@ -149,7 +149,7 @@ export default async function Home() {
   return (
     <main className="max-w-container-max mx-auto md:px-margin-desktop px-margin-mobile">
       {/* Hero */}
-      <section className="relative w-full h-[420px] md:h-[700px] rounded-[16px] overflow-hidden mb-stack-lg border border-outline-variant/30 flex items-center justify-center text-center">
+      <section className="relative w-full h-[340px] md:h-[700px] rounded-[16px] overflow-hidden mb-stack-lg border border-outline-variant/30 flex items-center justify-center text-center">
         <div
           className="absolute inset-0 bg-cover bg-center w-full h-full z-0 md:hidden"
           style={{
@@ -176,7 +176,7 @@ export default async function Home() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-surface/80 to-surface/20 z-10" />
         <div className="relative z-20 max-w-2xl px-6 flex flex-col items-center">
-          <h1 className="font-display-lg text-[40px] md:text-[64px] leading-tight text-on-surface mb-4 md:mb-6">
+          <h1 className="font-display-lg text-[28px] md:text-[64px] leading-tight text-on-surface mb-4 md:mb-6">
             {content.hero_headline}
           </h1>
           <p className="font-body-lg text-body-md md:text-body-lg text-on-surface-variant mb-6 md:mb-8 max-w-lg">
@@ -217,24 +217,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Why Choose TinyTots — admin-editable USP icons */}
-      {(content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items).length > 0 && (
-        <section className="mb-stack-lg">
-          <h2 className="font-headline-lg text-on-surface mb-stack-md text-center">Why Choose TinyTots</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
-            {(content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items).map(
-              (item: { icon: string; title: string; description: string }, i: number) => (
-                <div key={i} className="flex flex-col items-center text-center gap-2 p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/20">
-                  <span className="material-symbols-outlined text-primary text-[32px]">{item.icon || "star"}</span>
-                  <h3 className="font-headline-md text-headline-md text-on-surface">{item.title}</h3>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">{item.description}</p>
-                </div>
-              )
-            )}
-          </div>
-        </section>
-      )}
-
       {/* Product carousel — New Arrivals / Bestsellers / Trending tabs */}
       <section id="trending" className="mb-stack-lg">
         <ProductCarouselTabs
@@ -258,7 +240,7 @@ export default async function Home() {
               content.meadow_product_ids,
               content.meadow_link ?? HOMEPAGE_DEFAULTS.meadow_link
             )}
-            className="md:col-span-2 relative rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[300px]"
+            className="md:col-span-2 relative rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[220px] md:min-h-0"
           >
             <div
               className="absolute inset-0 bg-cover bg-center w-full h-full transition-transform duration-700 group-hover:scale-105"
@@ -269,7 +251,7 @@ export default async function Home() {
               <span className="bg-surface-container-lowest/90 backdrop-blur text-on-surface font-label-md text-label-md px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
                 {content.meadow_badge_text ?? HOMEPAGE_DEFAULTS.meadow_badge_text}
               </span>
-              <h3 className="font-display-md text-display-md text-white mb-4">
+              <h3 className="font-headline-lg md:font-display-md text-headline-lg md:text-display-md text-white mb-4">
                 {content.meadow_heading ?? HOMEPAGE_DEFAULTS.meadow_heading}
               </h3>
               <span className="bg-white text-on-surface font-button text-button px-6 py-2 rounded-lg group-hover:bg-surface-container-low transition-colors inline-block">
@@ -285,7 +267,7 @@ export default async function Home() {
                 content.boys_product_ids,
                 content.boys_link ?? HOMEPAGE_DEFAULTS.boys_link
               )}
-              className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[200px]"
+              className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[140px] md:min-h-[200px]"
             >
               <div
                 className="absolute inset-0 bg-cover bg-center w-full h-full transition-transform duration-700 group-hover:scale-105"
@@ -306,7 +288,7 @@ export default async function Home() {
                 content.girls_product_ids,
                 content.girls_link ?? HOMEPAGE_DEFAULTS.girls_link
               )}
-              className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[200px]"
+              className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[140px] md:min-h-[200px]"
             >
               <div
                 className="absolute inset-0 bg-cover bg-center w-full h-full transition-transform duration-700 group-hover:scale-105"
@@ -323,6 +305,23 @@ export default async function Home() {
           </div>
         </div>
       </section>
+      {/* Why Choose TinyTots — admin-editable USP icons, placed just above the footer */}
+      {(content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items).length > 0 && (
+        <section className="mb-stack-lg">
+          <h2 className="font-headline-lg text-on-surface mb-stack-md text-center">Why Choose TinyTots</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
+            {(content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items).map(
+              (item: { icon: string; title: string; description: string }, i: number) => (
+                <div key={i} className="flex flex-col items-center text-center gap-2 p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/20">
+                  <span className="material-symbols-outlined text-primary text-[32px]">{item.icon || "star"}</span>
+                  <h3 className="font-headline-md text-headline-md text-on-surface">{item.title}</h3>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">{item.description}</p>
+                </div>
+              )
+            )}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

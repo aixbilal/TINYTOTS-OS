@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const { data } = await supabase
     .from("homepage_content")
-    .select("announcement_enabled, announcement_text, announcement_link")
+    .select("announcement_enabled, announcement_text, announcement_link, announcement_style")
     .eq("id", 1)
     .single();
 
@@ -18,5 +18,6 @@ export async function GET() {
     enabled: data?.announcement_enabled ?? false,
     text: data?.announcement_text ?? "",
     link: data?.announcement_link ?? "",
+    style: data?.announcement_style ?? "static",
   });
 }
