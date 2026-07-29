@@ -10,6 +10,13 @@ interface UgcPost {
   link: string | null;
 }
 
+function normalizeLink(link: string | null): string | null {
+  if (!link) return null;
+  const trimmed = link.trim();
+  if (!trimmed) return null;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 export default function UgcFeed() {
   const [posts, setPosts] = useState<UgcPost[]>([]);
 
@@ -43,8 +50,9 @@ export default function UgcFeed() {
                 )}
               </div>
             );
-            return post.link ? (
-              <a key={post.id} href={post.link} target="_blank" rel="noreferrer">
+            const href = normalizeLink(post.link);
+            return href ? (
+              <a key={post.id} href={href} target="_blank" rel="noreferrer">
                 {content}
               </a>
             ) : (

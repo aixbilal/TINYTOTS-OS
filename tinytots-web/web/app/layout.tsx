@@ -122,10 +122,10 @@ function AnnouncementBar({ data }: { data: { enabled: boolean; text: string; lin
   const isMarquee = data.style === "marquee";
 
   const content = isMarquee ? (
-    <div className="py-2 overflow-hidden whitespace-nowrap">
-      <div className="inline-flex animate-marquee">
-        <span className="font-label-md text-label-md px-8">{data.text}</span>
-        <span className="font-label-md text-label-md px-8" aria-hidden="true">{data.text}</span>
+    <div className="overflow-hidden whitespace-nowrap">
+      <div className="marquee-track">
+        <span className="font-label-md text-label-md px-8 shrink-0 py-2">{data.text}</span>
+        <span className="font-label-md text-label-md px-8 shrink-0 py-2" aria-hidden="true">{data.text}</span>
       </div>
     </div>
   ) : (
@@ -438,10 +438,10 @@ function NewsletterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <div className="flex flex-col sm:flex-row rounded-lg border border-outline-variant/50 overflow-hidden sm:h-[48px]">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2 w-full max-w-[280px]">
+      <div className="flex flex-col rounded-lg border border-outline-variant/50 overflow-hidden">
         <input
-          className="flex-1 min-w-0 bg-transparent border-none px-4 py-3 sm:py-0 font-body-sm text-body-sm text-on-surface focus:ring-0 focus:outline-none"
+          className="w-full min-w-0 bg-transparent border-none px-4 py-3 font-body-sm text-body-sm text-on-surface focus:ring-0 focus:outline-none"
           placeholder="Email Address"
           type="email"
           required
@@ -451,7 +451,7 @@ function NewsletterForm() {
         <button
           type="submit"
           disabled={status === "loading"}
-          className="shrink-0 bg-primary-container text-on-primary px-6 py-3 sm:py-0 font-button text-button hover:bg-primary transition-colors whitespace-nowrap disabled:opacity-60"
+          className="w-full bg-primary-container text-on-primary px-6 py-3 font-button text-button hover:bg-primary transition-colors whitespace-nowrap disabled:opacity-60"
         >
           {status === "loading" ? "Subscribing..." : "Subscribe"}
         </button>
