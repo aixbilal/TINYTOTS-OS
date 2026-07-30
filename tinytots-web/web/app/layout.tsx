@@ -122,10 +122,10 @@ function AnnouncementBar({ data }: { data: { enabled: boolean; text: string; lin
   const isMarquee = data.style === "marquee";
 
   const content = isMarquee ? (
-    <div className="overflow-hidden whitespace-nowrap py-2">
+    <div className="overflow-hidden whitespace-nowrap">
       <div className="marquee-track">
-        <span className="font-label-md text-label-md px-12 shrink-0">{data.text}</span>
-        <span className="font-label-md text-label-md px-12 shrink-0" aria-hidden="true">{data.text}</span>
+        <span className="font-label-md text-label-md px-10 py-2 shrink-0">{data.text}</span>
+        <span className="font-label-md text-label-md px-10 py-2 shrink-0" aria-hidden="true">{data.text}</span>
       </div>
     </div>
   ) : (
