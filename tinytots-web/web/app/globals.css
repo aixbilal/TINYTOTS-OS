@@ -234,19 +234,23 @@
     @apply font-sans;
   }
 }
-/* Announcement bar marquee mode: a single copy of the text slides in from
-   the right, crosses the bar, and exits fully off the left before looping
-   — not two copies visible side by side. */
+/* Announcement bar marquee mode: a true continuous ticker. The track holds
+   two identical copies back to back; sliding the track by exactly -50% of
+   its own width (which equals one copy's width, since both copies are
+   identical) moves it by precisely one copy, so the restart point is
+   invisible — no jump, no gap, no "disappear then relocate." Seeing more
+   than one copy on screen at once with short text is expected/normal for
+   a continuous ticker (same as any news/stock ticker). */
 @keyframes marquee-loop {
   from {
-    transform: translateX(100%);
+    transform: translateX(0%);
   }
   to {
-    transform: translateX(-100%);
+    transform: translateX(-50%);
   }
 }
 .marquee-track {
-  display: inline-block;
-  white-space: nowrap;
-  animation: marquee-loop 12s linear infinite;
+  display: flex;
+  width: max-content;
+  animation: marquee-loop 20s linear infinite;
 }

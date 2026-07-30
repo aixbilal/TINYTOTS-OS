@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
+import UspMarquee from "@/components/UspMarquee";
+import ProductCardStack from "@/components/ProductCardStack";
 import TestimonialsCarousel from "@/components/TestimonialsCarousel";
 
 // Same root cause and fix as app/products/[id]/page.tsx and
@@ -147,7 +149,7 @@ export default async function Home() {
   ]);
 
   return (
-    <main className="max-w-container-max mx-auto md:px-margin-desktop px-margin-mobile">
+    <main className="max-w-container-max mx-auto px-5 md:px-16 md:px-margin-desktop px-margin-mobile">
       {/* Hero */}
       <section className="relative w-full h-[340px] md:h-[700px] rounded-[16px] overflow-hidden mb-stack-lg border border-outline-variant/30 flex items-center justify-center text-center">
         <div
@@ -301,12 +303,11 @@ export default async function Home() {
           </div>
         </div>
       </section>
-      {/* Trending Now again, single row, right before Why Choose Us */}
+      {/* Trending Now again, card-stack style, right before Why Choose Us */}
       {trendingProducts.length > 0 && (
         <section className="mb-stack-lg">
-          <ProductCarouselTabs
-            tabs={[{ key: "trending-2", label: content.trending_heading || "Trending Now", products: trendingProducts as any }]}
-          />
+          <h2 className="font-headline-lg text-on-surface mb-stack-md text-center">{content.trending_heading || "Trending Now"}</h2>
+          <ProductCardStack products={trendingProducts as any} />
         </section>
       )}
 
@@ -314,17 +315,7 @@ export default async function Home() {
       {(content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items).length > 0 && (
         <section className="mb-stack-lg">
           <h2 className="font-headline-lg text-on-surface mb-stack-md text-center">Why Choose TinyTots</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
-            {(content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items).map(
-              (item: { icon: string; title: string; description: string }, i: number) => (
-                <div key={i} className="flex flex-col items-center text-center gap-2 p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/20">
-                  <span className="material-symbols-outlined text-primary text-[32px]">{item.icon || "star"}</span>
-                  <h3 className="font-headline-md text-headline-md text-on-surface">{item.title}</h3>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">{item.description}</p>
-                </div>
-              )
-            )}
-          </div>
+          <UspMarquee items={content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items} />
         </section>
       )}
     </main>
