@@ -43,21 +43,13 @@ async function resolveOrFallback(sel: Selection, limit: number, offset = 0) {
   return data || [];
 }
 
-const BLOCK_KEYS = ["meadow", "boys", "girls", "collections", "accessories"] as const;
-
 export async function GET() {
-  const [{ data: signage }, { data: words }, { data: banners }, { data: testimonials }] = await Promise.all([
+  const [{ data: signage }, { data: words }, { data: testimonials }] = await Promise.all([
     supabaseAdmin.from("signage_content").select("*").eq("id", 1).maybeSingle(),
     supabaseAdmin
       .from("signage_marquee_words")
       .select("word")
       .eq("is_active", true)
-      .order("sort_order", { ascending: true }),
-    supabaseAdmin
-      .from("signage_bento_banners")
-      .select("block_key, image_url, heading, subtext, link, display_seconds")
-      .eq("is_active", true)
-      .order("block_key", { ascending: true })
       .order("sort_order", { ascending: true }),
     supabaseAdmin
       .from("testimonials")
@@ -83,16 +75,10 @@ export async function GET() {
     resolveOrFallback(row2Sel, 10, 10),
   ]);
 
-  const bento: Record<string, any[]> = { meadow: [], boys: [], girls: [], collections: [], accessories: [] };
-  for (const b of banners || []) {
-    if (BLOCK_KEYS.includes(b.block_key)) bento[b.block_key].push(b);
-  }
-
   return NextResponse.json({
     row1_images: row1Products.map((p) => p.image_url).filter(Boolean),
     row2_images: row2Products.map((p) => p.image_url).filter(Boolean),
     marquee_words: (words || []).map((w) => w.word),
-    bento,
     testimonials: (testimonials || []).map((t) => ({
       name: t.customer_name,
       rating: t.rating,
