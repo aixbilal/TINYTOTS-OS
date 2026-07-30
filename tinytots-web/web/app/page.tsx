@@ -217,14 +217,10 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Product carousel — New Arrivals / Bestsellers / Trending tabs */}
+      {/* Trending Now — single row, above the Meadow/Boys/Girls section */}
       <section id="trending" className="mb-stack-lg">
         <ProductCarouselTabs
-          tabs={[
-            { key: "new-arrivals", label: "New Arrivals", products: newArrivalsProducts as any },
-            { key: "bestsellers", label: "Bestsellers", products: bestsellersProducts as any },
-            { key: "trending", label: content.trending_heading || "Trending Now", products: trendingProducts as any },
-          ]}
+          tabs={[{ key: "trending", label: content.trending_heading || "Trending Now", products: trendingProducts as any }]}
         />
       </section>
 
@@ -305,6 +301,15 @@ export default async function Home() {
           </div>
         </div>
       </section>
+      {/* Trending Now again, single row, right before Why Choose Us */}
+      {trendingProducts.length > 0 && (
+        <section className="mb-stack-lg">
+          <ProductCarouselTabs
+            tabs={[{ key: "trending-2", label: content.trending_heading || "Trending Now", products: trendingProducts as any }]}
+          />
+        </section>
+      )}
+
       {/* Why Choose TinyTots — admin-editable USP icons, placed just above the footer */}
       {(content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items).length > 0 && (
         <section className="mb-stack-lg">

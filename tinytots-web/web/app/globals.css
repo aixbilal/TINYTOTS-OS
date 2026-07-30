@@ -234,20 +234,19 @@
     @apply font-sans;
   }
 }
-/* Announcement bar marquee mode: scrolls left-to-right in a seamless loop.
-   The track holds two identical copies of the content side by side; sliding
-   by exactly -50% of the track's own (content-sized) width moves it by one
-   copy's width, so the loop point is invisible. */
+/* Announcement bar marquee mode: a single copy of the text slides in from
+   the right, crosses the bar, and exits fully off the left before looping
+   — not two copies visible side by side. */
 @keyframes marquee-loop {
   from {
-    transform: translateX(0%);
+    transform: translateX(100%);
   }
   to {
-    transform: translateX(-50%);
+    transform: translateX(-100%);
   }
 }
 .marquee-track {
-  display: flex;
-  width: max-content;
-  animation: marquee-loop 15s linear infinite;
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee-loop 12s linear infinite;
 }
