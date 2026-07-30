@@ -479,10 +479,24 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     if (headerWrapRef.current) setHeaderHeight(headerWrapRef.current.offsetHeight);
   }, [announcement]);
   const pathname = usePathname();
+  const isSignage = pathname?.startsWith("/signage");
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  if (isSignage) {
+    return (
+      <html lang="en" className={cn("antialiased", geistMono.variable, inter.variable, plusJakarta.variable, "font-sans", geist.variable)}>
+        <head>
+          <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" precedence="default" />
+        </head>
+        <body className="bg-surface font-body-md text-on-surface antialiased min-h-screen overflow-hidden">
+          {children}
+        </body>
+      </html>
+    );
+  }
 
   return (
     <html lang="en" className={cn("antialiased", geistMono.variable, inter.variable, plusJakarta.variable, "font-sans", geist.variable)}>
