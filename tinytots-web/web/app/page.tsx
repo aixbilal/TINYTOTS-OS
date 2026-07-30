@@ -142,11 +142,11 @@ function sectionLink(
 
 export default async function Home() {
   const content = await getHomepageContent();
-  const [trendingProducts, newArrivalsProducts, bestsellersProducts] = await Promise.all([
-    getProductsForSection(content.trending_selection_type, content.trending_category, content.trending_product_ids),
-    getProductsForSection(content.newarrivals_selection_type, content.newarrivals_category, content.newarrivals_product_ids),
-    getProductsForSection(content.bestsellers_selection_type, content.bestsellers_category, content.bestsellers_product_ids),
-  ]);
+  const trendingProducts = await getProductsForSection(
+    content.trending_selection_type,
+    content.trending_category,
+    content.trending_product_ids
+  );
 
   return (
     <main className="max-w-container-max mx-auto px-5 md:px-16 md:px-margin-desktop px-margin-mobile">

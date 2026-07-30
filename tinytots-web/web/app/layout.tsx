@@ -68,7 +68,7 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
   return (
     <div
       ref={containerRef}
-      className="fixed left-4 right-4 top-[72px] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-full sm:max-w-md bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-4 z-[100]"
+      className="fixed left-4 right-4 top-[72px] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[420px] bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-4 z-[100]"
     >
       <input
         autoFocus
