@@ -1,7 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
-import ProductStackCarousel from "@/components/ProductStackCarousel";
 import UspMarquee from "@/components/UspMarquee";
 import ProductCardStack from "@/components/ProductCardStack";
 import TestimonialsCarousel from "@/components/TestimonialsCarousel";
