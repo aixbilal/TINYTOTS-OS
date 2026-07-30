@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
+import ProductStackCarousel from "@/components/ProductStackCarousel";
 import TestimonialsCarousel from "@/components/TestimonialsCarousel";
 
 // Same root cause and fix as app/products/[id]/page.tsx and
@@ -301,13 +302,12 @@ export default async function Home() {
           </div>
         </div>
       </section>
-      {/* Trending Now again, single row, right before Why Choose Us */}
+      {/* Trending Now again, stacked-card style, right before Why Choose Us */}
       {trendingProducts.length > 0 && (
-        <section className="mb-stack-lg">
-          <ProductCarouselTabs
-            tabs={[{ key: "trending-2", label: content.trending_heading || "Trending Now", products: trendingProducts as any }]}
-          />
-        </section>
+        <ProductStackCarousel
+          products={trendingProducts as any}
+          heading={content.trending_heading || "Trending Now"}
+        />
       )}
 
       {/* Why Choose TinyTots — admin-editable USP icons, placed just above the footer */}
