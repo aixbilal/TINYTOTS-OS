@@ -48,9 +48,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (!["jazzcash", "easypaisa", "card", "cod"].includes(payment_method)) {
+    if (payment_method !== "cod") {
       return NextResponse.json(
-        { error: "Invalid payment method." },
+        { error: "Online payment methods are coming soon — please use Cash on Delivery for now." },
         { status: 400 }
       );
     }
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json(
             {
               error:
-                "Cash on Delivery is currently only available in select cities. Please choose Card, JazzCash, or Easypaisa instead.",
+                "Cash on Delivery is currently only available in select cities. Online payment options are coming soon — please check back or contact us for help with your order.",
             },
             { status: 400 }
           );

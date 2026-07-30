@@ -292,18 +292,35 @@ export default function CheckoutPage() {
             <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Payment method</h2>
             <div className="flex flex-col gap-2">
               {[
-                { value: "cod", label: "Cash on Delivery (Punjab & Islamabad only, for now)" },
-                { value: "card", label: "Card" },
-                { value: "jazzcash", label: "JazzCash" },
-                { value: "easypaisa", label: "Easypaisa" },
+                { value: "cod", label: "Cash on Delivery (Punjab & Islamabad only, for now)", comingSoon: false },
+                { value: "card", label: "Card", comingSoon: true },
+                { value: "jazzcash", label: "JazzCash", comingSoon: true },
+                { value: "easypaisa", label: "Easypaisa", comingSoon: true },
               ].map((option) => (
-                <label key={option.value} className={`flex items-center gap-3 border rounded-lg px-4 py-3 cursor-pointer transition-colors ${
-                  paymentMethod === option.value ? "border-primary bg-primary-container/10" : "border-outline-variant"
-                }`}>
-                  <input type="radio" name="payment_method" value={option.value}
-                    checked={paymentMethod === option.value}
-                    onChange={(e) => setPaymentMethod(e.target.value)} />
-                  <span className="font-body-sm text-body-sm text-on-surface">{option.label}</span>
+                <label
+                  key={option.value}
+                  className={`flex items-center justify-between gap-3 border rounded-lg px-4 py-3 transition-colors ${
+                    option.comingSoon
+                      ? "opacity-50 cursor-not-allowed border-outline-variant"
+                      : `cursor-pointer ${paymentMethod === option.value ? "border-primary bg-primary-container/10" : "border-outline-variant"}`
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="payment_method"
+                      value={option.value}
+                      checked={paymentMethod === option.value}
+                      disabled={option.comingSoon}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                    />
+                    <span className="font-body-sm text-body-sm text-on-surface">{option.label}</span>
+                  </span>
+                  {option.comingSoon && (
+                    <span className="font-label-md text-label-md text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded-full">
+                      Coming Soon
+                    </span>
+                  )}
                 </label>
               ))}
             </div>
