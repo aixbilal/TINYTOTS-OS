@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<body>
+<pre id="out"></pre>
+<script>
+const img = new Image();
+img.onload = () => {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0);
+  const d = ctx.getImageData(0, 0, W, H).data;
+  const lum = (x, y) => { const i = (y * W + x) * 4; return 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; };
+  const out = [];
+  // Group rows of ink into text lines and report each line's extents.
+  const lineProfile = (name, x0, y0, x1, y1, thresh = 14) => {
+    const vals = [];
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) vals.push(lum(x, y));
+    vals.sort((a, b) => a - b);
+    const bg = vals[Math.floor(vals.length * 0.75)];
+    out.push(`${name} (bg ${bg.toFixed(0)}) region x${x0}..${x1} y${y0}..${y1}`);
+    let run = null;
+    for (let y = y0; y <= y1; y++) {
+      let min = 1e9, max = -1, n = 0;
+      for (let x = x0; x <= x1; x++) {
+        if (Math.abs(lum(x, y) - bg) > thresh) { n++; if (x < min) min = x; if (x > max) max = x; }
+      }
+      if (n > 1) {
+        if (!run) run = { y0: y, y1: y, min, max };
+        else { run.y1 = y; run.min = Math.min(run.min, min); run.max = Math.max(run.max, max); }
+      } else if (run) {
+        out.push(`   line y ${run.y0}..${run.y1} (h ${run.y1 - run.y0 + 1}) x ${run.min}..${run.max} (w ${run.max - run.min + 1})`);
+        run = null;
+      }
+    }
+    if (run) out.push(`   line y ${run.y0}..${run.y1} (h ${run.y1 - run.y0 + 1}) x ${run.min}..${run.max} (w ${run.max - run.min + 1})`);
+  };
+
+  lineProfile("TRUST CELL 1", 40, 456, 252, 512);
+  lineProfile("TRUST CELL 2", 258, 456, 452, 512);
+  lineProfile("TESTIMONIAL CARD 1 TEXT", 256, 545, 500, 615);
+  lineProfile("TESTIMONIAL TITLE", 300, 518, 730, 545);
+  lineProfile("FOOTER LEFT", 30, 640, 220, 678, 20);
+  lineProfile("FOOTER FOLLOW", 400, 640, 500, 678, 20);
+  lineProfile("FOOTER SCAN", 800, 640, 925, 678, 20);
+  lineProfile("FEATURED LEFT", 30, 330, 215, 445);
+  lineProfile("HERO LEFT", 30, 12, 262, 310);
+  lineProfile("STATS", 868, 50, 1005, 300);
+  lineProfile("FEATURES OVERLAY", 512, 175, 620, 245, 10);
+  lineProfile("BADGE", 470, 75, 530, 135, 10);
+  document.getElementById("out").textContent = out.join("\n");
+};
+img.src = "reference.png";
+</script>
+</body>
+</html>

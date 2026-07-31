@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<body>
+<pre id="out"></pre>
+<script>
+const img = new Image();
+img.onload = () => {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0);
+  const data = ctx.getImageData(0, 0, W, H).data;
+  const lum = (x, y) => {
+    const i = (y * W + x) * 4;
+    return 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+  };
+  const rgb = (x, y) => {
+    const i = (y * W + x) * 4;
+    return [data[i], data[i + 1], data[i + 2]];
+  };
+  const lines = [];
+  lines.push(`size ${W}x${H}`);
+
+  // Mean luminance per row and per column, to locate band boundaries.
+  const rowMean = [];
+  for (let y = 0; y < H; y++) {
+    let s = 0;
+    for (let x = 0; x < W; x += 2) s += lum(x, y);
+    rowMean.push(s / Math.ceil(W / 2));
+  }
+  lines.push("ROW MEAN TRANSITIONS (|delta|>3):");
+  for (let y = 1; y < H; y++) {
+    const d = rowMean[y] - rowMean[y - 1];
+    if (Math.abs(d) > 3) lines.push(`  y=${y} ${rowMean[y - 1].toFixed(1)} -> ${rowMean[y].toFixed(1)} (${d.toFixed(1)})`);
+  }
+
+  const scanRow = (y, threshold = 12) => {
+    const out = [];
+    for (let x = 1; x < W; x++) {
+      const d = lum(x, y) - lum(x - 1, y);
+      if (Math.abs(d) > threshold) out.push(`${x}${d > 0 ? "+" : "-"}`);
+    }
+    lines.push(`ROW y=${y}: ${out.join(" ")}`);
+  };
+  const scanCol = (x, threshold = 12) => {
+    const out = [];
+    for (let y = 1; y < H; y++) {
+      const d = lum(x, y) - lum(x, y - 1);
+      if (Math.abs(d) > threshold) out.push(`${y}${d > 0 ? "+" : "-"}`);
+    }
+    lines.push(`COL x=${x}: ${out.join(" ")}`);
+  };
+
+  for (const y of [40, 150, 300, 318, 385, 445, 470, 484, 512, 560, 575, 600, 628, 640, 660]) scanRow(y);
+  for (const x of [20, 60, 100, 200, 300, 500, 700, 860, 880, 900, 960, 1000]) scanCol(x);
+
+  lines.push(`corner colors: TL=${rgb(2,2)} hero-left=${rgb(20,200)} featured-bg=${rgb(20,400)} trust-inside=${rgb(200,484)} footer=${rgb(500,660)}`);
+  document.getElementById("out").textContent = lines.join("\n");
+};
+img.src = "reference.png";
+</script>
+</body>
+</html>

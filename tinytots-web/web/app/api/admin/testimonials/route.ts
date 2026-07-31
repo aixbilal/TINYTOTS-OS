@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 
 const createSchema = z.object({
   customer_name: z.string().min(1),
+  customer_image_url: z.string().nullable().optional(),
   rating: z.number().int().min(1).max(5).default(5),
   quote: z.string().min(1),
   is_published: z.boolean().default(true),
@@ -36,5 +37,23 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin.from("testimonials").insert(parsed.data).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const { data: activeCampaign } = await supabaseAdmin
+    .from("campaigns")
+    .select("id, testimonial_ids")
+    .eq("is_active", true)
+    .maybeSingle();
+  if (activeCampaign) {
+    const testimonialIds = [...new Set([...(activeCampaign.testimonial_ids || []), data.id])];
+    const { error: campaignError } = await supabaseAdmin
+      .from("campaigns")
+      .update({ testimonial_ids: testimonialIds, updated_at: new Date().toISOString() })
+      .eq("id", activeCampaign.id);
+    if (campaignError) {
+      await supabaseAdmin.from("testimonials").delete().eq("id", data.id);
+      return NextResponse.json({ error: campaignError.message }, { status: 500 });
+    }
+  }
+
   return NextResponse.json({ testimonial: data });
 }

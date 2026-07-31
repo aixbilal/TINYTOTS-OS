@@ -1,0 +1,23 @@
+QA proxy on http://localhost:4020
+GET /api/campaign/active
+GET /signage
+GET /_next/webpack-hmr?id=ptV14QMypUZKdvf13-zNJ
+GET /favicon.ico?favicon.2vob68tjqpejf.ico
+GET /_next/webpack-hmr?id=ptV14QMypUZKdvf13-zNJ
+GET /
+GET /
+GET /null
+GET /_next/webpack-hmr?id=5Vtig8_lcdzM8HbAAc0NF
+GET /_next/webpack-hmr?id=5Vtig8_lcdzM8HbAAc0NF
+GET /_next/webpack-hmr?id=5Vtig8_lcdzM8HbAAc0NF
+GET /_next/webpack-hmr?id=5Vtig8_lcdzM8HbAAc0NF
+GET /favicon.ico?favicon.2vob68tjqpejf.ico
+GET /_next/webpack-hmr?id=5Vtig8_lcdzM8HbAAc0NF
+GET /
+GET /
+GET /null
+GET /_next/webpack-hmr?id=PKmM3iqJmxhvuDSY_m3Op
+GET /null
+GET /_next/webpack-hmr?id=PKmM3iqJmxhvuDSY_m3Op
+GET /_next/webpack-hmr?id=PKmM3iqJmxhvuDSY_m3Op
+GET /_next/webpack-hmr?id=PKmM3iqJmxhvuDSY_m3Op

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface Testimonial {
   id: number;
@@ -27,12 +28,27 @@ function TestimonialCard({ t }: { t: Testimonial }) {
 export default function TestimonialsCarousel() {
   const [items, setItems] = useState<Testimonial[]>([]);
 
-  useEffect(() => {
-    fetch("/api/testimonials")
+  const load = useCallback(() => {
+    fetch("/api/testimonials", { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => setItems(json.testimonials || []))
-      .catch(() => setItems([]));
+      .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    load();
+    const channel = supabase
+      .channel("homepage-signage-revision")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "signage_revision", filter: "id=eq.1" },
+        load
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [load]);
 
   if (items.length === 0) return null;
 

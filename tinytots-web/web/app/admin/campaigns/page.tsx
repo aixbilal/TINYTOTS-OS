@@ -3,6 +3,18 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { adminFetch } from "@/lib/admin-fetch";
+import CampaignBannerEditor from "@/components/admin/CampaignBannerEditor";
+import CampaignQrEditor from "@/components/admin/CampaignQrEditor";
+import {
+  DEFAULT_BANNER_CROP,
+  DEFAULT_BANNER_FOCAL_POINT,
+  DEFAULT_CAMPAIGN_THEME,
+  type BannerCrop,
+  type BannerFocalPoint,
+  type CampaignFooterSettings,
+  type CampaignSocialLink,
+  type CampaignTheme,
+} from "@/lib/signage-campaign";
 
 /* ------------------------------------------------------------------
  * Suggested content — click-to-insert presets so the admin doesn't have
@@ -50,11 +62,11 @@ interface Campaign {
   cta_text: string;
   cta_url: string;
   cta_visible: boolean;
-  hero_mode: "single_image" | "separate_assets";
-  hero_banner_image: string | null;
-  hero_product_image: string | null;
+  hero_banner_original_url: string | null;
+  hero_banner_preview_url: string | null;
+  hero_banner_crop: BannerCrop;
+  hero_banner_focal_point: BannerFocalPoint;
   hero_badge: string | null;
-  lifestyle_image: string | null;
   feature_list: FeatureItem[];
   statistics: StatItem[];
   featured_heading: string;
@@ -65,6 +77,11 @@ interface Campaign {
   featured_product_ids: number[] | null;
   marquee_speed_seconds: number;
   marquee_direction: "left" | "right";
+  trust_item_ids: number[];
+  testimonial_ids: number[];
+  social_links: CampaignSocialLink[];
+  footer_settings: CampaignFooterSettings | null;
+  theme: CampaignTheme;
 }
 interface ProductLite {
   id: number;
@@ -74,6 +91,21 @@ interface ProductLite {
 interface CategoryLite {
   name: string;
   slug: string;
+}
+interface TrustItemOption {
+  id: number;
+  icon: string;
+  heading: string;
+  description: string;
+  is_active: boolean;
+}
+interface TestimonialOption {
+  id: number;
+  customer_name: string;
+  customer_image_url: string | null;
+  rating: number;
+  quote: string;
+  is_published: boolean;
 }
 
 const blankCampaign = (name: string): Partial<Campaign> => ({ name });
@@ -91,6 +123,32 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 const inputClass =
   "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900";
+
+const THEME_FIELDS: { key: keyof CampaignTheme; label: string }[] = [
+  { key: "primary", label: "Primary" },
+  { key: "secondary", label: "Secondary" },
+  { key: "accent", label: "Accent" },
+  { key: "button", label: "Button" },
+  { key: "buttonText", label: "Button text" },
+  { key: "badge", label: "Badge" },
+  { key: "badgeText", label: "Badge text" },
+  { key: "background", label: "Page background" },
+  { key: "surface", label: "Hero surface" },
+  { key: "card", label: "Card" },
+  { key: "text", label: "Main text" },
+  { key: "mutedText", label: "Muted text" },
+  { key: "border", label: "Borders" },
+  { key: "icon", label: "Icons" },
+  { key: "footer", label: "Footer" },
+  { key: "footerText", label: "Footer text" },
+];
+
+const SOCIAL_PLATFORMS: CampaignSocialLink["platform"][] = [
+  "instagram",
+  "facebook",
+  "pinterest",
+  "tiktok",
+];
 
 /* ------------------------------------------------------------------
  * Featured product/category picker — same pattern as the homepage and
@@ -193,6 +251,8 @@ function CampaignEditor({
   campaign,
   categories,
   products,
+  trustItems,
+  testimonials,
   onChange,
   onSave,
   saving,
@@ -200,6 +260,8 @@ function CampaignEditor({
   campaign: Campaign;
   categories: CategoryLite[];
   products: ProductLite[];
+  trustItems: TrustItemOption[];
+  testimonials: TestimonialOption[];
   onChange: (c: Campaign) => void;
   onSave: () => void;
   saving: boolean;
@@ -208,6 +270,16 @@ function CampaignEditor({
 
   const features = campaign.feature_list || [];
   const stats = campaign.statistics || [];
+  const theme = { ...DEFAULT_CAMPAIGN_THEME, ...(campaign.theme || {}) };
+  const socialLinks = SOCIAL_PLATFORMS.map(
+    (platform) =>
+      (campaign.social_links || []).find((link) => link.platform === platform) || {
+        platform,
+        account_name: "",
+        url: "",
+        is_active: false,
+      }
+  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -250,6 +322,59 @@ function CampaignEditor({
         </div>
       </section>
 
+      <section className="border border-gray-200 rounded-lg p-5">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900">Campaign Theme</h2>
+            <p className="text-xs text-gray-500">
+              Palette changes only. Every campaign keeps the same approved signage layout and typography.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => set("theme", DEFAULT_CAMPAIGN_THEME)}
+            className="shrink-0 rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700"
+          >
+            Reset palette
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {THEME_FIELDS.map(({ key, label }) => (
+            <label key={key} className="flex items-center gap-2 rounded-md border border-gray-200 p-2">
+              <input
+                type="color"
+                value={theme[key]}
+                onChange={(event) => set("theme", { ...theme, [key]: event.target.value })}
+                className="h-9 w-10 cursor-pointer rounded border-0 bg-transparent p-0"
+              />
+              <span className="min-w-0">
+                <span className="block text-xs font-medium text-gray-700">{label}</span>
+                <span className="block truncate font-mono text-[10px] text-gray-500">{theme[key]}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </section>
+
+      {/* Preview */}
+      <section className="border border-gray-200 rounded-lg p-5">
+        <h2 className="text-base font-semibold text-gray-900 mb-1">Campaign Preview</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Preview this campaign without changing the live signage.
+        </p>
+        <div className="flex items-center">
+          <a
+            href={`/signage?preview=${campaign.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 text-sm font-medium px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            <span className="material-symbols-outlined text-[18px]">visibility</span>
+            Preview
+          </a>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-4">CTA Button</h2>
@@ -267,61 +392,34 @@ function CampaignEditor({
         </div>
       </section>
 
-      {/* Hero Banner mode */}
+      {/* Hero Banner */}
       <section className="border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">Hero Banner</h2>
         <p className="text-xs text-gray-500 mb-4">
-          Recommended: upload one complete banner image (kid + product + background already composed). You can switch
-          to separate assets later without losing either set of images.
+          Upload visual artwork only: child, product, environment, lighting and background. Collection copy, CTA,
+          badge and feature list remain editable HTML overlays. The production crop is fixed at 11:4.
         </p>
-        <div className="flex gap-2 mb-4">
-          <button
-            type="button"
-            onClick={() => set("hero_mode", "single_image")}
-            className={`text-sm font-medium px-3 py-1.5 rounded-md ${
-              campaign.hero_mode === "single_image" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Single Banner Image (recommended)
-          </button>
-          <button
-            type="button"
-            onClick={() => set("hero_mode", "separate_assets")}
-            className={`text-sm font-medium px-3 py-1.5 rounded-md ${
-              campaign.hero_mode === "separate_assets" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Separate Assets
-          </button>
-        </div>
-
-        {campaign.hero_mode === "single_image" ? (
-          <Field label="Hero banner image URL">
-            <input
-              value={campaign.hero_banner_image || ""}
-              onChange={(e) => set("hero_banner_image", e.target.value)}
-              placeholder="https://..."
-              className={inputClass}
-            />
-          </Field>
-        ) : (
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Hero product image URL">
-              <input
-                value={campaign.hero_product_image || ""}
-                onChange={(e) => set("hero_product_image", e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Lifestyle image URL">
-              <input
-                value={campaign.lifestyle_image || ""}
-                onChange={(e) => set("lifestyle_image", e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-          </div>
-        )}
+        <CampaignBannerEditor
+          campaignId={campaign.id}
+          originalUrl={campaign.hero_banner_original_url}
+          previewUrl={campaign.hero_banner_preview_url}
+          savedCrop={campaign.hero_banner_crop || DEFAULT_BANNER_CROP}
+          savedFocalPoint={campaign.hero_banner_focal_point || DEFAULT_BANNER_FOCAL_POINT}
+          onUpdated={(updated) =>
+            onChange({
+              ...campaign,
+              hero_banner_original_url: updated.hero_banner_original_url
+                ? String(updated.hero_banner_original_url)
+                : null,
+              hero_banner_preview_url: updated.hero_banner_preview_url
+                ? String(updated.hero_banner_preview_url)
+                : null,
+              hero_banner_crop: (updated.hero_banner_crop as BannerCrop) || DEFAULT_BANNER_CROP,
+              hero_banner_focal_point:
+                (updated.hero_banner_focal_point as BannerFocalPoint) || DEFAULT_BANNER_FOCAL_POINT,
+            })
+          }
+        />
       </section>
 
       {/* Feature list */}
@@ -529,6 +627,210 @@ function CampaignEditor({
         />
       </section>
 
+      <section className="border border-gray-200 rounded-lg p-5">
+        <h2 className="text-base font-semibold text-gray-900 mb-1">Campaign Trust Strip</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Select the trust points owned by this campaign. Their order follows the list below.
+        </p>
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          {trustItems.map((item) => {
+            const selected = (campaign.trust_item_ids || []).includes(item.id);
+            return (
+              <label
+                key={item.id}
+                className={`flex items-start gap-2 rounded-md border p-3 ${
+                  selected ? "border-gray-900 bg-gray-50" : "border-gray-200"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onChange={() => {
+                    const current = campaign.trust_item_ids || [];
+                    set(
+                      "trust_item_ids",
+                      selected ? current.filter((id) => id !== item.id) : [...current, item.id]
+                    );
+                  }}
+                />
+                <span>
+                  <span className="block text-sm font-medium text-gray-900">{item.heading}</span>
+                  <span className="block text-xs text-gray-500">{item.description}</span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="border border-gray-200 rounded-lg p-5">
+        <h2 className="text-base font-semibold text-gray-900 mb-1">Campaign Testimonials</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Only selected published testimonials are returned when this campaign is active.
+        </p>
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          {testimonials.map((testimonial) => {
+            const selected = (campaign.testimonial_ids || []).includes(testimonial.id);
+            return (
+              <label
+                key={testimonial.id}
+                className={`flex items-start gap-2 rounded-md border p-3 ${
+                  selected ? "border-gray-900 bg-gray-50" : "border-gray-200"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onChange={() => {
+                    const current = campaign.testimonial_ids || [];
+                    set(
+                      "testimonial_ids",
+                      selected
+                        ? current.filter((id) => id !== testimonial.id)
+                        : [...current, testimonial.id]
+                    );
+                  }}
+                />
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-gray-900">{testimonial.customer_name}</span>
+                  <span className="block text-xs text-amber-600">{"★".repeat(testimonial.rating)}</span>
+                  <span className="block truncate text-xs text-gray-500">{testimonial.quote}</span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="border border-gray-200 rounded-lg p-5">
+        <h2 className="text-base font-semibold text-gray-900 mb-1">Campaign Social Links</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          These links travel with this campaign and replace the old shared signage configuration.
+        </p>
+        <div className="flex flex-col gap-2">
+          {socialLinks.map((link) => (
+            <div key={link.platform} className="grid grid-cols-[100px_1fr_1fr_auto] items-center gap-2">
+              <span className="text-sm font-medium capitalize text-gray-700">{link.platform}</span>
+              <input
+                value={link.account_name}
+                onChange={(event) =>
+                  set(
+                    "social_links",
+                    socialLinks.map((item) =>
+                      item.platform === link.platform ? { ...item, account_name: event.target.value } : item
+                    )
+                  )
+                }
+                placeholder="@account"
+                className={inputClass}
+              />
+              <input
+                value={link.url}
+                onChange={(event) =>
+                  set(
+                    "social_links",
+                    socialLinks.map((item) =>
+                      item.platform === link.platform ? { ...item, url: event.target.value } : item
+                    )
+                  )
+                }
+                placeholder="https://..."
+                className={inputClass}
+              />
+              <label className="flex items-center gap-1 text-xs text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={link.is_active}
+                  onChange={(event) =>
+                    set(
+                      "social_links",
+                      socialLinks.map((item) =>
+                        item.platform === link.platform ? { ...item, is_active: event.target.checked } : item
+                      )
+                    )
+                  }
+                />
+                Visible
+              </label>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="border border-gray-200 rounded-lg p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900">Campaign Footer</h2>
+            <p className="text-xs text-gray-500">Optional footer and QR configuration owned by this campaign.</p>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={campaign.footer_settings !== null}
+              onChange={(event) =>
+                set(
+                  "footer_settings",
+                  event.target.checked
+                    ? {
+                        website_url: "www.tinytotsofficial.com",
+                        qr_code_image_url: null,
+                        qr_visible: true,
+                        scan_label: "Scan to Shop",
+                      }
+                    : null
+                )
+              }
+            />
+            Enable footer
+          </label>
+        </div>
+        {campaign.footer_settings && (
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Website URL">
+              <input
+                value={campaign.footer_settings.website_url}
+                onChange={(event) =>
+                  set("footer_settings", { ...campaign.footer_settings!, website_url: event.target.value })
+                }
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Scan label">
+              <input
+                value={campaign.footer_settings.scan_label}
+                onChange={(event) =>
+                  set("footer_settings", { ...campaign.footer_settings!, scan_label: event.target.value })
+                }
+                className={inputClass}
+              />
+            </Field>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-gray-600">QR image</span>
+              <CampaignQrEditor
+                campaignId={campaign.id}
+                imageUrl={campaign.footer_settings.qr_code_image_url}
+                onUpdated={(updated) =>
+                  onChange({
+                    ...campaign,
+                    footer_settings: updated.footer_settings as CampaignFooterSettings,
+                  })
+                }
+              />
+            </div>
+            <label className="flex items-center gap-2 self-end pb-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={campaign.footer_settings.qr_visible}
+                onChange={(event) =>
+                  set("footer_settings", { ...campaign.footer_settings!, qr_visible: event.target.checked })
+                }
+              />
+              Show QR section
+            </label>
+          </div>
+        )}
+      </section>
+
       <button
         type="button"
         onClick={onSave}
@@ -548,6 +850,8 @@ export default function AdminCampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [products, setProducts] = useState<ProductLite[]>([]);
   const [categories, setCategories] = useState<CategoryLite[]>([]);
+  const [trustItems, setTrustItems] = useState<TrustItemOption[]>([]);
+  const [testimonials, setTestimonials] = useState<TestimonialOption[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [draft, setDraft] = useState<Campaign | null>(null);
 
@@ -564,6 +868,8 @@ export default function AdminCampaignsPage() {
         setCampaigns(data.campaigns || []);
         setProducts(data.products || []);
         setCategories(data.categories || []);
+        setTrustItems(data.trust_items || []);
+        setTestimonials(data.testimonials || []);
         if (!selectedId && data.campaigns?.length) {
           setSelectedId(data.campaigns[0].id);
           setDraft(data.campaigns[0]);
@@ -579,6 +885,8 @@ export default function AdminCampaignsPage() {
   }
 
   useEffect(() => {
+    // The first campaign list is loaded when this client-side admin screen mounts.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -655,22 +963,6 @@ export default function AdminCampaignsPage() {
     }
   }
 
-  async function deactivate(id: number) {
-    try {
-      const res = await adminFetch(`/api/admin/campaigns/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: false }),
-      });
-      if (res.ok) {
-        await loadAll();
-        flash("Campaign deactivated.");
-      }
-    } catch {
-      setErrorMsg("Failed to deactivate campaign");
-    }
-  }
-
   async function duplicate(id: number) {
     try {
       const res = await adminFetch(`/api/admin/campaigns/${id}/duplicate`, { method: "POST" });
@@ -714,7 +1006,9 @@ export default function AdminCampaignsPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Campaign Management</h1>
-          <p className="text-sm text-gray-500">Only one campaign is live on /signage at a time.</p>
+          <p className="text-sm text-gray-500">
+            Activating a campaign atomically replaces the currently live campaign on /signage.
+          </p>
         </div>
         <button
           onClick={createCampaign}
@@ -747,13 +1041,9 @@ export default function AdminCampaignsPage() {
                 )}
               </div>
               <div className="flex gap-1.5 flex-wrap" onClick={(e) => e.stopPropagation()}>
-                {!c.is_active ? (
+                {!c.is_active && (
                   <button onClick={() => activate(c.id)} className="text-xs px-2 py-1 rounded bg-gray-900 text-white hover:bg-gray-800">
                     Activate
-                  </button>
-                ) : (
-                  <button onClick={() => deactivate(c.id)} className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200">
-                    Deactivate
                   </button>
                 )}
                 <button onClick={() => duplicate(c.id)} className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200">
@@ -779,6 +1069,8 @@ export default function AdminCampaignsPage() {
               campaign={draft}
               categories={categories}
               products={products}
+              trustItems={trustItems}
+              testimonials={testimonials}
               onChange={setDraft}
               onSave={saveDraft}
               saving={saving}

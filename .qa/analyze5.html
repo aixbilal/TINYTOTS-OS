@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<body>
+<pre id="out"></pre>
+<script>
+const img = new Image();
+img.onload = () => {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0);
+  const d = ctx.getImageData(0, 0, W, H).data;
+  const lum = (x, y) => { const i = (y * W + x) * 4; return 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; };
+  const out = [];
+  const profile = (name, x0, y0, x1, y1, thresh) => {
+    const vals = [];
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) vals.push(lum(x, y));
+    vals.sort((a, b) => a - b);
+    const bg = vals[Math.floor(vals.length * 0.8)];
+    out.push(`${name} bg=${bg.toFixed(0)} thresh=${thresh}`);
+    for (let y = y0; y <= y1; y++) {
+      let min = 1e9, max = -1, n = 0;
+      for (let x = x0; x <= x1; x++) {
+        if (Math.abs(lum(x, y) - bg) > thresh) { n++; if (x < min) min = x; if (x > max) max = x; }
+      }
+      out.push(`   y=${y} n=${String(n).padStart(3)} ${n ? `x ${min}..${max} (w ${max - min + 1})` : ""}`);
+    }
+  };
+  profile("STAT1 NUMBER", 876, 78, 952, 116, 25);
+  profile("STAT1 LABEL", 876, 110, 960, 130, 20);
+  profile("TRUST1 TEXT", 88, 460, 240, 508, 25);
+  profile("STARS", 258, 542, 348, 572, 25);
+  profile("LOGO", 28, 14, 156, 64, 25);
+  document.getElementById("out").textContent = out.join("\n");
+};
+img.src = "reference.png";
+</script>
+</body>
+</html>

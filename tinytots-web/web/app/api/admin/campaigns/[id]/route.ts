@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
+import { normalizeCampaignTheme } from "@/lib/signage-campaign";
+import { removeUnreferencedCampaignAssets } from "@/lib/campaign-storage";
 
 const EDITABLE_FIELDS = [
   "name",
-  "is_active",
-  "scheduled_at",
   "collection_label",
   "heading",
   "subtitle",
@@ -13,11 +13,7 @@ const EDITABLE_FIELDS = [
   "cta_text",
   "cta_url",
   "cta_visible",
-  "hero_mode",
-  "hero_banner_image",
-  "hero_product_image",
   "hero_badge",
-  "lifestyle_image",
   "feature_list",
   "statistics",
   "featured_heading",
@@ -30,6 +26,9 @@ const EDITABLE_FIELDS = [
   "marquee_direction",
   "trust_item_ids",
   "testimonial_ids",
+  "social_links",
+  "footer_settings",
+  "theme",
 ] as const;
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -49,10 +48,52 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   try {
-    const body = await req.json();
-    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+    const body = (await req.json()) as Record<string, unknown>;
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     for (const field of EDITABLE_FIELDS) {
       if (field in body) updates[field] = body[field];
+    }
+    if ("theme" in body) updates.theme = normalizeCampaignTheme(body.theme);
+    if ("trust_item_ids" in body) {
+      updates.trust_item_ids = Array.isArray(body.trust_item_ids)
+        ? body.trust_item_ids.map(Number).filter(Number.isFinite)
+        : [];
+    }
+    if ("testimonial_ids" in body) {
+      updates.testimonial_ids = Array.isArray(body.testimonial_ids)
+        ? body.testimonial_ids.map(Number).filter(Number.isFinite)
+        : [];
+    }
+    if ("social_links" in body) {
+      updates.social_links = Array.isArray(body.social_links)
+        ? body.social_links
+            .filter(
+              (link): link is Record<string, unknown> =>
+                !!link &&
+                typeof link === "object" &&
+                ["instagram", "facebook", "pinterest", "tiktok"].includes(
+                  String((link as Record<string, unknown>).platform)
+                )
+            )
+            .map((link) => ({
+              platform: String(link.platform),
+              account_name: String(link.account_name || "").trim(),
+              url: String(link.url || "").trim(),
+              is_active: link.is_active !== false,
+            }))
+        : [];
+    }
+    if ("footer_settings" in body) {
+      const footer = body.footer_settings as Record<string, unknown> | null;
+      updates.footer_settings =
+        footer && typeof footer === "object"
+          ? {
+              website_url: String(footer.website_url || "").trim(),
+              qr_code_image_url: footer.qr_code_image_url ? String(footer.qr_code_image_url) : null,
+              qr_visible: footer.qr_visible !== false,
+              scan_label: String(footer.scan_label || "Scan to Shop").trim(),
+            }
+          : null;
     }
 
     const { data, error } = await supabaseAdmin
@@ -76,7 +117,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
 
   // Guard against deleting the only live campaign and leaving the TV blank.
-  const { data: target } = await supabaseAdmin.from("campaigns").select("is_active").eq("id", id).maybeSingle();
+  const { data: target } = await supabaseAdmin
+    .from("campaigns")
+    .select("is_active, hero_banner_original_url, hero_banner_preview_url, footer_settings")
+    .eq("id", id)
+    .maybeSingle();
   if (target?.is_active) {
     return NextResponse.json(
       { error: "Can't delete the active campaign — activate a different one first." },
@@ -86,5 +131,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   const { error } = await supabaseAdmin.from("campaigns").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const footer = target?.footer_settings as Record<string, unknown> | null;
+  await removeUnreferencedCampaignAssets([
+    target?.hero_banner_original_url || null,
+    target?.hero_banner_preview_url || null,
+    footer?.qr_code_image_url ? String(footer.qr_code_image_url) : null,
+  ]);
   return NextResponse.json({ success: true });
 }

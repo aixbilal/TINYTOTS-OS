@@ -1,11 +1,40 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import {
+  normalizeBannerCrop,
+  normalizeBannerFocalPoint,
+  normalizeCampaignTheme,
+} from "@/lib/signage-campaign";
 
 // The TV in the shop leaves this tab open indefinitely, so this must never
 // serve a stale cached response.
 export const dynamic = "force-dynamic";
 
-async function resolveFeaturedProducts(campaign: any) {
+type CampaignRow = {
+  id: number;
+  updated_at: string;
+  featured_selection_type: string | null;
+  featured_category: string | null;
+  featured_product_ids: number[] | null;
+  trust_item_ids: number[] | null;
+  testimonial_ids: number[] | null;
+  social_links: unknown;
+  footer_settings: unknown;
+  theme: unknown;
+  hero_banner_crop: unknown;
+  hero_banner_focal_point: unknown;
+  [key: string]: unknown;
+};
+
+type TestimonialRow = {
+  id: number;
+  customer_name: string;
+  customer_image_url: string | null;
+  rating: number;
+  quote: string;
+};
+
+async function resolveFeaturedProducts(campaign: CampaignRow) {
   if (campaign.featured_selection_type === "category" && campaign.featured_category) {
     const { data } = await supabaseAdmin
       .from("products")
@@ -26,59 +55,66 @@ async function resolveFeaturedProducts(campaign: any) {
       .eq("is_active", true);
     if (data?.length) {
       // Preserve the admin's chosen order — .in() doesn't guarantee it.
-      const byId = new Map(data.map((p: any) => [p.id, p]));
+      const byId = new Map(data.map((product) => [product.id, product]));
       return campaign.featured_product_ids.map((id: number) => byId.get(id)).filter(Boolean);
     }
   }
 
-  // Fallback: newest active products, so the marquee is never empty before
-  // an admin configures this campaign's selection.
-  const { data } = await supabaseAdmin
-    .from("products")
-    .select("id, name, image_url, category")
-    .eq("is_active", true)
-    .not("image_url", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(8);
-  return data || [];
+  return [];
 }
 
-export async function GET() {
-  const { data: campaign } = await supabaseAdmin
-    .from("campaigns")
-    .select("*")
-    .eq("is_active", true)
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+export async function GET(req: NextRequest) {
+  // Preview mode shows a campaign without changing what is live.
+  const previewId = req.nextUrl.searchParams.get("preview");
 
-  if (!campaign) {
-    return NextResponse.json({ campaign: null, featured_products: [], trust_items: [], testimonials: [], social_links: [] });
+  let campaign: CampaignRow | null = null;
+  if (previewId) {
+    const { data } = await supabaseAdmin.from("campaigns").select("*").eq("id", previewId).maybeSingle();
+    campaign = data as CampaignRow | null;
+  } else {
+    const { data } = await supabaseAdmin
+      .from("campaigns")
+      .select("*")
+      .eq("is_active", true)
+      .maybeSingle();
+    campaign = data as CampaignRow | null;
   }
 
-  const [featuredProducts, { data: trustItems }, { data: testimonials }, { data: socialLinks }] = await Promise.all([
+  if (!campaign) {
+    return NextResponse.json({
+      campaign: null,
+      featured_products: [],
+      trust_items: [],
+      testimonials: [],
+      social_links: [],
+      footer_settings: null,
+    });
+  }
+
+  const [featuredProducts, { data: trustItems }, { data: testimonials }] = await Promise.all([
     resolveFeaturedProducts(campaign),
     campaign.trust_item_ids?.length
-      ? supabaseAdmin.from("trust_items").select("*").in("id", campaign.trust_item_ids).eq("is_active", true)
-      : supabaseAdmin.from("trust_items").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
+      ? supabaseAdmin
+          .from("trust_items")
+          .select("*")
+          .in("id", campaign.trust_item_ids)
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true })
+      : Promise.resolve({ data: [] }),
     campaign.testimonial_ids?.length
       ? supabaseAdmin
           .from("testimonials")
           .select("id, customer_name, customer_image_url, rating, quote")
           .in("id", campaign.testimonial_ids)
           .eq("is_published", true)
-      : supabaseAdmin
-          .from("testimonials")
-          .select("id, customer_name, customer_image_url, rating, quote")
-          .eq("is_published", true)
           .order("sort_order", { ascending: true })
-          .order("created_at", { ascending: false })
-          .limit(6),
-    supabaseAdmin.from("social_links").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
+      : Promise.resolve({ data: [] }),
   ]);
 
   return NextResponse.json({
     campaign: {
+      _id: campaign.id,
+      _updated_at: campaign.updated_at,
       collection_label: campaign.collection_label,
       heading: campaign.heading,
       subtitle: campaign.subtitle,
@@ -86,11 +122,11 @@ export async function GET() {
       cta_text: campaign.cta_text,
       cta_url: campaign.cta_url,
       cta_visible: campaign.cta_visible,
-      hero_mode: campaign.hero_mode || "separate_assets",
-      hero_banner_image: campaign.hero_banner_image,
-      hero_product_image: campaign.hero_product_image,
+      hero_banner_original_url: campaign.hero_banner_original_url,
+      hero_banner_preview_url: campaign.hero_banner_preview_url,
+      hero_banner_crop: normalizeBannerCrop(campaign.hero_banner_crop),
+      hero_banner_focal_point: normalizeBannerFocalPoint(campaign.hero_banner_focal_point),
       hero_badge: campaign.hero_badge,
-      lifestyle_image: campaign.lifestyle_image,
       feature_list: campaign.feature_list || [],
       statistics: campaign.statistics || [],
       featured_heading: campaign.featured_heading,
@@ -98,15 +134,22 @@ export async function GET() {
       featured_button_text: campaign.featured_button_text,
       marquee_speed_seconds: campaign.marquee_speed_seconds,
       marquee_direction: campaign.marquee_direction,
+      theme: normalizeCampaignTheme(campaign.theme),
     },
     featured_products: featuredProducts,
     trust_items: trustItems || [],
-    testimonials: (testimonials || []).map((t: any) => ({
-      name: t.customer_name,
-      image_url: t.customer_image_url,
-      rating: t.rating,
-      quote: t.quote,
+    testimonials: ((testimonials || []) as TestimonialRow[]).map((testimonial) => ({
+      name: testimonial.customer_name,
+      image_url: testimonial.customer_image_url,
+      rating: testimonial.rating,
+      quote: testimonial.quote,
     })),
-    social_links: socialLinks || [],
+    social_links: Array.isArray(campaign.social_links)
+      ? campaign.social_links.filter(
+          (link): link is Record<string, unknown> =>
+            !!link && typeof link === "object" && (link as Record<string, unknown>).is_active !== false
+        )
+      : [],
+    footer_settings: campaign.footer_settings || null,
   });
 }

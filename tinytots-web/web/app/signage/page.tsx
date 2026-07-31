@@ -1,13 +1,52 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Playfair_Display } from "next/font/google";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BadgeCheck,
+  Camera,
+  Globe,
+  Heart,
+  Leaf,
+  Link as LinkIcon,
+  Music2,
+  Pin,
+  RefreshCw,
+  ShieldCheck,
+  Shirt,
+  Sparkles,
+  Truck,
+  ThumbsUp,
+  Users,
+  Wind,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  DEFAULT_CAMPAIGN_THEME,
+  type BannerFocalPoint,
+  type CampaignFooterSettings,
+  type CampaignSocialLink,
+  type CampaignTheme,
+} from "@/lib/signage-campaign";
+import { supabase } from "@/lib/supabase";
+import styles from "./signage.module.css";
 
-/* ------------------------------------------------------------------
- * Types — mirrors the payload from /api/campaign/active
- * ------------------------------------------------------------------ */
+const playfair = Playfair_Display({ subsets: ["latin"], weight: ["700", "800"] });
+
 type FeatureItem = { icon: string; title: string; description: string };
 type StatItem = { icon: string; number: string; description: string };
+type Product = { id: number; name: string; image_url: string | null; category: string | null };
+type TrustItem = { id: number; icon: string; heading: string; description: string };
+type Testimonial = { name: string; image_url: string | null; rating: number; quote: string };
+
 type Campaign = {
+  _id?: number;
+  _updated_at?: string;
   collection_label: string;
   heading: string;
   subtitle: string;
@@ -15,9 +54,10 @@ type Campaign = {
   cta_text: string;
   cta_url: string;
   cta_visible: boolean;
-  hero_product_image: string | null;
+  hero_banner_original_url?: string | null;
+  hero_banner_preview_url?: string | null;
+  hero_banner_focal_point?: BannerFocalPoint;
   hero_badge: string | null;
-  lifestyle_image: string | null;
   feature_list: FeatureItem[];
   statistics: StatItem[];
   featured_heading: string;
@@ -25,493 +65,438 @@ type Campaign = {
   featured_button_text: string;
   marquee_speed_seconds: number;
   marquee_direction: "left" | "right";
+  theme: CampaignTheme;
 };
-type Product = { id: number; name: string; image_url: string | null; category: string | null };
-type TrustItem = { id: number; icon: string; heading: string; description: string };
-type Testimonial = { name: string; image_url: string | null; rating: number; quote: string };
+
 type CampaignPayload = {
   campaign: Campaign | null;
   featured_products: Product[];
   trust_items: TrustItem[];
   testimonials: Testimonial[];
+  social_links: CampaignSocialLink[];
+  footer_settings: CampaignFooterSettings | null;
 };
 
-/* ------------------------------------------------------------------
- * Fallbacks — only rendered before /api/campaign/active responds, or if
- * an admin hasn't configured a field yet.
- * ------------------------------------------------------------------ */
-const FALLBACK_CAMPAIGN: Campaign = {
-  collection_label: "AUTUMN 2026",
-  heading: "Premium Denim",
-  subtitle: "Made for Active Kids",
-  description: "Crafted from the finest fabrics for comfort, durability & style.",
-  cta_text: "Shop Collection",
-  cta_url: "/products",
-  cta_visible: true,
-  hero_product_image: "https://picsum.photos/seed/tt-hero-product/500/650",
-  hero_badge: "BEST SELLER",
-  lifestyle_image: "https://picsum.photos/seed/tt-hero-lifestyle/700/900",
-  feature_list: [
-    { icon: "eco", title: "Premium Cotton", description: "" },
-    { icon: "spa", title: "Soft on Skin", description: "" },
-    { icon: "verified_user", title: "Built to Last", description: "" },
-  ],
-  statistics: [
-    { icon: "group", number: "50,000+", description: "Happy Parents" },
-    { icon: "checkroom", number: "200+", description: "Unique Designs" },
-    { icon: "eco", number: "100%", description: "Premium Cotton" },
-  ],
-  featured_heading: "Featured Collection",
-  featured_description: "Handpicked styles that kids love and parents trust.",
-  featured_button_text: "Explore All",
-  marquee_speed_seconds: 45,
-  marquee_direction: "left",
+const ICON_COMPONENTS: Record<string, LucideIcon> = {
+  eco: Leaf,
+  spa: Sparkles,
+  verified_user: ShieldCheck,
+  verified: BadgeCheck,
+  shield_check: ShieldCheck,
+  local_shipping: Truck,
+  sync_alt: RefreshCw,
+  group: Users,
+  checkroom: Shirt,
+  air: Wind,
+  favorite: Heart,
 };
-const FALLBACK_PRODUCTS: Product[] = Array.from({ length: 8 }).map((_, i) => ({
-  id: i,
-  name: `Product ${i + 1}`,
-  image_url: `https://picsum.photos/seed/tt-featured-${i}/400/500`,
-  category: null,
-}));
-const FALLBACK_TRUST: TrustItem[] = [
-  { id: 1, icon: "shield_check", heading: "Trusted by 50,000+ Parents", description: "Quality you can rely on" },
-  { id: 2, icon: "eco", heading: "Premium Fabrics", description: "100% organic cotton" },
-  { id: 3, icon: "local_shipping", heading: "Fast & Reliable Delivery", description: "Nationwide shipping" },
-  { id: 4, icon: "spa", heading: "Soft on Sensitive Skin", description: "Gentle & comfortable" },
-  { id: 5, icon: "sync_alt", heading: "Easy Returns & Exchanges", description: "Hassle-free returns" },
-];
-const FALLBACK_TESTIMONIALS: Testimonial[] = [
-  { name: "Ayesha M.", image_url: null, rating: 5, quote: "Amazing quality and perfect fit for my son. The fabric is so soft and comfortable!" },
-  { name: "Zain R.", image_url: null, rating: 5, quote: "TinyTots never disappoints! Stylish, durable and my kids love wearing them." },
-  { name: "Hina K.", image_url: null, rating: 5, quote: "Best kids' clothing shop in town — the staff always help me find the right size." },
-];
 
-const EDGE_FADE_MASK = "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)";
-
-/* ------------------------------------------------------------------
- * Global keyframes
- * ------------------------------------------------------------------ */
-function GlobalKeyframes() {
-  return (
-    <style jsx global>{`
-      @keyframes marquee-left {
-        from {
-          transform: translateX(0);
-        }
-        to {
-          transform: translateX(-50%);
-        }
-      }
-      @keyframes marquee-right {
-        from {
-          transform: translateX(-50%);
-        }
-        to {
-          transform: translateX(0);
-        }
-      }
-      @keyframes hero-float {
-        0%,
-        100% {
-          transform: translateY(0);
-        }
-        50% {
-          transform: translateY(-14px);
-        }
-      }
-      @keyframes stat-fade-in {
-        from {
-          opacity: 0;
-          transform: translateY(8px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      .hide-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .hide-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-    `}</style>
-  );
+function SignageIcon({ name, className }: { name: string; className?: string }) {
+  const Icon = ICON_COMPONENTS[name] || Sparkles;
+  return <Icon className={`${styles.icon} ${className || ""}`} aria-hidden="true" strokeWidth={1.8} />;
 }
 
-/* ------------------------------------------------------------------
- * Header — logo only, no navigation
- * ------------------------------------------------------------------ */
+function themeVariables(theme: CampaignTheme): CSSProperties {
+  return {
+    "--campaign-primary": theme.primary,
+    "--campaign-secondary": theme.secondary,
+    "--campaign-accent": theme.accent,
+    "--campaign-button": theme.button,
+    "--campaign-button-text": theme.buttonText,
+    "--campaign-badge": theme.badge,
+    "--campaign-badge-text": theme.badgeText,
+    "--campaign-background": theme.background,
+    "--campaign-surface": theme.surface,
+    "--campaign-card": theme.card,
+    "--campaign-text": theme.text,
+    "--campaign-muted-text": theme.mutedText,
+    "--campaign-border": theme.border,
+    "--campaign-icon": theme.icon,
+    "--campaign-footer": theme.footer,
+    "--campaign-footer-text": theme.footerText,
+  } as CSSProperties;
+}
+
 function Header() {
   return (
-    <div className="flex flex-col px-[2.5vw] pt-[2vh] shrink-0">
-      <span className="font-display-md text-display-md text-primary font-extrabold tracking-tight leading-none">
-        TinyTots
-      </span>
-      <span className="font-label-md text-label-md text-on-surface-variant uppercase tracking-[0.25em] mt-1">
-        Premium Kids Wear
-      </span>
-    </div>
+    <header className={styles.header}>
+      <span className={`${playfair.className} ${styles.logo}`}>TinyTots</span>
+      <span className={styles.brandLine}>Premium Kids Wear</span>
+    </header>
   );
 }
 
-/* ------------------------------------------------------------------
- * Hero section
- * ------------------------------------------------------------------ */
-function Hero({ campaign }: { campaign: Campaign }) {
-  return (
-    <div className="grid grid-cols-12 items-center gap-[1.5vw] px-[2.5vw] py-[2vh] flex-1 min-h-0">
-      {/* Left: copy + CTA */}
-      <div className="col-span-3 flex flex-col gap-3">
-        <span className="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-[0.3em]">
-          {campaign.collection_label}
-        </span>
-        <h1 className="font-serif text-[clamp(2.5rem,4.2vw,4.5rem)] leading-[0.95] font-bold text-on-surface">
-          {campaign.heading.split("\n").map((line, i) => (
-            <span key={i} className={i === 1 ? "block text-primary" : "block"}>
-              {line}
-            </span>
-          ))}
-        </h1>
-        <div className="h-[3px] w-10 bg-primary mt-1" />
-        <span className="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-[0.2em]">
-          {campaign.subtitle}
-        </span>
-        <p className="font-body-md text-body-md text-on-surface-variant max-w-[26ch]">{campaign.description}</p>
-        {campaign.cta_visible && (
-          <a
-            href={campaign.cta_url}
-            className="mt-2 inline-flex items-center gap-2 self-start bg-primary text-white font-label-lg text-label-lg font-semibold uppercase tracking-wide px-6 py-3 rounded-md"
-          >
-            {campaign.cta_text}
-            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-          </a>
-        )}
-      </div>
+function Artwork({ campaign }: { campaign: Campaign }) {
+  const focal = campaign.hero_banner_focal_point || { x: 50, y: 50 };
+  const bannerUrl = campaign.hero_banner_preview_url;
 
-      {/* Center: floating hero product + feature list */}
-      <div className="col-span-5 relative flex items-center justify-center h-full">
-        <div className="absolute w-[65%] aspect-square rounded-t-full bg-gradient-to-b from-surface-container-lowest to-transparent top-0" />
-        <div className="absolute bottom-[8%] w-[55%] h-[6%] rounded-full bg-surface-container-lowest border border-outline-variant/30" />
-        {campaign.hero_product_image && (
-          <div
-            className="relative z-10 w-[42%] aspect-[500/650]"
-            style={{ animation: "hero-float 6s ease-in-out infinite" }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={campaign.hero_product_image} alt="" className="w-full h-full object-contain drop-shadow-2xl" />
-          </div>
+  return (
+    <div className={styles.bannerColumn}>
+      <div className={styles.banner}>
+        {bannerUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={bannerUrl}
+            alt=""
+            className={styles.bannerImage}
+            style={{ objectPosition: `${focal.x}% ${focal.y}%` }}
+          />
         )}
-        {campaign.hero_badge && (
-          <div className="absolute z-20 top-[12%] right-[14%] w-[13%] aspect-square rounded-full bg-surface border border-outline-variant/30 shadow-lg flex items-center justify-center text-center">
-            <span className="font-label-sm text-label-sm font-bold text-primary uppercase leading-tight px-1">
-              {campaign.hero_badge}
-            </span>
-          </div>
-        )}
-        {campaign.feature_list?.length > 0 && (
-          <div className="absolute right-[2%] top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
-            {campaign.feature_list.map((f, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-[20px]">{f.icon}</span>
-                <div className="leading-tight">
-                  <p className="font-label-md text-label-md font-semibold text-on-surface uppercase whitespace-nowrap">
-                    {f.title}
-                  </p>
-                  {f.description && <p className="font-body-sm text-body-sm text-on-surface-variant">{f.description}</p>}
-                </div>
+
+        {campaign.hero_badge && <div className={styles.badge}>{campaign.hero_badge}</div>}
+        {campaign.feature_list.length > 0 && (
+          <div className={styles.features}>
+            {campaign.feature_list.map((feature, index) => (
+              <div className={styles.feature} key={`${feature.title}-${index}`}>
+                <SignageIcon name={feature.icon} className={styles.featureIcon} />
+                <span>{feature.title}</span>
               </div>
             ))}
           </div>
         )}
       </div>
+    </div>
+  );
+}
 
-      {/* Lifestyle image */}
-      <div className="col-span-2 h-full flex items-center justify-center">
-        {campaign.lifestyle_image && (
-          <div className="relative w-full h-[92%] rounded-[3rem] rounded-tr-[6rem] overflow-hidden shadow-xl">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={campaign.lifestyle_image} alt="" className="w-full h-full object-cover" />
-          </div>
+function Hero({ campaign }: { campaign: Campaign }) {
+  return (
+    <section className={styles.hero}>
+      <div className={styles.heroCopy}>
+        <span className={styles.eyebrow}>{campaign.collection_label}</span>
+        <h1 className={`${playfair.className} ${styles.heroHeading}`}>
+          {campaign.heading.split("\n").map((line, index) => (
+            <span key={`${line}-${index}`}>{line}</span>
+          ))}
+        </h1>
+        <div className={styles.divider} />
+        <span className={styles.subtitle}>{campaign.subtitle}</span>
+        <p className={styles.description}>{campaign.description}</p>
+        {campaign.cta_visible && (
+          <a href={campaign.cta_url} className={styles.cta}>
+            {campaign.cta_text}
+            <ArrowRight className={styles.icon} aria-hidden="true" />
+          </a>
         )}
       </div>
 
-      {/* Statistics column */}
-      {campaign.statistics?.length > 0 && (
-        <div className="col-span-2 flex flex-col h-full justify-center gap-4">
-          {campaign.statistics.map((s, i) => (
-            <div
-              key={i}
-              className={`flex flex-col gap-1 ${i > 0 ? "pt-4 border-t border-outline-variant/25" : ""}`}
-              style={{ animation: `stat-fade-in 0.6s ease-out ${i * 0.15}s both` }}
-            >
-              <span className="material-symbols-outlined text-primary text-[26px]">{s.icon}</span>
-              <span className="font-headline-lg text-headline-lg font-extrabold text-on-surface leading-none">
-                {s.number}
-              </span>
-              <span className="font-body-sm text-body-sm text-on-surface-variant">{s.description}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+      <Artwork campaign={campaign} />
 
-/* ------------------------------------------------------------------
- * Featured Collection — heading/CTA on the left, infinite product
- * marquee filling the rest of the row.
- * ------------------------------------------------------------------ */
-function FeaturedCollection({ campaign, products }: { campaign: Campaign; products: Product[] }) {
-  const list = products.length ? products : FALLBACK_PRODUCTS;
-  const track = [...list, ...list];
-  const direction = campaign.marquee_direction === "right" ? "marquee-right" : "marquee-left";
-  const speed = campaign.marquee_speed_seconds || 45;
-
-  return (
-    <div className="flex items-center gap-[2vw] px-[2.5vw] py-[2.5vh] shrink-0">
-      <div className="flex flex-col gap-2 w-[16vw] shrink-0">
-        <h2 className="font-headline-lg text-headline-lg font-extrabold text-on-surface leading-tight">
-          {campaign.featured_heading}
-        </h2>
-        <div className="h-[3px] w-8 bg-primary" />
-        <p className="font-body-sm text-body-sm text-on-surface-variant">{campaign.featured_description}</p>
-        <a
-          href="/products"
-          className="font-label-lg text-label-lg text-primary font-semibold uppercase tracking-wide inline-flex items-center gap-1 mt-1"
-        >
-          {campaign.featured_button_text}
-          <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-        </a>
-      </div>
-
-      <div className="relative flex-1 overflow-hidden" style={{ WebkitMaskImage: EDGE_FADE_MASK, maskImage: EDGE_FADE_MASK }}>
-        <div
-          className="flex gap-4 w-max"
-          style={{ animation: `${direction} ${speed}s linear infinite`, willChange: "transform" }}
-        >
-          {track.map((p, i) => (
-            <div
-              key={i}
-              className="relative shrink-0 w-[11vw] aspect-[4/5] rounded-2xl overflow-hidden bg-surface-container-lowest border border-outline-variant/15"
-            >
-              {p.image_url && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={p.image_url} alt={p.name} className="w-full h-full object-contain p-3" draggable={false} />
-              )}
-              <button className="absolute top-2 right-2 w-7 h-7 rounded-full bg-surface/90 flex items-center justify-center">
-                <span className="material-symbols-outlined text-[16px] text-primary">favorite_border</span>
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------
- * Trust strip
- * ------------------------------------------------------------------ */
-function TrustStrip({ items }: { items: TrustItem[] }) {
-  const list = items.length ? items : FALLBACK_TRUST;
-
-  return (
-    <div className="mx-[2.5vw] rounded-2xl bg-surface-container-lowest border border-outline-variant/15 shrink-0">
-      <div className="flex items-stretch">
-        {list.map((item, i) => (
-          <div
-            key={item.id}
-            className={`flex-1 flex items-center gap-3 px-5 py-4 ${i > 0 ? "border-l border-outline-variant/15" : ""}`}
-          >
-            <span className="material-symbols-outlined text-primary text-[26px] shrink-0">{item.icon}</span>
-            <div className="leading-tight">
-              <p className="font-label-md text-label-md font-bold text-on-surface uppercase">{item.heading}</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">{item.description}</p>
-            </div>
+      <div className={styles.stats}>
+        {campaign.statistics.map((stat, index) => (
+          <div className={styles.stat} key={`${stat.number}-${index}`}>
+            <SignageIcon name={stat.icon} className={styles.statIcon} />
+            <span className={styles.statNumber}>{stat.number}</span>
+            <span className={styles.statDescription}>{stat.description}</span>
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
-/* ------------------------------------------------------------------
- * Testimonials — 2-up fade carousel with manual arrows + dots
- * ------------------------------------------------------------------ */
-function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
-  const list = testimonials.length ? testimonials : FALLBACK_TESTIMONIALS;
-  const pairs: Testimonial[][] = [];
-  for (let i = 0; i < list.length; i += 2) pairs.push(list.slice(i, i + 2));
+function FeaturedCollection({ campaign, products }: { campaign: Campaign; products: Product[] }) {
+  const animationClass = campaign.marquee_direction === "right" ? styles.marqueeRight : styles.marqueeLeft;
+  const productCards = (duplicate: boolean) =>
+    products.map((product) => (
+      <div className={styles.productCard} key={`${duplicate ? "copy" : "original"}-${product.id}`}>
+        {product.image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={product.image_url} alt={duplicate ? "" : product.name} draggable={false} />
+        )}
+        <Heart className={`${styles.icon} ${styles.favorite}`} aria-hidden="true" strokeWidth={1.8} />
+      </div>
+    ));
 
-  const [index, setIndex] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  return (
+    <section className={styles.featured}>
+      <div className={styles.featuredCopy}>
+        <div className={styles.featuredRule} />
+        <h2 className={styles.sectionHeading}>{campaign.featured_heading}</h2>
+        <p className={styles.featuredDescription}>{campaign.featured_description}</p>
+        <Link href="/products" className={styles.featuredLink}>
+          {campaign.featured_button_text} →
+        </Link>
+      </div>
+      <div className={styles.marquee} aria-label="Featured products">
+        <div
+          className={`${styles.marqueeTrack} ${animationClass}`}
+          style={{
+            animationDuration: `${campaign.marquee_speed_seconds || 45}s`,
+            animationTimingFunction: "linear",
+            animationIterationCount: "infinite",
+          }}
+        >
+          <div className={styles.marqueeGroup}>{productCards(false)}</div>
+          <div className={styles.marqueeGroup} aria-hidden="true">
+            {productCards(true)}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TrustStrip({ items }: { items: TrustItem[] }) {
+  return (
+    <section className={styles.trust}>
+      {items.map((item) => (
+        <div className={styles.trustItem} key={item.id}>
+          <SignageIcon name={item.icon} className={styles.trustIcon} />
+          <div>
+            <p className={styles.trustHeading}>{item.heading}</p>
+            <p className={styles.trustDescription}>{item.description}</p>
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
+  const pairs: Testimonial[][] = [];
+  for (let index = 0; index < testimonials.length; index += 2) {
+    pairs.push(testimonials.slice(index, index + 2));
+  }
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     if (pairs.length <= 1) return;
-    timerRef.current = setInterval(() => setIndex((i) => (i + 1) % pairs.length), 7000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    const timer = setInterval(() => setActiveIndex((current) => (current + 1) % pairs.length), 7000);
+    return () => clearInterval(timer);
   }, [pairs.length]);
 
-  const go = (delta: number) => setIndex((i) => (i + delta + pairs.length) % pairs.length);
-  const current = pairs[index] || [];
+  const move = (delta: number) => {
+    if (pairs.length > 0) {
+      setActiveIndex((current) => (current + delta + pairs.length) % pairs.length);
+    }
+  };
+  const visibleIndex = Math.min(activeIndex, Math.max(0, pairs.length - 1));
+
+  if (pairs.length === 0) return <section className={styles.testimonials} aria-hidden="true" />;
 
   return (
-    <div className="flex flex-col items-center gap-4 px-[2.5vw] py-[2.5vh] shrink-0">
-      <div className="flex items-center gap-3">
-        <h2 className="font-label-lg text-label-lg font-bold text-on-surface uppercase tracking-[0.15em]">
-          Loved by Parents
-        </h2>
+    <section className={styles.testimonials}>
+      <div className={styles.testimonialTitleRow}>
+        <span className={styles.testimonialTitleLine} aria-hidden="true" />
+        <h2 className={styles.testimonialTitle}>Loved by Parents</h2>
+        <span className={styles.testimonialTitleLine} aria-hidden="true" />
       </div>
-      <div className="h-[2px] w-8 bg-primary -mt-2" />
-
-      <div className="flex items-center gap-4 w-full max-w-5xl">
-        <button
-          onClick={() => go(-1)}
-          className="shrink-0 w-9 h-9 rounded-full border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-lowest"
-        >
-          <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+      <div className={styles.testimonialRow}>
+        <button className={styles.arrow} onClick={() => move(-1)} aria-label="Previous testimonials">
+          <ArrowLeft className={styles.icon} aria-hidden="true" />
         </button>
-
-        <div className="flex-1 grid grid-cols-2 gap-4">
-          {current.map((t, i) => (
-            <div
-              key={i}
-              className="relative bg-surface-container-lowest border border-outline-variant/15 rounded-2xl px-5 py-4 flex items-start gap-3"
-            >
-              <div className="w-11 h-11 rounded-full overflow-hidden bg-surface shrink-0">
-                {t.image_url ? (
+        <div className={styles.testimonialCards}>
+          {(pairs[visibleIndex] || []).map((testimonial, index) => (
+            <article className={styles.testimonialCard} key={`${testimonial.name}-${index}`}>
+              <div className={styles.avatar}>
+                {testimonial.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={t.image_url} alt="" className="w-full h-full object-cover" />
+                  <img src={testimonial.image_url} alt="" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-primary/15 text-primary font-bold">
-                    {t.name.charAt(0)}
-                  </div>
+                  <span className={styles.avatarFallback}>{testimonial.name.charAt(0)}</span>
                 )}
               </div>
-              <div className="flex-1">
-                <div className="flex gap-0.5 mb-0.5">
-                  {Array.from({ length: 5 }).map((_, s) => (
-                    <span
-                      key={s}
-                      className={`material-symbols-outlined text-[14px] ${s < t.rating ? "text-primary" : "text-outline-variant"}`}
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      star
-                    </span>
-                  ))}
+              <div>
+                <div className={styles.stars}>
+                  {"★".repeat(testimonial.rating)}
+                  {"☆".repeat(5 - testimonial.rating)}
                 </div>
-                <p className="font-label-md text-label-md font-bold text-on-surface">{t.name}</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{t.quote}</p>
+                <p className={styles.customerName}>{testimonial.name}</p>
+                <p className={styles.quote}>{testimonial.quote}</p>
               </div>
-              <span className="material-symbols-outlined text-outline-variant/40 text-[28px] absolute top-3 right-3">
-                format_quote
-              </span>
-            </div>
+            </article>
           ))}
         </div>
-
-        <button
-          onClick={() => go(1)}
-          className="shrink-0 w-9 h-9 rounded-full border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-lowest"
-        >
-          <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+        <button className={styles.arrow} onClick={() => move(1)} aria-label="Next testimonials">
+          <ArrowRight className={styles.icon} aria-hidden="true" />
         </button>
       </div>
-
-      {pairs.length > 1 && (
-        <div className="flex gap-1.5">
-          {pairs.map((_, i) => (
-            <span
-              key={i}
-              className={`h-1.5 rounded-full transition-all ${i === index ? "w-5 bg-primary" : "w-1.5 bg-outline-variant"}`}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------
- * Footer
- * ------------------------------------------------------------------ */
-function Footer() {
-  return (
-    <div className="bg-[#3b241a] text-white flex items-center justify-between px-[2.5vw] py-[1.6vh] shrink-0">
-      <div className="flex items-center gap-2">
-        <span className="material-symbols-outlined text-[18px]">language</span>
-        <span className="font-body-sm text-body-sm">www.tinytots.pk</span>
-      </div>
-      <div className="flex items-center gap-3">
-        <span className="font-label-md text-label-md font-semibold uppercase tracking-wide">Follow Us</span>
-        {["instagram", "facebook", "pinterest"] ? null : null}
-        {[
-          { icon: "photo_camera", label: "Instagram" },
-          { icon: "thumb_up", label: "Facebook" },
-          { icon: "push_pin", label: "Pinterest" },
-        ].map((s) => (
-          <span key={s.label} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-            <span className="material-symbols-outlined text-[16px]">{s.icon}</span>
-          </span>
+      <div className={styles.dots}>
+        {pairs.map((_, index) => (
+          <span
+            className={`${styles.dot} ${index === visibleIndex ? styles.activeDot : ""}`}
+            key={index}
+          />
         ))}
       </div>
-      <div className="flex items-center gap-3">
-        <span className="font-label-md text-label-md font-semibold uppercase tracking-wide">Scan to Shop</span>
-        <div className="w-12 h-12 bg-white rounded-md flex items-center justify-center">
-          <span className="material-symbols-outlined text-[28px] text-[#3b241a]">qr_code_2</span>
-        </div>
-      </div>
-    </div>
+    </section>
   );
 }
 
-/* ------------------------------------------------------------------
- * Page
- * ------------------------------------------------------------------ */
-export default function SignagePage() {
-  const [data, setData] = useState<CampaignPayload | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+function Footer({
+  socialLinks,
+  footerSettings,
+}: {
+  socialLinks: CampaignSocialLink[];
+  footerSettings: CampaignFooterSettings | null;
+}) {
+  const websiteUrl = footerSettings?.website_url || "";
+  const scanLabel = footerSettings?.scan_label || "";
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = () => {
-      fetch("/api/campaign/active")
-        .then((res) => res.json())
-        .then((json) => {
-          if (!cancelled) setData(json);
-        })
-        .catch(() => {});
-    };
-    load();
-    // Re-poll so a campaign switch (or edit to the active one) shows up on
-    // the TV without a manual reload. A real campaign-switch fade (600-
-    // 800ms) needs the OLD and NEW campaign content cross-dissolving —
-    // see the note below on that piece being a follow-up.
-    pollRef.current = setInterval(load, 2 * 60 * 1000);
-    return () => {
-      cancelled = true;
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, []);
-
-  const campaign = data?.campaign || FALLBACK_CAMPAIGN;
-  const products = data?.featured_products || [];
-  const trustItems = data?.trust_items || [];
-  const testimonials = data?.testimonials || [];
+  const showQr = Boolean(footerSettings?.qr_visible && footerSettings.qr_code_image_url);
 
   return (
-    <div className="hide-scrollbar w-screen h-screen bg-[#faf5f0] flex flex-col overflow-hidden">
-      <GlobalKeyframes />
-      <Header />
-      <Hero campaign={campaign} />
-      <FeaturedCollection campaign={campaign} products={products} />
-      <TrustStrip items={trustItems} />
-      <Testimonials testimonials={testimonials} />
-      <Footer />
-    </div>
+    <footer className={`${styles.footer} ${showQr ? styles.footerWithQr : ""}`}>
+      <div className={styles.footerGroup}>
+        {websiteUrl && (
+          <>
+            <Globe className={styles.icon} aria-hidden="true" />
+            <span>{websiteUrl}</span>
+          </>
+        )}
+      </div>
+      <div className={styles.social}>
+        <strong>FOLLOW US</strong>
+        {socialLinks.map((link) => (
+          <a className={styles.socialLink} href={link.url} title={link.account_name} key={link.platform}>
+            {link.platform === "instagram" ? (
+              <Camera className={styles.icon} aria-hidden="true" />
+            ) : link.platform === "facebook" ? (
+              <ThumbsUp className={styles.icon} aria-hidden="true" />
+            ) : link.platform === "pinterest" ? (
+              <Pin className={styles.icon} aria-hidden="true" />
+            ) : link.platform === "tiktok" ? (
+              <Music2 className={styles.icon} aria-hidden="true" />
+            ) : (
+              <LinkIcon className={styles.icon} aria-hidden="true" />
+            )}
+          </a>
+        ))}
+      </div>
+      {showQr ? (
+        <div className={styles.footerQrGroup}>
+          <strong className={styles.scanLabel}>{scanLabel}</strong>
+          <div className={styles.qr}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={footerSettings!.qr_code_image_url!} alt="QR code" />
+          </div>
+        </div>
+      ) : (
+        <div className={styles.footerGroup} />
+      )}
+    </footer>
+  );
+}
+
+function payloadImageUrls(payload: CampaignPayload) {
+  const campaign = payload.campaign;
+  return [
+    campaign?.hero_banner_preview_url,
+    ...payload.featured_products.map((product) => product.image_url),
+    ...payload.testimonials.map((testimonial) => testimonial.image_url),
+    payload.footer_settings?.qr_code_image_url,
+  ].filter((url): url is string => Boolean(url));
+}
+
+async function preloadPayloadImages(payload: CampaignPayload) {
+  await Promise.all(
+    payloadImageUrls(payload).map(
+      (url) =>
+        new Promise<void>((resolve) => {
+          let settled = false;
+          const finish = () => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            resolve();
+          };
+          const image = new Image();
+          const timeout = window.setTimeout(finish, 3000);
+          image.onload = finish;
+          image.onerror = finish;
+          image.src = url;
+        })
+    )
+  );
+}
+
+function SignagePageContent() {
+  const previewId = useSearchParams().get("preview");
+  const [display, setDisplay] = useState<CampaignPayload | null>(null);
+  const [fading, setFading] = useState(false);
+  const displayRef = useRef<CampaignPayload | null>(null);
+  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadSequenceRef = useRef(0);
+
+  useEffect(() => {
+    displayRef.current = display;
+  }, [display]);
+
+  const load = useCallback(async () => {
+    const sequence = ++loadSequenceRef.current;
+    try {
+      const url = previewId
+        ? `/api/campaign/active?preview=${encodeURIComponent(previewId)}`
+        : "/api/campaign/active";
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) return;
+      const payload = (await response.json()) as CampaignPayload;
+      await preloadPayloadImages(payload);
+      if (sequence !== loadSequenceRef.current) return;
+
+      const current = displayRef.current;
+      const campaignChanged =
+        current?.campaign?._id !== payload.campaign?._id ||
+        current?.campaign?._updated_at !== payload.campaign?._updated_at;
+
+      if (!current || !campaignChanged) {
+        setDisplay(payload);
+        return;
+      }
+
+      setFading(true);
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+      fadeTimerRef.current = setTimeout(() => {
+        setDisplay(payload);
+        setFading(false);
+      }, 320);
+    } catch {
+      // Preserve the last complete frame through transient network errors.
+    }
+  }, [previewId]);
+
+  useEffect(() => {
+    queueMicrotask(() => void load());
+    const channel = supabase
+      .channel(`signage-revision-${previewId || "live"}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "signage_revision", filter: "id=eq.1" },
+        () => void load()
+      )
+      .subscribe();
+
+    return () => {
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+      void supabase.removeChannel(channel);
+    };
+  }, [load, previewId]);
+
+  const campaign = display?.campaign;
+  const theme = campaign?.theme || DEFAULT_CAMPAIGN_THEME;
+
+  return (
+    <main className={styles.stage} style={themeVariables(theme)}>
+      {previewId && <div className={styles.previewBadge}>PREVIEW MODE — NOT LIVE</div>}
+      {campaign && display && (
+        <div className={`${styles.canvas} ${styles.fade}`} style={{ opacity: fading ? 0 : 1 }}>
+          <Header />
+          <Hero campaign={{ ...campaign, theme }} />
+          <FeaturedCollection campaign={campaign} products={display.featured_products} />
+          <TrustStrip items={display.trust_items} />
+          <Testimonials testimonials={display.testimonials} />
+          <Footer socialLinks={display.social_links} footerSettings={display.footer_settings} />
+        </div>
+      )}
+    </main>
+  );
+}
+
+export default function SignagePage() {
+  return (
+    <Suspense fallback={null}>
+      <SignagePageContent />
+    </Suspense>
   );
 }

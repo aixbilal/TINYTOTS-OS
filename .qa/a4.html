@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html><head></head><body>
+<pre id="out">TRUST CELL 1 (bg 252) region x40..252 y456..512
+   line y 468..500 (h 33) x 91..219 (w 129)
+TRUST CELL 2 (bg 252) region x258..452 y456..512
+   line y 468..500 (h 33) x 285..403 (w 119)
+TESTIMONIAL CARD 1 TEXT (bg 251) region x256..500 y545..615
+   line y 548..562 (h 15) x 263..485 (w 223)
+   line y 567..576 (h 10) x 262..307 (w 46)
+   line y 583..591 (h 9) x 262..433 (w 172)
+   line y 595..602 (h 8) x 262..418 (w 157)
+TESTIMONIAL TITLE (bg 251) region x300..730 y518..545
+   line y 526..534 (h 9) x 446..576 (w 131)
+FOOTER LEFT (bg 53) region x30..220 y640..678
+   line y 653..665 (h 13) x 37..133 (w 97)
+FOOTER FOLLOW (bg 53) region x400..500 y640..678
+   line y 656..662 (h 7) x 430..485 (w 56)
+FOOTER SCAN (bg 53) region x800..925 y640..678
+   line y 656..662 (h 7) x 842..915 (w 74)
+FEATURED LEFT (bg 251) region x30..215 y330..445
+   line y 331..439 (h 109) x 37..215 (w 179)
+HERO LEFT (bg 244) region x30..262 y12..310
+   line y 12..144 (h 133) x 30..262 (w 233)
+   line y 154..187 (h 34) x 37..175 (w 139)
+   line y 202..202 (h 1) x 37..52 (w 16)
+   line y 215..221 (h 7) x 38..199 (w 162)
+   line y 238..244 (h 7) x 37..187 (w 151)
+   line y 250..259 (h 10) x 37..154 (w 118)
+   line y 277..303 (h 27) x 33..182 (w 150)
+STATS (bg 243) region x868..1005 y50..300
+   line y 50..108 (h 59) x 881..1005 (w 125)
+   line y 113..122 (h 10) x 882..949 (w 68)
+   line y 136..136 (h 1) x 882..976 (w 95)
+   line y 152..173 (h 22) x 881..905 (w 25)
+   line y 182..193 (h 12) x 882..920 (w 39)
+   line y 200..209 (h 10) x 882..952 (w 71)
+   line y 222..222 (h 1) x 882..975 (w 94)
+   line y 238..259 (h 22) x 881..905 (w 25)
+   line y 267..278 (h 12) x 882..923 (w 42)
+   line y 285..292 (h 8) x 882..956 (w 75)
+FEATURES OVERLAY (bg 233) region x512..620 y175..245
+   line y 175..245 (h 71) x 520..620 (w 101)
+BADGE (bg 249) region x470..530 y75..135
+   line y 75..135 (h 61) x 470..530 (w 61)</pre>
+<script>
+const img = new Image();
+img.onload = () => {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0);
+  const d = ctx.getImageData(0, 0, W, H).data;
+  const lum = (x, y) => { const i = (y * W + x) * 4; return 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; };
+  const out = [];
+  // Group rows of ink into text lines and report each line's extents.
+  const lineProfile = (name, x0, y0, x1, y1, thresh = 14) => {
+    const vals = [];
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) vals.push(lum(x, y));
+    vals.sort((a, b) => a - b);
+    const bg = vals[Math.floor(vals.length * 0.75)];
+    out.push(`${name} (bg ${bg.toFixed(0)}) region x${x0}..${x1} y${y0}..${y1}`);
+    let run = null;
+    for (let y = y0; y <= y1; y++) {
+      let min = 1e9, max = -1, n = 0;
+      for (let x = x0; x <= x1; x++) {
+        if (Math.abs(lum(x, y) - bg) > thresh) { n++; if (x < min) min = x; if (x > max) max = x; }
+      }
+      if (n > 1) {
+        if (!run) run = { y0: y, y1: y, min, max };
+        else { run.y1 = y; run.min = Math.min(run.min, min); run.max = Math.max(run.max, max); }
+      } else if (run) {
+        out.push(`   line y ${run.y0}..${run.y1} (h ${run.y1 - run.y0 + 1}) x ${run.min}..${run.max} (w ${run.max - run.min + 1})`);
+        run = null;
+      }
+    }
+    if (run) out.push(`   line y ${run.y0}..${run.y1} (h ${run.y1 - run.y0 + 1}) x ${run.min}..${run.max} (w ${run.max - run.min + 1})`);
+  };
+
+  lineProfile("TRUST CELL 1", 40, 456, 252, 512);
+  lineProfile("TRUST CELL 2", 258, 456, 452, 512);
+  lineProfile("TESTIMONIAL CARD 1 TEXT", 256, 545, 500, 615);
+  lineProfile("TESTIMONIAL TITLE", 300, 518, 730, 545);
+  lineProfile("FOOTER LEFT", 30, 640, 220, 678, 20);
+  lineProfile("FOOTER FOLLOW", 400, 640, 500, 678, 20);
+  lineProfile("FOOTER SCAN", 800, 640, 925, 678, 20);
+  lineProfile("FEATURED LEFT", 30, 330, 215, 445);
+  lineProfile("HERO LEFT", 30, 12, 262, 310);
+  lineProfile("STATS", 868, 50, 1005, 300);
+  lineProfile("FEATURES OVERLAY", 512, 175, 620, 245, 10);
+  lineProfile("BADGE", 470, 75, 530, 135, 10);
+  document.getElementById("out").textContent = out.join("\n");
+};
+img.src = "reference.png";
+</script>
+
+
+</body></html>

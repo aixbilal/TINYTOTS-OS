@@ -29,7 +29,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: Parameters<typeof can>[1]
   { prefix: "/admin/settings", permission: "canManageSettings" },
   { prefix: "/admin/homepage", permission: "canManageSettings" },
   { prefix: "/admin/campaigns", permission: "canManageSettings" },
-  { prefix: "/admin/signage", permission: "canManageSettings" },
+  { prefix: "/admin/site-content", permission: "canManageSettings" },
   { prefix: "/admin/testimonials", permission: "canManageSettings" },
   { prefix: "/admin/ugc-posts", permission: "canManageSettings" },
   { prefix: "/admin/shipping-cities", permission: "canManageSettings" },
@@ -49,10 +49,6 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const isLoginPage = pathname === "/admin/login";
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     if (!loading && !admin && !isLoginPage) {
@@ -83,6 +79,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     return (
       <Link
         href={href}
+        onClick={() => setSidebarOpen(false)}
         className={`block px-4 py-2 rounded-lg font-body-sm text-body-sm ${
           active
             ? "bg-primary-container text-on-primary"
@@ -148,7 +145,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         {can(admin.role, "canManageTeam") && navItem("/admin/team", "Team")}
         {can(admin.role, "canManageSettings") && navItem("/admin/homepage", "Homepage")}
         {can(admin.role, "canManageSettings") && navItem("/admin/campaigns", "Campaigns")}
-        {can(admin.role, "canManageSettings") && navItem("/admin/signage", "TV Signage")}
+        {can(admin.role, "canManageSettings") && navItem("/admin/site-content", "Trust Library")}
         {can(admin.role, "canManageSettings") && navItem("/admin/testimonials", "Testimonials")}
         {can(admin.role, "canManageSettings") && navItem("/admin/ugc-posts", "Instagram / UGC Feed")}
         {can(admin.role, "canManageSettings") && navItem("/admin/shipping-cities", "Delivery Cities")}
@@ -172,7 +169,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           <div className="max-w-md">
             <h1 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h1>
             <p className="text-sm text-gray-500">
-              Your role ({admin.role.replace("_", " ")}) doesn't have permission to view this page.
+              Your role ({admin.role.replace("_", " ")}) doesn&apos;t have permission to view this page.
               If you believe this is a mistake, ask an admin to update your role.
             </p>
           </div>

@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+<style>
+  html, body { margin: 0; background: #111; }
+  .pane { position: relative; overflow: hidden; }
+  .pane img { position: absolute; image-rendering: pixelated; }
+  .label { position: absolute; z-index: 2; left: 4px; top: 2px; color: #0f0; font: 700 12px monospace; text-shadow: 0 0 3px #000; }
+  .stack { display: flex; flex-direction: column; gap: 6px; }
+</style>
+</head>
+<body>
+<div class="stack" id="stack"></div>
+<script>
+const q = new URLSearchParams(location.search);
+const x = +q.get("x") || 0, y = +q.get("y") || 0;
+const w = +q.get("w") || 640, h = +q.get("h") || 360, z = +q.get("z") || 2;
+const shot = q.get("shot") || "shot.png";
+const stack = document.getElementById("stack");
+// The reference is stretched to the 1920x1080 canvas so positions map 1:1 on
+// both axes; the implementation shot is already 1920x1080.
+for (const [name, src, sw, sh] of [["REFERENCE", "reference.png", 1920, 1080], ["IMPLEMENTATION", shot, 1920, 1080]]) {
+  const pane = document.createElement("div");
+  pane.className = "pane";
+  pane.style.width = w * z + "px";
+  pane.style.height = h * z + "px";
+  const img = document.createElement("img");
+  img.src = src;
+  // reference.png includes a 1px frame around a 1022x680 content box.
+  if (name === "REFERENCE") {
+    img.style.width = 1920 * (1024 / 1022) * z + "px";
+    img.style.height = 1080 * (682 / 680) * z + "px";
+    img.style.left = -(x + 1920 / 1022) * z + "px";
+    img.style.top = -(y + 1080 / 680) * z + "px";
+  } else {
+    img.style.width = sw * z + "px";
+    img.style.height = sh * z + "px";
+    img.style.left = -x * z + "px";
+    img.style.top = -y * z + "px";
+  }
+  const label = document.createElement("div");
+  label.className = "label";
+  label.textContent = name + "  x" + x + " y" + y + " " + w + "x" + h + " @" + z + "x";
+  pane.append(img, label);
+  stack.append(pane);
+}
+</script>
+</body>
+</html>

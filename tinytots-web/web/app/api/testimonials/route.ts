@@ -1,14 +1,22 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/testimonials - public, published only (enforced by RLS anyway,
-// filtered again here for clarity).
+// Public testimonials are the exact set selected by the active campaign.
 export async function GET() {
-  const { data, error } = await supabase
+  const { data: campaign, error: campaignError } = await supabaseAdmin
+    .from("campaigns")
+    .select("testimonial_ids")
+    .eq("is_active", true)
+    .maybeSingle();
+  if (campaignError) return NextResponse.json({ error: campaignError.message }, { status: 500 });
+  if (!campaign?.testimonial_ids?.length) return NextResponse.json({ testimonials: [] });
+
+  const { data, error } = await supabaseAdmin
     .from("testimonials")
-    .select("id, customer_name, rating, quote")
+    .select("id, customer_name, customer_image_url, rating, quote")
+    .in("id", campaign.testimonial_ids)
     .eq("is_published", true)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });

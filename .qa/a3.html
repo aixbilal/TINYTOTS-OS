@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html><head></head><body>
+<pre id="out">headingLine1: x 35..221 (w 187) y 110..144 (h 35) bg 231
+headingLine2: x 37..174 (w 138) y 154..187 (h 34) bg 241
+ctaLabel: x 51..164 (w 114) y 286..293 (h 8) bg 72
+badgeCircle: x 440..560 (w 121) y 60..150 (h 91) bg 236
+badgeText: x 482..520 (w 39) y 98..120 (h 23) bg 249
+featureBlock: x 505..640 (w 136) y 175..250 (h 76) bg 218
+featureRow1: x 505..640 (w 136) y 178..200 (h 23) bg 218
+trustIcon1: x 89..90 (w 2) y 466..489 (h 24) bg 251
+trustHead1: x 91..254 (w 164) y 467..480 (h 14) bg 251
+trustDesc1: x 91..254 (w 164) y 480..500 (h 21) bg 250
+featuredDesc2: x 37..260 (w 224) y 380..412 (h 33) bg 245
+featuredLink2: x 37..260 (w 224) y 418..439 (h 22) bg 250
+avatar1b: x 173..268 (w 96) y 539..618 (h 80) bg 249
+quote1b: x 262..518 (w 257) y 578..615 (h 38) bg 251
+dots2: x 470..560 (w 91) y 622..640 (h 19) bg 247
+qr2: x 900..1015 (w 116) y 600..680 (h 81) bg 220
+globeIcon: x 37..60 (w 24) y 649..665 (h 17) bg 53
+socialRow: x 496..568 (w 73) y 648..670 (h 23) bg 52
+statDivider1: x 860..1015 (w 156) y 130..142 (h 13) bg 240
+statDivider2: x 880..978 (w 99) y 221..223 (h 3) bg 243
+stat3icon: x 880..910 (w 31) y 234..258 (h 25) bg 242
+VLINES y=136: 852 882 883
+HLINES x=60: 211 215 216 220 221 233 236 241 242 254 255 262 278 286 302
+VLINES y=295: 107 177
+HLINES x=90: 24 29 30 120 121 125 128 129 166 172 173 176 184 185 210 217 218 240 241 253 256 286 289 290 293 302
+VLINES y=20: 635 646 647 655 656 669 670 679 680 698 699 705 706 717 718 722 733 742 757 769 772 778 779 784 789 798 806 807 818 819 822 825 826 830 843 844 848 849 853
+VLINES y=260: 308 364 388 393 442 445 446 460 523 524 527 530 531 535 544 545 550 551 555 556 560 561 610 626 642 643 654 655 658 685 686 691 692 700 701 716 719 720 726 727 737 738 742 743 750 751 755 756 759 760 763 775 779 780 783 784 788 823 842 853 880 893
+HLINES x=600: 260 261 290 299
+HLINES x=300: 286 287 292 296 297 311 312</pre>
+<script>
+const img = new Image();
+img.onload = () => {
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0);
+  const d = ctx.getImageData(0, 0, W, H).data;
+  const lum = (x, y) => { const i = (y * W + x) * 4; return 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; };
+  const lines = [];
+  const bbox = (name, x0, y0, x1, y1, thresh = 18) => {
+    const vals = [];
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) vals.push(lum(x, y));
+    vals.sort((a, b) => a - b);
+    const bg = vals[Math.floor(vals.length / 2)];
+    let minX = 1e9, minY = 1e9, maxX = -1, maxY = -1;
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      if (Math.abs(lum(x, y) - bg) > thresh) {
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+      }
+    }
+    lines.push(maxX < 0 ? `${name}: none (bg ${bg.toFixed(0)})`
+      : `${name}: x ${minX}..${maxX} (w ${maxX - minX + 1}) y ${minY}..${maxY} (h ${maxY - minY + 1}) bg ${bg.toFixed(0)}`);
+  };
+  const vlines = (y, x0, x1, thresh = 5) => {
+    const hits = [];
+    for (let x = x0 + 2; x <= x1 - 2; x++) {
+      const v = lum(x, y);
+      if (v < lum(x - 2, y) - thresh && v < lum(x + 2, y) - thresh) hits.push(x);
+    }
+    lines.push(`VLINES y=${y}: ${hits.join(" ")}`);
+  };
+  const hlines = (x, y0, y1, thresh = 5) => {
+    const hits = [];
+    for (let y = y0 + 2; y <= y1 - 2; y++) {
+      const v = lum(x, y);
+      if (v < lum(x, y - 2) - thresh && v < lum(x, y + 2) - thresh) hits.push(y);
+    }
+    lines.push(`HLINES x=${x}: ${hits.join(" ")}`);
+  };
+
+  bbox("headingLine1", 25, 98, 265, 146);
+  bbox("headingLine2", 25, 146, 265, 195);
+  bbox("ctaLabel", 44, 282, 172, 300, 25);
+  bbox("badgeCircle", 440, 60, 560, 150, 6);
+  bbox("badgeText", 480, 90, 520, 120, 20);
+  bbox("featureBlock", 505, 175, 640, 250, 8);
+  bbox("featureRow1", 505, 178, 640, 200, 8);
+  bbox("trustIcon1", 40, 460, 90, 508, 6);
+  bbox("trustHead1", 88, 462, 260, 480, 10);
+  bbox("trustDesc1", 88, 480, 260, 500, 10);
+  bbox("featuredDesc2", 25, 380, 260, 412, 10);
+  bbox("featuredLink2", 25, 418, 260, 440, 10);
+  bbox("avatar1b", 172, 538, 268, 622, 8);
+  bbox("quote1b", 255, 578, 520, 615, 10);
+  bbox("dots2", 470, 618, 560, 640, 6);
+  bbox("qr2", 900, 600, 1015, 680, 10);
+  bbox("globeIcon", 28, 645, 60, 672, 10);
+  bbox("socialRow", 495, 645, 580, 675, 6);
+  bbox("statDivider1", 860, 130, 1015, 142, 4);
+  bbox("statDivider2", 860, 216, 1015, 228, 4);
+  bbox("stat3icon", 862, 228, 1010, 258, 6);
+  vlines(136, 850, 1015, 3);
+  hlines(60, 200, 320, 4);
+  vlines(295, 20, 260, 6);
+  hlines(90, 20, 320, 4);
+  // Banner extents: scan for the vertical seam at the banner edges.
+  vlines(20, 250, 900, 2);
+  vlines(260, 250, 900, 2);
+  hlines(600, 0, 330, 2);
+  hlines(300, 0, 330, 2);
+  document.getElementById("out").textContent = lines.join("\n");
+};
+img.src = "reference.png";
+</script>
+
+
+</body></html>
