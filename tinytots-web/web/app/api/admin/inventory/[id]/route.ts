@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
 
 // PUT /api/inventory/[id] — update a single variant's price/stock/reorder_level/web pricing lock (admin only)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
   const { id } = await params;
   try {
     const body = await request.json();

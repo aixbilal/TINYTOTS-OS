@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(request, "canManageOrders");
+  if (denied) return denied;
+
   const { id } = await params;
 
   const { data: order, error: orderError } = await supabaseAdmin
@@ -29,6 +33,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(request, "canManageOrders");
+  if (denied) return denied;
+
   const { id } = await params;
   try {
     const body = await request.json();

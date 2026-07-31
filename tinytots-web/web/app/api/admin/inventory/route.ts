@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
   const { data, error } = await supabaseAdmin
     .from("variants")
     .select("*, products(name, sku, cost_price, selling_price, is_active)");

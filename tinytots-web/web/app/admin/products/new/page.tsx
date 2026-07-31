@@ -6,6 +6,7 @@ import RichTextEditor from "@/components/admin/RichTextEditor";
 import TagInput from "@/components/admin/TagInput";
 import MarkupCalculator from "@/components/admin/MarkupCalculator";
 import CategorySelect from "@/components/admin/CategorySelect";
+import { adminFetch } from "@/lib/admin-fetch";
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -69,7 +70,7 @@ export default function NewProductPage() {
         reorder_level: 5,
       }));
 
-      const res = await fetch("/api/products", {
+      const res = await adminFetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

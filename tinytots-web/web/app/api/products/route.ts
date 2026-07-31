@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
 
 // Without this, Next.js can cache this route's data fetch, so newly
 // uploaded images, price changes, and stock updates from the admin panel
@@ -68,7 +69,10 @@ export async function GET(request: Request) {
 }
 
 // POST /api/products — creates a product + its variants together (admin only, called from /admin/products/new)
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     const {

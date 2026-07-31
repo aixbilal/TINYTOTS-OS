@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { adminFetch } from "@/lib/admin-fetch";
 
 type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number };
 type Product = { id: number; name: string; sku: string; brand: string; category: string; is_active: boolean; variants: Variant[] };
@@ -12,7 +13,7 @@ export default function AdminProductsPage() {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    fetch("/api/admin/inventory")
+    adminFetch("/api/admin/inventory")
       .then((r) => r.json())
       .then((json) => {
         // /api/inventory returns one row per variant; group into products client-side

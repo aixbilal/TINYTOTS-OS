@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const denied = await requireAdmin(request, "canManageTeam");
+  if (denied) return denied;
+
   const { data, error } = await supabaseAdmin
     .from("admin_users")
     .select("id, name, email, role, is_active, created_at")
@@ -14,6 +18,9 @@ export async function GET() {
 // POST — creates a real Supabase Auth account for the new team member (temp password)
 // AND their admin_users role row, in one step.
 export async function POST(request: NextRequest) {
+    const denied = await requireAdmin(request, "canManageTeam");
+    if (denied) return denied;
+
     try {
       const body = await request.json();
       const { name, email, role } = body;
