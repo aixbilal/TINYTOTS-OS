@@ -25,11 +25,19 @@ const EDITABLE_FIELDS = [
   "marquee_speed_seconds",
   "marquee_direction",
   "trust_item_ids",
+  "feature_item_ids",
+  "stat_item_ids",
   "testimonial_ids",
   "social_links",
   "footer_settings",
   "theme",
 ] as const;
+
+function normalizeIdArray(value: unknown, max?: number): number[] {
+  if (!Array.isArray(value)) return [];
+  const ids = value.map(Number).filter(Number.isFinite);
+  return typeof max === "number" ? ids.slice(0, max) : ids;
+}
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const denied = await requireAdmin(req, "canManageSettings");
@@ -55,14 +63,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
     if ("theme" in body) updates.theme = normalizeCampaignTheme(body.theme);
     if ("trust_item_ids" in body) {
-      updates.trust_item_ids = Array.isArray(body.trust_item_ids)
-        ? body.trust_item_ids.map(Number).filter(Number.isFinite)
-        : [];
+      updates.trust_item_ids = normalizeIdArray(body.trust_item_ids);
+    }
+    if ("feature_item_ids" in body) {
+      updates.feature_item_ids = normalizeIdArray(body.feature_item_ids, 3);
+    }
+    if ("stat_item_ids" in body) {
+      updates.stat_item_ids = normalizeIdArray(body.stat_item_ids, 3);
     }
     if ("testimonial_ids" in body) {
-      updates.testimonial_ids = Array.isArray(body.testimonial_ids)
-        ? body.testimonial_ids.map(Number).filter(Number.isFinite)
-        : [];
+      updates.testimonial_ids = normalizeIdArray(body.testimonial_ids);
     }
     if ("social_links" in body) {
       updates.social_links = Array.isArray(body.social_links)

@@ -11,6 +11,7 @@ import {
   BadgeCheck,
   Camera,
   Globe,
+  Hammer,
   Heart,
   Leaf,
   Link as LinkIcon,
@@ -24,12 +25,14 @@ import {
   ThumbsUp,
   Users,
   Wind,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import {
   DEFAULT_CAMPAIGN_THEME,
   formatSignageProductBadgeLabel,
   normalizeSignageProductBadge,
+  signageProductBadgeVariant,
   type BannerFocalPoint,
   type CampaignFooterSettings,
   type CampaignSocialLink,
@@ -98,6 +101,8 @@ const ICON_COMPONENTS: Record<string, LucideIcon> = {
   checkroom: Shirt,
   air: Wind,
   favorite: Heart,
+  construction: Hammer,
+  bolt: Zap,
 };
 
 function SignageIcon({ name, className }: { name: string; className?: string }) {
@@ -209,14 +214,17 @@ function FeaturedCollection({ campaign, products }: { campaign: Campaign; produc
   const productCards = (duplicate: boolean) =>
     products.map((product) => {
       const badge = normalizeSignageProductBadge(product.signage_badge);
+      const variant = badge ? signageProductBadgeVariant(badge) : null;
       const badgeClass =
-        badge === "NEW"
+        variant === "new"
           ? styles.productBadgeNew
-          : badge === "BEST_SELLER"
+          : variant === "best_seller"
             ? styles.productBadgeBestSeller
-            : badge === "LIMITED_EDITION"
+            : variant === "limited"
               ? styles.productBadgeLimited
-              : "";
+              : variant
+                ? styles.productBadgeBestSeller
+                : "";
 
       return (
         <div className={styles.productCard} key={`${duplicate ? "copy" : "original"}-${product.id}`}>

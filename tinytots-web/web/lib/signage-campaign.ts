@@ -44,26 +44,45 @@ export type CampaignFooterSettings = {
   scan_label: string;
 };
 
-/** Product card badge values for the signage featured marquee. */
-export type SignageProductBadge = "NEW" | "BEST_SELLER" | "LIMITED_EDITION";
+/** Free-text product card badge for the signage featured marquee (null = none). */
+export type SignageProductBadge = string;
 
-export const SIGNAGE_PRODUCT_BADGES: SignageProductBadge[] = [
+/** Legacy enum tokens kept for migration display / seed defaults. */
+export const SIGNAGE_PRODUCT_BADGES = [
   "NEW",
-  "BEST_SELLER",
-  "LIMITED_EDITION",
-];
+  "BEST SELLER",
+  "LIMITED EDITION",
+] as const;
 
+const MAX_SIGNAGE_BADGE_LENGTH = 40;
+
+/** Normalize free-text badge; accepts legacy BEST_SELLER / LIMITED_EDITION tokens. */
 export function normalizeSignageProductBadge(value: unknown): SignageProductBadge | null {
   if (typeof value !== "string") return null;
-  return SIGNAGE_PRODUCT_BADGES.includes(value as SignageProductBadge)
-    ? (value as SignageProductBadge)
-    : null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const legacy =
+    trimmed === "BEST_SELLER"
+      ? "BEST SELLER"
+      : trimmed === "LIMITED_EDITION"
+        ? "LIMITED EDITION"
+        : trimmed;
+  return legacy.slice(0, MAX_SIGNAGE_BADGE_LENGTH);
 }
 
 export function formatSignageProductBadgeLabel(badge: SignageProductBadge): string {
-  if (badge === "BEST_SELLER") return "BEST SELLER";
-  if (badge === "LIMITED_EDITION") return "LIMITED EDITION";
-  return "NEW";
+  return badge;
+}
+
+/** Visual variant for the existing three pill styles; everything else uses primary. */
+export function signageProductBadgeVariant(
+  badge: SignageProductBadge
+): "new" | "best_seller" | "limited" | "default" {
+  const key = badge.toUpperCase().replace(/_/g, " ").trim();
+  if (key === "NEW") return "new";
+  if (key === "BEST SELLER") return "best_seller";
+  if (key === "LIMITED EDITION") return "limited";
+  return "default";
 }
 
 export const DEFAULT_CAMPAIGN_THEME: CampaignTheme = {

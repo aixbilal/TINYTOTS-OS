@@ -15,6 +15,9 @@ export async function GET(req: NextRequest) {
     { data: products },
     { data: categories },
     { data: trustItems },
+    { data: featureItems },
+    { data: statItems },
+    { data: badgeItems },
     { data: testimonials },
   ] = await Promise.all([
     supabaseAdmin.from("campaigns").select("*").order("created_at", { ascending: false }),
@@ -25,6 +28,9 @@ export async function GET(req: NextRequest) {
       .order("name", { ascending: true }),
     supabaseAdmin.from("categories").select("name, slug").order("display_order", { ascending: true }).order("name", { ascending: true }),
     supabaseAdmin.from("trust_items").select("id, icon, heading, description, is_active").order("sort_order", { ascending: true }),
+    supabaseAdmin.from("feature_items").select("id, icon, label, is_active").order("sort_order", { ascending: true }),
+    supabaseAdmin.from("stat_items").select("id, icon, value, label, is_active").order("sort_order", { ascending: true }),
+    supabaseAdmin.from("badge_items").select("id, label, is_active").order("sort_order", { ascending: true }),
     supabaseAdmin
       .from("testimonials")
       .select("id, customer_name, customer_image_url, rating, quote, is_published")
@@ -38,6 +44,9 @@ export async function GET(req: NextRequest) {
     products: products || [],
     categories: categories || [],
     trust_items: trustItems || [],
+    feature_items: featureItems || [],
+    stat_items: statItems || [],
+    badge_items: badgeItems || [],
     testimonials: testimonials || [],
   });
 }
@@ -52,8 +61,21 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const name = String(body.name || "Untitled Campaign").trim();
 
-    const [{ data: trustItems }, { data: testimonials }] = await Promise.all([
+    const [{ data: trustItems }, { data: featureItems }, { data: statItems }, { data: testimonials }] =
+      await Promise.all([
         supabaseAdmin.from("trust_items").select("id").eq("is_active", true).order("sort_order", { ascending: true }),
+        supabaseAdmin
+          .from("feature_items")
+          .select("id")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true })
+          .limit(3),
+        supabaseAdmin
+          .from("stat_items")
+          .select("id")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true })
+          .limit(3),
         supabaseAdmin
           .from("testimonials")
           .select("id")
@@ -68,6 +90,8 @@ export async function POST(req: NextRequest) {
         name,
         is_active: false,
         trust_item_ids: (trustItems || []).map((item) => item.id),
+        feature_item_ids: (featureItems || []).map((item) => item.id),
+        stat_item_ids: (statItems || []).map((item) => item.id),
         testimonial_ids: (testimonials || []).map((item) => item.id),
         social_links: [],
         footer_settings: {

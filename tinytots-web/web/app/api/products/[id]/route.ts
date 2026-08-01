@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import {
-  normalizeSignageProductBadge,
-  SIGNAGE_PRODUCT_BADGES,
-} from "@/lib/signage-campaign";
+import { normalizeSignageProductBadge } from "@/lib/signage-campaign";
 
 // GET /api/products/[id]
 // Returns one product with all its variants.
@@ -78,10 +75,7 @@ export async function PUT(
       } else {
         const normalizedBadge = normalizeSignageProductBadge(body.signage_badge);
         if (!normalizedBadge) {
-          return NextResponse.json(
-            { error: `signage_badge must be one of: ${SIGNAGE_PRODUCT_BADGES.join(", ")}` },
-            { status: 400 }
-          );
+          return NextResponse.json({ error: "signage_badge must be a non-empty string" }, { status: 400 });
         }
         updates.signage_badge = normalizedBadge;
       }

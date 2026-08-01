@@ -145,7 +145,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         {can(admin.role, "canManageTeam") && navItem("/admin/team", "Team")}
         {can(admin.role, "canManageSettings") && navItem("/admin/homepage", "Homepage")}
         {can(admin.role, "canManageSettings") && navItem("/admin/campaigns", "Campaigns")}
-        {can(admin.role, "canManageSettings") && navItem("/admin/site-content", "Trust Library")}
+        {can(admin.role, "canManageSettings") && navItem("/admin/site-content", "Signage Libraries")}
         {can(admin.role, "canManageSettings") && navItem("/admin/testimonials", "Testimonials")}
         {can(admin.role, "canManageSettings") && navItem("/admin/ugc-posts", "Instagram / UGC Feed")}
         {can(admin.role, "canManageSettings") && navItem("/admin/shipping-cities", "Delivery Cities")}

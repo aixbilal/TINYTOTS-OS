@@ -17,14 +17,24 @@ type CampaignRow = {
   featured_category: string | null;
   featured_product_ids: number[] | null;
   trust_item_ids: number[] | null;
+  feature_item_ids: number[] | null;
+  stat_item_ids: number[] | null;
   testimonial_ids: number[] | null;
   social_links: unknown;
   footer_settings: unknown;
   theme: unknown;
   hero_banner_crop: unknown;
   hero_banner_focal_point: unknown;
+  feature_list: unknown;
+  statistics: unknown;
   [key: string]: unknown;
 };
+
+function orderByIds<T extends { id: number }>(rows: T[] | null | undefined, ids: number[]): T[] {
+  if (!rows?.length || !ids?.length) return [];
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  return ids.map((id) => byId.get(id)).filter((row): row is T => !!row);
+}
 
 type TestimonialRow = {
   id: number;
@@ -101,25 +111,75 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const [featuredProducts, { data: trustItems }, { data: testimonials }] = await Promise.all([
-    resolveFeaturedProducts(campaign),
-    campaign.trust_item_ids?.length
-      ? supabaseAdmin
-          .from("trust_items")
-          .select("*")
-          .in("id", campaign.trust_item_ids)
-          .eq("is_active", true)
-          .order("sort_order", { ascending: true })
-      : Promise.resolve({ data: [] }),
-    campaign.testimonial_ids?.length
-      ? supabaseAdmin
-          .from("testimonials")
-          .select("id, customer_name, customer_image_url, rating, quote")
-          .in("id", campaign.testimonial_ids)
-          .eq("is_published", true)
-          .order("sort_order", { ascending: true })
-      : Promise.resolve({ data: [] }),
-  ]);
+  const featureIds = (campaign.feature_item_ids || []).slice(0, 3);
+  const statIds = (campaign.stat_item_ids || []).slice(0, 3);
+
+  const [featuredProducts, { data: trustItems }, { data: featureRows }, { data: statRows }, { data: testimonials }] =
+    await Promise.all([
+      resolveFeaturedProducts(campaign),
+      campaign.trust_item_ids?.length
+        ? supabaseAdmin
+            .from("trust_items")
+            .select("*")
+            .in("id", campaign.trust_item_ids)
+            .eq("is_active", true)
+            .order("sort_order", { ascending: true })
+        : Promise.resolve({ data: [] }),
+      featureIds.length
+        ? supabaseAdmin
+            .from("feature_items")
+            .select("id, icon, label")
+            .in("id", featureIds)
+            .eq("is_active", true)
+        : Promise.resolve({ data: [] }),
+      statIds.length
+        ? supabaseAdmin
+            .from("stat_items")
+            .select("id, icon, value, label")
+            .in("id", statIds)
+            .eq("is_active", true)
+        : Promise.resolve({ data: [] }),
+      campaign.testimonial_ids?.length
+        ? supabaseAdmin
+            .from("testimonials")
+            .select("id, customer_name, customer_image_url, rating, quote")
+            .in("id", campaign.testimonial_ids)
+            .eq("is_published", true)
+            .order("sort_order", { ascending: true })
+        : Promise.resolve({ data: [] }),
+    ]);
+
+  const resolvedFeatures = orderByIds(
+    (featureRows || []) as { id: number; icon: string; label: string }[],
+    featureIds
+  ).map((item) => ({
+    icon: item.icon,
+    title: item.label,
+    description: "",
+  }));
+
+  const resolvedStats = orderByIds(
+    (statRows || []) as { id: number; icon: string; value: string; label: string }[],
+    statIds
+  ).map((item) => ({
+    icon: item.icon,
+    number: item.value,
+    description: item.label,
+  }));
+
+  // Prefer pool selection; fall back to legacy JSON columns if IDs are empty.
+  const feature_list =
+    resolvedFeatures.length > 0
+      ? resolvedFeatures
+      : Array.isArray(campaign.feature_list)
+        ? campaign.feature_list
+        : [];
+  const statistics =
+    resolvedStats.length > 0
+      ? resolvedStats
+      : Array.isArray(campaign.statistics)
+        ? campaign.statistics
+        : [];
 
   return NextResponse.json({
     campaign: {
@@ -137,8 +197,8 @@ export async function GET(req: NextRequest) {
       hero_banner_crop: normalizeBannerCrop(campaign.hero_banner_crop),
       hero_banner_focal_point: normalizeBannerFocalPoint(campaign.hero_banner_focal_point),
       hero_badge: campaign.hero_badge,
-      feature_list: campaign.feature_list || [],
-      statistics: campaign.statistics || [],
+      feature_list,
+      statistics,
       featured_heading: campaign.featured_heading,
       featured_description: campaign.featured_description,
       featured_button_text: campaign.featured_button_text,

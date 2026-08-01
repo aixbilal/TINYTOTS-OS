@@ -5,12 +5,11 @@ import Image from "next/image";
 import { adminFetch } from "@/lib/admin-fetch";
 import CampaignBannerEditor from "@/components/admin/CampaignBannerEditor";
 import CampaignQrEditor from "@/components/admin/CampaignQrEditor";
+import SignageBadgePicker from "@/components/admin/SignageBadgePicker";
 import {
   DEFAULT_BANNER_CROP,
   DEFAULT_BANNER_FOCAL_POINT,
   DEFAULT_CAMPAIGN_THEME,
-  SIGNAGE_PRODUCT_BADGES,
-  formatSignageProductBadgeLabel,
   type BannerCrop,
   type BannerFocalPoint,
   type CampaignFooterSettings,
@@ -20,40 +19,8 @@ import {
 } from "@/lib/signage-campaign";
 
 /* ------------------------------------------------------------------
- * Suggested content — click-to-insert presets so the admin doesn't have
- * to write copy from scratch. These are NOT stored anywhere; they just
- * prefill a new row in the editor.
- * ------------------------------------------------------------------ */
-const STAT_SUGGESTIONS = [
-  { icon: "local_shipping", number: "25,000+", description: "Orders Delivered" },
-  { icon: "sentiment_satisfied", number: "98%", description: "Parent Satisfaction" },
-  { icon: "new_releases", number: "500+", description: "New Arrivals" },
-  { icon: "eco", number: "Certified", description: "Organic Cotton" },
-  { icon: "design_services", number: "Premium", description: "Stitching" },
-  { icon: "spa", number: "Skin-Friendly", description: "Fabric" },
-  { icon: "verified", number: "Since 2020", description: "Trusted Brand" },
-  { icon: "local_shipping", number: "Free", description: "Nationwide Delivery" },
-];
-
-const ICON_OPTIONS = [
-  "eco", "spa", "verified_user", "group", "checkroom", "shield_check", "local_shipping", "sync_alt",
-  "verified", "lock", "air", "favorite", "handshake", "construction", "bolt", "new_releases",
-  "sentiment_satisfied", "design_services",
-];
-
-/* ------------------------------------------------------------------
  * Types
  * ------------------------------------------------------------------ */
-interface FeatureItem {
-  icon: string;
-  title: string;
-  description: string;
-}
-interface StatItem {
-  icon: string;
-  number: string;
-  description: string;
-}
 interface Campaign {
   id: number;
   name: string;
@@ -70,8 +37,8 @@ interface Campaign {
   hero_banner_crop: BannerCrop;
   hero_banner_focal_point: BannerFocalPoint;
   hero_badge: string | null;
-  feature_list: FeatureItem[];
-  statistics: StatItem[];
+  feature_item_ids: number[];
+  stat_item_ids: number[];
   featured_heading: string;
   featured_description: string;
   featured_button_text: string;
@@ -103,6 +70,24 @@ interface TrustItemOption {
   description: string;
   is_active: boolean;
 }
+interface FeatureItemOption {
+  id: number;
+  icon: string;
+  label: string;
+  is_active: boolean;
+}
+interface StatItemOption {
+  id: number;
+  icon: string;
+  value: string;
+  label: string;
+  is_active: boolean;
+}
+interface BadgeItemOption {
+  id: number;
+  label: string;
+  is_active: boolean;
+}
 interface TestimonialOption {
   id: number;
   customer_name: string;
@@ -110,6 +95,22 @@ interface TestimonialOption {
   rating: number;
   quote: string;
   is_published: boolean;
+}
+
+function toggleMaxThree(current: number[], id: number, selected: boolean): number[] {
+  if (selected) return current.filter((itemId) => itemId !== id);
+  if (current.length >= 3) return current;
+  return [...current, id];
+}
+
+function moveId(ids: number[], id: number, delta: number): number[] {
+  const index = ids.indexOf(id);
+  if (index < 0) return ids;
+  const target = index + delta;
+  if (target < 0 || target >= ids.length) return ids;
+  const next = [...ids];
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
 }
 
 const blankCampaign = (name: string): Partial<Campaign> => ({ name });
@@ -164,6 +165,7 @@ function FeaturedSelector({
   productIds,
   categories,
   products,
+  badgeItems,
   onChangeType,
   onChangeCategory,
   onToggleProduct,
@@ -174,6 +176,7 @@ function FeaturedSelector({
   productIds: number[] | null;
   categories: CategoryLite[];
   products: ProductLite[];
+  badgeItems: BadgeItemOption[];
   onChangeType: (t: "products" | "category") => void;
   onChangeCategory: (slug: string) => void;
   onToggleProduct: (id: number) => void;
@@ -184,16 +187,15 @@ function FeaturedSelector({
   const selectedIds = new Set(productIds || []);
   const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
 
-  async function saveBadge(productId: number, value: string) {
-    const badge = value ? (value as SignageProductBadge) : null;
+  async function saveBadge(productId: number, value: string | null) {
     setSavingBadgeId(productId);
     try {
       const res = await fetch(`/api/products/${productId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ signage_badge: badge }),
+        body: JSON.stringify({ signage_badge: value }),
       });
-      if (res.ok) onProductBadgeChange(productId, badge);
+      if (res.ok) onProductBadgeChange(productId, value);
     } finally {
       setSavingBadgeId(null);
     }
@@ -260,21 +262,14 @@ function FeaturedSelector({
                     </div>
                     <span className="text-xs text-gray-800 line-clamp-2">{p.name}</span>
                   </button>
-                  <select
-                    value={p.signage_badge || ""}
-                    disabled={savingBadgeId === p.id}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => void saveBadge(p.id, e.target.value)}
-                    className="w-full border border-gray-200 rounded px-1.5 py-1 text-[10px] text-gray-700 bg-white"
-                    title="Signage card badge"
-                  >
-                    <option value="">No badge</option>
-                    {SIGNAGE_PRODUCT_BADGES.map((badge) => (
-                      <option key={badge} value={badge}>
-                        {formatSignageProductBadgeLabel(badge)}
-                      </option>
-                    ))}
-                  </select>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <SignageBadgePicker
+                      value={p.signage_badge}
+                      options={badgeItems}
+                      disabled={savingBadgeId === p.id}
+                      onChange={(badge) => void saveBadge(p.id, badge)}
+                    />
+                  </div>
                 </div>
               );
             })}
@@ -293,6 +288,9 @@ function CampaignEditor({
   categories,
   products,
   trustItems,
+  featureItems,
+  statItems,
+  badgeItems,
   testimonials,
   onChange,
   onProductBadgeChange,
@@ -303,6 +301,9 @@ function CampaignEditor({
   categories: CategoryLite[];
   products: ProductLite[];
   trustItems: TrustItemOption[];
+  featureItems: FeatureItemOption[];
+  statItems: StatItemOption[];
+  badgeItems: BadgeItemOption[];
   testimonials: TestimonialOption[];
   onChange: (c: Campaign) => void;
   onProductBadgeChange: (id: number, badge: SignageProductBadge | null) => void;
@@ -311,8 +312,8 @@ function CampaignEditor({
 }) {
   const set = <K extends keyof Campaign>(key: K, value: Campaign[K]) => onChange({ ...campaign, [key]: value });
 
-  const features = campaign.feature_list || [];
-  const stats = campaign.statistics || [];
+  const featureIds = campaign.feature_item_ids || [];
+  const statIds = campaign.stat_item_ids || [];
   const theme = { ...DEFAULT_CAMPAIGN_THEME, ...(campaign.theme || {}) };
   const socialLinks = SOCIAL_PLATFORMS.map(
     (platform) =>
@@ -467,141 +468,128 @@ function CampaignEditor({
 
       {/* Feature list */}
       <section className="border border-gray-200 rounded-lg p-5">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Hero Feature List (icon + title, unlimited)</h2>
-        <div className="flex flex-col gap-2 mb-3">
-          {features.map((f, i) => (
-            <div key={i} className="flex gap-2 items-center">
-              <select
-                value={f.icon}
-                onChange={(e) => {
-                  const next = [...features];
-                  next[i] = { ...f, icon: e.target.value };
-                  set("feature_list", next);
-                }}
-                className={`${inputClass} w-40`}
-              >
-                {ICON_OPTIONS.map((ic) => (
-                  <option key={ic} value={ic}>
-                    {ic}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={f.title}
-                onChange={(e) => {
-                  const next = [...features];
-                  next[i] = { ...f, title: e.target.value };
-                  set("feature_list", next);
-                }}
-                placeholder="Title"
-                className={`${inputClass} flex-1`}
-              />
-              <button
-                type="button"
-                onClick={() => set("feature_list", features.filter((_, idx) => idx !== i))}
-                className="text-gray-400 hover:text-red-600 p-1"
-              >
-                <span className="material-symbols-outlined text-[20px]">delete</span>
-              </button>
-            </div>
-          ))}
+        <h2 className="text-base font-semibold text-gray-900 mb-1">Hero Feature Icons</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Select exactly 3 from the library. Order follows selection below (use arrows to reorder).
+          Manage the pool in Signage Libraries.
+        </p>
+        <p className="mb-3 text-xs text-gray-600">{featureIds.length}/3 selected</p>
+        <div className="mb-4 flex flex-col gap-2">
+          {featureIds.map((id, index) => {
+            const item = featureItems.find((row) => row.id === id);
+            if (!item) return null;
+            return (
+              <div key={id} className="flex items-center gap-2 rounded-md border border-gray-900 bg-gray-50 p-2">
+                <span className="flex-1 text-sm font-medium text-gray-900">{item.label}</span>
+                <button
+                  type="button"
+                  onClick={() => set("feature_item_ids", moveId(featureIds, id, -1))}
+                  disabled={index === 0}
+                  className="p-1 disabled:opacity-30"
+                >
+                  <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set("feature_item_ids", moveId(featureIds, id, 1))}
+                  disabled={index === featureIds.length - 1}
+                  className="p-1 disabled:opacity-30"
+                >
+                  <span className="material-symbols-outlined text-[18px]">arrow_downward</span>
+                </button>
+              </div>
+            );
+          })}
         </div>
-        <button
-          type="button"
-          onClick={() => set("feature_list", [...features, { icon: "eco", title: "", description: "" }])}
-          className="text-sm font-medium px-3 py-1.5 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
-        >
-          + Add feature
-        </button>
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          {featureItems.map((item) => {
+            const selected = featureIds.includes(item.id);
+            const atMax = featureIds.length >= 3 && !selected;
+            return (
+              <label
+                key={item.id}
+                className={`flex items-start gap-2 rounded-md border p-3 ${
+                  selected ? "border-gray-900 bg-gray-50" : "border-gray-200"
+                } ${atMax || !item.is_active ? "opacity-50" : ""}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  disabled={atMax || !item.is_active}
+                  onChange={() => set("feature_item_ids", toggleMaxThree(featureIds, item.id, selected))}
+                />
+                <span>
+                  <span className="block text-sm font-medium text-gray-900">{item.label}</span>
+                  <span className="block text-xs text-gray-500">{item.icon}</span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
       </section>
 
       {/* Statistics */}
       <section className="border border-gray-200 rounded-lg p-5">
-        <h2 className="text-base font-semibold text-gray-900 mb-1">Statistics</h2>
-        <p className="text-xs text-gray-500 mb-3">Add, remove, reorder, or edit any statistic.</p>
-
-        <div className="flex flex-col gap-2 mb-3">
-          {stats.map((s, i) => (
-            <div key={i} className="flex gap-2 items-center border border-gray-200 rounded-md p-2">
-              <select
-                value={s.icon}
-                onChange={(e) => {
-                  const next = [...stats];
-                  next[i] = { ...s, icon: e.target.value };
-                  set("statistics", next);
-                }}
-                className={`${inputClass} w-36`}
-              >
-                {ICON_OPTIONS.map((ic) => (
-                  <option key={ic} value={ic}>
-                    {ic}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={s.number}
-                onChange={(e) => {
-                  const next = [...stats];
-                  next[i] = { ...s, number: e.target.value };
-                  set("statistics", next);
-                }}
-                placeholder="50,000+"
-                className={`${inputClass} w-32`}
-              />
-              <input
-                value={s.description}
-                onChange={(e) => {
-                  const next = [...stats];
-                  next[i] = { ...s, description: e.target.value };
-                  set("statistics", next);
-                }}
-                placeholder="Happy Parents"
-                className={`${inputClass} flex-1`}
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (i === 0) return;
-                  const next = [...stats];
-                  [next[i - 1], next[i]] = [next[i], next[i - 1]];
-                  set("statistics", next);
-                }}
-                disabled={i === 0}
-                className="text-gray-400 hover:text-gray-900 disabled:opacity-30 p-1"
-              >
-                <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => set("statistics", stats.filter((_, idx) => idx !== i))}
-                className="text-gray-400 hover:text-red-600 p-1"
-              >
-                <span className="material-symbols-outlined text-[18px]">delete</span>
-              </button>
-            </div>
-          ))}
+        <h2 className="text-base font-semibold text-gray-900 mb-1">Hero Statistics</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Select exactly 3 from the library. Order follows selection below (use arrows to reorder).
+        </p>
+        <p className="mb-3 text-xs text-gray-600">{statIds.length}/3 selected</p>
+        <div className="mb-4 flex flex-col gap-2">
+          {statIds.map((id, index) => {
+            const item = statItems.find((row) => row.id === id);
+            if (!item) return null;
+            return (
+              <div key={id} className="flex items-center gap-2 rounded-md border border-gray-900 bg-gray-50 p-2">
+                <span className="flex-1 text-sm font-medium text-gray-900">
+                  {item.value} — {item.label}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => set("stat_item_ids", moveId(statIds, id, -1))}
+                  disabled={index === 0}
+                  className="p-1 disabled:opacity-30"
+                >
+                  <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set("stat_item_ids", moveId(statIds, id, 1))}
+                  disabled={index === statIds.length - 1}
+                  className="p-1 disabled:opacity-30"
+                >
+                  <span className="material-symbols-outlined text-[18px]">arrow_downward</span>
+                </button>
+              </div>
+            );
+          })}
         </div>
-
-        <button
-          type="button"
-          onClick={() => set("statistics", [...stats, { icon: "verified", number: "", description: "" }])}
-          className="text-sm font-medium px-3 py-1.5 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 mb-3"
-        >
-          + Add blank statistic
-        </button>
-
-        <p className="text-xs text-gray-500 mb-2">Or click a suggestion to add it instantly:</p>
-        <div className="flex flex-wrap gap-2">
-          {STAT_SUGGESTIONS.map((sug, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => set("statistics", [...stats, { ...sug }])}
-              className="text-xs px-3 py-1.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100"
-            >
-              {sug.number} — {sug.description}
-            </button>
-          ))}
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          {statItems.map((item) => {
+            const selected = statIds.includes(item.id);
+            const atMax = statIds.length >= 3 && !selected;
+            return (
+              <label
+                key={item.id}
+                className={`flex items-start gap-2 rounded-md border p-3 ${
+                  selected ? "border-gray-900 bg-gray-50" : "border-gray-200"
+                } ${atMax || !item.is_active ? "opacity-50" : ""}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  disabled={atMax || !item.is_active}
+                  onChange={() => set("stat_item_ids", toggleMaxThree(statIds, item.id, selected))}
+                />
+                <span>
+                  <span className="block text-sm font-medium text-gray-900">
+                    {item.value} — {item.label}
+                  </span>
+                  <span className="block text-xs text-gray-500">{item.icon}</span>
+                </span>
+              </label>
+            );
+          })}
         </div>
       </section>
 
@@ -660,6 +648,7 @@ function CampaignEditor({
           productIds={campaign.featured_product_ids}
           categories={categories}
           products={products}
+          badgeItems={badgeItems}
           onChangeType={(t) => set("featured_selection_type", t)}
           onChangeCategory={(slug) => set("featured_category", slug)}
           onToggleProduct={(id) => {
@@ -895,6 +884,9 @@ export default function AdminCampaignsPage() {
   const [products, setProducts] = useState<ProductLite[]>([]);
   const [categories, setCategories] = useState<CategoryLite[]>([]);
   const [trustItems, setTrustItems] = useState<TrustItemOption[]>([]);
+  const [featureItems, setFeatureItems] = useState<FeatureItemOption[]>([]);
+  const [statItems, setStatItems] = useState<StatItemOption[]>([]);
+  const [badgeItems, setBadgeItems] = useState<BadgeItemOption[]>([]);
   const [testimonials, setTestimonials] = useState<TestimonialOption[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [draft, setDraft] = useState<Campaign | null>(null);
@@ -913,6 +905,9 @@ export default function AdminCampaignsPage() {
         setProducts(data.products || []);
         setCategories(data.categories || []);
         setTrustItems(data.trust_items || []);
+        setFeatureItems(data.feature_items || []);
+        setStatItems(data.stat_items || []);
+        setBadgeItems(data.badge_items || []);
         setTestimonials(data.testimonials || []);
         if (!selectedId && data.campaigns?.length) {
           setSelectedId(data.campaigns[0].id);
@@ -1114,6 +1109,9 @@ export default function AdminCampaignsPage() {
               categories={categories}
               products={products}
               trustItems={trustItems}
+              featureItems={featureItems}
+              statItems={statItems}
+              badgeItems={badgeItems}
               testimonials={testimonials}
               onChange={setDraft}
               onProductBadgeChange={(id, badge) => {

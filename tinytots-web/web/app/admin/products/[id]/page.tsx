@@ -6,10 +6,8 @@ import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploader from "@/components/admin/ImageUploader";
 import CategorySelect from "@/components/admin/CategorySelect";
 import { adminFetch } from "@/lib/admin-fetch";
-import {
-  SIGNAGE_PRODUCT_BADGES,
-  type SignageProductBadge,
-} from "@/lib/signage-campaign";
+import SignageBadgePicker from "@/components/admin/SignageBadgePicker";
+import { type SignageProductBadge } from "@/lib/signage-campaign";
 
 type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number; reorder_level: number; web_price_locked: boolean; web_round_to: number };
 type Product = {
@@ -70,6 +68,7 @@ export default function EditProductPage() {
   const justCreated = searchParams.get("justCreated") === "1";
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
+  const [badgeItems, setBadgeItems] = useState<{ id: number; label: string; is_active: boolean }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +83,11 @@ export default function EditProductPage() {
       .then((r) => r.json())
       .then((json) => setImages(json.data || []))
       .catch(() => setImages([]));
+
+    adminFetch("/api/admin/badge-items")
+      .then((r) => r.json())
+      .then((json) => setBadgeItems(json.items || []))
+      .catch(() => setBadgeItems([]));
   }, [id]);
 
   function updateField<K extends keyof Product>(field: K, value: Product[K]) {
@@ -204,29 +208,15 @@ export default function EditProductPage() {
           <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">
             Signage card badge
           </label>
-          <select
-            value={product.signage_badge ?? ""}
-            onChange={(e) =>
-              updateField(
-                "signage_badge",
-                e.target.value ? (e.target.value as SignageProductBadge) : null
-              )
-            }
-            className={inputClass}
-          >
-            <option value="">None</option>
-            {SIGNAGE_PRODUCT_BADGES.map((badge) => (
-              <option key={badge} value={badge}>
-                {badge === "BEST_SELLER"
-                  ? "BEST SELLER"
-                  : badge === "LIMITED_EDITION"
-                    ? "LIMITED EDITION"
-                    : "NEW"}
-              </option>
-            ))}
-          </select>
+          <SignageBadgePicker
+            value={product.signage_badge}
+            options={badgeItems}
+            onChange={(badge) => updateField("signage_badge", badge)}
+            className="rounded-lg border border-outline-variant bg-surface-container-lowest p-3"
+          />
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5">
-            Shown on the digital signage featured product cards when this product is selected.
+            Shown on the digital signage featured product cards when this product is selected. Pick from
+            the library or enter custom text.
           </p>
         </div>
 
