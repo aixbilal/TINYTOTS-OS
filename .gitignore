@@ -32,3 +32,4 @@ tinytots-app/electron-app/backend/labels/
 tinytots-app/electron-app/backend/receipts/
 tinytots-app/electron-app/backend/reports/
 tinytots-fixes.bundle
+.qa/
