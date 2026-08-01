@@ -151,4 +151,3 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   await removeUnreferencedCampaignAssets([campaign.hero_banner_original_url, campaign.hero_banner_preview_url]);
   return NextResponse.json({ campaign: updated });
 }
-}

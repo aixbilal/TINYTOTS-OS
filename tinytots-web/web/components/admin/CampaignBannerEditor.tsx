@@ -136,8 +136,15 @@ export default function CampaignBannerEditor({
         method: "POST",
         body: formData,
       });
-      const payload = await response.json();
+      const text = await response.text();
+      let payload: { campaign?: Record<string, unknown>; error?: string } = {};
+      try {
+        payload = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error(`Banner upload failed (${response.status}).`);
+      }
       if (!response.ok) throw new Error(payload.error || "Banner upload failed.");
+      if (!payload.campaign) throw new Error("Banner upload returned no campaign.");
       onUpdated(payload.campaign);
       closeEditor();
     } catch (uploadError) {
@@ -153,8 +160,15 @@ export default function CampaignBannerEditor({
     setError("");
     try {
       const response = await adminFetch(`/api/admin/campaigns/${campaignId}/upload`, { method: "DELETE" });
-      const payload = await response.json();
+      const text = await response.text();
+      let payload: { campaign?: Record<string, unknown>; error?: string } = {};
+      try {
+        payload = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error(`Banner deletion failed (${response.status}).`);
+      }
       if (!response.ok) throw new Error(payload.error || "Banner deletion failed.");
+      if (!payload.campaign) throw new Error("Banner deletion returned no campaign.");
       onUpdated(payload.campaign);
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Banner deletion failed.");

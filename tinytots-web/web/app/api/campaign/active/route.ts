@@ -36,10 +36,20 @@ type TestimonialRow = {
 
 async function resolveFeaturedProducts(campaign: CampaignRow) {
   if (campaign.featured_selection_type === "category" && campaign.featured_category) {
+    // Admin stores categories.slug (e.g. "pants"); products.category usually
+    // stores the display name (e.g. "Pants"). Resolve slug → name first.
+    const slugOrName = campaign.featured_category;
+    const { data: categoryRow } = await supabaseAdmin
+      .from("categories")
+      .select("name, slug")
+      .or(`slug.eq.${slugOrName},name.eq.${slugOrName}`)
+      .maybeSingle();
+    const categoryLabel = categoryRow?.name || slugOrName;
+
     const { data } = await supabaseAdmin
       .from("products")
       .select("id, name, image_url, category, signage_badge")
-      .eq("category", campaign.featured_category)
+      .ilike("category", categoryLabel.trim())
       .eq("is_active", true)
       .not("image_url", "is", null)
       .order("created_at", { ascending: false })

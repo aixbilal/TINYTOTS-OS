@@ -20,3 +20,4 @@ comment on column public.products.signage_badge is
   'Optional signage featured-card badge: NEW, BEST_SELLER, or LIMITED_EDITION.';
 
 commit;
+-
