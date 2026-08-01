@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import {
   DEFAULT_CAMPAIGN_THEME,
+  DEFAULT_ROTATION_SECONDS,
   formatSignageProductBadgeLabel,
   normalizeSignageProductBadge,
   signageProductBadgeVariant,
@@ -87,6 +88,8 @@ type CampaignPayload = {
   testimonials: Testimonial[];
   social_links: CampaignSocialLink[];
   footer_settings: CampaignFooterSettings | null;
+  slides?: CampaignPayload[];
+  rotation_seconds?: number;
 };
 
 const ICON_COMPONENTS: Record<string, LucideIcon> = {
@@ -447,15 +450,13 @@ async function preloadPayloadImages(payload: CampaignPayload) {
 
 function SignagePageContent() {
   const previewId = useSearchParams().get("preview");
-  const [display, setDisplay] = useState<CampaignPayload | null>(null);
+  const [slides, setSlides] = useState<CampaignPayload[]>([]);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [rotationSeconds, setRotationSeconds] = useState(DEFAULT_ROTATION_SECONDS);
   const [fading, setFading] = useState(false);
-  const displayRef = useRef<CampaignPayload | null>(null);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rotateTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadSequenceRef = useRef(0);
-
-  useEffect(() => {
-    displayRef.current = display;
-  }, [display]);
 
   const load = useCallback(async () => {
     const sequence = ++loadSequenceRef.current;
@@ -466,25 +467,23 @@ function SignagePageContent() {
       const response = await fetch(url, { cache: "no-store" });
       if (!response.ok) return;
       const payload = (await response.json()) as CampaignPayload;
-      await preloadPayloadImages(payload);
+      const nextSlides =
+        Array.isArray(payload.slides) && payload.slides.length > 0
+          ? payload.slides
+          : payload.campaign
+            ? [payload]
+            : [];
+
+      await Promise.all(nextSlides.map((slide) => preloadPayloadImages(slide)));
       if (sequence !== loadSequenceRef.current) return;
 
-      const current = displayRef.current;
-      const campaignChanged =
-        current?.campaign?._id !== payload.campaign?._id ||
-        current?.campaign?._updated_at !== payload.campaign?._updated_at;
-
-      if (!current || !campaignChanged) {
-        setDisplay(payload);
-        return;
-      }
-
-      setFading(true);
-      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
-      fadeTimerRef.current = setTimeout(() => {
-        setDisplay(payload);
-        setFading(false);
-      }, 320);
+      setRotationSeconds(
+        Number.isFinite(payload.rotation_seconds)
+          ? Math.min(60, Math.max(10, Number(payload.rotation_seconds)))
+          : DEFAULT_ROTATION_SECONDS
+      );
+      setSlides(nextSlides);
+      setSlideIndex((current) => (nextSlides.length === 0 ? 0 : current % nextSlides.length));
     } catch {
       // Preserve the last complete frame through transient network errors.
     }
@@ -507,6 +506,30 @@ function SignagePageContent() {
     };
   }, [load, previewId]);
 
+  // Rotate among all active campaigns (skipped in single-campaign / preview).
+  useEffect(() => {
+    if (rotateTimerRef.current) {
+      clearInterval(rotateTimerRef.current);
+      rotateTimerRef.current = null;
+    }
+    if (previewId || slides.length <= 1) return;
+
+    rotateTimerRef.current = setInterval(() => {
+      setFading(true);
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+      fadeTimerRef.current = setTimeout(() => {
+        setSlideIndex((current) => (current + 1) % slides.length);
+        setFading(false);
+      }, 320);
+    }, rotationSeconds * 1000);
+
+    return () => {
+      if (rotateTimerRef.current) clearInterval(rotateTimerRef.current);
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+    };
+  }, [slides.length, rotationSeconds, previewId]);
+
+  const display = slides[slideIndex] || null;
   const campaign = display?.campaign;
   const theme = campaign?.theme || DEFAULT_CAMPAIGN_THEME;
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { adminFetch } from "@/lib/admin-fetch";
 import CampaignBannerEditor from "@/components/admin/CampaignBannerEditor";
+import CampaignPaletteEditor from "@/components/admin/CampaignPaletteEditor";
 import CampaignQrEditor from "@/components/admin/CampaignQrEditor";
 import SignageBadgePicker from "@/components/admin/SignageBadgePicker";
 import {
@@ -52,6 +53,21 @@ interface Campaign {
   social_links: CampaignSocialLink[];
   footer_settings: CampaignFooterSettings | null;
   theme: CampaignTheme;
+  updated_at?: string;
+  created_at?: string;
+}
+
+function formatEditedAt(value?: string): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 interface ProductLite {
   id: number;
@@ -113,7 +129,9 @@ function moveId(ids: number[], id: number, delta: number): number[] {
   return next;
 }
 
-const blankCampaign = (name: string): Partial<Campaign> => ({ name });
+function defaultTheme(): CampaignTheme {
+  return { ...DEFAULT_CAMPAIGN_THEME };
+}
 
 /* ------------------------------------------------------------------
  * Small reusable field components
@@ -128,25 +146,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 const inputClass =
   "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900";
-
-const THEME_FIELDS: { key: keyof CampaignTheme; label: string }[] = [
-  { key: "primary", label: "Primary" },
-  { key: "secondary", label: "Secondary" },
-  { key: "accent", label: "Accent" },
-  { key: "button", label: "Button" },
-  { key: "buttonText", label: "Button text" },
-  { key: "badge", label: "Badge" },
-  { key: "badgeText", label: "Badge text" },
-  { key: "background", label: "Page background" },
-  { key: "surface", label: "Hero surface" },
-  { key: "card", label: "Card" },
-  { key: "text", label: "Main text" },
-  { key: "mutedText", label: "Muted text" },
-  { key: "border", label: "Borders" },
-  { key: "icon", label: "Icons" },
-  { key: "footer", label: "Footer" },
-  { key: "footerText", label: "Footer text" },
-];
 
 const SOCIAL_PLATFORMS: CampaignSocialLink["platform"][] = [
   "instagram",
@@ -314,7 +313,7 @@ function CampaignEditor({
 
   const featureIds = campaign.feature_item_ids || [];
   const statIds = campaign.stat_item_ids || [];
-  const theme = { ...DEFAULT_CAMPAIGN_THEME, ...(campaign.theme || {}) };
+  const theme = { ...defaultTheme(), ...(campaign.theme || {}) };
   const socialLinks = SOCIAL_PLATFORMS.map(
     (platform) =>
       (campaign.social_links || []).find((link) => link.platform === platform) || {
@@ -367,37 +366,17 @@ function CampaignEditor({
       </section>
 
       <section className="border border-gray-200 rounded-lg p-5">
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">Campaign Theme</h2>
-            <p className="text-xs text-gray-500">
-              Palette changes only. Every campaign keeps the same approved signage layout and typography.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => set("theme", DEFAULT_CAMPAIGN_THEME)}
-            className="shrink-0 rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700"
-          >
-            Reset palette
-          </button>
+        <div className="mb-4">
+          <h2 className="text-base font-semibold text-gray-900">Campaign Theme</h2>
+          <p className="text-xs text-gray-500">
+            Pick one theme color — the full palette (buttons, badges, backgrounds, footer) builds
+            automatically. Layout stays the same.
+          </p>
         </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {THEME_FIELDS.map(({ key, label }) => (
-            <label key={key} className="flex items-center gap-2 rounded-md border border-gray-200 p-2">
-              <input
-                type="color"
-                value={theme[key]}
-                onChange={(event) => set("theme", { ...theme, [key]: event.target.value })}
-                className="h-9 w-10 cursor-pointer rounded border-0 bg-transparent p-0"
-              />
-              <span className="min-w-0">
-                <span className="block text-xs font-medium text-gray-700">{label}</span>
-                <span className="block truncate font-mono text-[10px] text-gray-500">{theme[key]}</span>
-              </span>
-            </label>
-          ))}
-        </div>
+        <CampaignPaletteEditor
+          theme={theme}
+          onChange={(nextTheme) => set("theme", nextTheme)}
+        />
       </section>
 
       {/* Preview */}
@@ -941,19 +920,28 @@ export default function AdminCampaignsPage() {
   }
 
   async function createCampaign() {
-    const name = window.prompt("Campaign name?", "New Campaign");
+    const name = window.prompt("Campaign name?", "New Campaign")?.trim();
     if (!name) return;
+    if (name.length > 120) {
+      setErrorMsg("Campaign name must be 1–120 characters.");
+      return;
+    }
+    setErrorMsg("");
     try {
       const res = await adminFetch("/api/admin/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(blankCampaign(name)),
+        body: JSON.stringify({ name }),
       });
-      const data = await res.json();
-      if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.campaign) {
+        // New campaigns always arrive with the default palette from the API.
         await loadAll();
-        selectCampaign(data.campaign);
-        flash("Campaign created.");
+        selectCampaign({
+          ...data.campaign,
+          theme: normalizeTheme(data.campaign.theme),
+        });
+        flash("Campaign created with default palette.");
       } else {
         setErrorMsg(data.error || "Failed to create campaign");
       }
@@ -962,18 +950,40 @@ export default function AdminCampaignsPage() {
     }
   }
 
+  function normalizeTheme(value: unknown): CampaignTheme {
+    return { ...defaultTheme(), ...(value && typeof value === "object" ? (value as CampaignTheme) : {}) };
+  }
+
   async function saveDraft() {
     if (!draft) return;
+    const name = (draft.name || "").trim();
+    if (!name) {
+      setErrorMsg("Campaign name is required.");
+      return;
+    }
     setSaving(true);
     setErrorMsg("");
     try {
+      const payload = {
+        ...draft,
+        name,
+        theme: normalizeTheme(draft.theme),
+        feature_item_ids: draft.feature_item_ids || [],
+        stat_item_ids: draft.stat_item_ids || [],
+        trust_item_ids: draft.trust_item_ids || [],
+        testimonial_ids: draft.testimonial_ids || [],
+        featured_product_ids: draft.featured_product_ids || [],
+      };
+      // Never send is_active through save — use Add/Remove from rotation.
+      const { is_active: _omitActive, ...safePayload } = payload as Campaign & { is_active?: boolean };
+
       const res = await adminFetch(`/api/admin/campaigns/${draft.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(draft),
+        body: JSON.stringify(safePayload),
       });
-      const data = await res.json();
-      if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.campaign) {
         setDraft(data.campaign);
         setCampaigns((prev) => prev.map((c) => (c.id === data.campaign.id ? data.campaign : c)));
         flash("Campaign saved.");
@@ -987,31 +997,72 @@ export default function AdminCampaignsPage() {
     }
   }
 
-  async function activate(id: number) {
+  async function setRotationMembership(id: number, active: boolean) {
+    setErrorMsg("");
     try {
-      const res = await adminFetch(`/api/admin/campaigns/${id}/activate`, { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        await loadAll();
-        flash("Campaign activated — live on /signage now.");
-      } else {
-        setErrorMsg(data.error || "Failed to activate campaign");
+      const res = await adminFetch("/api/admin/campaigns/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, active }),
+      });
+      const text = await res.text();
+      let data: { error?: string; warning?: string; campaign?: Campaign } = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        setErrorMsg(`Failed to update rotation (HTTP ${res.status}). Restart the dev server if this persists.`);
+        return;
       }
+      if (!res.ok) {
+        setErrorMsg(data.error || `Failed to update rotation (HTTP ${res.status})`);
+        return;
+      }
+
+      const listRes = await adminFetch("/api/admin/campaigns");
+      const listData = await listRes.json().catch(() => ({}));
+      if (listRes.ok) {
+        const nextCampaigns: Campaign[] = listData.campaigns || [];
+        setCampaigns(nextCampaigns);
+        setDraft((current) => {
+          if (!current) return current;
+          const refreshed = nextCampaigns.find((campaign) => campaign.id === current.id);
+          return refreshed ? { ...current, is_active: refreshed.is_active } : current;
+        });
+      }
+      flash(
+        data.warning
+          ? data.warning
+          : active
+            ? "Added to live rotation on /signage."
+            : "Removed from live rotation."
+      );
     } catch {
-      setErrorMsg("Failed to activate campaign");
+      setErrorMsg("Failed to update rotation");
     }
   }
 
   async function duplicate(id: number) {
+    setErrorMsg("");
     try {
-      const res = await adminFetch(`/api/admin/campaigns/${id}/duplicate`, { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
+      const res = await adminFetch("/api/admin/campaigns/duplicate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const text = await res.text();
+      let data: { error?: string; campaign?: Campaign } = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        setErrorMsg(`Failed to duplicate campaign (HTTP ${res.status}). Restart the dev server if this persists.`);
+        return;
+      }
+      if (res.ok && data.campaign) {
         await loadAll();
         selectCampaign(data.campaign);
-        flash("Campaign duplicated.");
+        flash("Campaign duplicated (inactive). Change its palette, then add to rotation.");
       } else {
-        setErrorMsg(data.error || "Failed to duplicate campaign");
+        setErrorMsg(data.error || `Failed to duplicate campaign (HTTP ${res.status})`);
       }
     } catch {
       setErrorMsg("Failed to duplicate campaign");
@@ -1021,8 +1072,13 @@ export default function AdminCampaignsPage() {
   async function deleteCampaign(id: number) {
     if (!window.confirm("Delete this campaign? This can't be undone.")) return;
     try {
-      const res = await adminFetch(`/api/admin/campaigns/${id}`, { method: "DELETE" });
-      const data = await res.json();
+      let res = await adminFetch(`/api/admin/campaigns/${id}`, { method: "DELETE" });
+      let data = await res.json().catch(() => ({}));
+      if (!res.ok && typeof data.error === "string" && data.error.includes("only campaign")) {
+        if (!window.confirm("This is the only campaign in the live rotation. Delete it anyway?")) return;
+        res = await adminFetch(`/api/admin/campaigns/${id}?force=1`, { method: "DELETE" });
+        data = await res.json().catch(() => ({}));
+      }
       if (res.ok) {
         if (selectedId === id) {
           setSelectedId(null);
@@ -1046,7 +1102,8 @@ export default function AdminCampaignsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Campaign Management</h1>
           <p className="text-sm text-gray-500">
-            Activating a campaign atomically replaces the currently live campaign on /signage.
+            Include multiple campaigns in the live rotation — /signage switches every ~18 seconds with
+            each campaign&apos;s own color palette.
           </p>
         </div>
         <button
@@ -1060,44 +1117,75 @@ export default function AdminCampaignsPage() {
       {errorMsg && <p className="text-sm text-red-700 bg-red-50 px-3 py-2 rounded-md mb-4">{errorMsg}</p>}
       {message && <p className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md mb-4">{message}</p>}
 
-      <div className="grid grid-cols-[280px_1fr] gap-6">
+      <div className="grid grid-cols-[320px_1fr] gap-6">
         {/* Campaign list */}
         <div className="flex flex-col gap-2">
-          {campaigns.map((c) => (
-            <div
-              key={c.id}
-              onClick={() => selectCampaign(c)}
-              className={`border rounded-lg p-3 cursor-pointer ${
-                selectedId === c.id ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:bg-gray-50"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-semibold text-gray-900 truncate">{c.name}</span>
-                {c.is_active && (
-                  <span className="text-[10px] font-bold uppercase bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
-                    Live
-                  </span>
-                )}
-              </div>
-              <div className="flex gap-1.5 flex-wrap" onClick={(e) => e.stopPropagation()}>
-                {!c.is_active && (
-                  <button onClick={() => activate(c.id)} className="text-xs px-2 py-1 rounded bg-gray-900 text-white hover:bg-gray-800">
-                    Activate
+          {campaigns.map((c) => {
+            const thumb = c.hero_banner_preview_url || c.hero_banner_original_url;
+            return (
+              <div
+                key={c.id}
+                onClick={() => selectCampaign(c)}
+                className={`border rounded-lg p-3 cursor-pointer ${
+                  selectedId === c.id ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                <div className="mb-2 flex items-start gap-3">
+                  <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-gray-100">
+                    {thumb ? (
+                      <Image src={thumb} alt="" fill className="object-cover" unoptimized />
+                    ) : (
+                      <span className="flex h-full items-center justify-center text-[10px] text-gray-400">No banner</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-semibold text-gray-900">{c.name}</span>
+                      {c.is_active ? (
+                        <span className="shrink-0 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-green-700">
+                          Live
+                        </span>
+                      ) : (
+                        <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-gray-500">
+                          Inactive
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-[11px] text-gray-500">Edited {formatEditedAt(c.updated_at)}</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
+                  {c.is_active ? (
+                    <button
+                      onClick={() => setRotationMembership(c.id, false)}
+                      className="rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800 hover:bg-green-200"
+                    >
+                      In rotation · Remove
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setRotationMembership(c.id, true)}
+                      className="rounded bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800"
+                    >
+                      Add to rotation
+                    </button>
+                  )}
+                  <button
+                    onClick={() => duplicate(c.id)}
+                    className="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 hover:bg-gray-200"
+                  >
+                    Duplicate
                   </button>
-                )}
-                <button onClick={() => duplicate(c.id)} className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200">
-                  Duplicate
-                </button>
-                <button
-                  onClick={() => deleteCampaign(c.id)}
-                  disabled={c.is_active}
-                  className="text-xs px-2 py-1 rounded bg-gray-100 text-red-600 hover:bg-red-50 disabled:opacity-30"
-                >
-                  Delete
-                </button>
+                  <button
+                    onClick={() => deleteCampaign(c.id)}
+                    className="rounded bg-gray-100 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {campaigns.length === 0 && <p className="text-sm text-gray-500">No campaigns yet.</p>}
         </div>
 

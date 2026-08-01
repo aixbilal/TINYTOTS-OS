@@ -1,28 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 
-// POST /api/admin/campaigns/[id]/duplicate — clones every field onto a new
-// row named "<original> (Copy)", always inactive so duplicating never
-// disrupts what's currently live on the TV.
+/** Legacy nested path — forwards to /api/admin/campaigns/duplicate. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const denied = await requireAdmin(req, "canManageSettings");
   if (denied) return denied;
 
   const { id } = await params;
+  const auth = req.headers.get("authorization") || "";
+  const origin = req.nextUrl.origin;
+  const upstream = await fetch(`${origin}/api/admin/campaigns/duplicate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: auth,
+    },
+    body: JSON.stringify({ id: Number(id) }),
+  });
 
-  const { data: original, error: fetchError } = await supabaseAdmin.from("campaigns").select("*").eq("id", id).maybeSingle();
-  if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 });
-  if (!original) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
-
-  const { id: _omitId, created_at: _omitCreated, updated_at: _omitUpdated, ...rest } = original;
-
-  const { data, error } = await supabaseAdmin
-    .from("campaigns")
-    .insert({ ...rest, name: `${original.name} (Copy)`, is_active: false })
-    .select("*")
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ campaign: data });
+  const text = await upstream.text();
+  try {
+    return NextResponse.json(JSON.parse(text), { status: upstream.status });
+  } catch {
+    return NextResponse.json(
+      { error: text || `Upstream duplicate failed (HTTP ${upstream.status})` },
+      { status: upstream.status || 500 }
+    );
+  }
 }

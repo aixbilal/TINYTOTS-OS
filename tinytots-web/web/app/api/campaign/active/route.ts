@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
+  DEFAULT_ROTATION_SECONDS,
   normalizeBannerCrop,
   normalizeBannerFocalPoint,
   normalizeCampaignTheme,
 } from "@/lib/signage-campaign";
 
-// The TV in the shop leaves this tab open indefinitely, so this must never
-// serve a stale cached response.
 export const dynamic = "force-dynamic";
 
 type CampaignRow = {
@@ -30,6 +29,15 @@ type CampaignRow = {
   [key: string]: unknown;
 };
 
+type CampaignPayload = {
+  campaign: Record<string, unknown> | null;
+  featured_products: unknown[];
+  trust_items: unknown[];
+  testimonials: unknown[];
+  social_links: unknown[];
+  footer_settings: unknown;
+};
+
 function orderByIds<T extends { id: number }>(rows: T[] | null | undefined, ids: number[]): T[] {
   if (!rows?.length || !ids?.length) return [];
   const byId = new Map(rows.map((row) => [row.id, row]));
@@ -46,8 +54,6 @@ type TestimonialRow = {
 
 async function resolveFeaturedProducts(campaign: CampaignRow) {
   if (campaign.featured_selection_type === "category" && campaign.featured_category) {
-    // Admin stores categories.slug (e.g. "pants"); products.category usually
-    // stores the display name (e.g. "Pants"). Resolve slug → name first.
     const slugOrName = campaign.featured_category;
     const { data: categoryRow } = await supabaseAdmin
       .from("categories")
@@ -74,7 +80,6 @@ async function resolveFeaturedProducts(campaign: CampaignRow) {
       .in("id", campaign.featured_product_ids)
       .eq("is_active", true);
     if (data?.length) {
-      // Preserve the admin's chosen order — .in() doesn't guarantee it.
       const byId = new Map(data.map((product) => [product.id, product]));
       return campaign.featured_product_ids.map((id: number) => byId.get(id)).filter(Boolean);
     }
@@ -83,34 +88,7 @@ async function resolveFeaturedProducts(campaign: CampaignRow) {
   return [];
 }
 
-export async function GET(req: NextRequest) {
-  // Preview mode shows a campaign without changing what is live.
-  const previewId = req.nextUrl.searchParams.get("preview");
-
-  let campaign: CampaignRow | null = null;
-  if (previewId) {
-    const { data } = await supabaseAdmin.from("campaigns").select("*").eq("id", previewId).maybeSingle();
-    campaign = data as CampaignRow | null;
-  } else {
-    const { data } = await supabaseAdmin
-      .from("campaigns")
-      .select("*")
-      .eq("is_active", true)
-      .maybeSingle();
-    campaign = data as CampaignRow | null;
-  }
-
-  if (!campaign) {
-    return NextResponse.json({
-      campaign: null,
-      featured_products: [],
-      trust_items: [],
-      testimonials: [],
-      social_links: [],
-      footer_settings: null,
-    });
-  }
-
+async function buildPayload(campaign: CampaignRow): Promise<CampaignPayload> {
   const featureIds = (campaign.feature_item_ids || []).slice(0, 3);
   const statIds = (campaign.stat_item_ids || []).slice(0, 3);
 
@@ -167,7 +145,6 @@ export async function GET(req: NextRequest) {
     description: item.label,
   }));
 
-  // Prefer pool selection; fall back to legacy JSON columns if IDs are empty.
   const feature_list =
     resolvedFeatures.length > 0
       ? resolvedFeatures
@@ -181,7 +158,7 @@ export async function GET(req: NextRequest) {
         ? campaign.statistics
         : [];
 
-  return NextResponse.json({
+  return {
     campaign: {
       _id: campaign.id,
       _updated_at: campaign.updated_at,
@@ -221,5 +198,59 @@ export async function GET(req: NextRequest) {
         )
       : [],
     footer_settings: campaign.footer_settings || null,
+  };
+}
+
+const emptyPayload = (): CampaignPayload => ({
+  campaign: null,
+  featured_products: [],
+  trust_items: [],
+  testimonials: [],
+  social_links: [],
+  footer_settings: null,
+});
+
+async function getRotationSeconds(): Promise<number> {
+  const { data, error } = await supabaseAdmin
+    .from("signage_revision")
+    .select("*")
+    .eq("id", 1)
+    .maybeSingle();
+  if (error || !data) return DEFAULT_ROTATION_SECONDS;
+  const value = Number((data as { rotation_seconds?: unknown }).rotation_seconds);
+  if (!Number.isFinite(value)) return DEFAULT_ROTATION_SECONDS;
+  return Math.min(60, Math.max(10, Math.round(value)));
+}
+
+export async function GET(req: NextRequest) {
+  const previewId = req.nextUrl.searchParams.get("preview");
+  const rotation_seconds = await getRotationSeconds();
+
+  if (previewId) {
+    const { data } = await supabaseAdmin.from("campaigns").select("*").eq("id", previewId).maybeSingle();
+    if (!data) {
+      return NextResponse.json({ ...emptyPayload(), slides: [], rotation_seconds });
+    }
+    const payload = await buildPayload(data as CampaignRow);
+    return NextResponse.json({ ...payload, slides: [payload], rotation_seconds });
+  }
+
+  const { data: activeRows } = await supabaseAdmin
+    .from("campaigns")
+    .select("*")
+    .eq("is_active", true)
+    .order("updated_at", { ascending: false });
+
+  const rows = (activeRows || []) as CampaignRow[];
+  if (!rows.length) {
+    return NextResponse.json({ ...emptyPayload(), slides: [], rotation_seconds });
+  }
+
+  const slides = await Promise.all(rows.map((row) => buildPayload(row)));
+  // Backward-compatible: `campaign` is the first slide; client rotates `slides`.
+  return NextResponse.json({
+    ...slides[0],
+    slides,
+    rotation_seconds,
   });
 }
