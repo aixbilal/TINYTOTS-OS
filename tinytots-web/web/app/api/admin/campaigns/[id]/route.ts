@@ -14,6 +14,8 @@ const EDITABLE_FIELDS = [
   "cta_url",
   "cta_visible",
   "hero_badge",
+  "heading_line1_color",
+  "heading_line2_color",
   "feature_list",
   "statistics",
   "featured_heading",
@@ -24,6 +26,8 @@ const EDITABLE_FIELDS = [
   "featured_product_ids",
   "marquee_speed_seconds",
   "marquee_direction",
+  "display_seconds",
+  "rotation_order",
   "trust_item_ids",
   "feature_item_ids",
   "stat_item_ids",
@@ -32,6 +36,8 @@ const EDITABLE_FIELDS = [
   "footer_settings",
   "theme",
 ] as const;
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 function normalizeIdArray(value: unknown, max?: number): number[] {
   if (!Array.isArray(value)) return [];
@@ -91,6 +97,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   if ("theme" in body) updates.theme = normalizeCampaignTheme(body.theme);
+  if ("display_seconds" in body) {
+    const seconds = Math.round(Number(body.display_seconds));
+    if (!Number.isFinite(seconds) || seconds < 10 || seconds > 60) {
+      return NextResponse.json({ error: "display_seconds must be between 10 and 60" }, { status: 400 });
+    }
+    updates.display_seconds = seconds;
+  }
+  if ("heading_line1_color" in body) {
+    const value = body.heading_line1_color;
+    updates.heading_line1_color =
+      typeof value === "string" && HEX_COLOR.test(value.trim()) ? value.trim().toLowerCase() : null;
+  }
+  if ("heading_line2_color" in body) {
+    const value = body.heading_line2_color;
+    updates.heading_line2_color =
+      typeof value === "string" && HEX_COLOR.test(value.trim()) ? value.trim().toLowerCase() : null;
+  }
+  if ("hero_badge" in body) {
+    const value = typeof body.hero_badge === "string" ? body.hero_badge.trim() : "";
+    updates.hero_badge = value || null;
+  }
   if ("trust_item_ids" in body) {
     updates.trust_item_ids = normalizeIdArray(body.trust_item_ids);
   }

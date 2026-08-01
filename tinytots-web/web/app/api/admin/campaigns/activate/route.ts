@@ -53,9 +53,23 @@ export async function POST(req: NextRequest) {
   }
 
   const now = new Date().toISOString();
+  const updates: Record<string, unknown> = { is_active: makeActive, updated_at: now };
+
+  if (makeActive) {
+    const { data: activeRows } = await supabaseAdmin
+      .from("campaigns")
+      .select("rotation_order")
+      .eq("is_active", true);
+    const maxOrder = (activeRows || []).reduce(
+      (max, row) => Math.max(max, Number(row.rotation_order) || 0),
+      -1
+    );
+    updates.rotation_order = maxOrder + 1;
+  }
+
   const { data: campaign, error } = await supabaseAdmin
     .from("campaigns")
-    .update({ is_active: makeActive, updated_at: now })
+    .update(updates)
     .eq("id", campaignId)
     .select("*")
     .maybeSingle();

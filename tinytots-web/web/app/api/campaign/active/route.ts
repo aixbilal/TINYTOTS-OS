@@ -158,12 +158,15 @@ async function buildPayload(campaign: CampaignRow): Promise<CampaignPayload> {
         ? campaign.statistics
         : [];
 
+  const displaySeconds = Number(campaign.display_seconds);
   return {
     campaign: {
       _id: campaign.id,
       _updated_at: campaign.updated_at,
       collection_label: campaign.collection_label,
       heading: campaign.heading,
+      heading_line1_color: campaign.heading_line1_color || null,
+      heading_line2_color: campaign.heading_line2_color || null,
       subtitle: campaign.subtitle,
       description: campaign.description,
       cta_text: campaign.cta_text,
@@ -181,6 +184,9 @@ async function buildPayload(campaign: CampaignRow): Promise<CampaignPayload> {
       featured_button_text: campaign.featured_button_text,
       marquee_speed_seconds: campaign.marquee_speed_seconds,
       marquee_direction: campaign.marquee_direction,
+      display_seconds: Number.isFinite(displaySeconds)
+        ? Math.min(60, Math.max(10, Math.round(displaySeconds)))
+        : DEFAULT_ROTATION_SECONDS,
       theme: normalizeCampaignTheme(campaign.theme),
     },
     featured_products: featuredProducts,
@@ -210,47 +216,72 @@ const emptyPayload = (): CampaignPayload => ({
   footer_settings: null,
 });
 
-async function getRotationSeconds(): Promise<number> {
+async function getSignageMeta() {
   const { data, error } = await supabaseAdmin
     .from("signage_revision")
     .select("*")
     .eq("id", 1)
     .maybeSingle();
-  if (error || !data) return DEFAULT_ROTATION_SECONDS;
+  if (error || !data) {
+    return {
+      rotation_seconds: DEFAULT_ROTATION_SECONDS,
+      header: { logo_text: "TinyTots", tagline: "Premium Kids Wear" },
+    };
+  }
   const value = Number((data as { rotation_seconds?: unknown }).rotation_seconds);
-  if (!Number.isFinite(value)) return DEFAULT_ROTATION_SECONDS;
-  return Math.min(60, Math.max(10, Math.round(value)));
+  return {
+    rotation_seconds: Number.isFinite(value)
+      ? Math.min(60, Math.max(10, Math.round(value)))
+      : DEFAULT_ROTATION_SECONDS,
+    header: {
+      logo_text: String((data as { header_logo_text?: unknown }).header_logo_text || "TinyTots"),
+      tagline: String((data as { header_tagline?: unknown }).header_tagline || "Premium Kids Wear"),
+    },
+  };
 }
 
 export async function GET(req: NextRequest) {
   const previewId = req.nextUrl.searchParams.get("preview");
-  const rotation_seconds = await getRotationSeconds();
+  const meta = await getSignageMeta();
 
   if (previewId) {
     const { data } = await supabaseAdmin.from("campaigns").select("*").eq("id", previewId).maybeSingle();
     if (!data) {
-      return NextResponse.json({ ...emptyPayload(), slides: [], rotation_seconds });
+      return NextResponse.json({ ...emptyPayload(), slides: [], ...meta });
     }
     const payload = await buildPayload(data as CampaignRow);
-    return NextResponse.json({ ...payload, slides: [payload], rotation_seconds });
+    return NextResponse.json({ ...payload, slides: [payload], ...meta });
   }
 
-  const { data: activeRows } = await supabaseAdmin
-    .from("campaigns")
-    .select("*")
-    .eq("is_active", true)
-    .order("updated_at", { ascending: false });
+  let activeRows: CampaignRow[] | null = null;
+  {
+    const ordered = await supabaseAdmin
+      .from("campaigns")
+      .select("*")
+      .eq("is_active", true)
+      .order("rotation_order", { ascending: true })
+      .order("id", { ascending: true });
+    if (ordered.error) {
+      const fallback = await supabaseAdmin
+        .from("campaigns")
+        .select("*")
+        .eq("is_active", true)
+        .order("updated_at", { ascending: false });
+      activeRows = (fallback.data || []) as CampaignRow[];
+    } else {
+      activeRows = (ordered.data || []) as CampaignRow[];
+    }
+  }
 
-  const rows = (activeRows || []) as CampaignRow[];
+  const rows = activeRows || [];
   if (!rows.length) {
-    return NextResponse.json({ ...emptyPayload(), slides: [], rotation_seconds });
+    return NextResponse.json({ ...emptyPayload(), slides: [], ...meta });
   }
 
   const slides = await Promise.all(rows.map((row) => buildPayload(row)));
-  // Backward-compatible: `campaign` is the first slide; client rotates `slides`.
   return NextResponse.json({
     ...slides[0],
     slides,
-    rotation_seconds,
+    ...meta,
   });
 }

@@ -6,7 +6,6 @@ import { Playfair_Display } from "next/font/google";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  ArrowLeft,
   ArrowRight,
   BadgeCheck,
   Camera,
@@ -62,6 +61,8 @@ type Campaign = {
   _updated_at?: string;
   collection_label: string;
   heading: string;
+  heading_line1_color?: string | null;
+  heading_line2_color?: string | null;
   subtitle: string;
   description: string;
   cta_text: string;
@@ -78,8 +79,11 @@ type Campaign = {
   featured_button_text: string;
   marquee_speed_seconds: number;
   marquee_direction: "left" | "right";
+  display_seconds?: number;
   theme: CampaignTheme;
 };
+
+type SignageHeader = { logo_text: string; tagline: string };
 
 type CampaignPayload = {
   campaign: Campaign | null;
@@ -90,6 +94,7 @@ type CampaignPayload = {
   footer_settings: CampaignFooterSettings | null;
   slides?: CampaignPayload[];
   rotation_seconds?: number;
+  header?: SignageHeader;
 };
 
 const ICON_COMPONENTS: Record<string, LucideIcon> = {
@@ -134,11 +139,13 @@ function themeVariables(theme: CampaignTheme): CSSProperties {
   } as CSSProperties;
 }
 
-function Header() {
+function Header({ header }: { header?: SignageHeader | null }) {
   return (
     <header className={styles.header}>
-      <span className={`${playfair.className} ${styles.logo}`}>TinyTots</span>
-      <span className={styles.brandLine}>Premium Kids Wear</span>
+      <span className={`${playfair.className} ${styles.logo}`}>
+        {header?.logo_text || "TinyTots"}
+      </span>
+      <span className={styles.brandLine}>{header?.tagline || "Premium Kids Wear"}</span>
     </header>
   );
 }
@@ -177,13 +184,27 @@ function Artwork({ campaign }: { campaign: Campaign }) {
 }
 
 function Hero({ campaign }: { campaign: Campaign }) {
+  const line1Color = campaign.heading_line1_color || undefined;
+  const line2Color = campaign.heading_line2_color || undefined;
+
   return (
     <section className={styles.hero}>
       <div className={styles.heroCopy}>
         <span className={styles.eyebrow}>{campaign.collection_label}</span>
         <h1 className={`${playfair.className} ${styles.heroHeading}`}>
           {campaign.heading.split("\n").map((line, index) => (
-            <span key={`${line}-${index}`}>{line}</span>
+            <span
+              key={`${line}-${index}`}
+              style={
+                index === 0 && line1Color
+                  ? { color: line1Color }
+                  : index === 1 && line2Color
+                    ? { color: line2Color }
+                    : undefined
+              }
+            >
+              {line}
+            </span>
           ))}
         </h1>
         <div className={styles.divider} />
@@ -291,26 +312,34 @@ function TrustStrip({ items }: { items: TrustItem[] }) {
 }
 
 function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
-  const pairs: Testimonial[][] = [];
-  for (let index = 0; index < testimonials.length; index += 2) {
-    pairs.push(testimonials.slice(index, index + 2));
+  if (testimonials.length === 0) {
+    return <section className={styles.testimonials} aria-hidden="true" />;
   }
-  const [activeIndex, setActiveIndex] = useState(0);
 
-  useEffect(() => {
-    if (pairs.length <= 1) return;
-    const timer = setInterval(() => setActiveIndex((current) => (current + 1) % pairs.length), 7000);
-    return () => clearInterval(timer);
-  }, [pairs.length]);
-
-  const move = (delta: number) => {
-    if (pairs.length > 0) {
-      setActiveIndex((current) => (current + delta + pairs.length) % pairs.length);
-    }
-  };
-  const visibleIndex = Math.min(activeIndex, Math.max(0, pairs.length - 1));
-
-  if (pairs.length === 0) return <section className={styles.testimonials} aria-hidden="true" />;
+  const cards = (duplicate: boolean) =>
+    testimonials.map((testimonial, index) => (
+      <article
+        className={styles.testimonialCard}
+        key={`${duplicate ? "copy" : "original"}-${testimonial.name}-${index}`}
+      >
+        <div className={styles.avatar}>
+          {testimonial.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={testimonial.image_url} alt="" />
+          ) : (
+            <span className={styles.avatarFallback}>{testimonial.name.charAt(0)}</span>
+          )}
+        </div>
+        <div>
+          <div className={styles.stars}>
+            {"★".repeat(testimonial.rating)}
+            {"☆".repeat(5 - testimonial.rating)}
+          </div>
+          <p className={styles.customerName}>{testimonial.name}</p>
+          <p className={styles.quote}>{testimonial.quote}</p>
+        </div>
+      </article>
+    ));
 
   return (
     <section className={styles.testimonials}>
@@ -319,43 +348,20 @@ function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
         <h2 className={styles.testimonialTitle}>Loved by Parents</h2>
         <span className={styles.testimonialTitleLine} aria-hidden="true" />
       </div>
-      <div className={styles.testimonialRow}>
-        <button className={styles.arrow} onClick={() => move(-1)} aria-label="Previous testimonials">
-          <ArrowLeft className={styles.icon} aria-hidden="true" />
-        </button>
-        <div className={styles.testimonialCards}>
-          {(pairs[visibleIndex] || []).map((testimonial, index) => (
-            <article className={styles.testimonialCard} key={`${testimonial.name}-${index}`}>
-              <div className={styles.avatar}>
-                {testimonial.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={testimonial.image_url} alt="" />
-                ) : (
-                  <span className={styles.avatarFallback}>{testimonial.name.charAt(0)}</span>
-                )}
-              </div>
-              <div>
-                <div className={styles.stars}>
-                  {"★".repeat(testimonial.rating)}
-                  {"☆".repeat(5 - testimonial.rating)}
-                </div>
-                <p className={styles.customerName}>{testimonial.name}</p>
-                <p className={styles.quote}>{testimonial.quote}</p>
-              </div>
-            </article>
-          ))}
+      <div className={styles.testimonialMarquee} aria-label="Parent testimonials">
+        <div
+          className={`${styles.marqueeTrack} ${styles.marqueeLeft}`}
+          style={{
+            animationDuration: `${Math.max(30, testimonials.length * 12)}s`,
+            animationTimingFunction: "linear",
+            animationIterationCount: "infinite",
+          }}
+        >
+          <div className={styles.testimonialMarqueeGroup}>{cards(false)}</div>
+          <div className={styles.testimonialMarqueeGroup} aria-hidden="true">
+            {cards(true)}
+          </div>
         </div>
-        <button className={styles.arrow} onClick={() => move(1)} aria-label="Next testimonials">
-          <ArrowRight className={styles.icon} aria-hidden="true" />
-        </button>
-      </div>
-      <div className={styles.dots}>
-        {pairs.map((_, index) => (
-          <span
-            className={`${styles.dot} ${index === visibleIndex ? styles.activeDot : ""}`}
-            key={index}
-          />
-        ))}
       </div>
     </section>
   );
@@ -453,9 +459,13 @@ function SignagePageContent() {
   const [slides, setSlides] = useState<CampaignPayload[]>([]);
   const [slideIndex, setSlideIndex] = useState(0);
   const [rotationSeconds, setRotationSeconds] = useState(DEFAULT_ROTATION_SECONDS);
+  const [header, setHeader] = useState<SignageHeader>({
+    logo_text: "TinyTots",
+    tagline: "Premium Kids Wear",
+  });
   const [fading, setFading] = useState(false);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const rotateTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const rotateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadSequenceRef = useRef(0);
 
   const load = useCallback(async () => {
@@ -482,6 +492,12 @@ function SignagePageContent() {
           ? Math.min(60, Math.max(10, Number(payload.rotation_seconds)))
           : DEFAULT_ROTATION_SECONDS
       );
+      if (payload.header) {
+        setHeader({
+          logo_text: payload.header.logo_text || "TinyTots",
+          tagline: payload.header.tagline || "Premium Kids Wear",
+        });
+      }
       setSlides(nextSlides);
       setSlideIndex((current) => (nextSlides.length === 0 ? 0 : current % nextSlides.length));
     } catch {
@@ -502,32 +518,39 @@ function SignagePageContent() {
 
     return () => {
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
+      if (rotateTimerRef.current) clearTimeout(rotateTimerRef.current);
       void supabase.removeChannel(channel);
     };
   }, [load, previewId]);
 
-  // Rotate among all active campaigns (skipped in single-campaign / preview).
+  // Per-campaign duration: each active slide uses its own display_seconds.
   useEffect(() => {
     if (rotateTimerRef.current) {
-      clearInterval(rotateTimerRef.current);
+      clearTimeout(rotateTimerRef.current);
       rotateTimerRef.current = null;
     }
     if (previewId || slides.length <= 1) return;
 
-    rotateTimerRef.current = setInterval(() => {
+    const currentSeconds = slides[slideIndex]?.campaign?.display_seconds;
+    const holdMs =
+      (Number.isFinite(currentSeconds)
+        ? Math.min(60, Math.max(10, Number(currentSeconds)))
+        : rotationSeconds) * 1000;
+
+    rotateTimerRef.current = setTimeout(() => {
       setFading(true);
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
       fadeTimerRef.current = setTimeout(() => {
         setSlideIndex((current) => (current + 1) % slides.length);
         setFading(false);
       }, 320);
-    }, rotationSeconds * 1000);
+    }, holdMs);
 
     return () => {
-      if (rotateTimerRef.current) clearInterval(rotateTimerRef.current);
+      if (rotateTimerRef.current) clearTimeout(rotateTimerRef.current);
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
     };
-  }, [slides.length, rotationSeconds, previewId]);
+  }, [slideIndex, slides, rotationSeconds, previewId]);
 
   const display = slides[slideIndex] || null;
   const campaign = display?.campaign;
@@ -538,7 +561,7 @@ function SignagePageContent() {
       {previewId && <div className={styles.previewBadge}>PREVIEW MODE — NOT LIVE</div>}
       {campaign && display && (
         <div className={`${styles.canvas} ${styles.fade}`} style={{ opacity: fading ? 0 : 1 }}>
-          <Header />
+          <Header header={header} />
           <Hero campaign={{ ...campaign, theme }} />
           <FeaturedCollection campaign={campaign} products={display.featured_products} />
           <TrustStrip items={display.trust_items} />

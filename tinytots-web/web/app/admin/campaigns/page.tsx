@@ -28,6 +28,8 @@ interface Campaign {
   is_active: boolean;
   collection_label: string;
   heading: string;
+  heading_line1_color?: string | null;
+  heading_line2_color?: string | null;
   subtitle: string;
   description: string;
   cta_text: string;
@@ -48,6 +50,8 @@ interface Campaign {
   featured_product_ids: number[] | null;
   marquee_speed_seconds: number;
   marquee_direction: "left" | "right";
+  display_seconds?: number;
+  rotation_order?: number;
   trust_item_ids: number[];
   testimonial_ids: number[];
   social_links: CampaignSocialLink[];
@@ -55,6 +59,12 @@ interface Campaign {
   theme: CampaignTheme;
   updated_at?: string;
   created_at?: string;
+}
+
+interface SignageSettings {
+  header_logo_text: string;
+  header_tagline: string;
+  rotation_seconds: number;
 }
 
 function formatEditedAt(value?: string): string {
@@ -340,7 +350,7 @@ function CampaignEditor({
               className={inputClass}
             />
           </Field>
-          <Field label="Heading (use a line break for the 2nd rust-colored line)">
+          <Field label="Heading (line break = 2nd colored line)">
             <textarea
               value={campaign.heading || ""}
               onChange={(e) => set("heading", e.target.value)}
@@ -348,6 +358,42 @@ function CampaignEditor({
               className={inputClass}
             />
           </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Heading line 1 color">
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={campaign.heading_line1_color || theme.text}
+                  onChange={(e) => set("heading_line1_color", e.target.value)}
+                  className="h-10 w-12 cursor-pointer rounded border border-gray-200"
+                />
+                <button
+                  type="button"
+                  className="text-xs text-gray-500 underline"
+                  onClick={() => set("heading_line1_color", null)}
+                >
+                  Use theme text
+                </button>
+              </div>
+            </Field>
+            <Field label="Heading line 2 color">
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={campaign.heading_line2_color || theme.primary}
+                  onChange={(e) => set("heading_line2_color", e.target.value)}
+                  className="h-10 w-12 cursor-pointer rounded border border-gray-200"
+                />
+                <button
+                  type="button"
+                  className="text-xs text-gray-500 underline"
+                  onClick={() => set("heading_line2_color", null)}
+                >
+                  Use theme primary
+                </button>
+              </div>
+            </Field>
+          </div>
           <Field label="Subtitle">
             <input value={campaign.subtitle || ""} onChange={(e) => set("subtitle", e.target.value)} className={inputClass} />
           </Field>
@@ -359,9 +405,27 @@ function CampaignEditor({
               className={inputClass}
             />
           </Field>
-          <Field label="Hero badge (e.g. BEST SELLER, NEW, LIMITED)">
-            <input value={campaign.hero_badge || ""} onChange={(e) => set("hero_badge", e.target.value)} className={inputClass} />
+          <Field label="Display duration on TV (seconds)">
+            <input
+              type="number"
+              min={10}
+              max={60}
+              value={campaign.display_seconds ?? 18}
+              onChange={(e) => set("display_seconds", Math.min(60, Math.max(10, Number(e.target.value) || 18)))}
+              className={inputClass}
+            />
           </Field>
+          <div>
+            <span className="mb-1 block text-xs font-medium text-gray-600">
+              Hero circular badge (pool or custom; None hides it)
+            </span>
+            <SignageBadgePicker
+              value={campaign.hero_badge}
+              options={badgeItems}
+              onChange={(badge) => set("hero_badge", badge)}
+              className="rounded-md border border-gray-200 p-3"
+            />
+          </div>
         </div>
       </section>
 
@@ -869,16 +933,26 @@ export default function AdminCampaignsPage() {
   const [testimonials, setTestimonials] = useState<TestimonialOption[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [draft, setDraft] = useState<Campaign | null>(null);
+  const [signageSettings, setSignageSettings] = useState<SignageSettings>({
+    header_logo_text: "TinyTots",
+    header_tagline: "Premium Kids Wear",
+    rotation_seconds: 18,
+  });
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
   const [message, setMessage] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
   async function loadAll() {
     try {
-      const res = await adminFetch("/api/admin/campaigns");
+      const [res, settingsRes] = await Promise.all([
+        adminFetch("/api/admin/campaigns"),
+        adminFetch("/api/admin/signage-settings"),
+      ]);
       const data = await res.json();
+      const settingsData = await settingsRes.json().catch(() => ({}));
       if (res.ok) {
         setCampaigns(data.campaigns || []);
         setProducts(data.products || []);
@@ -894,6 +968,9 @@ export default function AdminCampaignsPage() {
         }
       } else {
         setErrorMsg(data.error || "Failed to load campaigns");
+      }
+      if (settingsRes.ok && settingsData.settings) {
+        setSignageSettings(settingsData.settings);
       }
     } catch {
       setErrorMsg("Failed to load campaigns");
@@ -994,6 +1071,57 @@ export default function AdminCampaignsPage() {
       setErrorMsg("Failed to save campaign");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function saveSignageSettings() {
+    setSavingSettings(true);
+    setErrorMsg("");
+    try {
+      const res = await adminFetch("/api/admin/signage-settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(signageSettings),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.settings) {
+        setSignageSettings(data.settings);
+        flash("Signage header & default timing saved.");
+      } else {
+        setErrorMsg(data.error || "Failed to save signage settings");
+      }
+    } catch {
+      setErrorMsg("Failed to save signage settings");
+    } finally {
+      setSavingSettings(false);
+    }
+  }
+
+  async function moveInRotation(id: number, delta: number) {
+    const queue = campaigns
+      .filter((c) => c.is_active)
+      .slice()
+      .sort((a, b) => (a.rotation_order ?? 0) - (b.rotation_order ?? 0) || a.id - b.id);
+    const index = queue.findIndex((c) => c.id === id);
+    const target = index + delta;
+    if (index < 0 || target < 0 || target >= queue.length) return;
+    const next = [...queue];
+    [next[index], next[target]] = [next[target], next[index]];
+    const order = next.map((c) => c.id);
+    setCampaigns((prev) =>
+      prev.map((c) => {
+        const ord = order.indexOf(c.id);
+        return ord >= 0 ? { ...c, rotation_order: ord } : c;
+      })
+    );
+    const res = await adminFetch("/api/admin/campaigns/reorder-rotation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order }),
+    });
+    if (!res.ok) {
+      setErrorMsg("Failed to reorder rotation queue.");
+      await loadAll();
     }
   }
 
@@ -1102,8 +1230,7 @@ export default function AdminCampaignsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Campaign Management</h1>
           <p className="text-sm text-gray-500">
-            Include multiple campaigns in the live rotation — /signage switches every ~18 seconds with
-            each campaign&apos;s own color palette.
+            Multi-campaign rotation on /signage — set queue order and per-campaign duration (10–60s).
           </p>
         </div>
         <button
@@ -1116,6 +1243,99 @@ export default function AdminCampaignsPage() {
 
       {errorMsg && <p className="text-sm text-red-700 bg-red-50 px-3 py-2 rounded-md mb-4">{errorMsg}</p>}
       {message && <p className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md mb-4">{message}</p>}
+
+      <section className="mb-6 rounded-lg border border-gray-200 p-5">
+        <div className="mb-3 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900">Signage header (global)</h2>
+            <p className="text-xs text-gray-500">Shown on every campaign. Default rotation fallback if a campaign has no duration.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void saveSignageSettings()}
+            disabled={savingSettings}
+            className="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60"
+          >
+            {savingSettings ? "Saving..." : "Save header"}
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-600">Logo text</span>
+            <input
+              value={signageSettings.header_logo_text}
+              onChange={(e) => setSignageSettings((s) => ({ ...s, header_logo_text: e.target.value }))}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-600">Tagline</span>
+            <input
+              value={signageSettings.header_tagline}
+              onChange={(e) => setSignageSettings((s) => ({ ...s, header_tagline: e.target.value }))}
+              className={inputClass}
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-600">Default rotation seconds</span>
+            <input
+              type="number"
+              min={10}
+              max={60}
+              value={signageSettings.rotation_seconds}
+              onChange={(e) =>
+                setSignageSettings((s) => ({
+                  ...s,
+                  rotation_seconds: Math.min(60, Math.max(10, Number(e.target.value) || 18)),
+                }))
+              }
+              className={inputClass}
+            />
+          </label>
+        </div>
+      </section>
+
+      <section className="mb-6 rounded-lg border border-gray-200 p-5">
+        <h2 className="mb-1 text-base font-semibold text-gray-900">Live rotation queue</h2>
+        <p className="mb-3 text-xs text-gray-500">
+          Order controls which campaign plays next. Duration is per campaign (saved on each campaign).
+        </p>
+        <div className="flex flex-col gap-2">
+          {campaigns
+            .filter((c) => c.is_active)
+            .slice()
+            .sort((a, b) => (a.rotation_order ?? 0) - (b.rotation_order ?? 0) || a.id - b.id)
+            .map((c, index, list) => (
+              <div
+                key={c.id}
+                className="flex flex-wrap items-center gap-2 rounded-md border border-green-200 bg-green-50/40 px-3 py-2"
+              >
+                <span className="w-6 text-xs font-bold text-gray-500">{index + 1}.</span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">{c.name}</span>
+                <span className="text-xs text-gray-500">{c.display_seconds ?? 18}s</span>
+                <button
+                  type="button"
+                  disabled={index === 0}
+                  onClick={() => void moveInRotation(c.id, -1)}
+                  className="rounded bg-white px-2 py-1 text-xs disabled:opacity-30"
+                >
+                  Up
+                </button>
+                <button
+                  type="button"
+                  disabled={index === list.length - 1}
+                  onClick={() => void moveInRotation(c.id, 1)}
+                  className="rounded bg-white px-2 py-1 text-xs disabled:opacity-30"
+                >
+                  Down
+                </button>
+              </div>
+            ))}
+          {campaigns.every((c) => !c.is_active) && (
+            <p className="text-sm text-gray-500">No campaigns in rotation yet — use Add to rotation below.</p>
+          )}
+        </div>
+      </section>
 
       <div className="grid grid-cols-[320px_1fr] gap-6">
         {/* Campaign list */}
@@ -1151,7 +1371,10 @@ export default function AdminCampaignsPage() {
                         </span>
                       )}
                     </div>
-                    <p className="mt-0.5 text-[11px] text-gray-500">Edited {formatEditedAt(c.updated_at)}</p>
+                    <p className="mt-0.5 text-[11px] text-gray-500">
+                      Edited {formatEditedAt(c.updated_at)}
+                      {c.is_active ? ` · ${c.display_seconds ?? 18}s` : ""}
+                    </p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
