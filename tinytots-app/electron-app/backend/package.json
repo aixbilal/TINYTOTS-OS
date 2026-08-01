@@ -15,7 +15,7 @@
     "bcryptjs": "^3.0.3",
     "bwip-js": "^4.11.2",
     "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
+    "dotenv": "^16.4.5",
     "escpos": "^3.0.0-alpha.6",
     "escpos-usb": "^3.0.0-alpha.4",
     "express": "^5.2.1",
