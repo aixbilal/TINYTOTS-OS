@@ -93,13 +93,31 @@
 }
 
 .hero {
+  position: relative;
   display: grid;
+  /* Text 35.2% + banner 48.1% = 83.3% | stats 16.7%. */
   grid-template-columns: minmax(0, 35.2fr) minmax(0, 48.1fr) minmax(0, 16.7fr);
   align-items: stretch;
   min-height: 0;
+  overflow: hidden;
+  background: var(--campaign-background);
+}
+
+.heroBanner {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* Full text+banner band (83.3%) — not under the 16.7% stats column. */
+  left: 0;
+  right: 16.7%;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--campaign-surface);
 }
 
 .heroCopy {
+  position: relative;
+  z-index: 2;
   display: flex;
   min-width: 0;
   min-height: 0;
@@ -107,6 +125,31 @@
   justify-content: flex-start;
   padding: calc(var(--signage-unit) * 7.1) calc(var(--signage-unit) * 1.6) calc(var(--signage-unit) * 0.9)
     var(--container-padding);
+  background: transparent;
+}
+
+/* Soft cream wash behind copy only — no hard seam / boxed text column. */
+.heroCopy::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    var(--campaign-background) 0%,
+    color-mix(in srgb, var(--campaign-background) 88%, transparent) 38%,
+    color-mix(in srgb, var(--campaign-background) 40%, transparent) 68%,
+    transparent 100%
+  );
+}
+
+.heroSpacer {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 0;
+  pointer-events: none;
 }
 
 .eyebrow,
@@ -175,21 +218,6 @@
   text-transform: uppercase;
 }
 
-.bannerColumn {
-  min-width: 0;
-  min-height: 0;
-  display: block;
-}
-
-.banner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  border-radius: 0;
-  background: var(--campaign-surface);
-}
-
 .bannerImage {
   width: 100%;
   height: 100%;
@@ -198,10 +226,11 @@
 
 .badge {
   position: absolute;
-  z-index: 3;
+  z-index: 1;
+  /* left/top set per-campaign via inline style (hero_badge_position). */
   top: 14%;
   left: 58%;
-  width: 9.2%;
+  width: 5.5%;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -209,7 +238,12 @@
   border: 1px solid color-mix(in srgb, var(--campaign-primary) 55%, var(--campaign-border));
   border-radius: 50%;
   color: var(--campaign-badge-text);
-  background: var(--campaign-badge);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--campaign-primary) 42%, var(--campaign-badge)) 0%,
+    color-mix(in srgb, var(--campaign-primary) 14%, var(--campaign-badge)) 50%,
+    var(--campaign-badge) 100%
+  );
   font-size: calc(var(--signage-unit) * 0.5);
   font-weight: 800;
   line-height: 1.05;
@@ -220,9 +254,10 @@
 
 .features {
   position: absolute;
-  z-index: 3;
+  z-index: 1;
+  /* left/top set per-campaign via inline style (feature_list_position). */
   left: 56%;
-  bottom: 20%;
+  top: 55%;
   display: flex;
   flex-direction: column;
   gap: calc(var(--signage-unit) * 0.72);
@@ -252,6 +287,8 @@
 }
 
 .stats {
+  position: relative;
+  z-index: 2;
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -259,6 +296,16 @@
   justify-content: center;
   padding: calc(var(--signage-unit) * 2.8) calc(var(--signage-unit) * 3.4) calc(var(--signage-unit) * 1.6)
     calc(var(--signage-unit) * 2.2);
+  border: none;
+  border-radius: 0 calc(var(--signage-unit) * 0.55) 0 0;
+  box-shadow: none;
+  /* Palette color at top → light shade downward. */
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--campaign-primary) 48%, var(--campaign-surface)) 0%,
+    color-mix(in srgb, var(--campaign-primary) 18%, var(--campaign-background)) 42%,
+    var(--campaign-background) 100%
+  );
 }
 
 .stat {

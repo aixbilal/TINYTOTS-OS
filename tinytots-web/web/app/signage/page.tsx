@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import {
   DEFAULT_CAMPAIGN_THEME,
+  DEFAULT_FEATURE_LIST_POSITION,
+  DEFAULT_HERO_BADGE_POSITION,
   DEFAULT_ROTATION_SECONDS,
   formatSignageProductBadgeLabel,
   normalizeSignageProductBadge,
@@ -37,6 +39,7 @@ import {
   type CampaignFooterSettings,
   type CampaignSocialLink,
   type CampaignTheme,
+  type OverlayPosition,
   type SignageProductBadge,
 } from "@/lib/signage-campaign";
 import { supabase } from "@/lib/supabase";
@@ -72,6 +75,8 @@ type Campaign = {
   hero_banner_preview_url?: string | null;
   hero_banner_focal_point?: BannerFocalPoint;
   hero_badge: string | null;
+  hero_badge_position?: OverlayPosition;
+  feature_list_position?: OverlayPosition;
   feature_list: FeatureItem[];
   statistics: StatItem[];
   featured_heading: string;
@@ -150,13 +155,17 @@ function Header({ header }: { header?: SignageHeader | null }) {
   );
 }
 
-function Artwork({ campaign }: { campaign: Campaign }) {
+function Hero({ campaign }: { campaign: Campaign }) {
+  const line1Color = campaign.heading_line1_color || undefined;
+  const line2Color = campaign.heading_line2_color || undefined;
   const focal = campaign.hero_banner_focal_point || { x: 50, y: 50 };
   const bannerUrl = campaign.hero_banner_preview_url;
+  const badgePos = campaign.hero_badge_position || DEFAULT_HERO_BADGE_POSITION;
+  const featurePos = campaign.feature_list_position || DEFAULT_FEATURE_LIST_POSITION;
 
   return (
-    <div className={styles.bannerColumn}>
-      <div className={styles.banner}>
+    <section className={styles.hero}>
+      <div className={styles.heroBanner} aria-hidden="true">
         {bannerUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -166,10 +175,19 @@ function Artwork({ campaign }: { campaign: Campaign }) {
             style={{ objectPosition: `${focal.x}% ${focal.y}%` }}
           />
         )}
-
-        {campaign.hero_badge && <div className={styles.badge}>{campaign.hero_badge}</div>}
+        {campaign.hero_badge && (
+          <div
+            className={styles.badge}
+            style={{ left: `${badgePos.x}%`, top: `${badgePos.y}%` }}
+          >
+            {campaign.hero_badge}
+          </div>
+        )}
         {campaign.feature_list.length > 0 && (
-          <div className={styles.features}>
+          <div
+            className={styles.features}
+            style={{ left: `${featurePos.x}%`, top: `${featurePos.y}%` }}
+          >
             {campaign.feature_list.map((feature, index) => (
               <div className={styles.feature} key={`${feature.title}-${index}`}>
                 <SignageIcon name={feature.icon} className={styles.featureIcon} />
@@ -179,16 +197,7 @@ function Artwork({ campaign }: { campaign: Campaign }) {
           </div>
         )}
       </div>
-    </div>
-  );
-}
 
-function Hero({ campaign }: { campaign: Campaign }) {
-  const line1Color = campaign.heading_line1_color || undefined;
-  const line2Color = campaign.heading_line2_color || undefined;
-
-  return (
-    <section className={styles.hero}>
       <div className={styles.heroCopy}>
         <span className={styles.eyebrow}>{campaign.collection_label}</span>
         <h1 className={`${playfair.className} ${styles.heroHeading}`}>
@@ -218,7 +227,7 @@ function Hero({ campaign }: { campaign: Campaign }) {
         )}
       </div>
 
-      <Artwork campaign={campaign} />
+      <div className={styles.heroSpacer} aria-hidden="true" />
 
       <div className={styles.stats}>
         {campaign.statistics.map((stat, index) => (
@@ -516,9 +525,15 @@ function SignagePageContent() {
       )
       .subscribe();
 
+    // Re-fetch periodically so calendar/time windows take effect without a DB bump.
+    const pollMs = previewId ? 0 : 60_000;
+    const poll =
+      pollMs > 0 ? window.setInterval(() => void load(), pollMs) : null;
+
     return () => {
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
       if (rotateTimerRef.current) clearTimeout(rotateTimerRef.current);
+      if (poll) window.clearInterval(poll);
       void supabase.removeChannel(channel);
     };
   }, [load, previewId]);

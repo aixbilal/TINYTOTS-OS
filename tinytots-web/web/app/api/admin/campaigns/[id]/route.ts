@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
-import { normalizeCampaignTheme } from "@/lib/signage-campaign";
+import {
+  DEFAULT_FEATURE_LIST_POSITION,
+  DEFAULT_HERO_BADGE_POSITION,
+  normalizeCampaignTheme,
+  normalizeOverlayPosition,
+} from "@/lib/signage-campaign";
 import { removeUnreferencedCampaignAssets } from "@/lib/campaign-storage";
+import {
+  normalizeCampaignSchedule,
+  normalizeScheduleDays,
+  normalizeTimeString,
+  normalizeTimezone,
+} from "@/lib/campaign-schedule";
 
 const EDITABLE_FIELDS = [
   "name",
@@ -14,6 +25,8 @@ const EDITABLE_FIELDS = [
   "cta_url",
   "cta_visible",
   "hero_badge",
+  "hero_badge_position",
+  "feature_list_position",
   "heading_line1_color",
   "heading_line2_color",
   "feature_list",
@@ -35,6 +48,13 @@ const EDITABLE_FIELDS = [
   "social_links",
   "footer_settings",
   "theme",
+  "schedule_enabled",
+  "schedule_start_at",
+  "schedule_end_at",
+  "schedule_days",
+  "schedule_daily_start",
+  "schedule_daily_end",
+  "schedule_timezone",
 ] as const;
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
@@ -118,6 +138,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const value = typeof body.hero_badge === "string" ? body.hero_badge.trim() : "";
     updates.hero_badge = value || null;
   }
+  if ("hero_badge_position" in body) {
+    updates.hero_badge_position = normalizeOverlayPosition(
+      body.hero_badge_position,
+      DEFAULT_HERO_BADGE_POSITION
+    );
+  }
+  if ("feature_list_position" in body) {
+    updates.feature_list_position = normalizeOverlayPosition(
+      body.feature_list_position,
+      DEFAULT_FEATURE_LIST_POSITION
+    );
+  }
   if ("trust_item_ids" in body) {
     updates.trust_item_ids = normalizeIdArray(body.trust_item_ids);
   }
@@ -163,6 +195,58 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             scan_label: String(footer.scan_label || "Scan to Shop").trim(),
           }
         : null;
+  }
+
+  const scheduleTouched =
+    "schedule_enabled" in body ||
+    "schedule_start_at" in body ||
+    "schedule_end_at" in body ||
+    "schedule_days" in body ||
+    "schedule_daily_start" in body ||
+    "schedule_daily_end" in body ||
+    "schedule_timezone" in body;
+
+  if (scheduleTouched) {
+    const normalized = normalizeCampaignSchedule({
+      schedule_enabled: body.schedule_enabled,
+      schedule_start_at: body.schedule_start_at as string | null,
+      schedule_end_at: body.schedule_end_at as string | null,
+      schedule_days: body.schedule_days,
+      schedule_daily_start: body.schedule_daily_start as string | null,
+      schedule_daily_end: body.schedule_daily_end as string | null,
+      schedule_timezone: body.schedule_timezone as string,
+    });
+
+    if ("schedule_enabled" in body) updates.schedule_enabled = body.schedule_enabled === true;
+    if ("schedule_start_at" in body) updates.schedule_start_at = normalized.schedule_start_at;
+    if ("schedule_end_at" in body) updates.schedule_end_at = normalized.schedule_end_at;
+    if ("schedule_days" in body) updates.schedule_days = normalizeScheduleDays(body.schedule_days);
+    if ("schedule_daily_start" in body) {
+      updates.schedule_daily_start = normalizeTimeString(body.schedule_daily_start);
+    }
+    if ("schedule_daily_end" in body) {
+      updates.schedule_daily_end = normalizeTimeString(body.schedule_daily_end);
+    }
+    if ("schedule_timezone" in body) {
+      updates.schedule_timezone = normalizeTimezone(body.schedule_timezone);
+    }
+
+    const startAt =
+      "schedule_start_at" in updates
+        ? (updates.schedule_start_at as string | null)
+        : undefined;
+    const endAt =
+      "schedule_end_at" in updates ? (updates.schedule_end_at as string | null) : undefined;
+    if (
+      typeof startAt === "string" &&
+      typeof endAt === "string" &&
+      Date.parse(startAt) > Date.parse(endAt)
+    ) {
+      return NextResponse.json(
+        { error: "Schedule start must be before schedule end." },
+        { status: 400 }
+      );
+    }
   }
 
   // Only persist known editable fields (ignore corrupt/extra keys already filtered).

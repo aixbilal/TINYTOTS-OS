@@ -88,6 +88,28 @@ export async function POST(req: NextRequest) {
   }
   if ("feature_list" in original) insertPayload.feature_list = original.feature_list ?? [];
   if ("statistics" in original) insertPayload.statistics = original.statistics ?? [];
+  if ("display_seconds" in original) insertPayload.display_seconds = original.display_seconds ?? 18;
+  if ("heading_line1_color" in original) {
+    insertPayload.heading_line1_color = original.heading_line1_color ?? null;
+  }
+  if ("heading_line2_color" in original) {
+    insertPayload.heading_line2_color = original.heading_line2_color ?? null;
+  }
+  if ("schedule_enabled" in original) {
+    insertPayload.schedule_enabled = original.schedule_enabled === true;
+    insertPayload.schedule_start_at = original.schedule_start_at ?? null;
+    insertPayload.schedule_end_at = original.schedule_end_at ?? null;
+    insertPayload.schedule_days = Array.isArray(original.schedule_days) ? original.schedule_days : [];
+    insertPayload.schedule_daily_start = original.schedule_daily_start ?? null;
+    insertPayload.schedule_daily_end = original.schedule_daily_end ?? null;
+    insertPayload.schedule_timezone = original.schedule_timezone || "Asia/Karachi";
+  }
+  if ("hero_badge_position" in original) {
+    insertPayload.hero_badge_position = original.hero_badge_position ?? { x: 58, y: 14 };
+  }
+  if ("feature_list_position" in original) {
+    insertPayload.feature_list_position = original.feature_list_position ?? { x: 56, y: 55 };
+  }
 
   const { data, error } = await supabaseAdmin
     .from("campaigns")

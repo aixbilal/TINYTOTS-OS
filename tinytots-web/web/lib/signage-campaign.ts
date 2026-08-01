@@ -30,6 +30,18 @@ export type BannerFocalPoint = {
   y: number;
 };
 
+/** Overlay placement on the hero banner (percent of banner box). */
+export type OverlayPosition = {
+  /** Distance from left edge (0–100). */
+  x: number;
+  /** Distance from top edge (0–100). */
+  y: number;
+};
+
+export const DEFAULT_HERO_BADGE_POSITION: OverlayPosition = { x: 58, y: 14 };
+/** Feature stack anchored near product callouts (left %, top %). */
+export const DEFAULT_FEATURE_LIST_POSITION: OverlayPosition = { x: 56, y: 55 };
+
 export type CampaignSocialLink = {
   platform: "instagram" | "facebook" | "pinterest" | "tiktok";
   account_name: string;
@@ -379,5 +391,20 @@ export function normalizeBannerFocalPoint(value: unknown): BannerFocalPoint {
   return {
     x: coordinate("x", DEFAULT_BANNER_FOCAL_POINT.x),
     y: coordinate("y", DEFAULT_BANNER_FOCAL_POINT.y),
+  };
+}
+
+export function normalizeOverlayPosition(
+  value: unknown,
+  fallback: OverlayPosition
+): OverlayPosition {
+  const source = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const coordinate = (key: "x" | "y", fb: number) => {
+    const candidate = Number(source[key]);
+    return Number.isFinite(candidate) ? Math.min(100, Math.max(0, candidate)) : fb;
+  };
+  return {
+    x: coordinate("x", fallback.x),
+    y: coordinate("y", fallback.y),
   };
 }

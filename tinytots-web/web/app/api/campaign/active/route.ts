@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
+  DEFAULT_FEATURE_LIST_POSITION,
+  DEFAULT_HERO_BADGE_POSITION,
   DEFAULT_ROTATION_SECONDS,
   normalizeBannerCrop,
   normalizeBannerFocalPoint,
   normalizeCampaignTheme,
+  normalizeOverlayPosition,
 } from "@/lib/signage-campaign";
+import {
+  DEFAULT_STORE_TIMEZONE,
+  isCampaignScheduleActive,
+  normalizeTimezone,
+} from "@/lib/campaign-schedule";
 
 export const dynamic = "force-dynamic";
 
@@ -177,6 +185,14 @@ async function buildPayload(campaign: CampaignRow): Promise<CampaignPayload> {
       hero_banner_crop: normalizeBannerCrop(campaign.hero_banner_crop),
       hero_banner_focal_point: normalizeBannerFocalPoint(campaign.hero_banner_focal_point),
       hero_badge: campaign.hero_badge,
+      hero_badge_position: normalizeOverlayPosition(
+        campaign.hero_badge_position,
+        DEFAULT_HERO_BADGE_POSITION
+      ),
+      feature_list_position: normalizeOverlayPosition(
+        campaign.feature_list_position,
+        DEFAULT_FEATURE_LIST_POSITION
+      ),
       feature_list,
       statistics,
       featured_heading: campaign.featured_heading,
@@ -225,6 +241,7 @@ async function getSignageMeta() {
   if (error || !data) {
     return {
       rotation_seconds: DEFAULT_ROTATION_SECONDS,
+      store_timezone: DEFAULT_STORE_TIMEZONE,
       header: { logo_text: "TinyTots", tagline: "Premium Kids Wear" },
     };
   }
@@ -233,6 +250,10 @@ async function getSignageMeta() {
     rotation_seconds: Number.isFinite(value)
       ? Math.min(60, Math.max(10, Math.round(value)))
       : DEFAULT_ROTATION_SECONDS,
+    store_timezone: normalizeTimezone(
+      (data as { store_timezone?: unknown }).store_timezone,
+      DEFAULT_STORE_TIMEZONE
+    ),
     header: {
       logo_text: String((data as { header_logo_text?: unknown }).header_logo_text || "TinyTots"),
       tagline: String((data as { header_tagline?: unknown }).header_tagline || "Premium Kids Wear"),
@@ -273,7 +294,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const rows = activeRows || [];
+  const now = new Date();
+  const storeTz = meta.store_timezone || DEFAULT_STORE_TIMEZONE;
+  const rows = (activeRows || []).filter((row) =>
+    isCampaignScheduleActive(row, now, storeTz)
+  );
   if (!rows.length) {
     return NextResponse.json({ ...emptyPayload(), slides: [], ...meta });
   }

@@ -11,13 +11,55 @@ import {
   DEFAULT_BANNER_CROP,
   DEFAULT_BANNER_FOCAL_POINT,
   DEFAULT_CAMPAIGN_THEME,
+  DEFAULT_FEATURE_LIST_POSITION,
+  DEFAULT_HERO_BADGE_POSITION,
   type BannerCrop,
   type BannerFocalPoint,
   type CampaignFooterSettings,
   type CampaignSocialLink,
   type CampaignTheme,
+  type OverlayPosition,
   type SignageProductBadge,
 } from "@/lib/signage-campaign";
+import {
+  DEFAULT_STORE_TIMEZONE,
+  WEEKDAY_OPTIONS,
+  describeCampaignSchedule,
+  isCampaignScheduleActive,
+  normalizeCampaignSchedule,
+} from "@/lib/campaign-schedule";
+
+const TIMEZONE_OPTIONS = [
+  "Asia/Karachi",
+  "Asia/Dubai",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Europe/London",
+  "Europe/Paris",
+  "America/New_York",
+  "America/Los_Angeles",
+  "UTC",
+];
+
+function toDatetimeLocalValue(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function fromDatetimeLocalValue(value: string): string | null {
+  if (!value.trim()) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
+function timeInputValue(value: string | null | undefined): string {
+  if (!value) return "";
+  return value.slice(0, 5);
+}
 
 /* ------------------------------------------------------------------
  * Types
@@ -40,6 +82,8 @@ interface Campaign {
   hero_banner_crop: BannerCrop;
   hero_banner_focal_point: BannerFocalPoint;
   hero_badge: string | null;
+  hero_badge_position?: OverlayPosition;
+  feature_list_position?: OverlayPosition;
   feature_item_ids: number[];
   stat_item_ids: number[];
   featured_heading: string;
@@ -52,6 +96,13 @@ interface Campaign {
   marquee_direction: "left" | "right";
   display_seconds?: number;
   rotation_order?: number;
+  schedule_enabled?: boolean;
+  schedule_start_at?: string | null;
+  schedule_end_at?: string | null;
+  schedule_days?: number[];
+  schedule_daily_start?: string | null;
+  schedule_daily_end?: string | null;
+  schedule_timezone?: string;
   trust_item_ids: number[];
   testimonial_ids: number[];
   social_links: CampaignSocialLink[];
@@ -65,6 +116,7 @@ interface SignageSettings {
   header_logo_text: string;
   header_tagline: string;
   rotation_seconds: number;
+  store_timezone: string;
 }
 
 function formatEditedAt(value?: string): string {
@@ -154,6 +206,297 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </label>
   );
 }
+
+function PositionSliders({
+  label,
+  value,
+  onChange,
+  onReset,
+  onInteract,
+}: {
+  label: string;
+  value: OverlayPosition;
+  onChange: (next: OverlayPosition) => void;
+  onReset: () => void;
+  onInteract?: () => void;
+}) {
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-gray-700">{label}</span>
+        <button type="button" onClick={onReset} className="text-xs text-gray-500 underline">
+          Reset
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex flex-col gap-1">
+          <span className="text-[11px] text-gray-600">Left ↔ Right ({value.x}%)</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={value.x}
+            onPointerDown={onInteract}
+            onFocus={onInteract}
+            onChange={(e) => onChange({ ...value, x: Number(e.target.value) })}
+            className="w-full"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[11px] text-gray-600">Up ↕ Down ({value.y}%)</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={value.y}
+            onPointerDown={onInteract}
+            onFocus={onInteract}
+            onChange={(e) => onChange({ ...value, y: Number(e.target.value) })}
+            className="w-full"
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function OverlayPlacementStage({
+  bannerUrl,
+  theme,
+  badgeLabel,
+  badgePos,
+  featurePos,
+  featureLabels,
+  large,
+}: {
+  bannerUrl: string | null;
+  theme: CampaignTheme;
+  badgeLabel: string | null;
+  badgePos: OverlayPosition;
+  featurePos: OverlayPosition;
+  featureLabels: string[];
+  large?: boolean;
+}) {
+  const badgeSize = large ? "7.5%" : "9%";
+  const featureText = large ? "text-[11px]" : "text-[8px]";
+  const featureDot = large ? "h-2.5 w-2.5" : "h-2 w-2";
+  const badgeText = large ? "text-[11px]" : "text-[8px]";
+
+  return (
+    <div
+      className="relative w-full overflow-hidden rounded-md border border-gray-200 bg-gray-100"
+      style={{ aspectRatio: "16 / 7" }}
+    >
+      {bannerUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={bannerUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <div className="absolute inset-0 grid place-items-center text-xs text-gray-400">
+          Upload a hero banner to preview placement
+        </div>
+      )}
+      <div
+        className="pointer-events-none absolute inset-y-0 left-0 w-[35%] opacity-80"
+        style={{
+          background: `linear-gradient(to right, ${theme.background}, transparent)`,
+        }}
+      />
+      {badgeLabel && (
+        <div
+          className={`absolute grid place-items-center rounded-full border text-center font-extrabold uppercase leading-none ${badgeText}`}
+          style={{
+            left: `${badgePos.x}%`,
+            top: `${badgePos.y}%`,
+            width: badgeSize,
+            aspectRatio: "1",
+            borderColor: theme.primary,
+            color: theme.badgeText,
+            background: `linear-gradient(to bottom, color-mix(in srgb, ${theme.primary} 42%, ${theme.badge}), ${theme.badge})`,
+          }}
+        >
+          {badgeLabel.slice(0, 12)}
+        </div>
+      )}
+      {featureLabels.length > 0 && (
+        <div
+          className="absolute flex flex-col gap-1.5"
+          style={{ left: `${featurePos.x}%`, top: `${featurePos.y}%` }}
+        >
+          {featureLabels.map((label) => (
+            <div
+              key={label}
+              className={`flex items-center gap-1.5 font-bold uppercase tracking-wide ${featureText}`}
+              style={{ color: theme.text }}
+            >
+              <span
+                className={`inline-block shrink-0 rounded-full border ${featureDot}`}
+                style={{ borderColor: theme.icon, background: theme.surface }}
+              />
+              {label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HeroOverlayPlacementEditor({
+  bannerUrl,
+  theme,
+  badgeLabel,
+  badgePos,
+  featurePos,
+  featureLabels,
+  onChangeBadgePos,
+  onChangeFeaturePos,
+}: {
+  bannerUrl: string | null;
+  theme: CampaignTheme;
+  badgeLabel: string | null;
+  badgePos: OverlayPosition;
+  featurePos: OverlayPosition;
+  featureLabels: string[];
+  onChangeBadgePos: (next: OverlayPosition) => void;
+  onChangeFeaturePos: (next: OverlayPosition) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  const openPopup = () => setOpen(true);
+
+  return (
+    <section className="border border-gray-200 rounded-lg p-5">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900">Hero overlay placement</h2>
+          <p className="text-xs text-gray-500">
+            Click the preview or start moving a slider — a larger placement popup opens so you can
+            hit the exact spot.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={openPopup}
+          className="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800"
+        >
+          Open placement popup
+        </button>
+      </div>
+
+      <button
+        type="button"
+        onClick={openPopup}
+        className="group relative block w-full max-w-xl text-left"
+      >
+        <OverlayPlacementStage
+          bannerUrl={bannerUrl}
+          theme={theme}
+          badgeLabel={badgeLabel}
+          badgePos={badgePos}
+          featurePos={featurePos}
+          featureLabels={featureLabels}
+        />
+        <span className="absolute inset-0 grid place-items-center bg-black/0 transition group-hover:bg-black/25">
+          <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-gray-900 opacity-0 shadow-sm transition group-hover:opacity-100">
+            Click to adjust in large preview
+          </span>
+        </span>
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="flex max-h-[92vh] w-full max-w-5xl flex-col gap-4 overflow-auto rounded-xl bg-white p-5 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Placement preview</h3>
+                <p className="text-xs text-gray-500">
+                  Move the sliders — overlays update live on this larger stage.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Done
+              </button>
+            </div>
+
+            <OverlayPlacementStage
+              bannerUrl={bannerUrl}
+              theme={theme}
+              badgeLabel={badgeLabel}
+              badgePos={badgePos}
+              featurePos={featurePos}
+              featureLabels={featureLabels}
+              large
+            />
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {badgeLabel ? (
+                <PositionSliders
+                  label="Circular badge"
+                  value={badgePos}
+                  onChange={onChangeBadgePos}
+                  onReset={() => onChangeBadgePos({ ...DEFAULT_HERO_BADGE_POSITION })}
+                />
+              ) : (
+                <p className="rounded-md border border-dashed border-gray-200 px-3 py-2 text-xs text-gray-500">
+                  Pick a circular badge in Campaign Basics to position it here.
+                </p>
+              )}
+              <PositionSliders
+                label="Feature list"
+                value={featurePos}
+                onChange={onChangeFeaturePos}
+                onReset={() => onChangeFeaturePos({ ...DEFAULT_FEATURE_LIST_POSITION })}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+        {badgeLabel ? (
+          <PositionSliders
+            label="Circular badge"
+            value={badgePos}
+            onChange={onChangeBadgePos}
+            onReset={() => onChangeBadgePos({ ...DEFAULT_HERO_BADGE_POSITION })}
+            onInteract={openPopup}
+          />
+        ) : (
+          <p className="rounded-md border border-dashed border-gray-200 px-3 py-2 text-xs text-gray-500">
+            Pick a circular badge above to position it here.
+          </p>
+        )}
+        <PositionSliders
+          label="Feature list"
+          value={featurePos}
+          onChange={onChangeFeaturePos}
+          onReset={() => onChangeFeaturePos({ ...DEFAULT_FEATURE_LIST_POSITION })}
+          onInteract={openPopup}
+        />
+      </div>
+    </section>
+  );
+}
+
 const inputClass =
   "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900";
 
@@ -415,7 +758,7 @@ function CampaignEditor({
               className={inputClass}
             />
           </Field>
-          <div>
+          <div className="col-span-2">
             <span className="mb-1 block text-xs font-medium text-gray-600">
               Hero circular badge (pool or custom; None hides it)
             </span>
@@ -427,6 +770,126 @@ function CampaignEditor({
             />
           </div>
         </div>
+      </section>
+
+      <section className="border border-gray-200 rounded-lg p-5">
+        <div className="mb-4">
+          <h2 className="text-base font-semibold text-gray-900">Schedule</h2>
+          <p className="text-xs text-gray-500">
+            Optional calendar and daily hours. Campaign must still be in the rotation queue; the
+            schedule only decides when it is eligible to play.
+          </p>
+        </div>
+        {(() => {
+          const schedule = normalizeCampaignSchedule(campaign);
+          const liveNow = isCampaignScheduleActive(schedule);
+          const toggleDay = (day: number) => {
+            const current = schedule.schedule_days;
+            const next = current.includes(day)
+              ? current.filter((value) => value !== day)
+              : [...current, day].sort((a, b) => a - b);
+            set("schedule_days", next);
+          };
+          return (
+            <div className="flex flex-col gap-4">
+              <label className="flex items-center gap-2 text-sm text-gray-800">
+                <input
+                  type="checkbox"
+                  checked={schedule.schedule_enabled}
+                  onChange={(e) => set("schedule_enabled", e.target.checked)}
+                />
+                Limit this campaign by date / time
+              </label>
+              {!schedule.schedule_enabled ? (
+                <p className="text-xs text-gray-500">Always eligible while in the live rotation.</p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <Field label="Starts (optional)">
+                      <input
+                        type="datetime-local"
+                        value={toDatetimeLocalValue(schedule.schedule_start_at)}
+                        onChange={(e) => set("schedule_start_at", fromDatetimeLocalValue(e.target.value))}
+                        className={inputClass}
+                      />
+                    </Field>
+                    <Field label="Ends (optional)">
+                      <input
+                        type="datetime-local"
+                        value={toDatetimeLocalValue(schedule.schedule_end_at)}
+                        onChange={(e) => set("schedule_end_at", fromDatetimeLocalValue(e.target.value))}
+                        className={inputClass}
+                      />
+                    </Field>
+                    <Field label="Daily start (optional)">
+                      <input
+                        type="time"
+                        value={timeInputValue(schedule.schedule_daily_start)}
+                        onChange={(e) => set("schedule_daily_start", e.target.value || null)}
+                        className={inputClass}
+                      />
+                    </Field>
+                    <Field label="Daily end (optional)">
+                      <input
+                        type="time"
+                        value={timeInputValue(schedule.schedule_daily_end)}
+                        onChange={(e) => set("schedule_daily_end", e.target.value || null)}
+                        className={inputClass}
+                      />
+                    </Field>
+                    <Field label="Timezone">
+                      <select
+                        value={schedule.schedule_timezone}
+                        onChange={(e) => set("schedule_timezone", e.target.value)}
+                        className={inputClass}
+                      >
+                        {[schedule.schedule_timezone, ...TIMEZONE_OPTIONS]
+                          .filter((zone, index, list) => list.indexOf(zone) === index)
+                          .map((zone) => (
+                            <option key={zone} value={zone}>
+                              {zone}
+                            </option>
+                          ))}
+                      </select>
+                    </Field>
+                  </div>
+                  <div>
+                    <span className="mb-2 block text-xs font-medium text-gray-600">
+                      Days of week (leave all unchecked = every day)
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {WEEKDAY_OPTIONS.map((day) => {
+                        const checked = schedule.schedule_days.includes(day.value);
+                        return (
+                          <label
+                            key={day.value}
+                            className={`cursor-pointer rounded-md border px-2.5 py-1 text-xs font-medium ${
+                              checked
+                                ? "border-gray-900 bg-gray-900 text-white"
+                                : "border-gray-200 bg-white text-gray-700"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={checked}
+                              onChange={() => toggleDay(day.value)}
+                            />
+                            {day.short}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <p className={`text-xs ${liveNow ? "text-green-700" : "text-amber-700"}`}>
+                    {liveNow ? "Eligible right now" : "Outside schedule window right now"} ·{" "}
+                    {describeCampaignSchedule(schedule)}
+                  </p>
+                </>
+              )}
+            </div>
+          );
+        })()}
       </section>
 
       <section className="border border-gray-200 rounded-lg p-5">
@@ -509,12 +972,26 @@ function CampaignEditor({
         />
       </section>
 
+      <HeroOverlayPlacementEditor
+        bannerUrl={campaign.hero_banner_preview_url || campaign.hero_banner_original_url}
+        theme={theme}
+        badgeLabel={campaign.hero_badge}
+        badgePos={campaign.hero_badge_position || DEFAULT_HERO_BADGE_POSITION}
+        featurePos={campaign.feature_list_position || DEFAULT_FEATURE_LIST_POSITION}
+        featureLabels={featureIds
+          .map((id) => featureItems.find((row) => row.id === id)?.label)
+          .filter((label): label is string => !!label)}
+        onChangeBadgePos={(next) => set("hero_badge_position", next)}
+        onChangeFeaturePos={(next) => set("feature_list_position", next)}
+      />
+
       {/* Feature list */}
       <section className="border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">Hero Feature Icons</h2>
         <p className="text-xs text-gray-500 mb-4">
           Select exactly 3 from the library. Order follows selection below (use arrows to reorder).
-          Manage the pool in Signage Libraries.
+          Manage the pool in Signage Libraries. Placement is controlled in Hero overlay placement
+          above.
         </p>
         <p className="mb-3 text-xs text-gray-600">{featureIds.length}/3 selected</p>
         <div className="mb-4 flex flex-col gap-2">
@@ -937,6 +1414,7 @@ export default function AdminCampaignsPage() {
     header_logo_text: "TinyTots",
     header_tagline: "Premium Kids Wear",
     rotation_seconds: 18,
+    store_timezone: DEFAULT_STORE_TIMEZONE,
   });
 
   const [loading, setLoading] = useState(true);
@@ -1230,7 +1708,7 @@ export default function AdminCampaignsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Campaign Management</h1>
           <p className="text-sm text-gray-500">
-            Multi-campaign rotation on /signage — set queue order and per-campaign duration (10–60s).
+            Multi-campaign rotation on /signage — queue order, duration, and optional calendar schedules.
           </p>
         </div>
         <button
@@ -1259,7 +1737,7 @@ export default function AdminCampaignsPage() {
             {savingSettings ? "Saving..." : "Save header"}
           </button>
         </div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <label className="flex flex-col gap-1">
             <span className="text-xs font-medium text-gray-600">Logo text</span>
             <input
@@ -1292,27 +1770,63 @@ export default function AdminCampaignsPage() {
               className={inputClass}
             />
           </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-gray-600">Store timezone (fallback)</span>
+            <select
+              value={signageSettings.store_timezone || DEFAULT_STORE_TIMEZONE}
+              onChange={(e) => setSignageSettings((s) => ({ ...s, store_timezone: e.target.value }))}
+              className={inputClass}
+            >
+              {[signageSettings.store_timezone, ...TIMEZONE_OPTIONS]
+                .filter((zone, index, list) => zone && list.indexOf(zone) === index)
+                .map((zone) => (
+                  <option key={zone} value={zone}>
+                    {zone}
+                  </option>
+                ))}
+            </select>
+          </label>
         </div>
       </section>
 
       <section className="mb-6 rounded-lg border border-gray-200 p-5">
         <h2 className="mb-1 text-base font-semibold text-gray-900">Live rotation queue</h2>
         <p className="mb-3 text-xs text-gray-500">
-          Order controls which campaign plays next. Duration is per campaign (saved on each campaign).
+          Order controls which campaign plays next among those currently on schedule. Duration is per
+          campaign.
         </p>
         <div className="flex flex-col gap-2">
           {campaigns
             .filter((c) => c.is_active)
             .slice()
             .sort((a, b) => (a.rotation_order ?? 0) - (b.rotation_order ?? 0) || a.id - b.id)
-            .map((c, index, list) => (
+            .map((c, index, list) => {
+              const schedule = normalizeCampaignSchedule(c, signageSettings.store_timezone);
+              const onNow = isCampaignScheduleActive(schedule, new Date(), signageSettings.store_timezone);
+              return (
               <div
                 key={c.id}
-                className="flex flex-wrap items-center gap-2 rounded-md border border-green-200 bg-green-50/40 px-3 py-2"
+                className={`flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 ${
+                  onNow
+                    ? "border-green-200 bg-green-50/40"
+                    : "border-amber-200 bg-amber-50/50"
+                }`}
               >
                 <span className="w-6 text-xs font-bold text-gray-500">{index + 1}.</span>
                 <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">{c.name}</span>
                 <span className="text-xs text-gray-500">{c.display_seconds ?? 18}s</span>
+                <span
+                  className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                    !schedule.schedule_enabled
+                      ? "bg-gray-100 text-gray-600"
+                      : onNow
+                        ? "bg-green-100 text-green-800"
+                        : "bg-amber-100 text-amber-800"
+                  }`}
+                  title={describeCampaignSchedule(schedule)}
+                >
+                  {!schedule.schedule_enabled ? "Always" : onNow ? "On now" : "Off schedule"}
+                </span>
                 <button
                   type="button"
                   disabled={index === 0}
@@ -1330,7 +1844,8 @@ export default function AdminCampaignsPage() {
                   Down
                 </button>
               </div>
-            ))}
+            );
+            })}
           {campaigns.every((c) => !c.is_active) && (
             <p className="text-sm text-gray-500">No campaigns in rotation yet — use Add to rotation below.</p>
           )}
@@ -1363,7 +1878,11 @@ export default function AdminCampaignsPage() {
                       <span className="truncate text-sm font-semibold text-gray-900">{c.name}</span>
                       {c.is_active ? (
                         <span className="shrink-0 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-green-700">
-                          Live
+                          {c.schedule_enabled
+                            ? isCampaignScheduleActive(c, new Date(), signageSettings.store_timezone)
+                              ? "Live now"
+                              : "Queued"
+                            : "Live"}
                         </span>
                       ) : (
                         <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-gray-500">
@@ -1374,6 +1893,7 @@ export default function AdminCampaignsPage() {
                     <p className="mt-0.5 text-[11px] text-gray-500">
                       Edited {formatEditedAt(c.updated_at)}
                       {c.is_active ? ` · ${c.display_seconds ?? 18}s` : ""}
+                      {c.schedule_enabled ? " · Scheduled" : ""}
                     </p>
                   </div>
                 </div>

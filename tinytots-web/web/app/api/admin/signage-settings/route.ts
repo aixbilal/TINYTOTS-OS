@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 import { DEFAULT_ROTATION_SECONDS } from "@/lib/signage-campaign";
+import { DEFAULT_STORE_TIMEZONE, normalizeTimezone } from "@/lib/campaign-schedule";
 
 export async function GET(req: NextRequest) {
   const denied = await requireAdmin(req, "canManageSettings");
@@ -15,6 +16,7 @@ export async function GET(req: NextRequest) {
       header_logo_text: String(data?.header_logo_text || "TinyTots"),
       header_tagline: String(data?.header_tagline || "Premium Kids Wear"),
       rotation_seconds: Number(data?.rotation_seconds) || DEFAULT_ROTATION_SECONDS,
+      store_timezone: normalizeTimezone(data?.store_timezone, DEFAULT_STORE_TIMEZONE),
     },
   });
 }
@@ -47,6 +49,9 @@ export async function PATCH(req: NextRequest) {
     }
     updates.rotation_seconds = value;
   }
+  if ("store_timezone" in body) {
+    updates.store_timezone = normalizeTimezone(body.store_timezone, DEFAULT_STORE_TIMEZONE);
+  }
 
   if (Object.keys(updates).length <= 1) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
@@ -65,6 +70,7 @@ export async function PATCH(req: NextRequest) {
       header_logo_text: String(data.header_logo_text || "TinyTots"),
       header_tagline: String(data.header_tagline || "Premium Kids Wear"),
       rotation_seconds: Number(data.rotation_seconds) || DEFAULT_ROTATION_SECONDS,
+      store_timezone: normalizeTimezone(data.store_timezone, DEFAULT_STORE_TIMEZONE),
     },
   });
 }
