@@ -44,6 +44,28 @@ export type CampaignFooterSettings = {
   scan_label: string;
 };
 
+/** Product card badge values for the signage featured marquee. */
+export type SignageProductBadge = "NEW" | "BEST_SELLER" | "LIMITED_EDITION";
+
+export const SIGNAGE_PRODUCT_BADGES: SignageProductBadge[] = [
+  "NEW",
+  "BEST_SELLER",
+  "LIMITED_EDITION",
+];
+
+export function normalizeSignageProductBadge(value: unknown): SignageProductBadge | null {
+  if (typeof value !== "string") return null;
+  return SIGNAGE_PRODUCT_BADGES.includes(value as SignageProductBadge)
+    ? (value as SignageProductBadge)
+    : null;
+}
+
+export function formatSignageProductBadgeLabel(badge: SignageProductBadge): string {
+  if (badge === "BEST_SELLER") return "BEST SELLER";
+  if (badge === "LIMITED_EDITION") return "LIMITED EDITION";
+  return "NEW";
+}
+
 export const DEFAULT_CAMPAIGN_THEME: CampaignTheme = {
   primary: "#9c422e",
   secondary: "#3b241a",

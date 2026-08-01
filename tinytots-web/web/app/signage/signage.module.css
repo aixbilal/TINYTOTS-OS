@@ -393,6 +393,38 @@
   padding: calc(var(--signage-unit) * 0.38);
 }
 
+/* Pill badge — same campaign badge tokens as hero .badge, rectangular for cards */
+.productBadge {
+  position: absolute;
+  z-index: 3;
+  top: calc(var(--signage-unit) * 0.28);
+  left: calc(var(--signage-unit) * 0.28);
+  padding: calc(var(--signage-unit) * 0.18) calc(var(--signage-unit) * 0.38);
+  border: 1px solid color-mix(in srgb, var(--campaign-primary) 55%, var(--campaign-border));
+  border-radius: calc(var(--signage-unit) * 0.14);
+  color: var(--campaign-badge-text);
+  background: var(--campaign-badge);
+  font-size: calc(var(--signage-unit) * 0.42);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.productBadgeNew {
+  color: var(--campaign-button-text);
+  background: var(--campaign-text);
+  border-color: var(--campaign-text);
+}
+
+.productBadgeBestSeller,
+.productBadgeLimited {
+  color: var(--campaign-button-text);
+  background: var(--campaign-primary);
+  border-color: var(--campaign-primary);
+}
+
 .favorite {
   position: absolute;
   top: calc(var(--signage-unit) * 0.28);

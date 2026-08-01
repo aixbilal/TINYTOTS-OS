@@ -28,10 +28,13 @@ import {
 } from "lucide-react";
 import {
   DEFAULT_CAMPAIGN_THEME,
+  formatSignageProductBadgeLabel,
+  normalizeSignageProductBadge,
   type BannerFocalPoint,
   type CampaignFooterSettings,
   type CampaignSocialLink,
   type CampaignTheme,
+  type SignageProductBadge,
 } from "@/lib/signage-campaign";
 import { supabase } from "@/lib/supabase";
 import styles from "./signage.module.css";
@@ -40,7 +43,13 @@ const playfair = Playfair_Display({ subsets: ["latin"], weight: ["700", "800"] }
 
 type FeatureItem = { icon: string; title: string; description: string };
 type StatItem = { icon: string; number: string; description: string };
-type Product = { id: number; name: string; image_url: string | null; category: string | null };
+type Product = {
+  id: number;
+  name: string;
+  image_url: string | null;
+  category: string | null;
+  signage_badge?: SignageProductBadge | null;
+};
 type TrustItem = { id: number; icon: string; heading: string; description: string };
 type Testimonial = { name: string; image_url: string | null; rating: number; quote: string };
 
@@ -198,15 +207,32 @@ function Hero({ campaign }: { campaign: Campaign }) {
 function FeaturedCollection({ campaign, products }: { campaign: Campaign; products: Product[] }) {
   const animationClass = campaign.marquee_direction === "right" ? styles.marqueeRight : styles.marqueeLeft;
   const productCards = (duplicate: boolean) =>
-    products.map((product) => (
-      <div className={styles.productCard} key={`${duplicate ? "copy" : "original"}-${product.id}`}>
-        {product.image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.image_url} alt={duplicate ? "" : product.name} draggable={false} />
-        )}
-        <Heart className={`${styles.icon} ${styles.favorite}`} aria-hidden="true" strokeWidth={1.8} />
-      </div>
-    ));
+    products.map((product) => {
+      const badge = normalizeSignageProductBadge(product.signage_badge);
+      const badgeClass =
+        badge === "NEW"
+          ? styles.productBadgeNew
+          : badge === "BEST_SELLER"
+            ? styles.productBadgeBestSeller
+            : badge === "LIMITED_EDITION"
+              ? styles.productBadgeLimited
+              : "";
+
+      return (
+        <div className={styles.productCard} key={`${duplicate ? "copy" : "original"}-${product.id}`}>
+          {badge && (
+            <span className={`${styles.productBadge} ${badgeClass}`}>
+              {formatSignageProductBadgeLabel(badge)}
+            </span>
+          )}
+          {product.image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={product.image_url} alt={duplicate ? "" : product.name} draggable={false} />
+          )}
+          <Heart className={`${styles.icon} ${styles.favorite}`} aria-hidden="true" strokeWidth={1.8} />
+        </div>
+      );
+    });
 
   return (
     <section className={styles.featured}>

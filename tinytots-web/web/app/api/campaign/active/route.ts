@@ -38,7 +38,7 @@ async function resolveFeaturedProducts(campaign: CampaignRow) {
   if (campaign.featured_selection_type === "category" && campaign.featured_category) {
     const { data } = await supabaseAdmin
       .from("products")
-      .select("id, name, image_url, category")
+      .select("id, name, image_url, category, signage_badge")
       .eq("category", campaign.featured_category)
       .eq("is_active", true)
       .not("image_url", "is", null)
@@ -50,7 +50,7 @@ async function resolveFeaturedProducts(campaign: CampaignRow) {
   if (campaign.featured_selection_type === "products" && campaign.featured_product_ids?.length) {
     const { data } = await supabaseAdmin
       .from("products")
-      .select("id, name, image_url, category")
+      .select("id, name, image_url, category, signage_badge")
       .in("id", campaign.featured_product_ids)
       .eq("is_active", true);
     if (data?.length) {

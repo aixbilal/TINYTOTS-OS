@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     supabaseAdmin.from("campaigns").select("*").order("created_at", { ascending: false }),
     supabaseAdmin
       .from("products")
-      .select("id, name, image_url, category")
+      .select("id, name, image_url, category, signage_badge")
       .eq("is_active", true)
       .order("name", { ascending: true }),
     supabaseAdmin.from("categories").select("name, slug").order("display_order", { ascending: true }).order("name", { ascending: true }),

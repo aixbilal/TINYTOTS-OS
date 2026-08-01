@@ -14,7 +14,7 @@ export async function GET(
   const { data, error } = await supabaseAdmin
     .from("products")
     .select(`
-      id, name, sku, description, brand, category, image_url, gender, age_bracket, is_active,
+      id, name, sku, description, brand, category, image_url, gender, age_bracket, is_active, signage_badge,
       variants ( id, color, size, price, stock, reorder_level, web_price_locked, web_round_to )
     `)
     .eq("id", id)

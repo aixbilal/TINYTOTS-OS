@@ -9,11 +9,14 @@ import {
   DEFAULT_BANNER_CROP,
   DEFAULT_BANNER_FOCAL_POINT,
   DEFAULT_CAMPAIGN_THEME,
+  SIGNAGE_PRODUCT_BADGES,
+  formatSignageProductBadgeLabel,
   type BannerCrop,
   type BannerFocalPoint,
   type CampaignFooterSettings,
   type CampaignSocialLink,
   type CampaignTheme,
+  type SignageProductBadge,
 } from "@/lib/signage-campaign";
 
 /* ------------------------------------------------------------------
@@ -87,6 +90,7 @@ interface ProductLite {
   id: number;
   name: string;
   image_url: string | null;
+  signage_badge?: SignageProductBadge | null;
 }
 interface CategoryLite {
   name: string;
@@ -163,6 +167,7 @@ function FeaturedSelector({
   onChangeType,
   onChangeCategory,
   onToggleProduct,
+  onProductBadgeChange,
 }: {
   selectionType: "products" | "category";
   category: string | null;
@@ -172,10 +177,27 @@ function FeaturedSelector({
   onChangeType: (t: "products" | "category") => void;
   onChangeCategory: (slug: string) => void;
   onToggleProduct: (id: number) => void;
+  onProductBadgeChange: (id: number, badge: SignageProductBadge | null) => void;
 }) {
   const [search, setSearch] = useState("");
+  const [savingBadgeId, setSavingBadgeId] = useState<number | null>(null);
   const selectedIds = new Set(productIds || []);
   const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+
+  async function saveBadge(productId: number, value: string) {
+    const badge = value ? (value as SignageProductBadge) : null;
+    setSavingBadgeId(productId);
+    try {
+      const res = await fetch(`/api/products/${productId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signage_badge: badge }),
+      });
+      if (res.ok) onProductBadgeChange(productId, badge);
+    } finally {
+      setSavingBadgeId(null);
+    }
+  }
 
   return (
     <div>
@@ -222,19 +244,38 @@ function FeaturedSelector({
             {filtered.map((p) => {
               const selected = selectedIds.has(p.id);
               return (
-                <button
+                <div
                   key={p.id}
-                  type="button"
-                  onClick={() => onToggleProduct(p.id)}
-                  className={`flex items-center gap-2 border rounded-md p-2 text-left ${
-                    selected ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:bg-gray-50"
+                  className={`flex flex-col gap-1.5 border rounded-md p-2 ${
+                    selected ? "border-gray-900 bg-gray-50" : "border-gray-200"
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-md overflow-hidden bg-gray-100 shrink-0 relative">
-                    {p.image_url && <Image src={p.image_url} alt="" fill className="object-cover" unoptimized />}
-                  </div>
-                  <span className="text-xs text-gray-800 line-clamp-2">{p.name}</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => onToggleProduct(p.id)}
+                    className="flex items-center gap-2 text-left hover:opacity-90"
+                  >
+                    <div className="w-8 h-8 rounded-md overflow-hidden bg-gray-100 shrink-0 relative">
+                      {p.image_url && <Image src={p.image_url} alt="" fill className="object-cover" unoptimized />}
+                    </div>
+                    <span className="text-xs text-gray-800 line-clamp-2">{p.name}</span>
+                  </button>
+                  <select
+                    value={p.signage_badge || ""}
+                    disabled={savingBadgeId === p.id}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => void saveBadge(p.id, e.target.value)}
+                    className="w-full border border-gray-200 rounded px-1.5 py-1 text-[10px] text-gray-700 bg-white"
+                    title="Signage card badge"
+                  >
+                    <option value="">No badge</option>
+                    {SIGNAGE_PRODUCT_BADGES.map((badge) => (
+                      <option key={badge} value={badge}>
+                        {formatSignageProductBadgeLabel(badge)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               );
             })}
           </div>
@@ -254,6 +295,7 @@ function CampaignEditor({
   trustItems,
   testimonials,
   onChange,
+  onProductBadgeChange,
   onSave,
   saving,
 }: {
@@ -263,6 +305,7 @@ function CampaignEditor({
   trustItems: TrustItemOption[];
   testimonials: TestimonialOption[];
   onChange: (c: Campaign) => void;
+  onProductBadgeChange: (id: number, badge: SignageProductBadge | null) => void;
   onSave: () => void;
   saving: boolean;
 }) {
@@ -624,6 +667,7 @@ function CampaignEditor({
             const next = current.includes(id) ? current.filter((p) => p !== id) : [...current, id];
             set("featured_product_ids", next);
           }}
+          onProductBadgeChange={onProductBadgeChange}
         />
       </section>
 
@@ -1072,6 +1116,11 @@ export default function AdminCampaignsPage() {
               trustItems={trustItems}
               testimonials={testimonials}
               onChange={setDraft}
+              onProductBadgeChange={(id, badge) => {
+                setProducts((prev) =>
+                  prev.map((product) => (product.id === id ? { ...product, signage_badge: badge } : product))
+                );
+              }}
               onSave={saveDraft}
               saving={saving}
             />

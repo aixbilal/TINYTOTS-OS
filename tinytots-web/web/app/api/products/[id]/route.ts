@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import {
+  normalizeSignageProductBadge,
+  SIGNAGE_PRODUCT_BADGES,
+} from "@/lib/signage-campaign";
 
 // GET /api/products/[id]
 // Returns one product with all its variants.
@@ -52,11 +56,44 @@ export async function PUT(
   const { id } = await params;
   try {
     const body = await request.json();
-    const { name, sku, description, brand, category, image_url, gender, age_bracket, is_active } = body;
+    const updates: Record<string, unknown> = {};
+    const scalarKeys = [
+      "name",
+      "sku",
+      "description",
+      "brand",
+      "category",
+      "image_url",
+      "gender",
+      "age_bracket",
+      "is_active",
+    ] as const;
+    for (const key of scalarKeys) {
+      if (key in body) updates[key] = body[key];
+    }
+
+    if ("signage_badge" in body) {
+      if (body.signage_badge === null || body.signage_badge === "") {
+        updates.signage_badge = null;
+      } else {
+        const normalizedBadge = normalizeSignageProductBadge(body.signage_badge);
+        if (!normalizedBadge) {
+          return NextResponse.json(
+            { error: `signage_badge must be one of: ${SIGNAGE_PRODUCT_BADGES.join(", ")}` },
+            { status: 400 }
+          );
+        }
+        updates.signage_badge = normalizedBadge;
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+    }
 
     const { data, error } = await supabaseAdmin
       .from("products")
-      .update({ name, sku, description, brand, category, image_url, gender, age_bracket, is_active })
+      .update(updates)
       .eq("id", id)
       .select()
       .single();

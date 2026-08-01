@@ -6,12 +6,16 @@ import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploader from "@/components/admin/ImageUploader";
 import CategorySelect from "@/components/admin/CategorySelect";
 import { adminFetch } from "@/lib/admin-fetch";
+import {
+  SIGNAGE_PRODUCT_BADGES,
+  type SignageProductBadge,
+} from "@/lib/signage-campaign";
 
 type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number; reorder_level: number; web_price_locked: boolean; web_round_to: number };
 type Product = {
   id: number; name: string; sku: string; description: string | null; brand: string | null;
   category: string | null; image_url: string | null; gender: string | null; age_bracket: string | null;
-  is_active: boolean; variants: Variant[];
+  is_active: boolean; signage_badge: SignageProductBadge | null; variants: Variant[];
 };
 type ProductImage = { id: number; storage_path: string; is_primary: boolean; sort_order: number; url: string };
 
@@ -122,6 +126,7 @@ export default function EditProductPage() {
           // the page loaded, undoing any photo changes made since.
           gender: product.gender,
           age_bracket: product.age_bracket,
+          signage_badge: product.signage_badge,
         }),
       });
       if (!res.ok) {
@@ -193,6 +198,36 @@ export default function EditProductPage() {
         <div className="grid grid-cols-2 gap-4">
           <input value={product.brand ?? ""} onChange={(e) => updateField("brand", e.target.value)} className={inputClass} placeholder="Brand" />
           <CategorySelect value={product.category ?? ""} onChange={(v) => updateField("category", v)} className={inputClass} />
+        </div>
+
+        <div>
+          <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">
+            Signage card badge
+          </label>
+          <select
+            value={product.signage_badge ?? ""}
+            onChange={(e) =>
+              updateField(
+                "signage_badge",
+                e.target.value ? (e.target.value as SignageProductBadge) : null
+              )
+            }
+            className={inputClass}
+          >
+            <option value="">None</option>
+            {SIGNAGE_PRODUCT_BADGES.map((badge) => (
+              <option key={badge} value={badge}>
+                {badge === "BEST_SELLER"
+                  ? "BEST SELLER"
+                  : badge === "LIMITED_EDITION"
+                    ? "LIMITED EDITION"
+                    : "NEW"}
+              </option>
+            ))}
+          </select>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5">
+            Shown on the digital signage featured product cards when this product is selected.
+          </p>
         </div>
 
         <div>
