@@ -9,14 +9,9 @@
 # Local test scripts
 test-*.mjs
 *.local.mjs
-
-reset-password.mjs
-
-test-*.mjs
 test-*.js
-
 reset-password.mjs
-d66de0a (feat: discount campaign tool, storefront price display, admin route fixes)
+
 .next/
 tsconfig.tsbuildinfo
 .qa-current.png

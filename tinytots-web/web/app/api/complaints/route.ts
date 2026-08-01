@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { Agent, setGlobalDispatcher } from "undici";
 
 setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
@@ -13,6 +14,12 @@ const VALID_PREFERRED_REFUND_METHODS = ["voucher", "original_payment"];
 const MAX_MESSAGE_LEN = 1000;
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(`complaint:${clientIp(req)}`, {
+    limit: 8,
+    windowMs: 60_000,
+  });
+  if (!limited.ok) return rateLimitResponse(limited.retryAfterSec);
+
   try {
     const body = await req.json();
     const {

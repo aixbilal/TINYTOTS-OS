@@ -483,7 +483,16 @@ function SignagePageContent() {
       const url = previewId
         ? `/api/campaign/active?preview=${encodeURIComponent(previewId)}`
         : "/api/campaign/active";
-      const response = await fetch(url, { cache: "no-store" });
+      // Preview requires an admin Bearer token; live signage stays public.
+      const fetchInit: RequestInit = { cache: "no-store" };
+      if (previewId) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+        fetchInit.headers = { Authorization: `Bearer ${session.access_token}` };
+      }
+      const response = await fetch(url, fetchInit);
       if (!response.ok) return;
       const payload = (await response.json()) as CampaignPayload;
       const nextSlides =

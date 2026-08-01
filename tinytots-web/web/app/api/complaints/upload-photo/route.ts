@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -8,6 +9,12 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 // session) can attach a photo too. Bypasses RLS via supabaseAdmin, but the
 // bucket only ever gets return/complaint photos, never anything sensitive.
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(`complaint-upload:${clientIp(req)}`, {
+    limit: 10,
+    windowMs: 60_000,
+  });
+  if (!limited.ok) return rateLimitResponse(limited.retryAfterSec);
+
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;

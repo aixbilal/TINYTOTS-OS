@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // POST /api/newsletter - subscribe an email from the footer form
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(`newsletter:${clientIp(req)}`, {
+    limit: 5,
+    windowMs: 60_000,
+  });
+  if (!limited.ok) return rateLimitResponse(limited.retryAfterSec);
+
   try {
     const { email } = await req.json();
 

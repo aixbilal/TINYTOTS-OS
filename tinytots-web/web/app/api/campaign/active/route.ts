@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
 import {
   DEFAULT_FEATURE_LIST_POSITION,
   DEFAULT_HERO_BADGE_POSITION,
@@ -265,7 +266,11 @@ export async function GET(req: NextRequest) {
   const previewId = req.nextUrl.searchParams.get("preview");
   const meta = await getSignageMeta();
 
+  // Preview can load inactive/unpublished drafts — admin-only.
   if (previewId) {
+    const denied = await requireAdmin(req, "canManageSettings");
+    if (denied) return denied;
+
     const { data } = await supabaseAdmin.from("campaigns").select("*").eq("id", previewId).maybeSingle();
     if (!data) {
       return NextResponse.json({ ...emptyPayload(), slides: [], ...meta });

@@ -32,8 +32,24 @@ dotenv.config();
 
 const app = express();
 
-// Local POS only — not internet-facing. Override via POS_API_SECRET / VITE_POS_API_SECRET.
-const POS_API_SECRET = process.env.POS_API_SECRET || "tinytots-local-pos-dev-token";
+// Local POS only — not internet-facing. POS_API_SECRET must match VITE_POS_API_SECRET.
+const DEV_POS_FALLBACK_SECRET = "tinytots-local-pos-dev-token";
+const isProd = process.env.NODE_ENV === "production";
+
+if (!process.env.POS_API_SECRET) {
+  if (isProd) {
+    console.error(
+      "FATAL: POS_API_SECRET is not set. Refusing to start in production without a shared secret."
+    );
+    process.exit(1);
+  }
+  console.warn(
+    "WARNING: POS_API_SECRET is unset — using the well-known dev default. " +
+      "Set POS_API_SECRET in backend/.env (and matching VITE_POS_API_SECRET in the Electron root .env)."
+  );
+}
+
+const POS_API_SECRET = process.env.POS_API_SECRET || DEV_POS_FALLBACK_SECRET;
 const POS_TAX_RATE = Number(process.env.POS_TAX_RATE ?? 0.05);
 
 app.use(

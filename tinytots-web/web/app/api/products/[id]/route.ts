@@ -30,8 +30,7 @@ export async function GET(
         color,
         size,
         price,
-        stock,
-        reorder_level
+        stock
       )
     `
     )
