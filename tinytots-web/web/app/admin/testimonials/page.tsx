@@ -47,10 +47,20 @@ function PhotoUpload({
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await adminFetch(`/api/admin/testimonials/${testimonialId}/photo`, { method: "POST", body: formData });
-      const data = await res.json();
-      if (res.ok) onUploaded(data.url);
-      else setError(data.error || "Upload failed");
+      const res = await adminFetch(`/api/admin/testimonials/${testimonialId}/photo-upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const text = await res.text();
+      let data: { url?: string; error?: string } = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        setError(res.ok ? "Upload failed" : `Upload failed (${res.status})`);
+        return;
+      }
+      if (res.ok && data.url) onUploaded(data.url);
+      else setError(data.error || `Upload failed (${res.status})`);
     } catch {
       setError("Upload failed");
     } finally {
@@ -62,10 +72,19 @@ function PhotoUpload({
     setUploading(true);
     setError("");
     try {
-      const res = await adminFetch(`/api/admin/testimonials/${testimonialId}/photo`, { method: "DELETE" });
-      const data = await res.json();
+      const res = await adminFetch(`/api/admin/testimonials/${testimonialId}/photo-upload`, {
+        method: "DELETE",
+      });
+      const text = await res.text();
+      let data: { error?: string } = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        setError(res.ok ? "Delete failed" : `Delete failed (${res.status})`);
+        return;
+      }
       if (res.ok) onDeleted();
-      else setError(data.error || "Delete failed");
+      else setError(data.error || `Delete failed (${res.status})`);
     } catch {
       setError("Delete failed");
     } finally {
