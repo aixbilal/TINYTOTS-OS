@@ -34,14 +34,19 @@ export default function SettingsPage() {
     setLoading(true);
     setError(null);
     try {
-        const res = await adminFetch("/api/admin/settings");
-        const data = await res.json();
-        setSettings(data.settings);
+      const res = await adminFetch("/api/admin/settings");
+      const data = await res.json();
+      if (!res.ok) {
+        setSettings([]);
+        setError(data.error || "Failed to load settings");
+        return;
+      }
+      setSettings(data.settings || []);
       const initial: Record<string, string> = {};
-      for (const s of data.settings) initial[s.key] = s.value;
+      for (const s of data.settings || []) initial[s.key] = s.value;
       setEditValues(initial);
-    } catch (err: any) {
-      setError(err.message || "Failed to load settings");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load settings");
     } finally {
       setLoading(false);
     }

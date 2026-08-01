@@ -223,11 +223,22 @@ export default function MyReturnsPage() {
       });
       const message = `Return request for ${itemLines.join(", ")}.${note.trim() ? ` Note: ${note.trim()}` : ""}`;
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setSubmitError("Your session expired. Please sign in again and retry.");
+        setSubmitting(false);
+        return;
+      }
+
       const res = await fetch("/api/complaints", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
-          customer_id: customerId,
           order_id: order.id,
           type: "return",
           message,

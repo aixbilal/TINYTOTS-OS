@@ -17,13 +17,25 @@ interface Article {
 export default function AdminHelpListPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const fetchArticles = async () => {
     setLoading(true);
-    const res = await adminFetch("/api/admin/help");
-    const data = await res.json();
-    if (res.ok) setArticles(data.articles || []);
-    setLoading(false);
+    setErrorMsg("");
+    try {
+      const res = await adminFetch("/api/admin/help");
+      const data = await res.json();
+      if (res.ok) setArticles(data.articles || []);
+      else {
+        setArticles([]);
+        setErrorMsg(data.error || "Failed to load articles.");
+      }
+    } catch {
+      setArticles([]);
+      setErrorMsg("Failed to load articles.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -51,11 +63,15 @@ export default function AdminHelpListPage() {
         </Link>
       </div>
 
+      {errorMsg && (
+        <p className="mb-4 text-sm text-red-600">{errorMsg}</p>
+      )}
+
       {loading ? (
         <div className="text-center py-12 text-gray-500">Loading...</div>
       ) : articles.length === 0 ? (
         <div className="bg-white rounded-lg border border-dashed border-gray-300 p-12 text-center text-gray-500">
-          No articles yet.
+          {errorMsg ? "Could not load articles." : "No articles yet."}
         </div>
       ) : (
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">

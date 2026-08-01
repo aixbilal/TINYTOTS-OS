@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+/**
+ * POST /api/coupons/validate — public storefront helper.
+ * Returns only validity + the discount that would apply for the given subtotal.
+ * Does not expose usage counts, max uses, or other internal coupon fields.
+ */
 export async function POST(req: NextRequest) {
   try {
     const { code, subtotal } = await req.json();
@@ -12,14 +17,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const uppercaseCode = code.trim().toUpperCase();
+    const uppercaseCode = String(code).trim().toUpperCase();
 
-    // 1. Fetch coupon from database
     const { data: coupon, error } = await supabaseAdmin
       .from("coupons")
-      .select("*")
+      .select("code, discount_type, value, is_active, expires_at, max_uses, uses_count, min_spend")
       .eq("code", uppercaseCode)
-      .single();
+      .maybeSingle();
 
     if (error || !coupon) {
       return NextResponse.json(
@@ -28,7 +32,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Check if coupon is active
     if (!coupon.is_active) {
       return NextResponse.json(
         { valid: false, error: "This promo code is no longer active." },
@@ -36,12 +39,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Check expiration date & time
     if (coupon.expires_at) {
       const expirationDate = new Date(coupon.expires_at).getTime();
-      const now = new Date().getTime();
-
-      if (now > expirationDate) {
+      if (Date.now() > expirationDate) {
         return NextResponse.json(
           { valid: false, error: "This promo code has expired." },
           { status: 400 }
@@ -49,7 +49,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Check usage limits
     if (coupon.max_uses !== null && coupon.uses_count >= coupon.max_uses) {
       return NextResponse.json(
         { valid: false, error: "This promo code has reached its maximum redemption limit." },
@@ -57,41 +56,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 5. Check minimum spend requirement
-    if (coupon.min_spend > 0 && subtotal < coupon.min_spend) {
+    const minSpend = Number(coupon.min_spend ?? 0);
+    if (minSpend > 0 && subtotal < minSpend) {
       return NextResponse.json(
         {
           valid: false,
-          error: `Minimum order subtotal of $${coupon.min_spend.toFixed(2)} required for this code.`,
+          error: `Minimum order subtotal of Rs. ${minSpend.toFixed(0)} required for this code.`,
         },
         { status: 400 }
       );
     }
 
-    // 6. Calculate discount amount
     let discountAmount = 0;
     if (coupon.discount_type === "percentage") {
-      discountAmount = (subtotal * coupon.value) / 100;
+      discountAmount = (subtotal * Number(coupon.value)) / 100;
     } else if (coupon.discount_type === "flat") {
-      discountAmount = coupon.value;
+      discountAmount = Number(coupon.value);
     }
-
-    // Ensure discount doesn't exceed total order value
     discountAmount = Math.min(discountAmount, subtotal);
 
     return NextResponse.json({
       valid: true,
       coupon: {
-        id: coupon.id,
         code: coupon.code,
         discount_type: coupon.discount_type,
-        value: coupon.value,
+        value: Number(coupon.value),
         discount_amount: Number(discountAmount.toFixed(2)),
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { valid: false, error: err.message || "Failed to validate coupon." },
+      {
+        valid: false,
+        error: err instanceof Error ? err.message : "Failed to validate coupon.",
+      },
       { status: 500 }
     );
   }

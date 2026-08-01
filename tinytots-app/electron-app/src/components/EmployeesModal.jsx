@@ -1,6 +1,7 @@
 // src/components/EmployeesModal.jsx
 import { useEffect, useState } from "react";
 import { X, Plus, Trash2, User } from "lucide-react";
+import { apiFetch } from "../services/api";
 
 export default function EmployeesModal({ onClose }) {
   const [employees, setEmployees] = useState([]);
@@ -44,7 +45,7 @@ export default function EmployeesModal({ onClose }) {
 
     setSaving(true);
     try {
-      const res = await fetch("http://localhost:3000/api/users", {
+      const res = await apiFetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), username: username.trim(), password, role }),
@@ -74,7 +75,7 @@ export default function EmployeesModal({ onClose }) {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:3000/api/users/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/users/${id}`, { method: "DELETE" });
       const result = await res.json();
       if (result.success) {
         setEmployees((prev) => prev.filter((e) => e.id !== id));

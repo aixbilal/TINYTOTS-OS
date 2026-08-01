@@ -25,9 +25,21 @@ export default function DiscountsPage() {
 
   function loadDiscounts() {
     setLoading(true);
+    setError(null);
     adminFetch("/api/admin/discounts")
-      .then((r) => r.json())
-      .then((json) => setDiscounts(json.data || []))
+      .then(async (r) => {
+        const json = await r.json();
+        if (!r.ok) {
+          setDiscounts([]);
+          setError(json.error || "Failed to load discounts.");
+          return;
+        }
+        setDiscounts(json.data || []);
+      })
+      .catch(() => {
+        setDiscounts([]);
+        setError("Failed to load discounts.");
+      })
       .finally(() => setLoading(false));
   }
 

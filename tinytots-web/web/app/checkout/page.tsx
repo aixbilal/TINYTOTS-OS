@@ -120,15 +120,28 @@ export default function CheckoutPage() {
 
     setSubmitting(true);
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (user) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          setServerError("Your session expired. Please sign in again and retry.");
+          setSubmitting(false);
+          return;
+        }
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
       const res = await fetch("/api/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           items: items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity })),
           shipping_address: shippingAddress.trim(),
           shipping_city: shippingCity.trim(),
           payment_method: paymentMethod,
-          customer_id: user ? customerId : undefined,
+          // customer_id is derived server-side from the Bearer token — never trust the body
           guest_name: user ? undefined : guestName.trim(),
           guest_phone: user ? undefined : guestPhone.trim(),
           coupon_code: appliedCoupon?.code,

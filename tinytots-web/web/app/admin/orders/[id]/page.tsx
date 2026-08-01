@@ -26,11 +26,24 @@ export default function AdminOrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setError(null);
     adminFetch(`/api/admin/orders/${id}`)
-      .then((r) => r.json())
-      .then((json) => setOrder(json.data))
+      .then(async (r) => {
+        const json = await r.json();
+        if (!r.ok) {
+          setOrder(null);
+          setError(json.error || "Failed to load order.");
+          return;
+        }
+        setOrder(json.data);
+      })
+      .catch(() => {
+        setOrder(null);
+        setError("Failed to load order.");
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -62,7 +75,13 @@ export default function AdminOrderDetailPage() {
     "border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
 
     if (loading) return <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>;
-    if (!order) return <p className="font-body-md text-body-md text-error">Order not found.</p>;
+    if (!order) {
+      return (
+        <p className="font-body-md text-body-md text-error">
+          {error || "Order not found."}
+        </p>
+      );
+    }
 
   return (
     <div className="max-w-3xl">

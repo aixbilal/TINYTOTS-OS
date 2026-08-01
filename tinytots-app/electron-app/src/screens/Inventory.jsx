@@ -7,6 +7,7 @@ import VariantsTable from "../components/inventory/VariantsTable";
 import BarcodeQrPanel from "../components/inventory/BarcodeQrPanel";
 import ProductFormModal from "../components/inventory/ProductFormModal";
 import ImageUploader from "../components/inventory/ImageUploader";
+import { apiFetch } from "../services/api";
 import loginBg from "../assets/login-bg.png";
 
 const glassCard =
@@ -83,7 +84,7 @@ export default function Inventory() {
   async function handleDeleteProduct() {
     if (!selectedProduct) return;
     if (!confirm(`Delete "${selectedProduct.name}" and all its variants? This can't be undone.`)) return;
-    await fetch(`http://localhost:3000/api/products/${selectedProduct.id}`, { method: "DELETE" });
+    await apiFetch(`/api/products/${selectedProduct.id}`, { method: "DELETE" });
     setSelectedProductId(null);
     setSelectedIds([]);
     loadInventory();

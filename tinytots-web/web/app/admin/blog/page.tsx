@@ -17,13 +17,25 @@ interface Post {
 export default function AdminBlogListPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const fetchPosts = async () => {
     setLoading(true);
-    const res = await adminFetch("/api/admin/blog");
-    const data = await res.json();
-    if (res.ok) setPosts(data.posts || []);
-    setLoading(false);
+    setErrorMsg("");
+    try {
+      const res = await adminFetch("/api/admin/blog");
+      const data = await res.json();
+      if (res.ok) setPosts(data.posts || []);
+      else {
+        setPosts([]);
+        setErrorMsg(data.error || "Failed to load posts.");
+      }
+    } catch {
+      setPosts([]);
+      setErrorMsg("Failed to load posts.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -51,11 +63,15 @@ export default function AdminBlogListPage() {
         </Link>
       </div>
 
+      {errorMsg && (
+        <p className="mb-4 text-sm text-red-600">{errorMsg}</p>
+      )}
+
       {loading ? (
         <div className="text-center py-12 text-gray-500">Loading...</div>
       ) : posts.length === 0 ? (
         <div className="bg-white rounded-lg border border-dashed border-gray-300 p-12 text-center text-gray-500">
-          No posts yet.
+          {errorMsg ? "Could not load posts." : "No posts yet."}
         </div>
       ) : (
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">

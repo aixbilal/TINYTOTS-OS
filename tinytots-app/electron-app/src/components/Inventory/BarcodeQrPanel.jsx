@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Printer, Download, QrCode, Barcode as BarcodeIcon } from "lucide-react";
 import { generateQrPreview, generateBarcodePreview } from "../../utils/codeGenerators";
+import { apiFetch } from "../../services/api";
 
 const LABEL_PRESETS = [
   { label: "25 × 27 mm (standard tag)", w: 25, h: 30 },
@@ -107,7 +108,7 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds, onSe
         ...(download ? {} : { printerName }),
       };
 
-      const res = await fetch("http://localhost:5173/api/print-labels", {
+      const res = await apiFetch("/api/print-labels", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

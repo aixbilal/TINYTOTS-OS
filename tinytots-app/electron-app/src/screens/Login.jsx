@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, User } from "lucide-react";
 import { saveSession } from "../auth";
+import { apiFetch } from "../services/api";
 import loginBg from "../assets/login-bg.png";
 
 export default function Login() {
@@ -24,7 +25,7 @@ export default function Login() {
     setLoading(true);
     try {
       // ---- Try online login first ----
-      const res = await fetch("http://localhost:3000/api/login", {
+      const res = await apiFetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: username.trim(), password }),

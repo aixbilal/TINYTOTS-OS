@@ -144,11 +144,23 @@ export default function ReportIssuePage() {
         if (order) resolvedOrderId = order.id;
       }
 
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (user) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          setError("Your session expired. Please sign in again and retry.");
+          setSubmitting(false);
+          return;
+        }
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
       const res = await fetch("/api/complaints", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
-          customer_id: user ? customerId : undefined,
           order_id: resolvedOrderId,
           reporter_name: user ? undefined : name.trim(),
           reporter_phone: user ? undefined : phone.trim(),

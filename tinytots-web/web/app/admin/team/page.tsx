@@ -21,9 +21,21 @@ export default function TeamPage() {
 
   function loadTeam() {
     setLoading(true);
+    setError(null);
     adminFetch("/api/admin/team")
-      .then((r) => r.json())
-      .then((json) => setTeam(json.data || []))
+      .then(async (r) => {
+        const json = await r.json();
+        if (!r.ok) {
+          setTeam([]);
+          setError(json.error || "Failed to load team.");
+          return;
+        }
+        setTeam(json.data || []);
+      })
+      .catch(() => {
+        setTeam([]);
+        setError("Failed to load team.");
+      })
       .finally(() => setLoading(false));
   }
 

@@ -34,13 +34,17 @@ export default function AdminCouponsPage() {
   const fetchCoupons = async () => {
     try {
       setLoading(true);
+      setErrorMsg("");
       const res = await adminFetch("/api/admin/coupons");
       const data = await res.json();
       if (res.ok) {
         setCoupons(data.coupons || []);
+      } else {
+        setErrorMsg(data.error || "Failed to load coupons.");
       }
     } catch (err) {
       console.error("Failed to load coupons", err);
+      setErrorMsg("Failed to load coupons.");
     } finally {
       setLoading(false);
     }
@@ -91,20 +95,34 @@ export default function AdminCouponsPage() {
   };
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
+    const nextActive = !currentStatus;
+    if (
+      !confirm(
+        nextActive
+          ? "Enable this coupon? Customers will be able to use it at checkout."
+          : "Disable this coupon? It will stop working at checkout immediately."
+      )
+    ) {
+      return;
+    }
     try {
       const res = await adminFetch("/api/admin/coupons", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, is_active: !currentStatus }),
+        body: JSON.stringify({ id, is_active: nextActive }),
       });
 
       if (res.ok) {
         setCoupons((prev) =>
-          prev.map((c) => (c.id === id ? { ...c, is_active: !currentStatus } : c))
+          prev.map((c) => (c.id === id ? { ...c, is_active: nextActive } : c))
         );
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setErrorMsg(data.error || "Failed to update coupon status.");
       }
     } catch (err) {
       console.error("Failed to toggle status", err);
+      setErrorMsg("Failed to update coupon status.");
     }
   };
 

@@ -11,12 +11,19 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setError(null);
     adminFetch("/api/admin/inventory")
-      .then((r) => r.json())
-      .then((json) => {
-        // /api/inventory returns one row per variant; group into products client-side
+      .then(async (r) => {
+        const json = await r.json();
+        if (!r.ok) {
+          setProducts([]);
+          setError(json.error || "Failed to load products.");
+          return;
+        }
+        // /api/admin/inventory returns one row per variant; group into products client-side
         const grouped: Record<number, Product> = {};
         for (const row of json.data || []) {
           const pid = row.product_id;
@@ -34,6 +41,10 @@ export default function AdminProductsPage() {
           grouped[pid].variants.push(row);
         }
         setProducts(Object.values(grouped));
+      })
+      .catch(() => {
+        setProducts([]);
+        setError("Failed to load products.");
       })
       .finally(() => setLoading(false));
   }, []);
@@ -60,6 +71,10 @@ export default function AdminProductsPage() {
         onChange={(e) => setQuery(e.target.value)}
         className="w-full max-w-sm border rounded-lg px-4 py-2 mb-4 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none"
       />
+
+      {error && (
+        <p className="font-body-md text-body-md text-error mb-4">{error}</p>
+      )}
 
       {loading ? (
         <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>

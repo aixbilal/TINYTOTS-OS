@@ -19,6 +19,7 @@ import {
   removeQueuedSale,
   retrySale,
 } from "../services/offlineQueue";
+import { apiFetch } from "../services/api";
 import useNetworkStatus from "../hooks/useNetworkStatus";
 import { getSession, clearSession } from "../auth";
 import loginBg from "../assets/login-bg.png";
@@ -190,13 +191,15 @@ export default function POS() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
 
-      const res = await fetch("http://localhost:3000/api/checkout", {
+      const res = await apiFetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
           client_sale_id: clientSaleId,
-          cart, subtotal, discount: discountAmount, tax, total,
+          cart,
+          manual_discount: discount,
+          manual_discount_type: discountType,
           cashier, paymentMethod, notes,
         }),
       });
@@ -214,7 +217,11 @@ export default function POS() {
       }
 
       const sale = buildSale({
-        cart, subtotal, discount: discountAmount, tax, total,
+        cart,
+        subtotal: result.subtotal,
+        discount: result.discount,
+        tax: result.tax,
+        total: result.total,
         receiptNumber: result.receipt_number, cashier, paymentMethod,
       });
 
@@ -239,7 +246,17 @@ export default function POS() {
       });
 
       queueSale(
-        { cart, subtotal, discount: discountAmount, tax, total, cashier, paymentMethod, notes, offlineReceiptNumber },
+        {
+          cart,
+          manual_discount: discount,
+          manual_discount_type: discountType,
+          cashier,
+          paymentMethod,
+          notes,
+          offlineReceiptNumber,
+          // Display-only snapshot for the pending panel; server recomputes on sync.
+          total,
+        },
         clientSaleId
       );
       setPendingSales(getQueueCount());

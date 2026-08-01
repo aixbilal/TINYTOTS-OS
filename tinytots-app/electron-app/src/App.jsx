@@ -10,6 +10,7 @@ import {
   syncQueuedSales,
   getQueueCount,
 } from "./services/offlineQueue";
+import { apiFetch } from "./services/api";
 import useNetworkStatus from "./hooks/useNetworkStatus";
 
 function App() {
@@ -103,16 +104,17 @@ function App() {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/api/checkout", {
+      const response = await apiFetch("/api/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           cart,
-          subtotal,
-          tax,
-          total,
+          manual_discount: 0,
+          manual_discount_type: "flat",
+          cashier: "POS",
+          client_sale_id: crypto.randomUUID(),
         }),
       });
 
@@ -127,9 +129,9 @@ function App() {
 
       const sale = buildSale({
         cart,
-        subtotal,
-        tax,
-        total,
+        subtotal: result.subtotal ?? subtotal,
+        tax: result.tax ?? tax,
+        total: result.total ?? total,
         receiptNumber: result.receipt_number,
       });
 

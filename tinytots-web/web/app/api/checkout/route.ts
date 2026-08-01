@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import { getSettingNumber, getSetting } from "@/lib/settings";
+import { Agent, setGlobalDispatcher } from "undici";
 
+setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 function calculateCodTier(orderTotal: number) {
   if (orderTotal < 5000) {
@@ -25,13 +31,14 @@ export async function POST(request: NextRequest) {
       shipping_address,
       shipping_city,
       payment_method, // 'jazzcash' | 'easypaisa' | 'card' | 'cod'
-      customer_id, // optional, null for guest
       guest_name,
       guest_phone,
       coupon_code,
       voucher_id,
       referral_code,
     } = body;
+    // Ignore body.customer_id entirely — spoofable. Logged-in identity comes
+    // only from the Bearer token; guests leave customer_id null.
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
@@ -54,13 +61,42 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (!customer_id && (!guest_name || !guest_phone)) {
-      return NextResponse.json(
-        { error: "guest_name and guest_phone are required for guest checkout" },
-        { status: 400 }
-      );
+
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.replace(/^Bearer\s+/i, "")?.trim() || "";
+
+    let customer_id: number | null = null;
+
+    if (token) {
+      const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
+      const { data: userData, error: userError } = await supabaseAuth.auth.getUser(token);
+      if (userError || !userData?.user) {
+        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      }
+
+      const { data: customer, error: customerError } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("auth_user_id", userData.user.id)
+        .maybeSingle();
+
+      if (customerError || !customer) {
+        return NextResponse.json(
+          { error: "Customer record not found for this account." },
+          { status: 404 }
+        );
+      }
+      customer_id = customer.id;
+    } else {
+      if (!guest_name || !guest_phone) {
+        return NextResponse.json(
+          { error: "guest_name and guest_phone are required for guest checkout" },
+          { status: 400 }
+        );
+      }
     }
-    if (guest_phone) {
+
+    if (!customer_id && guest_phone) {
       const phoneDigits = guest_phone.replace(/[\s-]/g, "");
       const pakMobilePattern = /^(?:\+92|0)3\d{9}$/;
       if (!pakMobilePattern.test(phoneDigits)) {
@@ -161,9 +197,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
- // Coupon validation — active, not expired, under max_uses, subtotal meets min_spend
+ // Coupon validation — active, not expired, under max_uses, subtotal meets min_spend.
+ // Final claim is atomic via increment_coupon_uses(p_coupon_id) after the order row exists.
  let discountTotal = 0;
  let appliedCouponCode: string | null = null;
+ let appliedCouponId: number | null = null;
  if (coupon_code) {
    const { data: coupon } = await supabase
      .from("coupons")
@@ -185,6 +223,7 @@ export async function POST(request: NextRequest) {
            ? Math.round(subtotal * (coupon.value / 100))
            : coupon.value;
        appliedCouponCode = coupon.code;
+       appliedCouponId = coupon.id;
      }
    }
  }
@@ -325,39 +364,10 @@ export async function POST(request: NextRequest) {
       if (orderError) {
         return NextResponse.json({ error: orderError.message }, { status: 500 });
       }
-  
-// Increment coupon usage count now that the order is confirmed created.
-// Logged, not thrown — a failure here shouldn't fail an already-placed order,
-// but silent drift in uses_count is worse than a log line telling us it happened.
-if (appliedCouponCode) {
-  const { error: couponIncrementError } = await supabase.rpc("increment_coupon_uses", {
-    p_code: appliedCouponCode,
-  });
-  if (couponIncrementError) {
-    console.error(
-      `Order ${order.id}: failed to increment uses_count for coupon ${appliedCouponCode}:`,
-      couponIncrementError.message
-    );
-  }
-}
 
-// Mark voucher as used now that the order is confirmed created.
-// Same reasoning — log, don't throw, but never let this fail invisibly:
-// an unflagged voucher stays valid and could be reused elsewhere.
-if (validatedVoucherId) {
-  const { error: voucherFlagError } = await supabase
-    .from("vouchers")
-    .update({ is_used: true })
-    .eq("id", validatedVoucherId);
-  if (voucherFlagError) {
-    console.error(
-      `Order ${order.id}: failed to flag voucher ${validatedVoucherId} as used:`,
-      voucherFlagError.message
-    );
-  }
-}
-  
-      // Insert order_items — this triggers the deduct_stock_order function automatically
+    // Insert order_items — trg_deduct_stock_order_item locks the variant and
+    // decrements stock. customers.orders_count was already +1'd by the orders
+    // insert trigger (and is -1'd if we delete the order on failure below).
     const itemsToInsert = orderItems.map((item) => ({
       ...item,
       order_id: order.id,
@@ -367,11 +377,46 @@ if (validatedVoucherId) {
       .from("order_items")
       .insert(itemsToInsert);
 
-      if (itemsError) {
-        // Roll back the order if items failed to insert, to avoid an orphaned empty order
+    if (itemsError) {
+      // Roll back the empty order (restores orders_count via DELETE trigger)
+      await supabase.from("orders").delete().eq("id", order.id);
+      return NextResponse.json({ error: itemsError.message }, { status: 500 });
+    }
+
+    // Atomic coupon claim after stock is reserved. On failure, remove items
+    // (restores stock) then the order (restores orders_count).
+    if (appliedCouponId) {
+      const { data: couponClaimed, error: couponIncrementError } = await supabase.rpc(
+        "increment_coupon_uses",
+        { p_coupon_id: appliedCouponId }
+      );
+      if (couponIncrementError || couponClaimed !== true) {
+        await supabase.from("order_items").delete().eq("order_id", order.id);
         await supabase.from("orders").delete().eq("id", order.id);
-        return NextResponse.json({ error: itemsError.message }, { status: 500 });
+        return NextResponse.json(
+          {
+            error:
+              couponIncrementError?.message ||
+              "This promo code is no longer available. Please remove it and try again.",
+          },
+          { status: 409 }
+        );
       }
+    }
+
+    // Mark voucher as used only after items (+ coupon) succeeded.
+    if (validatedVoucherId) {
+      const { error: voucherFlagError } = await supabase
+        .from("vouchers")
+        .update({ is_used: true })
+        .eq("id", validatedVoucherId);
+      if (voucherFlagError) {
+        console.error(
+          `Order ${order.id}: failed to flag voucher ${validatedVoucherId} as used:`,
+          voucherFlagError.message
+        );
+      }
+    }
  // Link the referral now that the order is confirmed placed. Reward stays
       // unissued (reward_triggered: false) until admin approves it. Works for
       // both logged-in referees (referee_customer_id set now) and guests

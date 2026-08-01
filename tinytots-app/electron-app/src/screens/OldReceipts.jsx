@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Search, Calendar, SlidersHorizontal, RotateCcw, FileText, ChevronLeft, ChevronRight, MoreVertical } from "lucide-react";
 import FloralFlourish from "../components/FloralFlourish";
 import ReceiptDetailPanel from "../components/receipts/ReceiptDetailPanel";
+import { apiFetch } from "../services/api";
 import loginBg from "../assets/login-bg.png";
 
 const glassCard =
@@ -284,7 +285,7 @@ export default function OldReceipts() {
                         </button>
                         <button
                           onClick={async () => {
-                            await fetch(`http://localhost:3000/api/receipts/${r.id}/reprint`, { method: "POST" });
+                            await apiFetch(`/api/receipts/${r.id}/reprint`, { method: "POST" });
                             setOpenMenuId(null);
                           }}
                           className="w-full text-left px-3.5 py-2.5 hover:bg-white/30"

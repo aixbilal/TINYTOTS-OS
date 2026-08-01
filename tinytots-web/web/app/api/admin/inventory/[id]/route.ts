@@ -51,6 +51,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
   const { id } = await params;
   const { error } = await supabaseAdmin.from("variants").delete().eq("id", id);
   if (error) {

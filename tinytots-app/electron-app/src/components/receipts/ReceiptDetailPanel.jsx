@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, Download, Printer, FileText, Calendar, User, CreditCard, Banknote, Package } from "lucide-react";
+import { apiFetch } from "../../services/api";
 
 export default function ReceiptDetailPanel({ receiptId, onClose }) {
   const [receipt, setReceipt] = useState(null);
@@ -20,7 +21,7 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
     setBusy(true);
     setMessage("");
     try {
-      const res = await fetch(`http://localhost:3000/api/receipts/${receiptId}/reprint`, { method: "POST" });
+      const res = await apiFetch(`/api/receipts/${receiptId}/reprint`, { method: "POST" });
       const data = await res.json();
       setMessage(data.success ? "Sent to printer." : `Failed: ${data.error}`);
     } catch (err) {

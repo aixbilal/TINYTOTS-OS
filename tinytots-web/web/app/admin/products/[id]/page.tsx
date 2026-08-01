@@ -74,22 +74,39 @@ export default function EditProductPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setError(null);
     adminFetch(`/api/admin/products/${id}`)
-      .then((r) => r.json())
-      .then((json) => setProduct(json.data))
+      .then(async (r) => {
+        const json = await r.json();
+        if (!r.ok) {
+          setProduct(null);
+          setError(json.error || "Failed to load product.");
+          return;
+        }
+        setProduct(json.data);
+      })
+      .catch(() => {
+        setProduct(null);
+        setError("Failed to load product.");
+      })
       .finally(() => setLoading(false));
 
     adminFetch(`/api/admin/products/${id}/images`)
-      .then((r) => r.json())
-      .then((json) => setImages(json.data || []))
+      .then(async (r) => {
+        const json = await r.json();
+        if (r.ok) setImages(json.data || []);
+        else setImages([]);
+      })
       .catch(() => setImages([]));
 
     adminFetch("/api/admin/badge-items")
-      .then((r) => r.json())
-      .then((json) => setBadgeItems(json.items || []))
+      .then(async (r) => {
+        const json = await r.json();
+        if (r.ok) setBadgeItems(json.items || []);
+        else setBadgeItems([]);
+      })
       .catch(() => setBadgeItems([]));
   }, [id]);
-
   function updateField<K extends keyof Product>(field: K, value: Product[K]) {
     setProduct((prev) => (prev ? { ...prev, [field]: value } : prev));
   }
@@ -165,7 +182,13 @@ export default function EditProductPage() {
     "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
 
   if (loading) return <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>;
-  if (!product) return <p className="font-body-md text-body-md text-error">Product not found.</p>;
+  if (!product) {
+    return (
+      <p className="font-body-md text-body-md text-error">
+        {error || "Product not found."}
+      </p>
+    );
+  }
 
   return (
     <div className="max-w-2xl">
@@ -173,12 +196,27 @@ export default function EditProductPage() {
         <h1 className="font-display-md text-display-md text-on-surface">Edit Product</h1>
         <button
   onClick={async () => {
-    const res = await fetch(`/api/products/${id}`, {
+    const nextActive = !product.is_active;
+    if (
+      !confirm(
+        nextActive
+          ? "Reactivate this product? It will appear on the storefront again."
+          : "Deactivate this product? It will disappear from the storefront but stay in past orders."
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    const res = await adminFetch(`/api/products/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...product, is_active: !product.is_active }),
+      body: JSON.stringify({ is_active: nextActive }),
     });
-    if (res.ok) updateField("is_active", !product.is_active);
+    if (res.ok) updateField("is_active", nextActive);
+    else {
+      const json = await res.json().catch(() => ({}));
+      setError(json.error || "Failed to update product status.");
+    }
   }}
   className={`font-label-md text-label-md hover:underline ${product.is_active ? "text-error" : "text-primary"}`}
 >

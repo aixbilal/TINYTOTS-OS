@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Target } from "lucide-react";
+import { apiFetch } from "../../services/api";
 
 const glassCard =
   "rounded-2xl border border-white/40 backdrop-blur-xl transition-transform duration-300";
@@ -20,7 +21,7 @@ export default function SetGoalForm({ onGoalSet }) {
     if (!targetAmount) return;
     setBusy(true);
     try {
-      const res = await fetch("http://localhost:3000/api/goals", {
+      const res = await apiFetch("/api/goals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ goalType, targetAmount: Number(targetAmount), month }),

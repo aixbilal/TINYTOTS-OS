@@ -17,12 +17,25 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
+    setError(null);
     adminFetch(`/api/admin/orders?status=${statusFilter}`)
-      .then((r) => r.json())
-      .then((json) => setOrders(json.data || []))
+      .then(async (r) => {
+        const json = await r.json();
+        if (!r.ok) {
+          setOrders([]);
+          setError(json.error || "Failed to load orders.");
+          return;
+        }
+        setOrders(json.data || []);
+      })
+      .catch(() => {
+        setOrders([]);
+        setError("Failed to load orders.");
+      })
       .finally(() => setLoading(false));
   }, [statusFilter]);
 
@@ -52,10 +65,16 @@ export default function AdminOrdersPage() {
         ))}
       </div>
 
+      {error && (
+        <p className="font-body-md text-body-md text-error mb-4">{error}</p>
+      )}
+
       {loading ? (
         <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
       ) : orders.length === 0 ? (
-        <p className="font-body-md text-body-md text-on-surface-variant">No orders here.</p>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          {error ? "Could not load orders." : "No orders here."}
+        </p>
       ) : (
         <table className="w-full border-collapse">
           <thead>

@@ -13,13 +13,25 @@ interface SitePage {
 export default function AdminPagesListPage() {
   const [pages, setPages] = useState<SitePage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     (async () => {
-      const res = await adminFetch("/api/admin/pages");
-      const data = await res.json();
-      if (res.ok) setPages(data.pages || []);
-      setLoading(false);
+      setErrorMsg("");
+      try {
+        const res = await adminFetch("/api/admin/pages");
+        const data = await res.json();
+        if (res.ok) setPages(data.pages || []);
+        else {
+          setPages([]);
+          setErrorMsg(data.error || "Failed to load pages.");
+        }
+      } catch {
+        setPages([]);
+        setErrorMsg("Failed to load pages.");
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -29,6 +41,10 @@ export default function AdminPagesListPage() {
       <p className="text-sm text-gray-500 mb-6">
         Edit About Us, Privacy Policy, Terms, and Shipping &amp; Returns content shown on the storefront.
       </p>
+
+      {errorMsg && (
+        <p className="mb-4 text-sm text-red-600">{errorMsg}</p>
+      )}
 
       {loading ? (
         <div className="text-center py-12 text-gray-500">Loading...</div>

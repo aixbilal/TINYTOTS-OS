@@ -1,8 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-
-const API_BASE = "http://localhost:3000";
+import { apiFetch } from "../../services/api";
 const MAX_DIMENSION = 1600; // px — cuts upload size/time drastically vs. a raw phone/camera photo
 
 async function getCroppedBlob(image, crop) {
@@ -107,7 +106,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
         formData.append("file", blob, pendingFileRef.current.name);
         formData.append("is_primary", makePrimary ? "true" : "false");
 
-        const res = await fetch(`${API_BASE}/api/products/${productId}/images`, {
+        const res = await apiFetch(`/api/products/${productId}/images`, {
           method: "POST",
           body: formData,
         });
@@ -144,7 +143,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
 
   async function setPrimary(imageId) {
     setError(null);
-    const res = await fetch(`${API_BASE}/api/products/${productId}/images`, {
+    const res = await apiFetch(`/api/products/${productId}/images`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "set_primary", image_id: imageId }),
@@ -162,7 +161,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
     setDeletingIds((prev) => new Set(prev).add(imageId));
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/products/${productId}/images?image_id=${imageId}`, {
+      const res = await apiFetch(`/api/products/${productId}/images?image_id=${imageId}`, {
         method: "DELETE",
       });
       const json = await res.json();

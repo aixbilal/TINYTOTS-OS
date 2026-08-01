@@ -1,3 +1,5 @@
+import { apiFetch } from "./api";
+
 const STORAGE_KEY = "tiny_tots_pending_sales";
 
 export function getQueuedSales() {
@@ -62,17 +64,15 @@ export async function syncQueuedSales() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000); // don't hang forever on a half-dead connection
 
-      const response = await fetch("http://localhost:3000/api/checkout", {
+      const response = await apiFetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
           client_sale_id: sale.client_sale_id,
           cart: sale.cart,
-          subtotal: sale.subtotal,
-          discount: sale.discount ?? 0,
-          tax: sale.tax,
-          total: sale.total,
+          manual_discount: sale.manual_discount ?? 0,
+          manual_discount_type: sale.manual_discount_type ?? "flat",
           cashier: sale.cashier,
           paymentMethod: sale.paymentMethod,
           notes: sale.notes,

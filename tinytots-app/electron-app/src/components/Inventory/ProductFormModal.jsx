@@ -3,6 +3,7 @@ import { X, Plus } from "lucide-react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import ImageUploader from "./ImageUploader";
+import { apiFetch } from "../../services/api";
 
 function TagInput({ label, placeholder, values, onChange }) {
   const [draft, setDraft] = useState("");
@@ -144,8 +145,8 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
     try {
       const url =
         mode === "create"
-          ? "http://localhost:3000/api/products"
-          : `http://localhost:3000/api/products/${initialProduct.id}`;
+          ? "/api/products"
+          : `/api/products/${initialProduct.id}`;
       const method = mode === "create" ? "POST" : "PUT";
 
       const body =
@@ -153,7 +154,7 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
           ? { ...form, colors, sizes, variantStocks: stockOverrides }
           : form;
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

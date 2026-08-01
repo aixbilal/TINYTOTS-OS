@@ -32,8 +32,31 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
+// Local POS only — not internet-facing. Override via POS_API_SECRET / VITE_POS_API_SECRET.
+const POS_API_SECRET = process.env.POS_API_SECRET || "tinytots-local-pos-dev-token";
+const POS_TAX_RATE = Number(process.env.POS_TAX_RATE ?? 0.05);
+
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    allowedHeaders: ["Content-Type", "X-POS-Token"],
+  })
+);
 app.use(express.json());
+
+// Shared-secret gate on every mutating /api route so other local processes
+// cannot call the service-role-backed endpoints even on the same machine.
+app.use("/api", (req, res, next) => {
+  const method = req.method.toUpperCase();
+  if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
+    return next();
+  }
+  const token = req.get("X-POS-Token") || "";
+  if (!token || token !== POS_API_SECRET) {
+    return res.status(401).json({ success: false, message: "Unauthorized." });
+  }
+  return next();
+});
 
 app.use("/webhook", whatsappWebhook);
 
@@ -227,14 +250,13 @@ app.post("/api/checkout", async (req, res) => {
   try {
     const {
       cart,
-      subtotal,
-      discount = 0,
-      tax,
-      total,
       cashier,
       paymentMethod = "cash",
       notes = "",
       client_sale_id,
+      // Cashier-applied discount only — never trust client line prices / totals.
+      manual_discount = 0,
+      manual_discount_type = "flat",
     } = req.body;
 
     if (!cart || cart.length === 0) {
@@ -252,7 +274,7 @@ app.post("/api/checkout", async (req, res) => {
     // retried), return the original result instead of creating a duplicate.
     const { data: existingSale, error: existingErr } = await supabase
       .from("sales")
-      .select("id, receipt_number")
+      .select("id, receipt_number, subtotal, discount, tax, total")
       .eq("client_sale_id", client_sale_id)
       .maybeSingle();
     if (existingErr) throw existingErr;
@@ -261,58 +283,107 @@ app.post("/api/checkout", async (req, res) => {
         success: true,
         sale_id: existingSale.id,
         receipt_number: existingSale.receipt_number,
+        subtotal: Number(existingSale.subtotal),
+        discount: Number(existingSale.discount),
+        tax: Number(existingSale.tax),
+        total: Number(existingSale.total),
         deduped: true,
       });
     }
 
-    // Validate stock (see original note: read-then-write race window
-    // is acceptable for a single-till setup)
-    const variantStocks = {};
-    for (const item of cart) {
-      const { data: variant, error } = await supabase
-        .from("variants")
-        .select("stock")
-        .eq("id", item.variant_id)
-        .single();
+    // Load authoritative prices + stock from DB (ignore client price fields).
+    const variantIds = [...new Set(cart.map((item) => item.variant_id))];
+    const { data: variants, error: variantsError } = await supabase
+      .from("variants")
+      .select(`
+        id,
+        price,
+        stock,
+        discount_percent,
+        color,
+        size,
+        product:products(name)
+      `)
+      .in("id", variantIds);
 
-      if (error) throw error;
+    if (variantsError) throw variantsError;
+
+    const variantById = Object.fromEntries((variants || []).map((v) => [v.id, v]));
+    const pricedLines = [];
+
+    for (const item of cart) {
+      const qty = Number(item.qty);
+      if (!Number.isFinite(qty) || qty <= 0) {
+        return res.status(400).json({ success: false, message: "Invalid cart quantity." });
+      }
+
+      const variant = variantById[item.variant_id];
       if (!variant) {
         return res.status(400).json({ success: false, message: `Variant ${item.variant_id} not found.` });
       }
-      if (variant.stock < item.qty) {
+
+      const name = variant.product?.name || item.name || `Variant ${variant.id}`;
+      if (variant.stock < qty) {
         return res.status(400).json({
           success: false,
-          message: `${item.name} (${item.color} / ${item.size}) has only ${variant.stock} item(s) left in stock.`,
+          message: `${name} (${variant.color} / ${variant.size}) has only ${variant.stock} item(s) left in stock.`,
         });
       }
-      variantStocks[item.variant_id] = variant.stock;
+
+      const unitPrice = Number(variant.price);
+      const discountPercent = Number(variant.discount_percent) || 0;
+      pricedLines.push({
+        variant_id: variant.id,
+        qty,
+        unit_price: unitPrice,
+        line_total: unitPrice * qty,
+        discount_percent: discountPercent,
+        name,
+        color: variant.color,
+        size: variant.size,
+        stock: variant.stock,
+      });
     }
+
+    const subtotal = pricedLines.reduce((sum, line) => sum + line.line_total, 0);
+    const autoDiscountAmount = pricedLines.reduce(
+      (sum, line) => sum + line.line_total * (line.discount_percent / 100),
+      0
+    );
+    const manualDiscountAmount =
+      manual_discount_type === "percent"
+        ? (subtotal * (Number(manual_discount) || 0)) / 100
+        : Number(manual_discount) || 0;
+    const discount = autoDiscountAmount + manualDiscountAmount;
+    const taxableAmount = Math.max(subtotal - discount, 0);
+    const tax = taxableAmount * POS_TAX_RATE;
+    const total = taxableAmount + tax;
 
     // ---- NOTIFICATIONS: low stock / out of stock, based on what will
     //      remain after this sale goes through ----
-    for (const item of cart) {
-      const remaining = variantStocks[item.variant_id] - item.qty;
+    for (const line of pricedLines) {
+      const remaining = line.stock - line.qty;
       if (remaining <= 0) {
         await createNotification({
           category: "inventory",
           priority: "critical",
           title: "Out of Stock",
-          description: `${item.name} (${item.color || ""} ${item.size || ""}) just sold out.`,
+          description: `${line.name} (${line.color || ""} ${line.size || ""}) just sold out.`,
           target_role: "admin",
           action_label: "View Product",
           action_type: "view_product",
-          action_payload: { variantId: item.variant_id },
+          action_payload: { variantId: line.variant_id },
         });
       } else if (remaining <= 5) {
         await createNotification({
           category: "inventory",
           priority: "warning",
           title: "Low Stock",
-          description: `${item.name} (${item.color || ""} ${item.size || ""}) has only ${remaining} unit(s) remaining.`,
+          description: `${line.name} (${line.color || ""} ${line.size || ""}) has only ${remaining} unit(s) remaining.`,
           target_role: "admin",
           action_label: "View Product",
           action_type: "view_product",
-          action_payload: { variantId: item.variant_id },
+          action_payload: { variantId: line.variant_id },
         });
       }
     }
@@ -320,55 +391,56 @@ app.post("/api/checkout", async (req, res) => {
     const receiptNumber = `TT-${Date.now()}`;
 
     const { data: sale, error: saleError } = await supabase
-    .from("sales")
-    .insert([{
-      receipt_number: receiptNumber,
-      subtotal,
-      discount,
-      tax,
-      total,
-      status: "completed",
-      cashier: cashier.trim(),
-      payment_method: paymentMethod,
-      notes,
-      client_sale_id,
-    }])
-    .select()
-    .single();
-
-  if (saleError?.code === "23505") {
-    // Race: another request with the same client_sale_id beat us to it
-    // between our check above and this insert. Treat it the same way.
-    const { data: raceSale } = await supabase
       .from("sales")
-      .select("id, receipt_number")
-      .eq("client_sale_id", client_sale_id)
+      .insert([{
+        receipt_number: receiptNumber,
+        subtotal,
+        discount,
+        tax,
+        total,
+        status: "completed",
+        cashier: cashier.trim(),
+        payment_method: paymentMethod,
+        notes,
+        client_sale_id,
+      }])
+      .select()
       .single();
-    if (raceSale) {
-      return res.json({ success: true, sale_id: raceSale.id, receipt_number: raceSale.receipt_number, deduped: true });
+
+    if (saleError?.code === "23505") {
+      // Race: another request with the same client_sale_id beat us to it
+      // between our check above and this insert. Treat it the same way.
+      const { data: raceSale } = await supabase
+        .from("sales")
+        .select("id, receipt_number, subtotal, discount, tax, total")
+        .eq("client_sale_id", client_sale_id)
+        .single();
+      if (raceSale) {
+        return res.json({
+          success: true,
+          sale_id: raceSale.id,
+          receipt_number: raceSale.receipt_number,
+          subtotal: Number(raceSale.subtotal),
+          discount: Number(raceSale.discount),
+          tax: Number(raceSale.tax),
+          total: Number(raceSale.total),
+          deduped: true,
+        });
+      }
     }
-  }
     if (saleError) throw saleError;
 
-    const saleItems = cart.map((item) => ({
+    const saleItems = pricedLines.map((line) => ({
       sale_id: sale.id,
-      variant_id: item.variant_id,
-      quantity: item.qty,
-      unit_price: item.price,
-      line_total: item.price * item.qty,
+      variant_id: line.variant_id,
+      quantity: line.qty,
+      unit_price: line.unit_price,
+      line_total: line.line_total,
     }));
 
+    // Stock is decremented once by the sale_items deduct_stock trigger — do not update variants here.
     const { error: itemError } = await supabase.from("sale_items").insert(saleItems);
     if (itemError) throw itemError;
-
-    for (const item of cart) {
-      const newStock = Math.max(variantStocks[item.variant_id] - item.qty, 0);
-      const { error: stockError } = await supabase
-        .from("variants")
-        .update({ stock: newStock })
-        .eq("id", item.variant_id);
-      if (stockError) throw stockError;
-    }
 
     // ---- NOTIFICATIONS: sale completed, high-value sale, discount limit ----
     await createNotification({
@@ -412,7 +484,15 @@ app.post("/api/checkout", async (req, res) => {
       });
     }
 
-    res.json({ success: true, sale_id: sale.id, receipt_number: receiptNumber });
+    res.json({
+      success: true,
+      sale_id: sale.id,
+      receipt_number: receiptNumber,
+      subtotal,
+      discount,
+      tax,
+      total,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: err.message });
@@ -2150,7 +2230,7 @@ await recoverMissedReport();
 // Start scheduled jobs
 startCronJobs();
 
-// Start Express server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Start Express server — localhost only (not reachable from the LAN/internet)
+app.listen(PORT, "127.0.0.1", () => {
+  console.log(`Server running on http://127.0.0.1:${PORT}`);
 });

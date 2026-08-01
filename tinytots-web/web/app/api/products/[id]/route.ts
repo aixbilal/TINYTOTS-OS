@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { requireAdmin } from "@/lib/require-admin";
 import { normalizeSignageProductBadge } from "@/lib/signage-campaign";
 
 // GET /api/products/[id]
@@ -50,6 +51,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
   const { id } = await params;
   try {
     const body = await request.json();
@@ -106,6 +110,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(request, "canManageInventory");
+  if (denied) return denied;
+
   const { id } = await params;
 
   const { error } = await supabaseAdmin

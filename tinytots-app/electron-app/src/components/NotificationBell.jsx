@@ -7,6 +7,7 @@ import {
   X, Check,
 } from "lucide-react";
 import { getSession } from "../auth";
+import { apiFetch } from "../services/api";
 
 const CATEGORY_ICONS = {
   inventory: Package,
@@ -81,7 +82,7 @@ export default function NotificationBell() {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
     setUnreadCount((prev) => Math.max(prev - 1, 0));
     try {
-      await fetch(`http://localhost:3000/api/notifications/${id}/read`, { method: "PATCH" });
+      await apiFetch(`/api/notifications/${id}/read`, { method: "PATCH" });
     } catch (err) {
       console.error("Failed to mark as read:", err);
     }
@@ -91,7 +92,7 @@ export default function NotificationBell() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
     try {
-      await fetch("http://localhost:3000/api/notifications/mark-all-read", {
+      await apiFetch("/api/notifications/mark-all-read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: session.role, username: session.username }),
@@ -105,7 +106,7 @@ export default function NotificationBell() {
     setNotifications([]);
     setUnreadCount(0);
     try {
-      await fetch("http://localhost:3000/api/notifications", {
+      await apiFetch("/api/notifications", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: session.role, username: session.username }),

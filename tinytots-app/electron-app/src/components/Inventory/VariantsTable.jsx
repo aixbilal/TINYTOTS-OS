@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MoreVertical, Trash2, Check, X, Plus } from "lucide-react";
+import { apiFetch } from "../../services/api";
 
 const COLOR_SWATCH = {
   maroon: "#7A0F1F", black: "#111111", white: "#f5f5f5", olive: "#556B2F",
@@ -33,7 +34,7 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
   }
 
   async function saveEdit(id) {
-    await fetch(`http://localhost:3000/api/variants/${id}`, {
+    await apiFetch(`/api/variants/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -48,7 +49,7 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
 
   async function deleteVariant(id) {
     if (!confirm("Delete this variant? This can't be undone.")) return;
-    await fetch(`http://localhost:3000/api/variants/${id}`, { method: "DELETE" });
+    await apiFetch(`/api/variants/${id}`, { method: "DELETE" });
     setOpenMenuId(null);
     onChanged();
   }
@@ -252,7 +253,7 @@ function AddVariantModal({ productId, onClose, onAdded }) {
 
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:3000/api/products/${productId}/variants`, {
+      const res = await apiFetch(`/api/products/${productId}/variants`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
