@@ -20,7 +20,7 @@ export default async function TermsPage() {
       sections={sections}
     >
       <div
-        className="w-full text-on-surface-variant font-body-md text-body-md
+        className="w-full break-words text-on-surface-variant font-body-md text-body-md
           [&_h2]:font-headline-lg [&_h2]:text-on-surface [&_h2]:mb-3 [&_h2]:mt-2
           [&_p]:mb-4 [&_p]:leading-relaxed
           [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2

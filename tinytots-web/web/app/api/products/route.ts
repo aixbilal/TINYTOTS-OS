@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
+import { normalizeQuillHtml } from "@/lib/html-text";
 
 // Without this, Next.js can cache this route's data fetch, so newly
 // uploaded images, price changes, and stock updates from the admin panel
@@ -87,9 +88,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "At least one variant is required" }, { status: 400 });
     }
 
+    const cleanDescription =
+      description == null || description === ""
+        ? description
+        : normalizeQuillHtml(String(description));
+
     const { data: product, error: productError } = await supabaseAdmin
       .from("products")
-      .insert([{ name, sku, description, brand, category, image_url, gender, age_bracket, cost_price, selling_price, is_active: true }])
+      .insert([{ name, sku, description: cleanDescription, brand, category, image_url, gender, age_bracket, cost_price, selling_price, is_active: true }])
       .select()
       .single();
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { normalizeQuillHtml } from "@/lib/html-text";
 
 export const dynamic = "force-dynamic";
 
@@ -70,7 +71,7 @@ break-words [&_*]:max-w-full [&_*]:box-border
             [&_strong]:font-semibold [&_strong]:text-on-surface
 [&_a]:text-primary [&_a]:underline [&_a]:break-all
             [&_img]:rounded-xl [&_img]:my-6 [&_img]:h-auto"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: normalizeQuillHtml(post.content) }}
         />
       </article>
     </div>

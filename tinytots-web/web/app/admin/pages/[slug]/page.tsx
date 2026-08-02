@@ -33,6 +33,8 @@ export default function SitePageEditor() {
   const [errorMsg, setErrorMsg] = useState("");
   const [saved, setSaved] = useState(false);
 
+  const isOrphanSlug = slug === "shipping-returns" || slug === "our-story";
+
   const fetchPage = useCallback(async () => {
     setLoading(true);
     const res = await adminFetch(`/api/admin/pages/${slug}`);
@@ -47,8 +49,14 @@ export default function SitePageEditor() {
   }, [slug]);
 
   useEffect(() => {
+    if (!isOrphanSlug) return;
+    router.replace(slug === "shipping-returns" ? "/admin/shipping-returns" : "/admin/about-page");
+  }, [slug, router, isOrphanSlug]);
+
+  useEffect(() => {
+    if (isOrphanSlug) return;
     fetchPage();
-  }, [fetchPage]);
+  }, [fetchPage, isOrphanSlug]);
 
   async function handleSave() {
     if (!title.trim() || !content.trim()) {
@@ -75,6 +83,8 @@ export default function SitePageEditor() {
       setSaving(false);
     }
   }
+
+  if (isOrphanSlug) return null;
 
   if (loading) {
     return <div className="max-w-3xl mx-auto text-center py-12 text-gray-500">Loading...</div>;

@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
+import { normalizeQuillHtml } from "@/lib/html-text";
 import DOMPurify from "isomorphic-dompurify";
 
 function sanitizeContent(html: string): string {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ["p", "br", "strong", "em", "u", "s", "h1", "h2", "h3", "ul", "ol", "li", "a"],
-    ALLOWED_ATTR: ["href", "target", "rel"],
-    FORBID_ATTR: ["style", "class", "width", "height"],
-  }).replace(/\p{Cf}/gu, "");
+  return normalizeQuillHtml(
+    DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ["p", "br", "strong", "em", "u", "s", "h1", "h2", "h3", "ul", "ol", "li", "a"],
+      ALLOWED_ATTR: ["href", "target", "rel"],
+      FORBID_ATTR: ["style", "class", "width", "height"],
+    }).replace(/\p{Cf}/gu, "")
+  );
 }
 
 export async function GET(

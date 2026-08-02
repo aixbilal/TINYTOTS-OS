@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 import { normalizeSignageProductBadge } from "@/lib/signage-campaign";
+import { normalizeQuillHtml } from "@/lib/html-text";
 
 // GET /api/products/[id]
 // Returns one product with all its variants.
@@ -70,6 +71,9 @@ export async function PUT(
     ] as const;
     for (const key of scalarKeys) {
       if (key in body) updates[key] = body[key];
+    }
+    if (typeof updates.description === "string" && updates.description !== "") {
+      updates.description = normalizeQuillHtml(updates.description);
     }
 
     if ("signage_badge" in body) {

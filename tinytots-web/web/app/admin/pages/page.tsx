@@ -39,7 +39,8 @@ export default function AdminPagesListPage() {
     <div className="max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Site Pages</h1>
       <p className="text-sm text-gray-500 mb-6">
-        Edit About Us, Privacy Policy, Terms, and Shipping &amp; Returns content shown on the storefront.
+        Edit Privacy Policy and Terms &amp; Conditions (Markdown/HTML + TOC). Our Story and Shipping &amp; Returns
+        use their own structured editors in the sidebar.
       </p>
 
       {errorMsg && (

@@ -36,6 +36,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: Parameters<typeof can>[1]
   { prefix: "/admin/help", permission: "canManageHelp" },
   { prefix: "/admin/pages", permission: "canManagePages" },
   { prefix: "/admin/about-page", permission: "canManagePages" },
+  { prefix: "/admin/shipping-returns", permission: "canManagePages" },
 ];
 
 function getRequiredPermission(pathname: string) {
@@ -152,6 +153,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         {can(admin.role, "canManageSettings") && navItem("/admin/settings", "Settings")}
         {can(admin.role, "canManageHelp") && navItem("/admin/help", "Help Center")}
         {can(admin.role, "canManagePages") && navItem("/admin/about-page", "Our Story Page")}
+        {can(admin.role, "canManagePages") && navItem("/admin/shipping-returns", "Shipping & Returns")}
         {can(admin.role, "canManagePages") && navItem("/admin/pages", "Site Pages")}
         <div className="mt-auto pt-4 border-t border-outline-variant/20">
           <p className="font-body-sm text-body-sm text-on-surface px-2 mb-1">{admin.name}</p>

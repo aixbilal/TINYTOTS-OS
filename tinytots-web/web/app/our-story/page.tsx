@@ -35,15 +35,20 @@ export default async function Page() {
 
   return (
     <main className="max-w-container-max mx-auto md:px-margin-desktop px-margin-mobile">
-      {/* Hero */}
-      <section className="relative w-full h-[320px] md:h-[560px] rounded-[16px] overflow-hidden mb-stack-lg border border-outline-variant/30 flex items-center justify-center text-center">
+      {/* Hero — full-vibrancy photo + bottom-left dark scrim for headline contrast */}
+      <section className="relative w-full h-[320px] md:h-[560px] rounded-[16px] overflow-hidden mb-stack-lg border border-outline-variant/30">
         <div
           className="absolute inset-0 bg-cover bg-center w-full h-full z-0"
           style={{ backgroundImage: `url('${c.hero_image_url}')` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-surface/85 via-surface/10 to-surface/20 z-10" />
-        <div className="relative z-20 max-w-3xl px-6">
-          <h1 className="font-display-lg text-[32px] md:text-[56px] leading-tight text-on-surface drop-shadow-sm">
+        <div
+          className="absolute inset-0 z-10 pointer-events-none"
+          style={{
+            background: "linear-gradient(to top right, rgba(0,0,0,0.6), rgba(0,0,0,0) 60%)",
+          }}
+        />
+        <div className="absolute inset-0 z-20 flex items-end justify-start p-6 md:p-10 lg:p-12">
+          <h1 className="font-display-md text-[28px] md:text-[40px] max-w-[18ch] md:max-w-xl text-left text-white leading-[1.15] tracking-tight">
             {c.hero_headline}
           </h1>
         </div>
