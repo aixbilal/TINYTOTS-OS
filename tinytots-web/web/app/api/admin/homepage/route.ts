@@ -7,6 +7,7 @@ const SELECTION_TYPE_FIELDS = [
   "trending_selection_type",
   "newarrivals_selection_type",
   "bestsellers_selection_type",
+  "stack_selection_type",
   "meadow_selection_type",
   "boys_selection_type",
   "girls_selection_type",
@@ -15,6 +16,7 @@ const CATEGORY_FIELDS = [
   "trending_category",
   "newarrivals_category",
   "bestsellers_category",
+  "stack_category",
   "meadow_category",
   "boys_category",
   "girls_category",
@@ -23,6 +25,7 @@ const PRODUCT_ID_FIELDS = [
   "trending_product_ids",
   "newarrivals_product_ids",
   "bestsellers_product_ids",
+  "stack_product_ids",
   "meadow_product_ids",
   "boys_product_ids",
   "girls_product_ids",
@@ -61,14 +64,22 @@ export async function PATCH(req: NextRequest) {
       "hero_button_text",
       "hero_button_link",
       "trending_heading",
+      "newarrivals_heading",
+      "bestsellers_heading",
+      "stack_heading",
+      "usp_heading",
       "meadow_image_url",
       "meadow_badge_text",
       "meadow_heading",
       "meadow_button_text",
       "meadow_link",
       "boys_image_url",
+      "boys_heading",
+      "boys_button_text",
       "boys_link",
       "girls_image_url",
+      "girls_heading",
+      "girls_button_text",
       "girls_link",
     ];
 
@@ -105,6 +116,15 @@ export async function PATCH(req: NextRequest) {
           title: String(item.title || "").trim(),
           description: String(item.description || "").trim(),
         }));
+    }
+    if (Array.isArray(body.trust_items)) {
+      updates.trust_items = body.trust_items
+        .filter((item: any) => item && typeof item === "object")
+        .map((item: any) => ({
+          icon: String(item.icon || "verified").trim(),
+          label: String(item.label || "").trim(),
+        }))
+        .filter((item: { label: string }) => item.label.length > 0);
     }
     if (Array.isArray(body.hero_slides)) {
       updates.hero_slides = sanitizeHeroSlides(body.hero_slides);

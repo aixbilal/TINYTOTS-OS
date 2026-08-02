@@ -11,7 +11,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import HeaderCart from "@/components/HeaderCart";
 import MobileSubNav from "@/components/MobileSubNav";
 import UgcFeed from "@/components/UgcFeed";
-import FooterFaq from "@/components/FooterFaq";
+import FooterFaq, { shouldShowFooterFaq } from "@/components/FooterFaq";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import { WishlistProvider } from "@/lib/wishlist-context";
@@ -572,7 +572,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
             {/* FOOTER */}
             <UgcFeed />
-            <FooterFaq />
+            {shouldShowFooterFaq(pathname) && <FooterFaq />}
             <footer className="bg-surface-container-lowest border-t border-outline-variant/20 w-full mt-stack-lg">
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-8 px-margin-mobile md:px-margin-desktop py-stack-md max-w-container-max mx-auto">
                 <div className="col-span-2 lg:col-span-1 flex flex-col gap-2">

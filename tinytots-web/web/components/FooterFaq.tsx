@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 
 type FaqItem = {
@@ -55,58 +55,155 @@ const FAQ_ITEMS: FaqItem[] = [
   },
 ];
 
+const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
+const DURATION_MS = 650;
+
+/** Homepage, Shop All (/products), and collection/category pages only. */
+export function shouldShowFooterFaq(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+  if (pathname === "/") return true;
+  if (pathname === "/products") return true;
+  if (pathname.startsWith("/collections/")) return true;
+  return false;
+}
+
 export default function FooterFaq() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const isOpen = openIndex !== null;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenIndex(null);
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
 
   return (
-    <section
-      className="w-full border-t border-outline-variant/20 bg-surface py-stack-md"
-      aria-labelledby="footer-faq-heading"
-    >
-      <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
-        <div className="max-w-3xl mx-auto">
-        <h2
-          id="footer-faq-heading"
-          className="font-headline-md text-headline-md text-on-surface text-center mb-stack-sm"
-        >
-          Common Questions
-        </h2>
-        <div className="flex flex-col border border-outline-variant/30 rounded-2xl overflow-hidden bg-surface-container-lowest">
-          {FAQ_ITEMS.map((item, i) => {
-            const open = openIndex === i;
-            return (
-              <div
-                key={item.question}
-                className={i > 0 ? "border-t border-outline-variant/20" : undefined}
-              >
-                <button
-                  type="button"
-                  onClick={() => setOpenIndex(open ? null : i)}
-                  aria-expanded={open}
-                  aria-controls={`footer-faq-panel-${i}`}
-                  id={`footer-faq-trigger-${i}`}
-                  className="w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 text-left font-body-md text-body-md text-on-surface hover:bg-surface-container-low transition-colors"
+    <>
+      <div
+        aria-hidden={!isOpen}
+        onClick={() => setOpenIndex(null)}
+        className={`fixed inset-0 z-[40] bg-on-surface/25 transition-opacity ${
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        style={{ transitionDuration: `${DURATION_MS}ms`, transitionTimingFunction: EASE }}
+      />
+
+      {/* No top border / divider — section blends into page */}
+      <section
+        className={`relative w-full bg-surface py-stack-md ${isOpen ? "z-[45]" : "z-0"}`}
+        aria-labelledby="footer-faq-heading"
+      >
+        <div className="w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
+          <h2
+            id="footer-faq-heading"
+            className="font-headline-md text-headline-md text-on-surface text-center mb-stack-sm"
+          >
+            Common Questions
+          </h2>
+
+          <ul className="w-full flex flex-col gap-3 list-none m-0 p-0">
+            {FAQ_ITEMS.map((item, i) => {
+              const open = openIndex === i;
+              return (
+                <li
+                  key={item.question}
+                  className="relative"
+                  style={{
+                    zIndex: open ? 2 : 1,
+                    transition: `opacity ${DURATION_MS}ms ${EASE}`,
+                    opacity: isOpen && !open ? 0.35 : 1,
+                  }}
                 >
-                  <span className="font-medium">{item.question}</span>
-                  <span className="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0">
-                    {open ? "expand_less" : "expand_more"}
-                  </span>
-                </button>
-                <div
-                  id={`footer-faq-panel-${i}`}
-                  role="region"
-                  aria-labelledby={`footer-faq-trigger-${i}`}
-                  hidden={!open}
-                  className="px-4 sm:px-5 pb-4 font-body-sm text-body-sm text-on-surface-variant leading-relaxed"
-                >
-                  {item.answer}
-                </div>
-              </div>
-            );
-          })}
+                  <div
+                    className="rounded-2xl bg-surface-container-lowest will-change-transform"
+                    style={{
+                      // Shadow only — no border lines that “pop” during scale
+                      boxShadow: open
+                        ? "0 18px 40px rgba(28, 25, 23, 0.14), 0 4px 12px rgba(28, 25, 23, 0.06)"
+                        : "0 1px 3px rgba(28, 25, 23, 0.06)",
+                      transform: open ? "scale(1.035)" : "scale(1)",
+                      transformOrigin: "center center",
+                      transition: [
+                        `transform ${DURATION_MS}ms ${EASE}`,
+                        `box-shadow ${DURATION_MS}ms ${EASE}`,
+                      ].join(", "),
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setOpenIndex(open ? null : i)}
+                      aria-expanded={open}
+                      aria-controls={`footer-faq-panel-${i}`}
+                      id={`footer-faq-trigger-${i}`}
+                      className="w-full flex items-center justify-between gap-4 px-5 md:px-7 text-left text-on-surface"
+                      style={{
+                        paddingTop: open ? "1.5rem" : "1.15rem",
+                        paddingBottom: open ? "0.5rem" : "1.15rem",
+                        transition: `padding ${DURATION_MS}ms ${EASE}`,
+                      }}
+                    >
+                      <span
+                        className="font-medium"
+                        style={{
+                          fontSize: open ? "1.125rem" : "1rem",
+                          transition: `font-size ${DURATION_MS}ms ${EASE}`,
+                        }}
+                      >
+                        {item.question}
+                      </span>
+                      <span
+                        className="material-symbols-outlined shrink-0 text-on-surface-variant"
+                        style={{
+                          fontSize: open ? 26 : 22,
+                          transform: open ? "rotate(180deg)" : "rotate(0deg)",
+                          transition: `transform ${DURATION_MS}ms ${EASE}, font-size ${DURATION_MS}ms ${EASE}`,
+                        }}
+                      >
+                        expand_more
+                      </span>
+                    </button>
+
+                    <div
+                      id={`footer-faq-panel-${i}`}
+                      role="region"
+                      aria-labelledby={`footer-faq-trigger-${i}`}
+                      style={{
+                        display: "grid",
+                        gridTemplateRows: open ? "1fr" : "0fr",
+                        transition: `grid-template-rows ${DURATION_MS}ms ${EASE}`,
+                      }}
+                    >
+                      <div className="overflow-hidden min-h-0">
+                        <div
+                          className="px-5 md:px-7 font-body-sm text-body-sm md:text-base text-on-surface-variant leading-relaxed"
+                          style={{
+                            paddingBottom: open ? "1.5rem" : 0,
+                            opacity: open ? 1 : 0,
+                            transition: [
+                              `opacity ${DURATION_MS}ms ${EASE}`,
+                              `padding ${DURATION_MS}ms ${EASE}`,
+                            ].join(", "),
+                          }}
+                        >
+                          {item.answer}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
-        </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 interface Product {
@@ -73,13 +73,25 @@ function ProductCard({ product, layout }: { product: Product; layout: Layout }) 
 export default function ProductCarouselTabs({
   tabs,
   layout = "grid",
+  hideHeading = false,
 }: {
   tabs: Tab[];
   layout?: Layout;
+  /** When true, omit the built-in section heading (parent renders a larger one). */
+  hideHeading?: boolean;
 }) {
   const nonEmptyTabs = tabs.filter((t) => t.products.length > 0);
   const [activeKey, setActiveKey] = useState(nonEmptyTabs[0]?.key);
   const active = nonEmptyTabs.find((t) => t.key === activeKey) || nonEmptyTabs[0];
+
+  const tabKeys = nonEmptyTabs.map((t) => t.key).join("|");
+  useEffect(() => {
+    const keys = tabKeys ? tabKeys.split("|") : [];
+    if (keys.length > 0 && !keys.includes(activeKey || "")) {
+      setActiveKey(keys[0]);
+    }
+  }, [tabKeys, activeKey]);
+
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -133,23 +145,24 @@ export default function ProductCarouselTabs({
   return (
     <div>
       <div className="flex items-center gap-2 mb-stack-md overflow-x-auto no-scrollbar">
-        {nonEmptyTabs.length > 1 ? (
-          nonEmptyTabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveKey(tab.key)}
-              className={`shrink-0 font-button text-button px-5 py-2 rounded-full border transition-colors ${
-                active.key === tab.key
-                  ? "bg-primary-container text-on-primary border-primary-container"
-                  : "bg-surface-container-lowest text-on-surface-variant border-outline-variant/30 hover:bg-surface-container-low"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))
-        ) : (
-          <h2 className="font-headline-lg text-on-surface">{active.label}</h2>
-        )}
+        {!hideHeading &&
+          (nonEmptyTabs.length > 1 ? (
+            nonEmptyTabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveKey(tab.key)}
+                className={`shrink-0 font-button text-button px-5 py-2 rounded-full border transition-colors ${
+                  active.key === tab.key
+                    ? "bg-primary-container text-on-primary border-primary-container"
+                    : "bg-surface-container-lowest text-on-surface-variant border-outline-variant/30 hover:bg-surface-container-low"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))
+          ) : (
+            <h2 className="font-headline-lg text-on-surface">{active.label}</h2>
+          ))}
         <Link
           href="/products"
           className="ml-auto shrink-0 font-body-sm text-body-sm text-primary hover:underline whitespace-nowrap"
