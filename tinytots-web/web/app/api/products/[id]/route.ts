@@ -75,6 +75,11 @@ export async function PUT(
     if (typeof updates.description === "string" && updates.description !== "") {
       updates.description = normalizeQuillHtml(updates.description);
     }
+    if (Array.isArray(body.related_product_ids)) {
+      updates.related_product_ids = body.related_product_ids
+        .map((id: unknown) => Number(id))
+        .filter((id: number) => Number.isFinite(id) && id > 0);
+    }
 
     if ("signage_badge" in body) {
       if (body.signage_badge === null || body.signage_badge === "") {

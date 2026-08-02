@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import ProductDetailInteractive from "@/components/ProductDetailInteractive";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
+import { getRelatedProductsForPdp } from "@/lib/related-products";
+import { getShopMoreCategories } from "@/lib/shop-more-categories";
 import Link from "next/link";
 
 // Without this, Next.js caches the Supabase data fetch indefinitely, so
@@ -14,7 +16,7 @@ async function getProduct(id: string) {
     .from("products")
     .select(
       `
-      id, name, sku, description, brand, category, image_url,
+      id, name, sku, description, brand, category, image_url, related_product_ids,
       variants ( id, color, size, price, web_price, web_base_price, web_discount_percent, stock )
     `
     )
@@ -47,36 +49,6 @@ async function getProductImages(id: string) {
   }));
 }
 
-async function getRelatedProducts(category: string | null, excludeId: string) {
-  if (!category) return [];
-  const { data, error } = await supabase
-    .from("products")
-    .select(
-      `
-      id, name, image_url,
-      product_images ( storage_path, is_primary, sort_order ),
-      variants ( price, web_price, stock )
-    `
-    )
-    .eq("category", category)
-    .eq("is_active", true)
-    .neq("id", excludeId)
-    .limit(8);
-
-  if (error || !data) return [];
-
-  return data.map((p: any) => {
-    const gallery = (p.product_images || [])
-      .filter((img: any) => !img.is_primary)
-      .sort((a: any, b: any) => a.sort_order - b.sort_order);
-    const secondary = gallery[0]
-      ? supabase.storage.from("product-images").getPublicUrl(gallery[0].storage_path).data.publicUrl
-      : null;
-    const { product_images, ...rest } = p;
-    return { ...rest, secondary_image_url: secondary };
-  });
-}
-
 export default async function ProductDetailPage({
   params,
 }: {
@@ -84,7 +56,16 @@ export default async function ProductDetailPage({
 }) {
   const { id } = await params;
   const [product, images] = await Promise.all([getProduct(id), getProductImages(id)]);
-  const relatedProducts = product ? await getRelatedProducts(product.category, id) : [];
+  const [relatedProducts, shopMoreCategories] = product
+    ? await Promise.all([
+        getRelatedProductsForPdp(
+          product.id,
+          product.category,
+          product.related_product_ids as number[] | null
+        ),
+        getShopMoreCategories(product.category, 4),
+      ])
+    : [[], []];
 
   if (!product) {
     return (
@@ -132,8 +113,40 @@ export default async function ProductDetailPage({
       {relatedProducts.length > 0 && (
         <section className="mt-stack-lg">
           <ProductCarouselTabs
-            tabs={[{ key: "related", label: "You Might Also Like", products: relatedProducts as any }]}
+            layout="scroll"
+            tabs={[{ key: "related", label: "You May Also Like", products: relatedProducts as any }]}
           />
+        </section>
+      )}
+
+      {shopMoreCategories.length > 0 && (
+        <section className="mt-stack-lg">
+          <h2 className="font-headline-lg text-on-surface mb-stack-md">Shop More</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
+            {shopMoreCategories.map((cat) => (
+              <Link
+                key={cat.slug}
+                href={`/collections/${cat.slug}`}
+                className="relative aspect-[4/5] md:aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[140px]"
+              >
+                {cat.image_url ? (
+                  <div
+                    className="absolute inset-0 bg-cover bg-center w-full h-full transition-transform duration-700 group-hover:scale-105"
+                    style={{ backgroundImage: `url('${cat.image_url}')` }}
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-surface-container" />
+                )}
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+                <div className="absolute bottom-4 left-4 right-4 z-10">
+                  <h3 className="font-headline-md text-headline-md text-white mb-1">{cat.name}</h3>
+                  <span className="text-white flex items-center font-body-sm text-body-sm group-hover:underline">
+                    Shop Now <span className="material-symbols-outlined text-[16px] ml-1">arrow_forward</span>
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
         </section>
       )}
     </main>

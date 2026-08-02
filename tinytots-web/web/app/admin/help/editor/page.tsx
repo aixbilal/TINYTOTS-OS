@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { adminFetch } from "@/lib/admin-fetch";
+import { HELP_CATEGORIES, normalizeHelpCategory } from "@/lib/help-categories";
 import "react-quill-new/dist/quill.snow.css";
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
@@ -35,7 +36,7 @@ export default function HelpEditorPage() {
   const isEditing = !!articleId;
 
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("general");
+  const [category, setCategory] = useState("orders");
   const [displayOrder, setDisplayOrder] = useState("0");
   const [content, setContent] = useState("");
   const [isPublished, setIsPublished] = useState(false);
@@ -50,7 +51,7 @@ export default function HelpEditorPage() {
     const data = await res.json();
     if (res.ok) {
       setTitle(data.article.title);
-      setCategory(data.article.category);
+      setCategory(normalizeHelpCategory(data.article.category));
       setDisplayOrder(String(data.article.display_order));
       setContent(data.article.content);
       setIsPublished(data.article.is_published);
@@ -133,13 +134,17 @@ export default function HelpEditorPage() {
         <div className="flex gap-4">
           <div className="flex-1">
             <label className="block text-xs font-medium text-gray-700 mb-1">Category</label>
-            <input
-              type="text"
+            <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full border rounded-md px-3 py-2 text-sm"
-              placeholder="e.g. shipping, returns, payments"
-            />
+              className="w-full border rounded-md px-3 py-2 text-sm bg-white"
+            >
+              {HELP_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="w-32">
             <label className="block text-xs font-medium text-gray-700 mb-1">Order</label>

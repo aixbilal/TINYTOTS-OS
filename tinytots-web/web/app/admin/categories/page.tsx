@@ -2,12 +2,14 @@
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
+import RelatedProductPicker from "@/components/admin/RelatedProductPicker";
 
 interface Category {
   id: number;
   name: string;
   slug: string;
   display_order: number;
+  related_product_ids?: number[] | null;
 }
 
 interface Product {
@@ -15,6 +17,7 @@ interface Product {
   name: string;
   sku: string;
   category: string | null;
+  image_url?: string | null;
 }
 
 export default function AdminCategoriesPage() {
@@ -30,6 +33,9 @@ export default function AdminCategoriesPage() {
 
   // Which category's product-assignment panel is currently open
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [relatedExpandedId, setRelatedExpandedId] = useState<number | null>(null);
+  const [relatedIds, setRelatedIds] = useState<number[]>([]);
+  const [savingRelated, setSavingRelated] = useState(false);
   const [search, setSearch] = useState("");
   const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
@@ -124,12 +130,46 @@ export default function AdminCategoriesPage() {
       return;
     }
     setExpandedId(c.id);
+    setRelatedExpandedId(null);
     setSearch("");
     // Pre-check whichever products are currently assigned to this category
     const current = new Set(
       products.filter((p) => p.category === c.name).map((p) => p.id)
     );
     setPendingIds(current);
+  }
+
+  function openRelatedPicker(c: Category) {
+    if (relatedExpandedId === c.id) {
+      setRelatedExpandedId(null);
+      return;
+    }
+    setRelatedExpandedId(c.id);
+    setExpandedId(null);
+    setRelatedIds(
+      Array.isArray(c.related_product_ids)
+        ? c.related_product_ids.map(Number).filter((id) => Number.isFinite(id))
+        : []
+    );
+  }
+
+  async function saveRelatedDefaults(c: Category) {
+    setSavingRelated(true);
+    setErrorMsg("");
+    const res = await adminFetch(`/api/admin/categories/${c.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ related_product_ids: relatedIds }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setErrorMsg(data.error || "Failed to save related products");
+      setSavingRelated(false);
+      return;
+    }
+    setRelatedExpandedId(null);
+    await load();
+    setSavingRelated(false);
   }
 
   function toggleProduct(id: number) {
@@ -278,6 +318,12 @@ export default function AdminCategoriesPage() {
                           </button>
                         </td>
                         <td className="px-6 py-4 text-right space-x-3">
+                          <button
+                            onClick={() => openRelatedPicker(c)}
+                            className="text-xs font-medium text-indigo-600 hover:underline"
+                          >
+                            Related{relatedExpandedId === c.id ? " ▲" : ""}
+                          </button>
                           <button onClick={() => startEdit(c)} className="text-xs font-medium text-indigo-600 hover:underline">
                             Edit
                           </button>
@@ -288,6 +334,35 @@ export default function AdminCategoriesPage() {
                       </>
                     )}
                   </tr>
+                  {relatedExpandedId === c.id && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-4 bg-gray-50">
+                        <RelatedProductPicker
+                          label={`You May Also Like defaults — ${c.name}`}
+                          helpText="Used when a product in this category has no per-product related picks. Leave empty to use automatic same-category suggestions."
+                          productIds={relatedIds}
+                          products={products}
+                          onChange={setRelatedIds}
+                        />
+                        <div className="mt-3 flex justify-end gap-3">
+                          <button
+                            onClick={() => setRelatedExpandedId(null)}
+                            className="text-xs font-medium text-gray-500 hover:underline"
+                            disabled={savingRelated}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => saveRelatedDefaults(c)}
+                            disabled={savingRelated}
+                            className="bg-indigo-600 text-white px-4 py-1.5 rounded-md text-xs font-medium hover:bg-indigo-700 disabled:opacity-50"
+                          >
+                            {savingRelated ? "Saving..." : "Save related defaults"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                   {expandedId === c.id && (
                     <tr>
                       <td colSpan={4} className="px-6 py-4 bg-gray-50">

@@ -32,6 +32,11 @@ export async function PATCH(
     if (body.display_order !== undefined) {
       updates.display_order = Number.isFinite(Number(body.display_order)) ? Number(body.display_order) : 0;
     }
+    if (Array.isArray(body.related_product_ids)) {
+      updates.related_product_ids = body.related_product_ids
+        .map((id: unknown) => Number(id))
+        .filter((id: number) => Number.isFinite(id) && id > 0);
+    }
 
     const { data, error } = await supabaseAdmin
       .from("categories")

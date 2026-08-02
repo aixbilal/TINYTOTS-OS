@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 import { normalizeQuillHtml } from "@/lib/html-text";
+import { isHelpCategory, normalizeHelpCategory } from "@/lib/help-categories";
 import DOMPurify from "isomorphic-dompurify";
 
 function sanitizeContent(html: string): string {
@@ -47,7 +48,16 @@ export async function PATCH(
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };
     if (title !== undefined) updates.title = title.trim();
     if (content !== undefined) updates.content = sanitizeContent(content);
-    if (category !== undefined) updates.category = category?.trim() || "general";
+    if (category !== undefined) {
+      const categoryRaw = category == null ? "" : String(category).trim();
+      if (categoryRaw && !isHelpCategory(categoryRaw)) {
+        return NextResponse.json(
+          { error: "Invalid category. Choose one of the fixed Help Center categories." },
+          { status: 400 }
+        );
+      }
+      updates.category = normalizeHelpCategory(categoryRaw);
+    }
     if (display_order !== undefined) {
       updates.display_order = Number.isFinite(Number(display_order)) ? Number(display_order) : 0;
     }

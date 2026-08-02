@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { normalizeQuillHtml } from "@/lib/html-text";
+import {
+  helpCategoryLabel,
+  normalizeHelpCategory,
+} from "@/lib/help-categories";
 
 export const dynamic = "force-dynamic";
 
@@ -22,19 +26,43 @@ export default async function HelpArticlePage({
     notFound();
   }
 
+  const category = normalizeHelpCategory(article.category);
+  const categoryLabel = helpCategoryLabel(category);
+
+  const { data: related } = await supabaseAdmin
+    .from("help_articles")
+    .select("id, title, slug")
+    .eq("is_published", true)
+    .eq("category", category)
+    .neq("id", article.id)
+    .order("display_order", { ascending: true })
+    .limit(5);
+
   return (
     <div className="w-full max-w-full overflow-x-hidden py-8 px-4 sm:px-6">
       <article className="w-full max-w-2xl mx-auto">
-        <Link
-          href="/help"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mb-6"
+        <nav
+          aria-label="Breadcrumb"
+          className="flex flex-wrap items-center gap-1.5 text-sm text-on-surface-variant mb-6"
         >
-          ← Back to Help Center
-        </Link>
+          <Link href="/help" className="font-medium text-primary hover:underline">
+            Help Center
+          </Link>
+          <span aria-hidden="true" className="text-on-surface-variant/60">
+            /
+          </span>
+          <span className="text-on-surface-variant">{categoryLabel}</span>
+          <span aria-hidden="true" className="text-on-surface-variant/60">
+            /
+          </span>
+          <span className="text-on-surface truncate max-w-[min(100%,16rem)] sm:max-w-none">
+            {article.title}
+          </span>
+        </nav>
 
         <header className="mb-6">
           <p className="text-xs sm:text-sm text-primary uppercase tracking-wider font-semibold mb-2">
-            {article.category}
+            {categoryLabel}
           </p>
           <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight leading-tight">
             {article.title}
@@ -51,6 +79,29 @@ break-words [&_*]:max-w-full [&_*]:box-border
 [&_a]:text-primary [&_a]:underline [&_a]:break-all"
           dangerouslySetInnerHTML={{ __html: normalizeQuillHtml(article.content) }}
         />
+
+        {related && related.length > 0 && (
+          <aside className="mt-10 pt-8 border-t border-outline-variant/30">
+            <h2 className="text-lg font-bold text-on-surface mb-3">
+              Related in {categoryLabel}
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {related.map((a) => (
+                <li key={a.id}>
+                  <Link
+                    href={`/help/${a.slug}`}
+                    className="group flex items-center justify-between rounded-xl border border-outline-variant/30 hover:border-primary/40 px-4 py-3 transition-all"
+                  >
+                    <span className="font-medium text-on-surface group-hover:text-primary transition-colors">
+                      {a.title}
+                    </span>
+                    <span className="text-primary text-sm shrink-0 ml-3">→</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
       </article>
     </div>
   );

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { adminFetch } from "@/lib/admin-fetch";
+import AspectImageUploader from "@/components/admin/AspectImageUploader";
+import { sanitizeHeroSlides, type HeroSlide } from "@/lib/hero-slides";
 
 interface HomepageContent {
   hero_image_url: string;
@@ -12,6 +14,7 @@ interface HomepageContent {
   hero_subtext: string;
   hero_button_text: string;
   hero_button_link: string;
+  hero_slides: HeroSlide[];
   trending_heading: string;
   trending_selection_type: "products" | "category";
   trending_category: string | null;
@@ -58,19 +61,19 @@ interface CategoryLite {
   slug: string;
 }
 
+const EMPTY_HERO_SLIDE: HeroSlide = {
+  image_url: "",
+  image_url_mobile: "",
+  headline: "",
+  subtitle: "",
+  button_text: "",
+  button_link: "",
+};
+
+const DESKTOP_ASPECT = 16 / 9;
+const MOBILE_ASPECT = 5 / 4;
+
 const FIELD_GROUPS: { title: string; fields: { key: keyof HomepageContent; label: string; type?: "text" | "textarea" }[] }[] = [
-  {
-    title: "Hero Banner",
-    fields: [
-      { key: "hero_image_url", label: "Hero image URL (desktop)" },
-      { key: "hero_image_url_mobile", label: "Hero image URL (mobile — optional, falls back to desktop image if blank)" },
-      { key: "hero_video_url", label: "Hero video URL (desktop only, optional — overrides the desktop image when set, e.g. an .mp4 link)" },
-      { key: "hero_headline", label: "Headline" },
-      { key: "hero_subtext", label: "Subtext", type: "textarea" },
-      { key: "hero_button_text", label: "Button text" },
-      { key: "hero_button_link", label: "Button link" },
-    ],
-  },
   {
     title: "The Meadow Edit (banner)",
     fields: [
@@ -210,7 +213,28 @@ export default function AdminHomepagePage() {
         const res = await adminFetch("/api/admin/homepage");
         const data = await res.json();
         if (res.ok) {
-          setContent(data.content);
+          const c = data.content as HomepageContent;
+          const fromDb = sanitizeHeroSlides(c.hero_slides);
+          const slides =
+            fromDb.length > 0
+              ? fromDb.map((s, idx) => ({
+                  ...s,
+                  image_url_mobile:
+                    s.image_url_mobile ||
+                    (idx === 0 ? (c.hero_image_url_mobile || "").replace(/^(null|undefined)$/, "") : ""),
+                }))
+              : [
+                  {
+                    ...EMPTY_HERO_SLIDE,
+                    image_url: c.hero_image_url || "",
+                    image_url_mobile: (c.hero_image_url_mobile || "").replace(/^(null|undefined)$/, ""),
+                    headline: c.hero_headline || "",
+                    subtitle: c.hero_subtext || "",
+                    button_text: c.hero_button_text || "",
+                    button_link: c.hero_button_link || "",
+                  },
+                ];
+          setContent({ ...c, hero_slides: slides });
           setProducts(data.products || []);
           setCategories(data.categories || []);
         } else {
@@ -408,13 +432,140 @@ export default function AdminHomepagePage() {
           </div>
         </div>
 
-        {/* Hero */}
+        {/* Hero slides */}
         <div className="border border-gray-200 rounded-lg p-5">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">{FIELD_GROUPS[0].title}</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-1">Hero Banner</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Full-bleed rotating slides on the homepage. Order here is the play order (auto-advances every 12s).
+            Upload separate desktop (16:9) and mobile (5:4) crops per slide. Video URL is left unused for now.
+          </p>
           <div className="flex flex-col gap-4">
-            {FIELD_GROUPS[0].fields.map((field) => (
-              <FieldInput key={field.key} field={field} content={content} updateField={updateField} />
+            {(content.hero_slides || []).map((slide, i) => (
+              <div key={i} className="border border-gray-100 rounded-md p-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-gray-800">Slide {i + 1}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      disabled={i === 0}
+                      onClick={() => {
+                        const next = [...content.hero_slides];
+                        [next[i - 1], next[i]] = [next[i], next[i - 1]];
+                        updateField("hero_slides", next);
+                      }}
+                      className="p-1.5 text-gray-600 hover:text-gray-900 disabled:opacity-30"
+                      aria-label="Move slide up"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={i === content.hero_slides.length - 1}
+                      onClick={() => {
+                        const next = [...content.hero_slides];
+                        [next[i], next[i + 1]] = [next[i + 1], next[i]];
+                        updateField("hero_slides", next);
+                      }}
+                      className="p-1.5 text-gray-600 hover:text-gray-900 disabled:opacity-30"
+                      aria-label="Move slide down"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">arrow_downward</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={content.hero_slides.length <= 1}
+                      onClick={() =>
+                        updateField(
+                          "hero_slides",
+                          content.hero_slides.filter((_, idx) => idx !== i)
+                        )
+                      }
+                      className="p-1.5 text-red-600 hover:text-red-800 disabled:opacity-30"
+                      aria-label="Remove slide"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <AspectImageUploader
+                    label="Desktop image"
+                    value={slide.image_url || ""}
+                    onChange={(url) => {
+                      const next = [...content.hero_slides];
+                      next[i] = { ...next[i], image_url: url };
+                      updateField("hero_slides", next);
+                    }}
+                    aspect={DESKTOP_ASPECT}
+                    aspectLabel="16:9"
+                    previewClassName="aspect-video"
+                    outputWidth={1920}
+                    outputHeight={1080}
+                    variant="desktop"
+                  />
+                  <AspectImageUploader
+                    label="Mobile image"
+                    value={slide.image_url_mobile || ""}
+                    onChange={(url) => {
+                      const next = [...content.hero_slides];
+                      next[i] = { ...next[i], image_url_mobile: url };
+                      updateField("hero_slides", next);
+                    }}
+                    aspect={MOBILE_ASPECT}
+                    aspectLabel="5:4"
+                    previewClassName="aspect-[5/4]"
+                    outputWidth={1000}
+                    outputHeight={800}
+                    variant="mobile"
+                  />
+                </div>
+
+                {(
+                  [
+                    ["headline", "Headline"],
+                    ["subtitle", "Subtitle"],
+                    ["button_text", "Button text"],
+                    ["button_link", "Button link"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <div key={key}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                    {key === "subtitle" ? (
+                      <textarea
+                        value={slide[key]}
+                        onChange={(e) => {
+                          const next = [...content.hero_slides];
+                          next[i] = { ...next[i], [key]: e.target.value };
+                          updateField("hero_slides", next);
+                        }}
+                        rows={2}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                      />
+                    ) : (
+                      <input
+                        value={slide[key]}
+                        onChange={(e) => {
+                          const next = [...content.hero_slides];
+                          next[i] = { ...next[i], [key]: e.target.value };
+                          updateField("hero_slides", next);
+                        }}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
             ))}
+            <button
+              type="button"
+              onClick={() =>
+                updateField("hero_slides", [...(content.hero_slides || []), { ...EMPTY_HERO_SLIDE }])
+              }
+              className="text-sm font-medium text-gray-700 hover:text-gray-900 self-start"
+            >
+              + Add slide
+            </button>
           </div>
         </div>
 
@@ -464,9 +615,9 @@ export default function AdminHomepagePage() {
 
         {/* Meadow */}
         <div className="border border-gray-200 rounded-lg p-5">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">{FIELD_GROUPS[1].title}</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">{FIELD_GROUPS[0].title}</h2>
           <div className="flex flex-col gap-4">
-            {FIELD_GROUPS[1].fields.map((field) => (
+            {FIELD_GROUPS[0].fields.map((field) => (
               <FieldInput key={field.key} field={field} content={content} updateField={updateField} />
             ))}
           </div>
@@ -485,9 +636,9 @@ export default function AdminHomepagePage() {
 
         {/* Boys */}
         <div className="border border-gray-200 rounded-lg p-5">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">{FIELD_GROUPS[2].title}</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">{FIELD_GROUPS[1].title}</h2>
           <div className="flex flex-col gap-4">
-            {FIELD_GROUPS[2].fields.map((field) => (
+            {FIELD_GROUPS[1].fields.map((field) => (
               <FieldInput key={field.key} field={field} content={content} updateField={updateField} />
             ))}
           </div>
@@ -506,9 +657,9 @@ export default function AdminHomepagePage() {
 
         {/* Girls */}
         <div className="border border-gray-200 rounded-lg p-5">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">{FIELD_GROUPS[3].title}</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">{FIELD_GROUPS[2].title}</h2>
           <div className="flex flex-col gap-4">
-            {FIELD_GROUPS[3].fields.map((field) => (
+            {FIELD_GROUPS[2].fields.map((field) => (
               <FieldInput key={field.key} field={field} content={content} updateField={updateField} />
             ))}
           </div>

@@ -4,6 +4,8 @@ import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 import UspMarquee from "@/components/UspMarquee";
 import ProductCardStack from "@/components/ProductCardStack";
 import TestimonialsCarousel from "@/components/TestimonialsCarousel";
+import HomepageHero from "@/components/HomepageHero";
+import { resolveHeroSlides } from "@/lib/hero-slides";
 
 // Same root cause and fix as app/products/[id]/page.tsx and
 // app/api/products/route.ts — without this, Next.js caches this Server
@@ -148,51 +150,14 @@ export default async function Home() {
     content.trending_product_ids
   );
 
-  return (
-    <main className="max-w-container-max mx-auto px-5 md:px-16 md:px-margin-desktop px-margin-mobile">
-      {/* Hero */}
-      <section className="relative w-full h-[340px] md:h-[700px] rounded-[16px] overflow-hidden mb-stack-lg border border-outline-variant/30 flex items-center justify-center text-center">
-        <div
-          className="absolute inset-0 bg-cover bg-center w-full h-full z-0 md:hidden"
-          style={{
-            backgroundImage: `url('${content.hero_image_url_mobile || content.hero_image_url}')`,
-          }}
-        />
-        {content.hero_video_url ? (
-          <video
-            className="absolute inset-0 w-full h-full object-cover z-0 hidden md:block"
-            src={content.hero_video_url}
-            autoPlay
-            muted
-            loop
-            playsInline
-            poster={content.hero_image_url}
-          />
-        ) : (
-          <div
-            className="absolute inset-0 bg-cover bg-center w-full h-full z-0 hidden md:block"
-            style={{
-              backgroundImage: `url('${content.hero_image_url}')`,
-            }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-surface/80 to-surface/20 z-10" />
-        <div className="relative z-20 max-w-2xl px-6 flex flex-col items-center">
-          <h1 className="font-display-lg text-[28px] md:text-[64px] leading-tight text-on-surface mb-4 md:mb-6">
-            {content.hero_headline}
-          </h1>
-          <p className="font-body-lg text-body-md md:text-body-lg text-on-surface-variant mb-6 md:mb-8 max-w-lg">
-            {content.hero_subtext}
-          </p>
-          <Link
-            href={content.hero_button_link}
-            className="bg-primary-container text-on-primary font-button text-button h-[56px] px-8 rounded-lg hover:bg-primary transition-colors duration-300 flex items-center"
-          >
-            {content.hero_button_text}
-          </Link>
-        </div>
-      </section>
+  const heroSlides = resolveHeroSlides(content);
 
+  return (
+    <>
+      {/* Full-bleed hero — breaks out of layout max-width + padding */}
+      <HomepageHero slides={heroSlides} />
+
+      <div className="max-w-container-max mx-auto px-5 md:px-16 md:px-margin-desktop px-margin-mobile">
       {/* Trust strip */}
       <section className="w-full border-t border-b border-outline-variant/30 py-4 mb-stack-lg bg-surface-container-lowest">
         <div className="flex flex-wrap md:flex-nowrap justify-center md:justify-between items-center gap-6 px-4">
@@ -318,6 +283,7 @@ export default async function Home() {
           <UspMarquee items={content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items} />
         </section>
       )}
-    </main>
+      </div>
+    </>
   );
 }

@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import {
+  buildSizeFilterOptions,
+  productMatchesSizeFilter,
+} from "@/lib/size-filter";
 
 type Variant = { id: number; color: string | null; size: string | null; price: number; web_price: number | null; stock: number };
 type Product = {
@@ -21,6 +25,8 @@ const SORTS = [
   { value: "name", label: "Name: A–Z" },
 ];
 
+const COLOR_PREVIEW_COUNT = 10;
+
 export default function CollectionPage() {
   const { slug } = useParams<{ slug: string }>();
   const [category, setCategory] = useState<Category | null>(null);
@@ -33,6 +39,10 @@ export default function CollectionPage() {
   const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Size + Price open by default; Color collapsed.
+  const [openGroups, setOpenGroups] = useState({ size: true, color: false, price: true });
+  const [showAllColors, setShowAllColors] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -56,32 +66,45 @@ export default function CollectionPage() {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  const { sizes, colors, priceRange } = useMemo(() => {
-    const sizeSet = new Set<string>();
-    const colorSet = new Set<string>();
+  const { sizeOptions, colorsByFreq, priceRange } = useMemo(() => {
+    const rawSizes: string[] = [];
+    const colorCounts = new Map<string, number>();
     let min = Infinity;
     let max = 0;
+
     products.forEach((p) =>
       p.variants.forEach((v) => {
-        if (v.size) sizeSet.add(v.size);
-        if (v.color) colorSet.add(v.color);
+        if (v.size) rawSizes.push(v.size);
+        if (v.color) colorCounts.set(v.color, (colorCounts.get(v.color) || 0) + 1);
         const price = v.web_price ?? v.price;
         if (price < min) min = price;
         if (price > max) max = price;
       })
     );
+
+    const colorsByFreq = [...colorCounts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([color]) => color);
+
     return {
-      sizes: Array.from(sizeSet).sort(),
-      colors: Array.from(colorSet).sort(),
+      sizeOptions: buildSizeFilterOptions(rawSizes),
+      colorsByFreq,
       priceRange: { min: min === Infinity ? 0 : min, max },
     };
   }, [products]);
 
+  const visibleColors = showAllColors
+    ? colorsByFreq
+    : colorsByFreq.slice(0, COLOR_PREVIEW_COUNT);
+  const hasMoreColors = colorsByFreq.length > COLOR_PREVIEW_COUNT;
+
   const filtered = useMemo(() => {
     let list = products.filter((p) => {
       const variants = p.variants;
-      if (selectedSizes.size > 0 && !variants.some((v) => v.size && selectedSizes.has(v.size))) return false;
-      if (selectedColors.size > 0 && !variants.some((v) => v.color && selectedColors.has(v.color))) return false;
+      if (!productMatchesSizeFilter(variants, selectedSizes)) return false;
+      if (selectedColors.size > 0 && !variants.some((v) => v.color && selectedColors.has(v.color))) {
+        return false;
+      }
       if (maxPrice !== null) {
         const minVariantPrice = Math.min(...variants.map((v) => v.web_price ?? v.price));
         if (minVariantPrice > maxPrice) return false;
@@ -95,16 +118,16 @@ export default function CollectionPage() {
       if (sort === "price_asc") return aPrice - bPrice;
       if (sort === "price_desc") return bPrice - aPrice;
       if (sort === "name") return a.name.localeCompare(b.name);
-      return b.id - a.id; // newest first, assuming higher id = newer
+      return b.id - a.id;
     });
 
     return list;
   }, [products, selectedSizes, selectedColors, maxPrice, sort]);
 
-  function toggleSize(s: string) {
+  function toggleSize(token: string) {
     setSelectedSizes((prev) => {
       const next = new Set(prev);
-      next.has(s) ? next.delete(s) : next.add(s);
+      next.has(token) ? next.delete(token) : next.add(token);
       return next;
     });
   }
@@ -123,6 +146,10 @@ export default function CollectionPage() {
     setMaxPrice(null);
   }
 
+  function toggleGroup(key: keyof typeof openGroups) {
+    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
   const hasActiveFilters = selectedSizes.size > 0 || selectedColors.size > 0 || maxPrice !== null;
 
   const FiltersPanel = (
@@ -136,68 +163,131 @@ export default function CollectionPage() {
         )}
       </div>
 
-      {sizes.length > 0 && (
-        <div>
-          <p className="font-label-lg text-label-lg text-on-surface font-semibold mb-2 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px]">straighten</span> Size
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {sizes.map((s) => (
-              <button
-                key={s}
-                onClick={() => toggleSize(s)}
-                className={`px-3 py-1.5 rounded-full font-label-md text-label-md border transition-colors ${
-                  selectedSizes.has(s)
-                    ? "bg-primary-container text-on-primary-container border-primary-container"
-                    : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+      {sizeOptions.length > 0 && (
+        <div className="border-b border-outline-variant/20 pb-stack-md">
+          <button
+            type="button"
+            onClick={() => toggleGroup("size")}
+            className="w-full flex items-center justify-between gap-2 font-label-lg text-label-lg text-on-surface font-semibold mb-2"
+            aria-expanded={openGroups.size}
+          >
+            <span className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px]">straighten</span> Size
+              {selectedSizes.size > 0 && (
+                <span className="font-label-md text-label-md text-primary font-normal">
+                  ({selectedSizes.size})
+                </span>
+              )}
+            </span>
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
+              {openGroups.size ? "expand_less" : "expand_more"}
+            </span>
+          </button>
+          {openGroups.size && (
+            <div className="flex flex-wrap gap-2">
+              {sizeOptions.map((opt) => (
+                <button
+                  key={opt.token}
+                  type="button"
+                  onClick={() => toggleSize(opt.token)}
+                  className={`px-3 py-1.5 rounded-full font-label-md text-label-md border transition-colors ${
+                    selectedSizes.has(opt.token)
+                      ? "bg-primary-container text-on-primary-container border-primary-container"
+                      : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {colors.length > 0 && (
-        <div>
-          <p className="font-label-lg text-label-lg text-on-surface font-semibold mb-2 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px]">palette</span> Color
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {colors.map((c) => (
-              <button
-                key={c}
-                onClick={() => toggleColor(c)}
-                className={`px-3 py-1.5 rounded-full font-label-md text-label-md border transition-colors ${
-                  selectedColors.has(c)
-                    ? "bg-primary-container text-on-primary-container border-primary-container"
-                    : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
+      {colorsByFreq.length > 0 && (
+        <div className="border-b border-outline-variant/20 pb-stack-md">
+          <button
+            type="button"
+            onClick={() => toggleGroup("color")}
+            className="w-full flex items-center justify-between gap-2 font-label-lg text-label-lg text-on-surface font-semibold mb-2"
+            aria-expanded={openGroups.color}
+          >
+            <span className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px]">palette</span> Color
+              {selectedColors.size > 0 && (
+                <span className="font-label-md text-label-md text-primary font-normal">
+                  ({selectedColors.size})
+                </span>
+              )}
+            </span>
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
+              {openGroups.color ? "expand_less" : "expand_more"}
+            </span>
+          </button>
+          {openGroups.color && (
+            <>
+              <div className="flex flex-wrap gap-2">
+                {visibleColors.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => toggleColor(c)}
+                    className={`px-3 py-1.5 rounded-full font-label-md text-label-md border transition-colors ${
+                      selectedColors.has(c)
+                        ? "bg-primary-container text-on-primary-container border-primary-container"
+                        : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+              {hasMoreColors && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllColors((v) => !v)}
+                  className="mt-2 font-label-md text-label-md text-primary hover:underline"
+                >
+                  {showAllColors
+                    ? "Show fewer colors"
+                    : `Show all colors (${colorsByFreq.length})`}
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
 
       {priceRange.max > 0 && (
         <div>
-          <p className="font-label-lg text-label-lg text-on-surface font-semibold mb-2 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px]">payments</span> Max Price
-          </p>
-          <input
-            type="range"
-            min={priceRange.min}
-            max={priceRange.max}
-            value={maxPrice ?? priceRange.max}
-            onChange={(e) => setMaxPrice(Number(e.target.value))}
-            className="w-full accent-primary"
-          />
-          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-            Up to Rs. {(maxPrice ?? priceRange.max).toLocaleString()}
-          </p>
+          <button
+            type="button"
+            onClick={() => toggleGroup("price")}
+            className="w-full flex items-center justify-between gap-2 font-label-lg text-label-lg text-on-surface font-semibold mb-2"
+            aria-expanded={openGroups.price}
+          >
+            <span className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px]">payments</span> Max Price
+            </span>
+            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
+              {openGroups.price ? "expand_less" : "expand_more"}
+            </span>
+          </button>
+          {openGroups.price && (
+            <>
+              <input
+                type="range"
+                min={priceRange.min}
+                max={priceRange.max}
+                value={maxPrice ?? priceRange.max}
+                onChange={(e) => setMaxPrice(Number(e.target.value))}
+                className="w-full accent-primary"
+              />
+              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                Up to Rs. {(maxPrice ?? priceRange.max).toLocaleString()}
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -205,7 +295,6 @@ export default function CollectionPage() {
 
   return (
     <main className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-1 font-body-sm text-body-sm text-on-surface-variant mb-stack-sm">
         <Link href="/" className="hover:text-primary transition-colors">Home</Link>
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("products")
-    .select("id, name, sku, category")
+    .select("id, name, sku, category, image_url")
     .eq("is_active", true)
     .order("name", { ascending: true });
 

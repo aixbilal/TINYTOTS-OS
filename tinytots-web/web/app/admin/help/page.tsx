@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminFetch } from "@/lib/admin-fetch";
+import { helpCategoryLabel } from "@/lib/help-categories";
 
 interface Article {
   id: number;
@@ -89,7 +90,7 @@ export default function AdminHelpListPage() {
               {articles.map((a) => (
                 <tr key={a.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-gray-900">{a.title}</td>
-                  <td className="px-6 py-4 capitalize">{a.category}</td>
+                  <td className="px-6 py-4">{helpCategoryLabel(a.category)}</td>
                   <td className="px-6 py-4">{a.display_order}</td>
                   <td className="px-6 py-4">
                     <span

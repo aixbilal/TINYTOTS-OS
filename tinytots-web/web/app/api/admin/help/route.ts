@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 import { normalizeQuillHtml } from "@/lib/html-text";
+import { isHelpCategory, normalizeHelpCategory } from "@/lib/help-categories";
 import DOMPurify from "isomorphic-dompurify";
 
 function sanitizeContent(html: string): string {
@@ -49,6 +50,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Title and content are required" }, { status: 400 });
     }
 
+    const categoryRaw = category == null ? "" : String(category).trim();
+    if (categoryRaw && !isHelpCategory(categoryRaw)) {
+      return NextResponse.json(
+        { error: "Invalid category. Choose one of the fixed Help Center categories." },
+        { status: 400 }
+      );
+    }
+
     const cleanContent = sanitizeContent(content);
     let slug = slugify(title);
 
@@ -66,7 +75,7 @@ export async function POST(req: NextRequest) {
         title: title.trim(),
         slug,
         content: cleanContent,
-        category: category?.trim() || "general",
+        category: normalizeHelpCategory(categoryRaw),
         display_order: Number.isFinite(Number(display_order)) ? Number(display_order) : 0,
         is_published: !!is_published,
         published_at: is_published ? new Date().toISOString() : null,

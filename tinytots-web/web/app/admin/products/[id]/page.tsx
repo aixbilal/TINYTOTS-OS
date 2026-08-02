@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUploader from "@/components/admin/ImageUploader";
 import CategorySelect from "@/components/admin/CategorySelect";
+import RelatedProductPicker, { type RelatedProductLite } from "@/components/admin/RelatedProductPicker";
 import { adminFetch } from "@/lib/admin-fetch";
 import SignageBadgePicker from "@/components/admin/SignageBadgePicker";
 import { type SignageProductBadge } from "@/lib/signage-campaign";
@@ -13,7 +14,8 @@ type Variant = { id: number; color: string | null; size: string | null; price: n
 type Product = {
   id: number; name: string; sku: string; description: string | null; brand: string | null;
   category: string | null; image_url: string | null; gender: string | null; age_bracket: string | null;
-  is_active: boolean; signage_badge: SignageProductBadge | null; variants: Variant[];
+  is_active: boolean; signage_badge: SignageProductBadge | null;
+  related_product_ids: number[] | null; variants: Variant[];
 };
 type ProductImage = { id: number; storage_path: string; is_primary: boolean; sort_order: number; url: string };
 
@@ -69,6 +71,7 @@ export default function EditProductPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [badgeItems, setBadgeItems] = useState<{ id: number; label: string; is_active: boolean }[]>([]);
+  const [allProducts, setAllProducts] = useState<RelatedProductLite[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +86,13 @@ export default function EditProductPage() {
           setError(json.error || "Failed to load product.");
           return;
         }
-        setProduct(json.data);
+        const data = json.data;
+        setProduct({
+          ...data,
+          related_product_ids: Array.isArray(data.related_product_ids)
+            ? data.related_product_ids.map(Number)
+            : [],
+        });
       })
       .catch(() => {
         setProduct(null);
@@ -106,6 +115,14 @@ export default function EditProductPage() {
         else setBadgeItems([]);
       })
       .catch(() => setBadgeItems([]));
+
+    adminFetch("/api/admin/categories/products")
+      .then(async (r) => {
+        const json = await r.json();
+        if (r.ok) setAllProducts(json.products || []);
+        else setAllProducts([]);
+      })
+      .catch(() => setAllProducts([]));
   }, [id]);
   function updateField<K extends keyof Product>(field: K, value: Product[K]) {
     setProduct((prev) => (prev ? { ...prev, [field]: value } : prev));
@@ -132,7 +149,7 @@ export default function EditProductPage() {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await adminFetch(`/api/products/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -148,6 +165,7 @@ export default function EditProductPage() {
           gender: product.gender,
           age_bracket: product.age_bracket,
           signage_badge: product.signage_badge,
+          related_product_ids: product.related_product_ids || [],
         }),
       });
       if (!res.ok) {
@@ -191,7 +209,7 @@ export default function EditProductPage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-3xl">
       <div className="flex justify-between items-center mb-stack-md">
         <h1 className="font-display-md text-display-md text-on-surface">Edit Product</h1>
         <button
@@ -262,6 +280,15 @@ export default function EditProductPage() {
           <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Photos</label>
           <ImageUploader productId={product.id} images={images} onImagesChange={setImages} variants={product.variants} />
         </div>
+
+        <RelatedProductPicker
+          label="You May Also Like"
+          helpText="Optional manual picks for this product’s related carousel. If empty, category defaults or same-category products are used."
+          productIds={product.related_product_ids || []}
+          products={allProducts}
+          excludeId={product.id}
+          onChange={(ids) => updateField("related_product_ids", ids)}
+        />
 
         <button
           onClick={saveProduct}

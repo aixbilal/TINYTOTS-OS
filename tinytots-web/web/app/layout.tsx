@@ -11,6 +11,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import HeaderCart from "@/components/HeaderCart";
 import MobileSubNav from "@/components/MobileSubNav";
 import UgcFeed from "@/components/UgcFeed";
+import FooterFaq from "@/components/FooterFaq";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 import { WishlistProvider } from "@/lib/wishlist-context";
@@ -202,6 +203,7 @@ function ShopMenu() {
 function MegaMenu() {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -212,6 +214,14 @@ function MegaMenu() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  function show() {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setOpen(true);
+  }
+  function scheduleHide() {
+    closeTimer.current = setTimeout(() => setOpen(false), 150);
+  }
 
   const MenuLink = ({ href, label }: { href: string; label: string }) => (
     <Link
@@ -224,7 +234,7 @@ function MegaMenu() {
   );
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative" onMouseEnter={show} onMouseLeave={scheduleHide}>
       <button
         onClick={() => setOpen((o) => !o)}
         className={`flex items-center gap-1 font-body-md text-body-md pb-1 transition-colors border-b-2 ${
@@ -562,6 +572,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
             {/* FOOTER */}
             <UgcFeed />
+            <FooterFaq />
             <footer className="bg-surface-container-lowest border-t border-outline-variant/20 w-full mt-stack-lg">
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-8 px-margin-mobile md:px-margin-desktop py-stack-md max-w-container-max mx-auto">
                 <div className="col-span-2 lg:col-span-1 flex flex-col gap-2">

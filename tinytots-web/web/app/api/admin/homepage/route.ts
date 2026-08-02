@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
+import { sanitizeHeroSlides } from "@/lib/hero-slides";
 
 const SELECTION_TYPE_FIELDS = [
   "trending_selection_type",
@@ -104,6 +105,19 @@ export async function PATCH(req: NextRequest) {
           title: String(item.title || "").trim(),
           description: String(item.description || "").trim(),
         }));
+    }
+    if (Array.isArray(body.hero_slides)) {
+      updates.hero_slides = sanitizeHeroSlides(body.hero_slides);
+      // Keep legacy single-hero columns in sync with slide 1 for older readers.
+      const first = updates.hero_slides[0];
+      if (first) {
+        updates.hero_image_url = first.image_url;
+        updates.hero_image_url_mobile = first.image_url_mobile;
+        updates.hero_headline = first.headline;
+        updates.hero_subtext = first.subtitle;
+        updates.hero_button_text = first.button_text;
+        updates.hero_button_link = first.button_link;
+      }
     }
 
     const { data, error } = await supabaseAdmin
