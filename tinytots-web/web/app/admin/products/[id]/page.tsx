@@ -29,17 +29,20 @@ function AddVariantForm({ productId, onAdded }: { productId: number; onAdded: (v
     "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
 
   async function handleAdd() {
-    if (!price) return;
+    const parsedPrice = parseFloat(price);
+    const parsedStock = parseInt(stock || "0", 10);
+    if (!price || Number.isNaN(parsedPrice) || parsedPrice < 0) return;
+    if (Number.isNaN(parsedStock) || parsedStock < 0) return;
     setSaving(true);
-    const res = await fetch("/api/inventory", {
+    const res = await adminFetch("/api/admin/inventory", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         product_id: productId,
         color: color || null,
         size: size || null,
-        price: parseFloat(price),
-        stock: parseInt(stock || "0", 10),
+        price: parsedPrice,
+        stock: parsedStock,
       }),
     });
     const json = await res.json();
@@ -146,6 +149,14 @@ export default function EditProductPage() {
   }
   async function saveProduct() {
     if (!product) return;
+    if (!product.name?.trim() || !product.sku?.trim()) {
+      setError("Name and SKU are required.");
+      return;
+    }
+    if (!product.category?.trim()) {
+      setError("Please select a category.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -179,10 +190,26 @@ export default function EditProductPage() {
 
   async function saveVariant(v: Variant) {
     setError(null);
-    const res = await fetch(`/api/inventory/${v.id}`, {
+    if (!Number.isFinite(v.price) || v.price < 0) {
+      setError("Price must be a non-negative number.");
+      return;
+    }
+    if (!Number.isFinite(v.stock) || v.stock < 0 || !Number.isInteger(v.stock)) {
+      setError("Stock must be a non-negative whole number.");
+      return;
+    }
+    const res = await adminFetch(`/api/admin/inventory/${v.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ price: v.price, stock: v.stock, reorder_level: v.reorder_level, color: v.color, size: v.size, web_price_locked: v.web_price_locked, web_round_to: v.web_round_to }),
+      body: JSON.stringify({
+        price: v.price,
+        stock: v.stock,
+        reorder_level: v.reorder_level,
+        color: v.color,
+        size: v.size,
+        web_price_locked: v.web_price_locked,
+        web_round_to: v.web_round_to,
+      }),
     });
     if (!res.ok) {
       const json = await res.json();
@@ -313,9 +340,12 @@ export default function EditProductPage() {
         <button
           onClick={async () => {
             if (!confirm("Delete this variant permanently?")) return;
-            const res = await fetch(`/api/inventory/${v.id}`, { method: "DELETE" });
+            const res = await adminFetch(`/api/admin/inventory/${v.id}`, { method: "DELETE" });
             if (res.ok) {
               setProduct((prev) => prev ? { ...prev, variants: prev.variants.filter((x) => x.id !== v.id) } : prev);
+            } else {
+              const json = await res.json().catch(() => ({}));
+              setError(json.error || "Failed to delete variant.");
             }
           }}
           className="font-label-md text-label-md text-error hover:underline"

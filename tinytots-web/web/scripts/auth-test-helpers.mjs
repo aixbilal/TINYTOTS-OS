@@ -69,20 +69,32 @@ export const anonClient = createClient(url, anon, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-// Must look like a deliverable address — Supabase rejects .local / fake TLDs
-// on resetPasswordForEmail even though admin.createUser may accept them.
-export const TEST_CUSTOMER_EMAIL = "auth-reset-test@tinytotsofficial.com";
-export const TEST_CUSTOMER_PASSWORD_INITIAL = "ResetTest1_@abc";
-export const TEST_CUSTOMER_PASSWORD_NEW = "ResetTest2_@xyz";
+// Optional local-only harness. Set AUTH_TEST_* emails via env when needed —
+// do not hardcode disposable Auth users into the repo.
+export const TEST_CUSTOMER_EMAIL = process.env.AUTH_TEST_CUSTOMER_EMAIL || "";
+export const TEST_CUSTOMER_PASSWORD_INITIAL =
+  process.env.AUTH_TEST_CUSTOMER_PASSWORD || "ResetTest1_@abc";
+export const TEST_CUSTOMER_PASSWORD_NEW =
+  process.env.AUTH_TEST_CUSTOMER_PASSWORD_NEW || "ResetTest2_@xyz";
 
-export const TEST_ADMIN_EMAIL = "auth-admin-test@tinytotsofficial.com";
-export const TEST_ADMIN_PASSWORD_A = "AdminTest1_@abc";
-export const TEST_ADMIN_PASSWORD_B = "AdminTest2_@xyz";
+export const TEST_ADMIN_EMAIL = process.env.AUTH_TEST_ADMIN_EMAIL || "";
+export const TEST_ADMIN_PASSWORD_A =
+  process.env.AUTH_TEST_ADMIN_PASSWORD || "AdminTest1_@abc";
+export const TEST_ADMIN_PASSWORD_B =
+  process.env.AUTH_TEST_ADMIN_PASSWORD_B || "AdminTest2_@xyz";
 export const BASE = process.env.AUTH_TEST_BASE || "http://localhost:3002";
+
+function requireTestEmail(email, envName) {
+  if (!email) {
+    console.error(`Set ${envName} before running this helper command.`);
+    process.exit(1);
+  }
+}
 
 const cmd = process.argv[2];
 
 if (cmd === "ensure-customer") {
+  requireTestEmail(TEST_CUSTOMER_EMAIL, "AUTH_TEST_CUSTOMER_EMAIL");
   const { data: listed } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
   let user = listed?.users?.find((u) => u.email === TEST_CUSTOMER_EMAIL);
   if (!user) {
@@ -133,6 +145,7 @@ if (cmd === "ensure-customer") {
     })
   );
 } else if (cmd === "recovery-link") {
+  requireTestEmail(TEST_CUSTOMER_EMAIL, "AUTH_TEST_CUSTOMER_EMAIL");
   const { data, error } = await admin.auth.admin.generateLink({
     type: "recovery",
     email: TEST_CUSTOMER_EMAIL,
@@ -157,6 +170,7 @@ if (cmd === "ensure-customer") {
     )
   );
 } else if (cmd === "login-check") {
+  requireTestEmail(TEST_CUSTOMER_EMAIL, "AUTH_TEST_CUSTOMER_EMAIL");
   const password = process.argv[3] || TEST_CUSTOMER_PASSWORD_NEW;
   const { data, error } = await anonClient.auth.signInWithPassword({
     email: TEST_CUSTOMER_EMAIL,
@@ -169,11 +183,13 @@ if (cmd === "ensure-customer") {
   console.log("LOGIN_OK", data.user?.id);
   await anonClient.auth.signOut();
 } else if (cmd === "request-reset") {
+  requireTestEmail(TEST_CUSTOMER_EMAIL, "AUTH_TEST_CUSTOMER_EMAIL");
   const { data, error } = await anonClient.auth.resetPasswordForEmail(TEST_CUSTOMER_EMAIL, {
     redirectTo: process.argv[3] || "http://localhost:3001/reset-password",
   });
   console.log(JSON.stringify({ data, error }, null, 2));
 } else if (cmd === "ensure-admin") {
+  requireTestEmail(TEST_ADMIN_EMAIL, "AUTH_TEST_ADMIN_EMAIL");
   const { data: listed } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
   let user = listed?.users?.find((u) => u.email === TEST_ADMIN_EMAIL);
   if (!user) {
@@ -220,6 +236,7 @@ if (cmd === "ensure-customer") {
   }
   console.log(JSON.stringify({ email: TEST_ADMIN_EMAIL, password: TEST_ADMIN_PASSWORD_A, userId: user.id }));
 } else if (cmd === "test-admin-password-change") {
+  requireTestEmail(TEST_ADMIN_EMAIL, "AUTH_TEST_ADMIN_EMAIL");
   const { data: login, error: loginErr } = await anonClient.auth.signInWithPassword({
     email: TEST_ADMIN_EMAIL,
     password: TEST_ADMIN_PASSWORD_A,
@@ -262,6 +279,7 @@ if (cmd === "ensure-customer") {
   console.log("restored PASSWORD_A");
   await anonClient.auth.signOut();
 } else if (cmd === "test-admin-mfa") {
+  requireTestEmail(TEST_ADMIN_EMAIL, "AUTH_TEST_ADMIN_EMAIL");
   // Full MFA cycle on the dedicated test admin: enroll → login challenge → disable.
   await anonClient.auth.signOut().catch(() => {});
   const { data: login, error: loginErr } = await anonClient.auth.signInWithPassword({
@@ -479,6 +497,7 @@ if (cmd === "ensure-customer") {
     process.exit(1);
   }
 } else if (cmd === "test-admin-forgot-password") {
+  requireTestEmail(TEST_ADMIN_EMAIL, "AUTH_TEST_ADMIN_EMAIL");
   // Admin forgot-password E2E: reset while MFA enrolled → new password still requires TOTP.
   const NEW_PASS = "AdminResetPass99";
   await anonClient.auth.signOut().catch(() => {});

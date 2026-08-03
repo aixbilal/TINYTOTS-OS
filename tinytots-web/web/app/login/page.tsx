@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,6 +21,10 @@ export default function LoginPage() {
 
     if (!email.trim() || !password) {
       setServerError("Please enter your email and password.");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setServerError(EMAIL_ERROR);
       return;
     }
 

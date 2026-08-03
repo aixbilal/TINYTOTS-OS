@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/lib/admin-auth-context";
 import { adminFetch } from "@/lib/admin-fetch";
+import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
 
 type TeamMember = { id: string; name: string; email: string; role: string; is_active: boolean };
 
@@ -45,6 +46,8 @@ export default function TeamPage() {
     e.preventDefault();
     setError(null);
     if (!name.trim() || !email.trim()) return setError("Name and email are required.");
+    if (!isValidEmail(email)) return setError(EMAIL_ERROR);
+    if (!ROLES.includes(role)) return setError("Please select a valid role.");
 
     setSubmitting(true);
     const res = await adminFetch("/api/admin/team", {

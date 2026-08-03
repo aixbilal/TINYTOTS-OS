@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { isValidPakPhone, PAK_PHONE_ERROR } from "@/lib/validate-phone";
 
 const STATUS_STEPS = ["new", "processing", "shipped", "delivered"];
 
@@ -31,6 +32,20 @@ function TrackOrderForm() {
     e.preventDefault();
     setError(null);
     setOrder(null);
+
+    if (!orderNumber.trim()) {
+      setError("Please enter your order number.");
+      return;
+    }
+    if (!phone.trim()) {
+      setError("Please enter the phone number used at checkout.");
+      return;
+    }
+    if (!isValidPakPhone(phone)) {
+      setError(PAK_PHONE_ERROR);
+      return;
+    }
+
     setLoading(true);
 
     try {

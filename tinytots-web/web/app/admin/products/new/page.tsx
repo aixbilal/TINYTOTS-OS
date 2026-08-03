@@ -51,8 +51,18 @@ export default function NewProductPage() {
     setError(null);
 
     if (!name.trim() || !sku.trim()) return setError("Name and SKU are required.");
+    if (!category.trim()) return setError("Please select a category.");
     if (!shopFinalPrice || !webFinalPrice) return setError("Fill in cost price and shop selling price so both prices can be calculated.");
+    const shopPriceNum = parseFloat(shopFinalPrice);
+    const webPriceNum = parseFloat(webFinalPrice);
+    if (Number.isNaN(shopPriceNum) || shopPriceNum < 0 || Number.isNaN(webPriceNum) || webPriceNum < 0) {
+      return setError("Prices must be non-negative numbers.");
+    }
     if (!colors.length || !sizes.length) return setError("Add at least one color and one size to generate variants.");
+    for (const c of variantCombos) {
+      const s = parseInt(stockFor(c.key) || "0", 10);
+      if (Number.isNaN(s) || s < 0) return setError("Stock must be a non-negative whole number.");
+    }
 
     setSubmitting(true);
     try {
@@ -62,10 +72,10 @@ export default function NewProductPage() {
         cost_price: costPrice ? parseFloat(costPrice) : 0,
         base_price: shopBasePrice ? parseFloat(shopBasePrice) : null,
         discount_percent: shopDiscountPercent ? parseFloat(shopDiscountPercent) : 0,
-        price: parseFloat(shopFinalPrice),
+        price: shopPriceNum,
         web_base_price: webBasePrice ? parseFloat(webBasePrice) : null,
         web_discount_percent: webDiscountPercent ? parseFloat(webDiscountPercent) : 0,
-        web_price: parseFloat(webFinalPrice),
+        web_price: webPriceNum,
         stock: parseInt(stockFor(c.key) || "0", 10),
         reorder_level: 5,
       }));

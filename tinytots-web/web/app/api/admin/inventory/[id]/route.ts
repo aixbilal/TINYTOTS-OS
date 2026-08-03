@@ -16,18 +16,46 @@ export async function PUT(
     const { price, stock, reorder_level, color, size, web_price_locked, web_round_to } = body;
 
     const updates: Record<string, unknown> = {};
-    if (price !== undefined) updates.price = price;
-    if (stock !== undefined) updates.stock = stock;
-    if (reorder_level !== undefined) updates.reorder_level = reorder_level;
+    if (price !== undefined) {
+      const n = Number(price);
+      if (!Number.isFinite(n) || n < 0) {
+        return NextResponse.json({ error: "Price must be a non-negative number." }, { status: 400 });
+      }
+      updates.price = n;
+    }
+    if (stock !== undefined) {
+      const n = Number(stock);
+      if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) {
+        return NextResponse.json(
+          { error: "Stock must be a non-negative whole number." },
+          { status: 400 }
+        );
+      }
+      updates.stock = n;
+    }
+    if (reorder_level !== undefined) {
+      const n = Number(reorder_level);
+      if (!Number.isFinite(n) || n < 0 || !Number.isInteger(n)) {
+        return NextResponse.json(
+          { error: "Reorder level must be a non-negative whole number." },
+          { status: 400 }
+        );
+      }
+      updates.reorder_level = n;
+    }
     if (color !== undefined) updates.color = color;
     if (size !== undefined) updates.size = size;
-    
+
     // Coerce safely to Boolean and Number to ensure no bad types hit the database
     if (web_price_locked !== undefined) {
       updates.web_price_locked = Boolean(web_price_locked);
     }
     if (web_round_to !== undefined) {
-      updates.web_round_to = Number(web_round_to);
+      const n = Number(web_round_to);
+      if (!Number.isFinite(n) || n < 0) {
+        return NextResponse.json({ error: "Invalid web_round_to value." }, { status: 400 });
+      }
+      updates.web_round_to = n;
     }
 
     const { data, error } = await supabaseAdmin

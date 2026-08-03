@@ -3,11 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-
-function isValidPakPhone(phone: string) {
-  const digits = phone.replace(/[\s-]/g, "");
-  return /^(03\d{9}|\+923\d{9})$/.test(digits);
-}
+import { isValidPakPhone, PAK_PHONE_ERROR } from "@/lib/validate-phone";
 
 export default function AddPhonePage() {
   const router = useRouter();
@@ -43,7 +39,7 @@ export default function AddPhonePage() {
     setError(null);
 
     if (!isValidPakPhone(phone)) {
-      setError("Enter a valid Pakistani mobile number, e.g. 03001234567.");
+      setError(PAK_PHONE_ERROR);
       return;
     }
 

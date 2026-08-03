@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { isValidPakPhoneServer, PAK_PHONE_ERROR } from "@/lib/validate-phone";
 import { Agent, setGlobalDispatcher } from "undici";
 
 setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
@@ -75,11 +76,22 @@ export async function POST(req: NextRequest) {
         );
       }
       customerId = customer.id;
-    } else if (!reporter_phone || typeof reporter_phone !== "string" || !reporter_phone.trim()) {
-      return NextResponse.json(
-        { error: "Phone number is required for guest complaints." },
-        { status: 400 }
-      );
+    } else {
+      if (!reporter_name || typeof reporter_name !== "string" || !reporter_name.trim()) {
+        return NextResponse.json(
+          { error: "Name is required for guest submissions." },
+          { status: 400 }
+        );
+      }
+      if (!reporter_phone || typeof reporter_phone !== "string" || !reporter_phone.trim()) {
+        return NextResponse.json(
+          { error: "Phone number is required for guest complaints." },
+          { status: 400 }
+        );
+      }
+      if (!isValidPakPhoneServer(reporter_phone.trim())) {
+        return NextResponse.json({ error: PAK_PHONE_ERROR }, { status: 400 });
+      }
     }
 
     // If an order_id is given, confirm it actually exists (avoid orphaned/fake references)

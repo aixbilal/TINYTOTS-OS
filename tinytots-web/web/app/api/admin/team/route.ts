@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
+import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
+
+const VALID_ROLES = ["admin", "order_manager", "support", "inventory_only"] as const;
 
 export async function GET(request: NextRequest) {
   const denied = await requireAdmin(request, "canManageTeam");
@@ -28,11 +31,17 @@ export async function POST(request: NextRequest) {
       if (!name || !email || !role) {
         return NextResponse.json({ error: "name, email, and role are required" }, { status: 400 });
       }
-  
+      if (!isValidEmail(String(email))) {
+        return NextResponse.json({ error: EMAIL_ERROR }, { status: 400 });
+      }
+      if (!VALID_ROLES.includes(role)) {
+        return NextResponse.json({ error: "Invalid role." }, { status: 400 });
+      }
+
       const tempPassword = Math.random().toString(36).slice(-10) + "A1!";
   
       const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email,
+        email: String(email).trim(),
         password: tempPassword,
         email_confirm: true,
         user_metadata: {

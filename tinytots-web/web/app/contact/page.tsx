@@ -3,16 +3,12 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
+import { isValidPakPhone, PAK_PHONE_ERROR } from "@/lib/validate-phone";
 
 const MAX_LEN = { name: 80, phone: 20, message: 1000 };
 
 function sanitize(v: string, max: number) {
   return v.replace(/[<>]/g, "").slice(0, max);
-}
-
-function isValidPakPhone(phone: string) {
-  const digits = phone.replace(/[\s-]/g, "");
-  return /^(03\d{9}|\+923\d{9})$/.test(digits);
 }
 
 export default function ContactPage() {
@@ -30,7 +26,7 @@ export default function ContactPage() {
     if (!user) {
       if (!name.trim()) errs.name = "Please enter your name.";
       if (!phone.trim()) errs.phone = "Please enter your phone number.";
-      else if (!isValidPakPhone(phone)) errs.phone = "Enter a valid number, e.g. 03001234567.";
+      else if (!isValidPakPhone(phone)) errs.phone = PAK_PHONE_ERROR;
     }
     if (!message.trim()) errs.message = "Please enter a message.";
     setFieldErrors(errs);

@@ -56,8 +56,31 @@ export default function AdminCouponsPage() {
 
   const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     setErrorMsg("");
+
+    if (!code.trim()) {
+      setErrorMsg("Coupon code is required.");
+      return;
+    }
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+      setErrorMsg("Discount value must be a positive number.");
+      return;
+    }
+    if (discountType === "percentage" && numericValue > 100) {
+      setErrorMsg("Percentage discount cannot exceed 100.");
+      return;
+    }
+    if (minSpend !== "" && (Number.isNaN(Number(minSpend)) || Number(minSpend) < 0)) {
+      setErrorMsg("Minimum spend must be zero or greater.");
+      return;
+    }
+    if (maxUses !== "" && (!Number.isInteger(Number(maxUses)) || Number(maxUses) <= 0)) {
+      setErrorMsg("Max uses must be a positive whole number.");
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
       const res = await adminFetch("/api/admin/coupons", {
@@ -66,10 +89,10 @@ export default function AdminCouponsPage() {
         body: JSON.stringify({
           code,
           discount_type: discountType,
-          value,
-          min_spend: minSpend,
-          max_uses: maxUses,
-          expires_at: expiresAt,
+          value: numericValue,
+          min_spend: minSpend === "" ? 0 : Number(minSpend),
+          max_uses: maxUses === "" ? null : Number(maxUses),
+          expires_at: expiresAt || null,
         }),
       });
 

@@ -11,6 +11,7 @@ import UgcFeed from "@/components/UgcFeed";
 import FooterFaq, { shouldShowFooterFaq } from "@/components/FooterFaq";
 import { useAuth } from "@/lib/auth-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
+import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
 
 function SearchOverlay({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
@@ -411,8 +412,13 @@ function NewsletterForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setStatus("loading");
     setErrorMsg("");
+    if (!isValidEmail(email)) {
+      setStatus("error");
+      setErrorMsg(EMAIL_ERROR);
+      return;
+    }
+    setStatus("loading");
     try {
       const res = await fetch("/api/newsletter", {
         method: "POST",

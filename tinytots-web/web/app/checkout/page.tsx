@@ -6,17 +6,13 @@ import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
+import { isValidPakPhone, PAK_PHONE_ERROR } from "@/lib/validate-phone";
 
 const MAX_LEN = { name: 80, phone: 20, address: 300, city: 50 };
 
 function sanitize(v: string, max: number) {
   // strip control chars / trim, cap length — real escaping still happens server-side via parameterized Supabase calls
   return v.replace(/[<>]/g, "").slice(0, max);
-}
-
-function isValidPakPhone(phone: string) {
-  const digits = phone.replace(/[\s-]/g, "");
-  return /^(03\d{9}|\+923\d{9})$/.test(digits);
 }
 
 export default function CheckoutPage() {
@@ -105,9 +101,12 @@ export default function CheckoutPage() {
     if (!user) {
       if (!guestName.trim()) errs.guestName = "Please enter your full name.";
       if (!guestPhone.trim()) errs.guestPhone = "Please enter your phone number.";
-      else if (!isValidPakPhone(guestPhone)) errs.guestPhone = "Enter a valid number, e.g. 03001234567.";
+      else if (!isValidPakPhone(guestPhone)) errs.guestPhone = PAK_PHONE_ERROR;
     }
     if (!shippingAddress.trim()) errs.shippingAddress = "Please enter your shipping address.";
+    else if (shippingAddress.trim().length < 10) {
+      errs.shippingAddress = "Please enter a fuller shipping address (at least 10 characters).";
+    }
     if (!shippingCity.trim()) errs.shippingCity = "Please enter your city.";
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;

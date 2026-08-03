@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAdminAuth } from "@/lib/admin-auth-context";
-import { PASSWORD_HINT } from "@/lib/validate-password";
+import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
 import AdminMfaSettings from "@/components/admin/AdminMfaSettings";
 
 export default function AdminAccountPage() {
@@ -23,6 +23,11 @@ export default function AdminAccountPage() {
 
     if (!currentPassword) {
       setError("Current password is required.");
+      return;
+    }
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
     if (newPassword !== confirmPassword) {

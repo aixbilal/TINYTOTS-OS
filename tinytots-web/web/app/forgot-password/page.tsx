@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
 
 const RESET_NEXT_KEY = "tt_password_reset_next";
 
@@ -26,8 +27,8 @@ function ForgotPasswordForm() {
       setFormError("Please enter your email address.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setFormError("Please enter a valid email address.");
+    if (!isValidEmail(trimmed)) {
+      setFormError(EMAIL_ERROR);
       return;
     }
 

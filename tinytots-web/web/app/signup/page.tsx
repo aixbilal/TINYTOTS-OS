@@ -6,13 +6,10 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
 import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
+import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
+import { isValidPakPhone, PAK_PHONE_ERROR } from "@/lib/validate-phone";
 
 const MAX_LEN = { name: 80, phone: 20, email: 100, password: 72 };
-
-function isValidPakPhone(phone: string) {
-  const digits = phone.replace(/[\s-]/g, "");
-  return /^(03\d{9}|\+923\d{9})$/.test(digits);
-}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -31,9 +28,9 @@ export default function SignupPage() {
     const errs: Record<string, string> = {};
     if (!fullName.trim()) errs.fullName = "Please enter your full name.";
     if (!email.trim()) errs.email = "Please enter your email.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = "Enter a valid email address.";
+    else if (!isValidEmail(email)) errs.email = EMAIL_ERROR;
     if (!phone.trim()) errs.phone = "Phone number is required.";
-    else if (!isValidPakPhone(phone)) errs.phone = "Enter a valid number, e.g. 03001234567.";
+    else if (!isValidPakPhone(phone)) errs.phone = PAK_PHONE_ERROR;
     const passwordError = validatePassword(password);
     if (passwordError) errs.password = passwordError;
     setFieldErrors(errs);

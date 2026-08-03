@@ -72,6 +72,38 @@ export async function PUT(
     for (const key of scalarKeys) {
       if (key in body) updates[key] = body[key];
     }
+    if ("name" in updates) {
+      const name = typeof updates.name === "string" ? updates.name.trim() : "";
+      if (!name) {
+        return NextResponse.json({ error: "Name is required." }, { status: 400 });
+      }
+      updates.name = name;
+    }
+    if ("sku" in updates) {
+      const sku = typeof updates.sku === "string" ? updates.sku.trim() : "";
+      if (!sku) {
+        return NextResponse.json({ error: "SKU is required." }, { status: 400 });
+      }
+      updates.sku = sku;
+    }
+    if ("category" in updates) {
+      const category = typeof updates.category === "string" ? updates.category.trim() : "";
+      if (!category) {
+        return NextResponse.json({ error: "Please select a category." }, { status: 400 });
+      }
+      const { data: categoryRow } = await supabaseAdmin
+        .from("categories")
+        .select("name")
+        .eq("name", category)
+        .maybeSingle();
+      if (!categoryRow) {
+        return NextResponse.json(
+          { error: "Invalid category. Choose a category from the list." },
+          { status: 400 }
+        );
+      }
+      updates.category = category;
+    }
     if (typeof updates.description === "string" && updates.description !== "") {
       updates.description = normalizeQuillHtml(updates.description);
     }

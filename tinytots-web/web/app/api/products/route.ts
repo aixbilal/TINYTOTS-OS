@@ -93,8 +93,40 @@ export async function POST(request: NextRequest) {
     if (!name || !sku) {
       return NextResponse.json({ error: "name and sku are required" }, { status: 400 });
     }
+    if (!category || typeof category !== "string" || !category.trim()) {
+      return NextResponse.json({ error: "Please select a category." }, { status: 400 });
+    }
     if (!Array.isArray(variants) || variants.length === 0) {
       return NextResponse.json({ error: "At least one variant is required" }, { status: 400 });
+    }
+
+    const { data: categoryRow } = await supabaseAdmin
+      .from("categories")
+      .select("name")
+      .eq("name", category.trim())
+      .maybeSingle();
+    if (!categoryRow) {
+      return NextResponse.json(
+        { error: "Invalid category. Choose a category from the list." },
+        { status: 400 }
+      );
+    }
+
+    for (const v of variants) {
+      const price = Number(v.price);
+      const stock = Number(v.stock ?? 0);
+      if (!Number.isFinite(price) || price < 0) {
+        return NextResponse.json(
+          { error: "Variant price must be a non-negative number." },
+          { status: 400 }
+        );
+      }
+      if (!Number.isFinite(stock) || stock < 0 || !Number.isInteger(stock)) {
+        return NextResponse.json(
+          { error: "Variant stock must be a non-negative whole number." },
+          { status: 400 }
+        );
+      }
     }
 
     const cleanDescription =
@@ -104,7 +136,7 @@ export async function POST(request: NextRequest) {
 
     const { data: product, error: productError } = await supabaseAdmin
       .from("products")
-      .insert([{ name, sku, description: cleanDescription, brand, category, image_url, gender, age_bracket, cost_price, selling_price, is_active: true }])
+      .insert([{ name, sku, description: cleanDescription, brand, category: category.trim(), image_url, gender, age_bracket, cost_price, selling_price, is_active: true }])
       .select()
       .single();
 
@@ -116,14 +148,14 @@ export async function POST(request: NextRequest) {
       product_id: product.id,
       color: v.color || null,
       size: v.size || null,
-      price: v.price,
+      price: Number(v.price),
       base_price: v.base_price ?? null,
       discount_percent: v.discount_percent ?? 0,
       cost_price: v.cost_price ?? 0,
       web_base_price: v.web_base_price ?? null,
       web_discount_percent: v.web_discount_percent ?? 0,
       web_price: v.web_price,
-      stock: v.stock ?? 0,
+      stock: Number(v.stock ?? 0),
       reorder_level: v.reorder_level ?? 5,
     }));
 

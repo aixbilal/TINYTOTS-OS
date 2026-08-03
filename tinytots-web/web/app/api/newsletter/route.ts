@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
 
 // POST /api/newsletter - subscribe an email from the footer form
 export async function POST(req: NextRequest) {
@@ -15,8 +14,8 @@ export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();
 
-    if (!email || typeof email !== "string" || !EMAIL_RE.test(email.trim())) {
-      return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
+    if (!email || typeof email !== "string" || !isValidEmail(email)) {
+      return NextResponse.json({ error: EMAIL_ERROR }, { status: 400 });
     }
 
     const { error } = await supabaseAdmin
