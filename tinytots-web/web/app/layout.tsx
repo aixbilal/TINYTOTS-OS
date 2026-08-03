@@ -1,32 +1,34 @@
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import SiteShell from "@/components/SiteShell";
 import Analytics from "@/components/Analytics";
-import DeferredStylesheet from "@/components/DeferredStylesheet";
 import SerwistProvider from "@/components/SerwistProvider";
+import IconFontGuard from "@/components/IconFontGuard";
 import { cn } from "@/lib/utils";
 import { getSiteUrl } from "@/lib/site-url";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 
-// font-display: optional — avoid late FOUT/layout shift after first paint (CLS).
+// swap: on slow networks, optional never applies the webfont and layout looks broken.
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  display: "optional",
+  display: "swap",
 });
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
   subsets: ["latin"],
   weight: ["600", "700"],
-  display: "optional",
+  display: "swap",
 });
 
-// Narrow Material Symbols + optional display — deferred load + reserved icon boxes in CSS.
+// Must load in <head> (not after hydration). display=block avoids ligature
+// text leaking as "ho"/"se"/"sh" when the icon font is late on slow networks.
 const MATERIAL_SYMBOLS_HREF =
-  "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=optional";
+  "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block";
 
 const siteUrl = getSiteUrl();
 const defaultTitle = "TinyTots | Premium Kids Clothing";
@@ -103,12 +105,20 @@ export default async function RootLayout({
       className={cn("antialiased", inter.variable, plusJakarta.variable)}
     >
       <head>
-        <DeferredStylesheet href={MATERIAL_SYMBOLS_HREF} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link rel="stylesheet" href={MATERIAL_SYMBOLS_HREF} />
       </head>
       <body className="bg-surface font-body-md text-on-surface antialiased min-h-screen">
         <SerwistProvider>
+          <IconFontGuard />
           <SiteShell announcement={announcement}>{children}</SiteShell>
           <Analytics />
+          <SpeedInsights />
         </SerwistProvider>
       </body>
     </html>

@@ -95,10 +95,24 @@ const runtimeCaching: RuntimeCaching[] = [
       ],
     }),
   },
+  // Stylesheets can change (e.g. display=optional → block) — do not CacheFirst forever.
   {
-    matcher: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
+    matcher: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+    handler: new StaleWhileRevalidate({
+      cacheName: "google-fonts-css-v2",
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 8,
+          maxAgeSeconds: WEEK,
+        }),
+      ],
+    }),
+  },
+  // Versioned font files — safe to cache aggressively.
+  {
+    matcher: /^https:\/\/fonts\.gstatic\.com\/.*/i,
     handler: new CacheFirst({
-      cacheName: "google-fonts",
+      cacheName: "google-fonts-files-v2",
       plugins: [
         new ExpirationPlugin({
           maxEntries: 24,

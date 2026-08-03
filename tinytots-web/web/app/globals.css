@@ -255,7 +255,11 @@
   animation: marquee-loop 20s linear infinite;
 }
 
-/* Reserve icon box before Material Symbols font loads (prevents CLS from DeferredStylesheet). */
+/*
+ * Icon box reserved for CLS. With font-display:block the glyph stays blank
+ * until the icon font is ready — do not pair with display:optional + deferred
+ * CSS (that truncates ligatures to "ho"/"se"/"sh" on slow networks).
+ */
 .material-symbols-outlined {
   font-family: "Material Symbols Outlined", sans-serif;
   font-weight: normal;
@@ -272,6 +276,19 @@
   height: 1em;
   overflow: hidden;
   flex-shrink: 0;
+  speak: never;
   font-feature-settings: "liga";
   -webkit-font-smoothing: antialiased;
+}
+
+@supports (font-technology: variations) {
+  .material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  }
+}
+
+/* Set by IconFontGuard when the icon webfont never loads. */
+html.icons-failed .material-symbols-outlined {
+  color: transparent;
+  user-select: none;
 }

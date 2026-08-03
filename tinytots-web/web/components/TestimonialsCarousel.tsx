@@ -14,7 +14,15 @@ function TestimonialCard({ t }: { t: Testimonial }) {
         {"★".repeat(t.rating)}
         {"☆".repeat(5 - t.rating)}
       </div>
-      <p className="font-body-sm text-body-sm text-on-surface-variant italic line-clamp-3">
+      <p
+        className="font-body-sm text-on-surface-variant italic overflow-hidden"
+        style={{
+          display: "-webkit-box",
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: "vertical",
+          lineHeight: 1.5,
+        }}
+      >
         &ldquo;{t.quote}&rdquo;
       </p>
       <p className="font-label-md text-label-md text-on-surface font-semibold mt-auto">
