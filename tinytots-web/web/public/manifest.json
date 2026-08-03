@@ -1,0 +1,24 @@
+{
+  "name": "TinyTots",
+  "short_name": "TinyTots",
+  "description": "Premium kids clothing — shop TinyTots online.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fcf9f8",
+  "theme_color": "#9c422e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

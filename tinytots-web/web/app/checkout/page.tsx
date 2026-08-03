@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
+import OfflineNotice from "@/components/OfflineNotice";
 import { supabase } from "@/lib/supabase";
 import { isValidPakPhone, PAK_PHONE_ERROR } from "@/lib/validate-phone";
 
@@ -71,6 +72,7 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+        <OfflineNotice feature="Checkout" />
         <p className="text-on-surface-variant font-body-md text-body-md">
           Your cart is empty. Add something before checking out.
         </p>
@@ -116,6 +118,10 @@ export default function CheckoutPage() {
     e.preventDefault();
     setServerError(null);
     if (!validate()) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setServerError("You're offline. Reconnect to place your order.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -161,7 +167,11 @@ export default function CheckoutPage() {
       clearCart();
       router.push(`/order-confirmation/${json.data.order_number}`);
     } catch {
-      setServerError("Network error. Please try again.");
+      setServerError(
+        typeof navigator !== "undefined" && !navigator.onLine
+          ? "You're offline. Reconnect to place your order."
+          : "Network error. Please try again."
+      );
       setSubmitting(false);
     }
   }
@@ -177,6 +187,7 @@ export default function CheckoutPage() {
   return (
     <main className="max-w-5xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
       <div className="md:col-span-2">
+        <OfflineNotice feature="Checkout" />
         <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Checkout</h1>
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-md">

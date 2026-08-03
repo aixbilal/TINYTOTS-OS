@@ -32,6 +32,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@serwist/turbopack": "^9.5.12",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.20",
     "@types/dompurify": "^3.0.5",
@@ -40,10 +41,13 @@
     "@types/react-dom": "^19",
     "@types/sanitize-html": "^2.16.1",
     "cross-env": "^10.1.0",
+    "esbuild": "^0.28.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "serwist": "^9.5.12",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "webpack": "^5.109.2"
   },
   "description": "This is a Next.js project."
 }

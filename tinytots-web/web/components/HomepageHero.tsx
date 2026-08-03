@@ -38,20 +38,20 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <section
-      className="relative w-screen max-w-[100vw] left-1/2 -translate-x-1/2 h-[340px] md:h-[700px] mb-stack-lg overflow-hidden"
+      // Explicit aspect-ratio reserves LCP box before images decode (fixes CLS).
+      // Matches prior 340px@~390w mobile and 700px@~1440w desktop proportions.
+      className="relative w-screen max-w-[100vw] left-1/2 -translate-x-1/2 aspect-[39/34] md:aspect-[72/35] mb-stack-lg overflow-hidden"
       onTouchStart={() => {
         touchPauseRef.current = true;
         setPaused(true);
       }}
       onTouchEnd={() => {
-        // Keep paused briefly so a tap on a dot isn't raced by auto-advance.
         window.setTimeout(() => {
           touchPauseRef.current = false;
           setPaused(false);
         }, 400);
       }}
       onTouchCancel={() => {
-        // Browser took over the gesture (e.g. scroll) — don't leave rotation stuck paused.
         touchPauseRef.current = false;
         setPaused(false);
       }}
@@ -62,8 +62,6 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
         const desktopUrl = slide.image_url || slide.image_url_mobile;
         const mobileUrl = slide.image_url_mobile || slide.image_url;
         const isActive = i === index;
-        // Mobile PageSpeed LCP is the mobile hero — only preload that one.
-        // Do NOT priority both breakpoints (double LCP candidates).
         const isLcpSlide = i === 0;
         return (
           <div
@@ -93,9 +91,9 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
                 src={desktopUrl}
                 alt=""
                 fill
-                // Desktop image must not compete with mobile LCP preload.
+                // First desktop slide: eager without priority so mobile LCP preload stays sole high-priority.
                 priority={false}
-                loading="lazy"
+                loading={isLcpSlide ? "eager" : "lazy"}
                 sizes="100vw"
                 quality={75}
                 className="object-cover hidden md:block"
@@ -107,7 +105,6 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
         );
       })}
 
-      {/* Our Story–style bottom-left dark scrim for readable white copy */}
       <div
         className="absolute inset-0 z-[2] pointer-events-none"
         style={{

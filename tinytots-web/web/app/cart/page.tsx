@@ -2,6 +2,7 @@
 
 import { useCart } from "@/lib/cart-context";
 import CouponInput from "@/components/CouponInput";
+import OfflineNotice from "@/components/OfflineNotice";
 import VoucherVault from "@/components/VoucherVault";
 import Link from "next/link";
 
@@ -11,6 +12,7 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
+        <OfflineNotice feature="Cart and checkout" />
         <span className="material-symbols-outlined text-[48px] text-on-surface-variant">
           shopping_bag
         </span>
@@ -34,6 +36,7 @@ export default function CartPage() {
     <main className="max-w-5xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
       {/* Left: cart items */}
       <div className="md:col-span-2">
+        <OfflineNotice feature="Cart and checkout" />
         <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Your Cart</h1>
 
         <div className="flex flex-col gap-stack-sm">

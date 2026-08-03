@@ -1,17 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
 import HeaderCart from "@/components/HeaderCart";
 import MobileSubNav from "@/components/MobileSubNav";
-import UgcFeed from "@/components/UgcFeed";
-import FooterFaq, { shouldShowFooterFaq } from "@/components/FooterFaq";
+import { shouldShowFooterFaq } from "@/components/FooterFaq";
 import { useAuth } from "@/lib/auth-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
 import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
+
+// Below-fold chrome — keep off the homepage critical JS path.
+const UgcFeed = dynamic(() => import("@/components/UgcFeed"), { ssr: false });
+const FooterFaq = dynamic(() => import("@/components/FooterFaq"), { ssr: false });
+
+export type AnnouncementData = {
+  enabled: boolean;
+  text: string;
+  link: string;
+  style?: string;
+};
 
 function SearchOverlay({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
@@ -467,22 +478,27 @@ function NewsletterForm() {
   );
 }
 
-export default function SiteShell({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function SiteShell({
+  children,
+  announcement = null,
+}: Readonly<{
+  children: React.ReactNode;
+  /** Server-fetched announcement — avoids CLS from client fetch expanding the fixed header. */
+  announcement?: AnnouncementData | null;
+}>) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [announcement, setAnnouncement] = useState<{ enabled: boolean; text: string; link: string; style?: string } | null>(null);
   const headerWrapRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(80);
 
   useEffect(() => {
-    fetch("/api/announcement")
-      .then((res) => res.json())
-      .then(setAnnouncement)
-      .catch(() => setAnnouncement(null));
-  }, []);
-
-  useEffect(() => {
-    if (headerWrapRef.current) setHeaderHeight(headerWrapRef.current.offsetHeight);
+    const el = headerWrapRef.current;
+    if (!el) return;
+    const measure = () => setHeaderHeight(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [announcement]);
   const pathname = usePathname();
   const isSignage = pathname?.startsWith("/signage");

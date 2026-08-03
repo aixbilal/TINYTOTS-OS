@@ -1,5 +1,11 @@
 import type { NextConfig } from "next";
+import { withSerwist } from "@serwist/turbopack";
 
+/**
+ * PWA via Serwist (successor to @ducanh2912/next-pwa; works with Next.js 16 Turbopack).
+ * Service worker source: app/sw.ts — served from /serwist/sw.js via app/serwist/[path]/route.ts.
+ * Disabled in development through SerwistProvider (see layout).
+ */
 const nextConfig: NextConfig = {
   // Do NOT mark isomorphic-dompurify/jsdom as serverExternalPackages —
   // on Vercel that triggers externalRequire → ERR_REQUIRE_ESM via
@@ -7,6 +13,7 @@ const nextConfig: NextConfig = {
   // sanitize-html (lib/sanitize.ts) instead.
   images: {
     formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       {
         protocol: "https",
@@ -23,7 +30,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/:path*.:ext(ico|png|jpg|jpeg|gif|webp|avif|svg|woff2)",
+        source: "/:path*.:ext(ico|png|jpg|jpeg|gif|webp|avif|svg|woff|woff2)",
         headers: [
           {
             key: "Cache-Control",
@@ -40,8 +47,17 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: "/_next/image",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
     ];
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

@@ -15,12 +15,13 @@ import { absoluteUrl } from "@/lib/site-url";
 export const revalidate = 60;
 
 // Heavy client islands — code-split so framer-motion / supabase realtime stay off the critical path.
+// Aspect-square stack (~max-w-2xl) — reserve layout so dynamic chunk load doesn't CLS.
 const ProductCardStack = dynamic(() => import("@/components/ProductCardStack"), {
-  loading: () => <div className="min-h-[320px]" aria-hidden />,
+  loading: () => (
+    <div className="w-full max-w-2xl mx-auto aspect-square md:aspect-[2/1]" aria-hidden />
+  ),
 });
-const TestimonialsCarousel = dynamic(() => import("@/components/TestimonialsCarousel"), {
-  loading: () => <div className="min-h-[180px]" aria-hidden />,
-});
+const TestimonialsCarousel = dynamic(() => import("@/components/TestimonialsCarousel"));
 
 const HOME_TITLE = "TinyTots | Premium Kids Clothing";
 const HOME_DESCRIPTION =
@@ -200,9 +201,33 @@ function resolveTrustItems(raw: unknown) {
   return items.length > 0 ? items : DEFAULT_TRUST_ITEMS;
 }
 
+async function getHomepageTestimonials() {
+  // Mirror /api/testimonials without .single() — multi-active campaigns return many rows.
+  const { data: campaigns } = await supabase
+    .from("campaigns")
+    .select("testimonial_ids")
+    .eq("is_active", true);
+  const ids = [
+    ...new Set(
+      (campaigns || []).flatMap((c: { testimonial_ids?: number[] | null }) =>
+        Array.isArray(c.testimonial_ids) ? c.testimonial_ids : []
+      )
+    ),
+  ];
+  if (!ids.length) return [];
+  const { data } = await supabase
+    .from("testimonials")
+    .select("id, customer_name, rating, quote")
+    .in("id", ids)
+    .eq("is_published", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  return data || [];
+}
+
 export default async function Home() {
   const content = await getHomepageContent();
-  const [trendingProducts, stackProducts] = await Promise.all([
+  const [trendingProducts, stackProducts, testimonials] = await Promise.all([
     getProductsForSection(
       content.trending_selection_type,
       content.trending_category,
@@ -213,6 +238,7 @@ export default async function Home() {
       content.stack_category,
       content.stack_product_ids
     ),
+    getHomepageTestimonials(),
   ]);
 
   const heroSlides = resolveHeroSlides(content);
@@ -261,7 +287,7 @@ export default async function Home() {
           />
         </section>
 
-        <TestimonialsCarousel />
+        <TestimonialsCarousel testimonials={testimonials as any} />
 
         <section className="mb-stack-lg">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap h-auto md:h-[500px]">
