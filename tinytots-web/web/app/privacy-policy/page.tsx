@@ -1,28 +1,96 @@
-import DOMPurify from "isomorphic-dompurify";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import LegalPageLayout from "@/components/LegalPageLayout";
 import { extractTocAndAnnotate } from "@/lib/site-page-toc";
-import { normalizeQuillHtml } from "@/lib/html-text";
+import { sanitizeContentHtml } from "@/lib/sanitize";
 
 export const dynamic = "force-dynamic";
 
 export default async function PrivacyPolicyPage() {
+  // #region agent log
+  fetch("http://127.0.0.1:7261/ingest/10d5a026-855f-457d-b513-38d64a2ea290", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Debug-Session-Id": "16b950",
+    },
+    body: JSON.stringify({
+      sessionId: "16b950",
+      runId: "post-fix",
+      hypothesisId: "E",
+      location: "privacy-policy/page.tsx:enter",
+      message: "privacy-policy render start (sanitize-html path)",
+      data: { nodeEnv: process.env.NODE_ENV ?? null },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   const { data: page } = await supabaseAdmin
     .from("site_pages")
     .select("title, content, updated_at")
     .eq("slug", "privacy-policy")
     .single();
 
-  const { html, sections } = extractTocAndAnnotate(page?.content || "<p>Content coming soon.</p>");
-  // Sanitize after TOC annotation so heading `id` attrs for scroll-spy survive.
-  const safeHtml = normalizeQuillHtml(
-    DOMPurify.sanitize(html, { ADD_ATTR: ["id"] })
+  const { html, sections } = extractTocAndAnnotate(
+    page?.content || "<p>Content coming soon.</p>"
   );
+
+  let safeHtml = "";
+  try {
+    safeHtml = sanitizeContentHtml(html);
+    // #region agent log
+    fetch("http://127.0.0.1:7261/ingest/10d5a026-855f-457d-b513-38d64a2ea290", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "16b950",
+      },
+      body: JSON.stringify({
+        sessionId: "16b950",
+        runId: "post-fix",
+        hypothesisId: "E",
+        location: "privacy-policy/page.tsx:success",
+        message: "sanitize-html succeeded",
+        data: {
+          sanitizePath: "sanitize-html",
+          htmlLen: safeHtml.length,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // #region agent log
+    fetch("http://127.0.0.1:7261/ingest/10d5a026-855f-457d-b513-38d64a2ea290", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "16b950",
+      },
+      body: JSON.stringify({
+        sessionId: "16b950",
+        runId: "post-fix",
+        hypothesisId: "E",
+        location: "privacy-policy/page.tsx:fail",
+        message: "sanitize-html failed",
+        data: {
+          msg: msg.slice(0, 500),
+          isRequireEsm: msg.includes("ERR_REQUIRE_ESM"),
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    throw err;
+  }
 
   return (
     <LegalPageLayout
       title={page?.title || "Privacy Policy"}
-      lastUpdated={page?.updated_at ? new Date(page.updated_at).toLocaleDateString() : ""}
+      lastUpdated={
+        page?.updated_at ? new Date(page.updated_at).toLocaleDateString() : ""
+      }
       sections={sections}
     >
       <div

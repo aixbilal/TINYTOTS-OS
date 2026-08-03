@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import DOMPurify from "isomorphic-dompurify";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { htmlToPlainText, normalizeQuillHtml } from "@/lib/html-text";
+import { htmlToPlainText } from "@/lib/html-text";
+import { sanitizeContentHtml } from "@/lib/sanitize";
 import { absoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
 function sanitizePostHtml(html: string): string {
-  return normalizeQuillHtml(DOMPurify.sanitize(html));
+  return sanitizeContentHtml(html);
 }
 
 export async function generateMetadata({

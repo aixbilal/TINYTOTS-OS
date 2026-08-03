@@ -1,13 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // isomorphic-dompurify → jsdom → html-encoding-sniffer is ESM-only;
-  // bundling it into the RSC/SSR graph triggers ERR_REQUIRE_ESM.
-  serverExternalPackages: [
-    "isomorphic-dompurify",
-    "jsdom",
-    "html-encoding-sniffer",
-  ],
+  // Do NOT mark isomorphic-dompurify/jsdom as serverExternalPackages —
+  // on Vercel that triggers externalRequire → ERR_REQUIRE_ESM via
+  // html-encoding-sniffer/@exodus/bytes. Server HTML is sanitized with
+  // sanitize-html (lib/sanitize.ts) instead.
   images: {
     remotePatterns: [
       {

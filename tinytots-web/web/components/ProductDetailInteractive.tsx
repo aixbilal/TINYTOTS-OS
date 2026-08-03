@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import DOMPurify from "isomorphic-dompurify";
+import DOMPurify from "dompurify";
 import { normalizeQuillHtml } from "@/lib/html-text";
 import ProductGallery from "./ProductGallery";
 import AddToCart from "./AddToCart";
