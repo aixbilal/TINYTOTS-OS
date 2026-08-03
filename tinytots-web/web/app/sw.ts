@@ -48,26 +48,60 @@ function isSupabaseOrUpstash(hostname: string) {
   );
 }
 
+/** Never serve stale commerce/auth HTML from the HTTP cache. */
+const liveNetworkOnly = new NetworkOnly({
+  fetchOptions: { cache: "no-store" },
+});
+
 /**
  * Custom strategies — do not use defaultCache (it NetworkFirst-caches /api/*
  * and cross-origin hosts, which is unsafe for inventory/pricing/orders).
  */
 const runtimeCaching: RuntimeCaching[] = [
-  // Never cache APIs
+  // Never cache APIs (all methods — Workbox matches GET by default per entry)
   {
     matcher: ({ url }) => url.pathname.startsWith("/api/"),
-    handler: new NetworkOnly(),
+    handler: liveNetworkOnly,
+    method: "GET",
+  },
+  {
+    matcher: ({ url }) => url.pathname.startsWith("/api/"),
+    handler: liveNetworkOnly,
+    method: "POST",
+  },
+  {
+    matcher: ({ url }) => url.pathname.startsWith("/api/"),
+    handler: liveNetworkOnly,
+    method: "PUT",
+  },
+  {
+    matcher: ({ url }) => url.pathname.startsWith("/api/"),
+    handler: liveNetworkOnly,
+    method: "PATCH",
+  },
+  {
+    matcher: ({ url }) => url.pathname.startsWith("/api/"),
+    handler: liveNetworkOnly,
+    method: "DELETE",
   },
   // Never cache Supabase / Upstash
   {
     matcher: ({ url }) => isSupabaseOrUpstash(url.hostname),
-    handler: new NetworkOnly(),
+    handler: liveNetworkOnly,
   },
   // Live-only storefront navigations
   {
     matcher: ({ request, url }) =>
       request.mode === "navigate" && isLivePath(url.pathname),
-    handler: new NetworkOnly(),
+    handler: liveNetworkOnly,
+  },
+  // Live-only RSC (client navigations to cart/checkout/auth)
+  {
+    matcher: ({ request, url, sameOrigin }) =>
+      sameOrigin &&
+      request.headers.get("RSC") === "1" &&
+      isLivePath(url.pathname),
+    handler: liveNetworkOnly,
   },
   // Hashed Next build assets
   {
@@ -95,7 +129,6 @@ const runtimeCaching: RuntimeCaching[] = [
       ],
     }),
   },
-  // Stylesheets can change (e.g. display=optional → block) — do not CacheFirst forever.
   {
     matcher: /^https:\/\/fonts\.googleapis\.com\/.*/i,
     handler: new StaleWhileRevalidate({
@@ -108,7 +141,6 @@ const runtimeCaching: RuntimeCaching[] = [
       ],
     }),
   },
-  // Versioned font files — safe to cache aggressively.
   {
     matcher: /^https:\/\/fonts\.gstatic\.com\/.*/i,
     handler: new CacheFirst({
@@ -121,7 +153,6 @@ const runtimeCaching: RuntimeCaching[] = [
       ],
     }),
   },
-  // Static images (same-origin public assets; Supabase already NetworkOnly)
   {
     matcher: ({ sameOrigin, url }) =>
       sameOrigin && /\.(?:png|jpg|jpeg|svg|gif|webp|avif|ico)$/i.test(url.pathname),
@@ -135,7 +166,6 @@ const runtimeCaching: RuntimeCaching[] = [
       ],
     }),
   },
-  // next/image optimizer
   {
     matcher: /\/_next\/image\?.*/i,
     handler: new StaleWhileRevalidate({
@@ -148,7 +178,6 @@ const runtimeCaching: RuntimeCaching[] = [
       ],
     }),
   },
-  // App Router RSC payloads for browsable pages
   {
     matcher: ({ request, url, sameOrigin }) =>
       sameOrigin &&
@@ -166,7 +195,6 @@ const runtimeCaching: RuntimeCaching[] = [
       ],
     }),
   },
-  // Page shells — NetworkFirst so offline uses cache, online refreshes
   {
     matcher: ({ request, url }) =>
       request.mode === "navigate" && !isLivePath(url.pathname),

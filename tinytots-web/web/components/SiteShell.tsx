@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
 import HeaderCart from "@/components/HeaderCart";
+import CartStickyBar from "@/components/CartStickyBar";
 import MobileSubNav from "@/components/MobileSubNav";
 import { shouldShowFooterFaq } from "@/components/FooterFaq";
 import { useAuth } from "@/lib/auth-context";
@@ -319,7 +320,10 @@ function MobileMenu({ open, onClose, topOffset }: { open: boolean; onClose: () =
         </div>
         <div>
           <p className="font-label-lg text-label-lg text-primary font-semibold uppercase tracking-wider mb-1 px-3">My TinyTots</p>
+          <MenuLink href="/login" label="Sign in" icon="login" />
+          <MenuLink href="/signup" label="Sign up" icon="person_add" />
           <MenuLink href="/account" label="My Account" icon="person" />
+          <MenuLink href="/cart" label="Cart" icon="shopping_bag" />
           <MenuLink href="/account/wishlist" label="Wishlist" icon="favorite" />
           <MenuLink href="/track-order" label="Track Order" icon="local_shipping" />
           <MenuLink href="/account/returns" label="Returns & Refunds" icon="assignment_return" />
@@ -352,23 +356,24 @@ function AccountMenu() {
 
   if (!user) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <Link
           href="/login"
-          className="hidden sm:inline-block font-body-sm text-body-sm text-on-surface-variant hover:text-primary px-3 py-2 rounded-full transition-colors"
+          className="hidden md:inline-block font-body-sm text-body-sm text-on-surface-variant hover:text-primary px-3 py-2 rounded-full transition-colors"
         >
           Sign in
         </Link>
         <Link
           href="/signup"
-          className="font-body-sm text-body-sm bg-primary-container text-on-primary px-4 py-2 rounded-full hover:bg-primary transition-colors whitespace-nowrap"
+          className="hidden md:inline-block font-body-sm text-body-sm bg-primary-container text-on-primary px-4 py-2 rounded-full hover:bg-primary transition-colors whitespace-nowrap"
         >
           Sign up
         </Link>
         <Link
           href="/login"
-          className="sm:hidden text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
-          title="Log in"
+          className="md:hidden text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
+          title="Account"
+          aria-label="Account"
         >
           <span className="material-symbols-outlined">person</span>
         </Link>
@@ -547,15 +552,16 @@ export default function SiteShell({
                     <MegaMenu />
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <button onClick={() => setSearchOpen((o) => !o)} className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Search">
+                <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
+                  <div className="relative shrink-0">
+                    <button onClick={() => setSearchOpen((o) => !o)} className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Search" aria-label="Search">
                       <span className="material-symbols-outlined">search</span>
                     </button>
                     {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
                   </div>
-                  <AccountMenu />
+                  {/* Cart before account so it isn’t clipped off-screen by Sign up on narrow phones */}
                   <HeaderCart />
+                  <AccountMenu />
                 </div>
               </nav>
             </header>
@@ -563,9 +569,10 @@ export default function SiteShell({
 
             <MobileMenu open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} topOffset={headerHeight} />
             {!mobileMenuOpen && <MobileSubNav />}
+            <CartStickyBar />
 
             {/* MAIN CONTENT AREA */}
-            <main className="flex-grow w-full max-w-container-max mx-auto min-w-0 px-margin-mobile md:px-margin-desktop">
+            <main className="flex-grow w-full max-w-container-max mx-auto min-w-0 px-margin-mobile md:px-margin-desktop pb-24 md:pb-8">
               {children}
             </main>
 

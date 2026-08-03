@@ -119,7 +119,7 @@ export default function CheckoutPage() {
     setServerError(null);
     if (!validate()) return;
     if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setServerError("You're offline. Reconnect to place your order.");
+      setServerError("You're offline, please reconnect");
       return;
     }
 
@@ -169,7 +169,7 @@ export default function CheckoutPage() {
     } catch {
       setServerError(
         typeof navigator !== "undefined" && !navigator.onLine
-          ? "You're offline. Reconnect to place your order."
+          ? "You're offline, please reconnect"
           : "Network error. Please try again."
       );
       setSubmitting(false);

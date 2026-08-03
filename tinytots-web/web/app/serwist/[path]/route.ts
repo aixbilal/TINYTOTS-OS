@@ -13,6 +13,18 @@ export const { dynamic, dynamicParams, revalidate, generateStaticParams, GET } =
       { url: "/offline", revision },
       { url: "/~offline", revision },
     ],
+    // Strip live commerce/auth URLs from the precache manifest.
+    manifestTransforms: [
+      async (entries) => ({
+        manifest: entries.filter((entry) => {
+          const url = entry.url.split("?")[0];
+          return !/\/(cart|checkout|login|signup|account|admin|forgot-password|reset-password|track-order|order-confirmation)(\/|$)/.test(
+            url
+          ) && !url.startsWith("/api/");
+        }),
+        warnings: [],
+      }),
+    ],
     // Native esbuild is preferred on Windows per @serwist/turbopack defaults.
     useNativeEsbuild: true,
   });

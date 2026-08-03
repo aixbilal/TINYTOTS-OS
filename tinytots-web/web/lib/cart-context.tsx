@@ -41,6 +41,9 @@ type CartContextType = {
   applyVoucher: (voucher: AppliedVoucher) => void;
   clearVoucher: () => void;
   total: number;
+  /** Sticky “view cart” bar — shown after add-to-cart until dismissed. */
+  cartBarVisible: boolean;
+  dismissCartBar: () => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -49,6 +52,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [appliedVoucher, setAppliedVoucher] = useState<AppliedVoucher | null>(null);
+  const [cartBarVisible, setCartBarVisible] = useState(false);
 
   function addItem(item: Omit<CartItem, "quantity">, quantity: number) {
     setItems((prev) => {
@@ -61,6 +65,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { ...item, quantity: Math.min(quantity, item.maxStock) }];
     });
+    setCartBarVisible(true);
+  }
+
+  function dismissCartBar() {
+    setCartBarVisible(false);
   }
 
   function updateQuantity(variantId: number, quantity: number) {
@@ -83,6 +92,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
     setAppliedCoupon(null);
     setAppliedVoucher(null);
+    setCartBarVisible(false);
   }
 
   function applyCoupon(coupon: AppliedCoupon) {
@@ -125,6 +135,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         applyVoucher,
         clearVoucher,
         total,
+        cartBarVisible,
+        dismissCartBar,
       }}
     >
       {children}

@@ -9,12 +9,15 @@ export default function HeaderCart() {
   return (
     <Link
       href="/cart"
-      className="relative text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
+      aria-label={totalItems > 0 ? `Cart, ${totalItems} items` : "Cart"}
+      className="relative shrink-0 text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
     >
-      <span className="material-symbols-outlined">shopping_bag</span>
+      <span className="material-symbols-outlined" aria-hidden>
+        shopping_bag
+      </span>
       {totalItems > 0 && (
-        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold rounded-full bg-primary text-on-primary">
-          {totalItems}
+        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold rounded-full bg-primary text-on-primary">
+          {totalItems > 99 ? "99+" : totalItems}
         </span>
       )}
     </Link>

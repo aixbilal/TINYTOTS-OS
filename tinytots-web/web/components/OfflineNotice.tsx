@@ -30,7 +30,7 @@ export default function OfflineNotice({ feature = "this page" }: { feature?: str
       className="mb-stack-md rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-left"
     >
       <p className="font-headline-sm text-headline-sm text-on-surface mb-1">
-        You&apos;re offline
+        You&apos;re offline, please reconnect
       </p>
       <p className="font-body-sm text-body-sm text-on-surface-variant">
         {feature} can&apos;t run live offline (prices, stock, orders). Cached
