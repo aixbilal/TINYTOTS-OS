@@ -22,7 +22,7 @@ const FAQ_ITEMS: FaqItem[] = [
     question: "What's your return policy?",
     answer: (
       <>
-        3 days from delivery, items unworn with tags attached. See our{" "}
+        7 days from delivery, items unworn with tags attached. See our{" "}
         <Link href="/shipping-returns" className="text-primary font-medium hover:underline">
           Shipping &amp; Returns
         </Link>{" "}

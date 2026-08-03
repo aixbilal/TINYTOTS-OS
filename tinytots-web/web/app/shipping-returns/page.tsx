@@ -31,7 +31,7 @@ const FALLBACK = {
     {
       icon: "assignment_return",
       title: "Request Initiation",
-      body: "Start a return request within 3 days of delivery, via our Report an Issue page or by emailing support@tinytotsofficial.com. Items must be unworn and unwashed, with tags intact.",
+      body: "Start a return request within 7 days of delivery, via our Report an Issue page or by emailing support@tinytotsofficial.com. Items must be unworn and unwashed, with tags intact.",
     },
     {
       icon: "airport_shuttle",

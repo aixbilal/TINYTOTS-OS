@@ -6,9 +6,15 @@ interface UspItem {
   description: string;
 }
 
+const CARD_WIDTH_PX = 220;
+const CARD_GAP_PX = 16;
+
 function UspCard({ item }: { item: UspItem }) {
   return (
-    <div className="shrink-0 w-[220px] flex flex-col items-center text-center gap-2 p-5 rounded-xl bg-surface-container-lowest border border-outline-variant/20 mx-2">
+    <div
+      className="shrink-0 flex flex-col items-center text-center gap-2 p-5 rounded-xl bg-surface-container-lowest border border-outline-variant/20"
+      style={{ width: CARD_WIDTH_PX }}
+    >
       <span className="material-symbols-outlined text-primary text-[32px]">{item.icon || "star"}</span>
       <h3 className="font-headline-md text-headline-md text-on-surface">{item.title}</h3>
       <p className="font-body-sm text-body-sm text-on-surface-variant">{item.description}</p>
@@ -16,24 +22,53 @@ function UspCard({ item }: { item: UspItem }) {
   );
 }
 
-// A continuously-scrolling strip of USP cards (pauses on hover), instead of
-// a static grid — same seamless double-copy technique as the announcement
-// bar ticker, just with cards instead of text.
+/** Repeat items until one loop unit is wide enough for a seamless -50% scroll on large screens. */
+function expandLoopUnit(items: UspItem[], minWidthPx = 1400): UspItem[] {
+  if (items.length === 0) return [];
+  // Each card contributes width + trailing gap (pr on the unit keeps junction spacing identical).
+  const unitWidth = items.length * (CARD_WIDTH_PX + CARD_GAP_PX);
+  const reps = Math.max(1, Math.ceil(minWidthPx / unitWidth));
+  const out: UspItem[] = [];
+  for (let i = 0; i < reps; i++) out.push(...items);
+  return out;
+}
+
+function LoopUnit({ items }: { items: UspItem[] }) {
+  return (
+    <div className="flex shrink-0" style={{ gap: CARD_GAP_PX, paddingRight: CARD_GAP_PX }}>
+      {items.map((item, i) => (
+        <UspCard key={i} item={item} />
+      ))}
+    </div>
+  );
+}
+
+// Full-bleed infinite marquee. Breaks out of page horizontal padding so cards
+// scroll off the real viewport edge instead of being hard-clipped mid-card
+// inside the content column. Soft side fades soften the overflow edges.
 export default function UspMarquee({ items }: { items: UspItem[] }) {
   if (items.length === 0) return null;
 
+  const unit = expandLoopUnit(items);
+  const durationSec = Math.max(25, Math.round(unit.length * 3.5));
+
   return (
-    <div className="overflow-hidden py-2 group">
-      <div className="flex w-max group-hover:[animation-play-state:paused]" style={{ animation: "marquee-loop 25s linear infinite" }}>
-        <div className="flex shrink-0">
-          {items.map((item, i) => (
-            <UspCard key={`a-${i}`} item={item} />
-          ))}
-        </div>
-        <div className="flex shrink-0" aria-hidden="true">
-          {items.map((item, i) => (
-            <UspCard key={`b-${i}`} item={item} />
-          ))}
+    <div
+      className="relative w-screen max-w-[100vw] left-1/2 -translate-x-1/2 overflow-hidden py-2 group"
+      style={{
+        maskImage:
+          "linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%)",
+        WebkitMaskImage:
+          "linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%)",
+      }}
+    >
+      <div
+        className="flex w-max group-hover:[animation-play-state:paused]"
+        style={{ animation: `marquee-loop ${durationSec}s linear infinite` }}
+      >
+        <LoopUnit items={unit} />
+        <div aria-hidden="true">
+          <LoopUnit items={unit} />
         </div>
       </div>
     </div>
