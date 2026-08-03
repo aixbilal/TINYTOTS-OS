@@ -8,6 +8,7 @@ import ProductCardStack from "@/components/ProductCardStack";
 import TestimonialsCarousel from "@/components/TestimonialsCarousel";
 import HomepageHero from "@/components/HomepageHero";
 import { resolveHeroSlides } from "@/lib/hero-slides";
+import { absoluteUrl } from "@/lib/site-url";
 
 // Same root cause and fix as app/products/[id]/page.tsx and
 // app/api/products/route.ts — without this, Next.js caches this Server
@@ -16,13 +17,9 @@ import { resolveHeroSlides } from "@/lib/hero-slides";
 // full rebuild.
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: {
-    absolute: "TinyTots | Premium Kids Clothing",
-  },
-  description:
-    "Ethically crafted, modern essentials for every stage of your child's early journey. Soft, durable kids clothing with free delivery and easy 7-day returns.",
-};
+const HOME_TITLE = "TinyTots | Premium Kids Clothing";
+const HOME_DESCRIPTION =
+  "Ethically crafted, modern essentials for every stage of your child's early journey. Soft, durable kids clothing with free delivery and easy 7-day returns.";
 
 const PRODUCT_SELECT = `
   id,
@@ -141,6 +138,36 @@ const HOMEPAGE_DEFAULTS = {
 async function getHomepageContent() {
   const { data } = await supabase.from("homepage_content").select("*").eq("id", 1).single();
   return data || HOMEPAGE_DEFAULTS;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const content = await getHomepageContent();
+  const slides = resolveHeroSlides(content);
+  const ogImage =
+    slides[0]?.image_url ||
+    content.hero_image_url ||
+    HOMEPAGE_DEFAULTS.hero_image_url;
+
+  return {
+    title: { absolute: HOME_TITLE },
+    description: HOME_DESCRIPTION,
+    alternates: { canonical: absoluteUrl("/") },
+    openGraph: {
+      type: "website",
+      title: HOME_TITLE,
+      description: HOME_DESCRIPTION,
+      url: absoluteUrl("/"),
+      images: ogImage
+        ? [{ url: ogImage, width: 1200, height: 630, alt: "TinyTots" }]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: HOME_TITLE,
+      description: HOME_DESCRIPTION,
+      images: ogImage ? [ogImage] : undefined,
+    },
+  };
 }
 
 function sectionLink(

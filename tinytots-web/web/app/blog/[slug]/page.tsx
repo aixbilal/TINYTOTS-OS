@@ -1,9 +1,53 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { normalizeQuillHtml } from "@/lib/html-text";
+import { htmlToPlainText, normalizeQuillHtml } from "@/lib/html-text";
+import { absoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const { data: post } = await supabaseAdmin
+    .from("blog_posts")
+    .select("title, content, featured_image_url, is_published")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (!post || !post.is_published) {
+    return { title: "Blog" };
+  }
+
+  const description =
+    htmlToPlainText(post.content || "", 155) || `${post.title} — TinyTots Blog`;
+  const title = post.title;
+  const url = absoluteUrl(`/blog/${slug}`);
+  const image = post.featured_image_url || undefined;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      url,
+      images: image ? [{ url: image, alt: title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
+}
 
 export default async function BlogPostPage({
   params,

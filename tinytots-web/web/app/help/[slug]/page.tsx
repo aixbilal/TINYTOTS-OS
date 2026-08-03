@@ -7,6 +7,7 @@ import {
   helpCategoryLabel,
   normalizeHelpCategory,
 } from "@/lib/help-categories";
+import { absoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -26,11 +27,27 @@ export async function generateMetadata({
     return { title: "Help Center" };
   }
 
+  const description =
+    htmlToPlainText(article.content || "", 155) ||
+    `${article.title} — TinyTots Help Center`;
+  const title = article.title;
+  const url = absoluteUrl(`/help/${slug}`);
+
   return {
-    title: article.title,
-    description:
-      htmlToPlainText(article.content || "", 155) ||
-      `${article.title} — TinyTots Help Center`,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      url,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }
 

@@ -6,6 +6,7 @@ import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 import { getRelatedProductsForPdp } from "@/lib/related-products";
 import { getShopMoreCategories } from "@/lib/shop-more-categories";
 import { htmlToPlainText } from "@/lib/html-text";
+import { absoluteUrl } from "@/lib/site-url";
 import Link from "next/link";
 
 // Without this, Next.js caches the Supabase data fetch indefinitely, so
@@ -22,7 +23,7 @@ export async function generateMetadata({
   const { id } = await params;
   const { data: product } = await supabase
     .from("products")
-    .select("name, description, brand, category")
+    .select("name, description, brand, category, image_url")
     .eq("id", id)
     .eq("is_active", true)
     .maybeSingle();
@@ -38,12 +39,48 @@ export async function generateMetadata({
   const fallback = [product.brand, product.category, "kids clothing from TinyTots"]
     .filter(Boolean)
     .join(" · ");
+  const description = fromDescription || fallback;
+  const title = `${product.name} | TinyTots`;
+  const url = absoluteUrl(`/products/${id}`);
+
+  let imageUrl = product.image_url || "";
+  if (!imageUrl) {
+    const { data: primary } = await supabase
+      .from("product_images")
+      .select("storage_path")
+      .eq("product_id", id)
+      .order("is_primary", { ascending: false })
+      .order("sort_order", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (primary?.storage_path) {
+      imageUrl = supabase.storage
+        .from("product-images")
+        .getPublicUrl(primary.storage_path).data.publicUrl;
+    }
+  }
 
   return {
     // absolute: parent /products layout also sets a title; without absolute,
     // Next can omit the root `%s | TinyTots` template on this segment.
-    title: { absolute: `${product.name} | TinyTots` },
-    description: fromDescription || fallback,
+    title: { absolute: title },
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url,
+      images: imageUrl
+        ? [{ url: imageUrl, width: 800, height: 800, alt: product.name }]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: imageUrl ? [imageUrl] : undefined,
+    },
   };
 }
 
@@ -124,8 +161,50 @@ export default async function ProductDetailPage({
       ? [{ id: 0, url: product.image_url, is_primary: true, variant_ids: [] }]
       : [];
 
+  const pricedVariants = (product.variants || []).filter(
+    (v: { price?: number | null; web_price?: number | null; stock?: number | null }) =>
+      Number(v.web_price ?? v.price ?? 0) > 0
+  );
+  const lowPrice = pricedVariants.reduce((min: number, v: { price?: number | null; web_price?: number | null }) => {
+    const p = Number(v.web_price ?? v.price ?? 0);
+    return min === 0 || p < min ? p : min;
+  }, 0);
+  const highPrice = pricedVariants.reduce((max: number, v: { price?: number | null; web_price?: number | null }) => {
+    const p = Number(v.web_price ?? v.price ?? 0);
+    return p > max ? p : max;
+  }, 0);
+  const inStock = (product.variants || []).some(
+    (v: { stock?: number | null }) => Number(v.stock || 0) > 0
+  );
+  const primaryImage =
+    galleryImages.find((img) => img.is_primary)?.url || galleryImages[0]?.url || product.image_url || undefined;
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: htmlToPlainText(product.description || "", 300) || product.name,
+    image: primaryImage ? [primaryImage] : undefined,
+    brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined,
+    sku: product.sku || undefined,
+    offers: {
+      "@type": lowPrice && highPrice && lowPrice !== highPrice ? "AggregateOffer" : "Offer",
+      url: absoluteUrl(`/products/${product.id}`),
+      priceCurrency: "PKR",
+      ...(lowPrice && highPrice && lowPrice !== highPrice
+        ? { lowPrice: String(lowPrice), highPrice: String(highPrice), offerCount: pricedVariants.length }
+        : { price: String(lowPrice || highPrice || 0) }),
+      availability: inStock
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+    },
+  };
+
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <nav className="text-body-sm font-body-sm text-on-surface-variant mb-stack-sm flex items-center gap-2">
         <Link href="/" className="hover:text-primary transition-colors">Home</Link>
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>

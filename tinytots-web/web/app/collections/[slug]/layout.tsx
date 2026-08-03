@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
+import { absoluteUrl } from "@/lib/site-url";
 
 export async function generateMetadata({
   params,
@@ -14,10 +15,25 @@ export async function generateMetadata({
     .maybeSingle();
 
   const name = category?.name || slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const title = name;
+  const description = `Shop ${name} for kids at TinyTots — soft, durable essentials with free delivery and easy 7-day returns.`;
+  const url = absoluteUrl(`/collections/${slug}`);
 
   return {
-    title: name,
-    description: `Shop ${name} for kids at TinyTots — soft, durable essentials with free delivery and easy 7-day returns.`,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      title: `${title} | TinyTots`,
+      description,
+      url,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | TinyTots`,
+      description,
+    },
   };
 }
 
