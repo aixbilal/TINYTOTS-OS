@@ -22,7 +22,6 @@ import Login from "./screens/Login.jsx";
 import Dashboard from "./screens/Dashboard.jsx";
 import Inventory from "./screens/Inventory.jsx";
 import POS from "./screens/POS.jsx";
-import ReceiptPrintPage from "./receipts/ReceiptPrintPage";
 import LowStock from "./screens/LowStock";
 
 import PerformanceGoals from "./screens/PerformanceGoals";
@@ -80,10 +79,14 @@ createRoot(document.getElementById("root")).render(
           </RequireAuth>
         }
       />
-     <Route path="/low-stock" element={<LowStock />} />
-      {/* Used internally by Electron's hidden print window — unchanged,
-          no login needed since it's never user-navigated to directly */}
-      <Route path="/print" element={<ReceiptPrintPage />} />
+      <Route
+        path="/low-stock"
+        element={
+          <RequireAuth adminOnly>
+            <LowStock />
+          </RequireAuth>
+        }
+      />
     </Routes>
   </HashRouter>
 );

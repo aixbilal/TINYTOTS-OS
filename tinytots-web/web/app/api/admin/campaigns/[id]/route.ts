@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   const { data, error } = await supabaseAdmin.from("campaigns").select("*").eq("id", id).maybeSingle();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/campaigns/[id]");
   if (!data) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
   return NextResponse.json({ campaign: data });
 }
@@ -261,7 +262,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .select("*")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/campaigns/[id]");
   return NextResponse.json({ campaign: data });
 }
 
@@ -302,7 +303,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
 
   const { error } = await supabaseAdmin.from("campaigns").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/campaigns/[id]");
   const footer = target?.footer_settings as Record<string, unknown> | null;
   await removeUnreferencedCampaignAssets([
     target?.hero_banner_original_url || null,

@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -56,7 +57,7 @@ export async function GET(
     .eq("product_id", id)
     .order("sort_order", { ascending: true });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/products/[id]/images");
 
   const withUrls = await Promise.all(
     (data || []).map(async (img) => {
@@ -131,7 +132,7 @@ export async function POST(
       .upload(storagePath, arrayBuffer, { contentType: file.type, upsert: false });
 
     if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      return apiErrorResponse(uploadError, 500, "admin/products/[id]/images");
     }
 
     // If this is the first image for the product, or the caller asked for it,
@@ -168,7 +169,7 @@ export async function POST(
     if (insertError) {
       // Roll back the uploaded file so we don't leave orphaned storage objects
       await supabaseAdmin.storage.from(BUCKET).remove([storagePath]);
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      return apiErrorResponse(insertError, 500, "admin/products/[id]/images");
     }
 
     if (shouldBePrimary) {
@@ -205,7 +206,7 @@ export async function POST(
     );
   } catch (err: any) {
     console.error("POST /api/admin/products/[id]/images crashed:", err);
-    return NextResponse.json({ error: err?.message || "Unexpected server error" }, { status: 500 });
+    return apiErrorResponse(err, 500, "admin/products/[id]/images");
   }
 }
 
@@ -236,7 +237,7 @@ export async function PATCH(
         .eq("id", body.image_id)
         .eq("product_id", productId);
 
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) return apiErrorResponse(error, 500, "admin/products/[id]/images");
 
       await syncPrimaryImageUrl(productId);
       return NextResponse.json({ success: true }, { status: 200 });
@@ -259,7 +260,7 @@ export async function PATCH(
       { status: 400 }
     );
   } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Invalid request body" }, { status: 400 });
+    return apiErrorResponse(err, 400, "admin/products/[id]/images");
   }
 }
 
@@ -295,7 +296,7 @@ export async function DELETE(
     .eq("id", imageId);
 
   if (deleteRowError) {
-    return NextResponse.json({ error: deleteRowError.message }, { status: 500 });
+    return apiErrorResponse(deleteRowError, 500, "admin/products/[id]/images");
   }
 
   // Best-effort storage cleanup — the DB row is already gone either way

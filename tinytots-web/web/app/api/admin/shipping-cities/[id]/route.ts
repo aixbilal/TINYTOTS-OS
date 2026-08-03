@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -12,6 +13,6 @@ export async function DELETE(
   const params = await (context.params as any);
   const { error } = await supabaseAdmin.from("shipping_cities").delete().eq("id", params.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/shipping-cities/[id]");
   return NextResponse.json({ success: true });
 }

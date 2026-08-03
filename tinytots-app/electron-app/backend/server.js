@@ -34,12 +34,21 @@ const app = express();
 
 // Local POS only — not internet-facing. POS_API_SECRET must match VITE_POS_API_SECRET.
 const DEV_POS_FALLBACK_SECRET = "tinytots-local-pos-dev-token";
+const FORBIDDEN_SECRETS = new Set([
+  DEV_POS_FALLBACK_SECRET,
+  "change-me-to-a-long-random-string",
+]);
 const isProd = process.env.NODE_ENV === "production";
+const isEmbedded = process.env.POS_EMBEDDED === "1";
+const requireRealSecret = isProd || isEmbedded;
 
-if (!process.env.POS_API_SECRET) {
-  if (isProd) {
+const configuredSecret = (process.env.POS_API_SECRET || "").trim();
+
+if (!configuredSecret) {
+  if (requireRealSecret) {
     console.error(
-      "FATAL: POS_API_SECRET is not set. Refusing to start in production without a shared secret."
+      "FATAL: POS_API_SECRET is not set. Refusing to start without a shared secret " +
+        "(production / embedded Electron)."
     );
     process.exit(1);
   }
@@ -47,14 +56,32 @@ if (!process.env.POS_API_SECRET) {
     "WARNING: POS_API_SECRET is unset — using the well-known dev default. " +
       "Set POS_API_SECRET in backend/.env (and matching VITE_POS_API_SECRET in the Electron root .env)."
   );
+} else if (requireRealSecret && FORBIDDEN_SECRETS.has(configuredSecret)) {
+  console.error(
+    "FATAL: POS_API_SECRET is set to a known local-dev fallback. " +
+      "Use a real secret that matches VITE_POS_API_SECRET."
+  );
+  process.exit(1);
 }
 
-const POS_API_SECRET = process.env.POS_API_SECRET || DEV_POS_FALLBACK_SECRET;
+const POS_API_SECRET = configuredSecret || DEV_POS_FALLBACK_SECRET;
 const POS_TAX_RATE = Number(process.env.POS_TAX_RATE ?? 0.05);
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    // Local POS only. Allow Vite dev, and packaged Electron (file:// / null origin).
+    origin(origin, callback) {
+      if (
+        !origin ||
+        origin === "null" ||
+        origin.startsWith("file://") ||
+        origin.startsWith("http://localhost:") ||
+        origin.startsWith("http://127.0.0.1:")
+      ) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     allowedHeaders: ["Content-Type", "X-POS-Token"],
   })
 );
@@ -74,7 +101,10 @@ app.use("/api", (req, res, next) => {
   return next();
 });
 
-app.use("/webhook", whatsappWebhook);
+// WhatsApp webhooks need a single always-on public host — skip on each POS till.
+if (!isEmbedded) {
+  app.use("/webhook", whatsappWebhook);
+}
 
 // ----------------------------------------------------
 // PATHS
@@ -83,7 +113,12 @@ app.use("/webhook", whatsappWebhook);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const RECEIPT_FOLDER = path.join(__dirname, "receipts");
+// When spawned by Electron, write under userData (extraResources / asar are not writable).
+const DATA_ROOT = process.env.POS_DATA_DIR
+  ? path.resolve(process.env.POS_DATA_DIR)
+  : __dirname;
+
+const RECEIPT_FOLDER = path.join(DATA_ROOT, "receipts");
 
 if (!fs.existsSync(RECEIPT_FOLDER)) {
   fs.mkdirSync(RECEIPT_FOLDER, { recursive: true });
@@ -827,7 +862,7 @@ app.get("/api/low-stock", async (req, res) => {
 // DYNAMIC INVENTORY
 // ----------------------------------------------------
 
-const LABEL_FOLDER = path.join(__dirname, "labels");
+const LABEL_FOLDER = path.join(DATA_ROOT, "labels");
 if (!fs.existsSync(LABEL_FOLDER)) {
   fs.mkdirSync(LABEL_FOLDER, { recursive: true });
 }
@@ -1069,38 +1104,6 @@ app.post("/api/products/:id/variants", async (req, res) => {
     if (err.code === "23505" || /duplicate key/i.test(err.message || "")) {
       return res.status(409).json({ success: false, message: "One of those color/size combinations already exists for this product." });
     }
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// ----------------------------------------------------
-// APPLY DISCOUNT TO ALL VARIANTS OF A PRODUCT
-// ----------------------------------------------------
-app.put("/api/products/:id/discount", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { discount_percent } = req.body;
-    const discountPct = Number(discount_percent) || 0;
-
-    const { data: variants, error: fetchErr } = await supabase
-      .from("variants")
-      .select("id, base_price")
-      .eq("product_id", id);
-    if (fetchErr) throw fetchErr;
-
-    await Promise.all(
-      variants.map((v) => {
-        const newPrice = Math.round((v.base_price || 0) * (1 - discountPct / 100) * 100) / 100;
-        return supabase
-          .from("variants")
-          .update({ discount_percent: discountPct, price: newPrice })
-          .eq("id", v.id);
-      })
-    );
-
-    res.json({ success: true, updated: variants.length });
-  } catch (err) {
-    console.error("Bulk discount error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -2240,13 +2243,33 @@ app.delete("/api/notifications", async (req, res) => {
   }
 });
 
-// Check for any missed report
-await recoverMissedReport();
-
-// Start scheduled jobs
-startCronJobs();
+// Cron stays off in embedded mode (no 23:59 job inside the POS till).
+// Standalone backend: recover then schedule crons as before.
+if (!isEmbedded) {
+  await recoverMissedReport();
+  startCronJobs();
+} else {
+  console.log(
+    "[POS] Embedded mode: WhatsApp webhook + cron jobs disabled; " +
+      "missed daily report will be checked asynchronously after listen."
+  );
+}
 
 // Start Express server — localhost only (not reachable from the LAN/internet)
 app.listen(PORT, "127.0.0.1", () => {
   console.log(`Server running on http://127.0.0.1:${PORT}`);
+
+  // Packaged POS: on every launch, reuse recoverMissedReport() (report_history
+  // gated — no duplicate emails). Fire-and-forget so /api/health and the UI
+  // are not blocked while SMTP runs.
+  if (isEmbedded) {
+    void recoverMissedReport()
+      .then(() => {
+        console.log("[POS] Embedded missed-report check finished.");
+      })
+      .catch((err) => {
+        console.error("[POS] Embedded missed-report check failed (UI unaffected):");
+        console.error(err);
+      });
+  }
 });

@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -16,6 +17,6 @@ export async function GET(req: NextRequest) {
     .not("slug", "in", "(our-story,shipping-returns)")
     .order("slug", { ascending: true });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/pages");
   return NextResponse.json({ pages: data });
 }

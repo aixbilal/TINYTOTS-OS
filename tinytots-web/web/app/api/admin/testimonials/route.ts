@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/testimonials");
   return NextResponse.json({ testimonials: data });
 }
 
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { data, error } = await supabaseAdmin.from("testimonials").insert(parsed.data).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/testimonials");
 
   const { data: activeCampaign } = await supabaseAdmin
     .from("campaigns")
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
       .eq("id", activeCampaign.id);
     if (campaignError) {
       await supabaseAdmin.from("testimonials").delete().eq("id", data.id);
-      return NextResponse.json({ error: campaignError.message }, { status: 500 });
+      return apiErrorResponse(campaignError, 500, "admin/testimonials");
     }
   }
 

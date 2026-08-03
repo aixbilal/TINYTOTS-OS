@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiErrorResponse } from "@/lib/api-error";
+import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 import { normalizeSignageProductBadge } from "@/lib/signage-campaign";
@@ -40,7 +41,7 @@ export async function GET(
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 404 });
+    return apiErrorResponse(error, 404, "products/[id]");
   }
 
   return NextResponse.json({ data: product }, { status: 200 });
@@ -137,7 +138,7 @@ export async function PUT(
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiErrorResponse(error, 500, "products/[id]");
     }
     return NextResponse.json({ success: true, data }, { status: 200 });
   } catch {
@@ -161,7 +162,7 @@ export async function DELETE(
     .eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return apiErrorResponse(error, 500, "products/[id]");
   }
   return NextResponse.json({ success: true }, { status: 200 });
 }

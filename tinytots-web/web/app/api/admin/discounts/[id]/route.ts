@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -39,7 +40,7 @@ export async function PUT(
           .select("id, base_price")
           .in("product_id", targetProductIds);
   
-        if (fetchVariantsError) return NextResponse.json({ error: fetchVariantsError.message }, { status: 500 });
+        if (fetchVariantsError) return apiErrorResponse(fetchVariantsError, 500, "admin/discounts/[id]");
   
         const resets = (variantsToReset || []).map((v) =>
           supabaseAdmin
@@ -50,7 +51,7 @@ export async function PUT(
   
         const results = await Promise.all(resets);
         const failed = results.find((r) => r.error);
-        if (failed?.error) return NextResponse.json({ error: failed.error.message }, { status: 500 });
+        if (failed?.error) return apiErrorResponse(failed.error, 500, "admin/discounts/[id]");
       }
 
     const { error: updateError } = await supabaseAdmin
@@ -58,7 +59,7 @@ export async function PUT(
       .update({ is_active: false, ends_at: new Date().toISOString() })
       .eq("id", id);
 
-    if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+    if (updateError) return apiErrorResponse(updateError, 500, "admin/discounts/[id]");
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (err) {

@@ -12,7 +12,8 @@ body {
   padding: 0;
   background: #ffffff;
   color: #000;
-  font-family: "Courier New", monospace;
+  /* Match app mono stack — thermal receipts stay monospace for alignment */
+  font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 
 /* ========================= */
@@ -31,7 +32,7 @@ body {
 /* Used by the rebuilt ReceiptTemplate, which renders fixed-width
    monospace text lines (like the Tiny Tots sample) inside a <pre>. */
 .receipt-mono {
-  font-family: "Courier New", monospace;
+  font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   white-space: pre;
   overflow-x: hidden;
   margin: 0;

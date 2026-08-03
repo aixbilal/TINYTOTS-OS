@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -10,7 +11,7 @@ export async function GET() {
     .select("testimonial_ids")
     .eq("is_active", true)
     .maybeSingle();
-  if (campaignError) return NextResponse.json({ error: campaignError.message }, { status: 500 });
+  if (campaignError) return apiErrorResponse(campaignError, 500, "testimonials");
   if (!campaign?.testimonial_ids?.length) return NextResponse.json({ testimonials: [] });
 
   const { data, error } = await supabaseAdmin
@@ -21,6 +22,6 @@ export async function GET() {
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "testimonials");
   return NextResponse.json({ testimonials: data });
 }

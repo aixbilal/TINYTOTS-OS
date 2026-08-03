@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -96,10 +97,10 @@ export async function PATCH(
       .select()
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return apiErrorResponse(error, 500, "admin/blog/[id]");
     return NextResponse.json({ post });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to update post" }, { status: 500 });
+    return apiErrorResponse(err, 500, "admin/blog/[id]");
   }
 }
 
@@ -113,6 +114,6 @@ export async function DELETE(
   const params = await (context.params as any);
   const { error } = await supabaseAdmin.from("blog_posts").delete().eq("id", params.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/blog/[id]");
   return NextResponse.json({ success: true });
 }

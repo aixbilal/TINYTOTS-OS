@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiErrorResponse } from "@/lib/api-error";
+import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 import { normalizeQuillHtml } from "@/lib/html-text";
@@ -51,7 +52,7 @@ export async function GET(request: Request) {
   const { data: rawProducts, error } = await query;
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return apiErrorResponse(error, 500, "products");
   }
 
   // Pick a non-primary gallery image (lowest sort_order) to power the
@@ -141,7 +142,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (productError) {
-      return NextResponse.json({ error: productError.message }, { status: 500 });
+      return apiErrorResponse(productError, 500, "products");
     }
 
     const variantRows = variants.map((v: any) => ({
@@ -163,7 +164,7 @@ export async function POST(request: NextRequest) {
 
     if (variantError) {
       await supabaseAdmin.from("products").delete().eq("id", product.id);
-      return NextResponse.json({ error: variantError.message }, { status: 500 });
+      return apiErrorResponse(variantError, 500, "products");
     }
 
     return NextResponse.json({ success: true, data: product }, { status: 201 });

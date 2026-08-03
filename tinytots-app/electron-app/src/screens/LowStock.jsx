@@ -28,7 +28,7 @@ export default function LowStock() {
 
       <div className="mb-8">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/dashboard")}
           className="inline-flex items-center gap-2 text-sm text-maroon-700 hover:underline mb-4"
         >
           <ArrowLeft size={16} />

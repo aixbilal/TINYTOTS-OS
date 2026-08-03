@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { supabase } from "@/lib/supabase";
+import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import ProductDetailInteractive from "@/components/ProductDetailInteractive";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 import { getRelatedProductsForPdp } from "@/lib/related-products";

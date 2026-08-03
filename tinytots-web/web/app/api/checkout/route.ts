@@ -1,13 +1,18 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import { getSettingNumber, getSetting } from "@/lib/settings";
+import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { Agent, setGlobalDispatcher } from "undici";
 
 setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+const CHECKOUT_WINDOW_MS = 15 * 60 * 1000;
+const CHECKOUT_LIMIT = 20;
 
 function calculateCodTier(orderTotal: number) {
   if (orderTotal < 5000) {
@@ -24,6 +29,12 @@ function calculateCodTier(orderTotal: number) {
 }
 
 export async function POST(request: NextRequest) {
+  const limited = await rateLimit(`checkout:${clientIp(request)}`, {
+    limit: CHECKOUT_LIMIT,
+    windowMs: CHECKOUT_WINDOW_MS,
+  });
+  if (!limited.ok) return rateLimitResponse(limited.retryAfterSec);
+
   try {
     const body = await request.json();
     const {
@@ -76,7 +87,7 @@ export async function POST(request: NextRequest) {
 
       const { data: customer, error: customerError } = await supabase
         .from("customers")
-        .select("id")
+        .select("id, phone")
         .eq("auth_user_id", userData.user.id)
         .maybeSingle();
 
@@ -84,6 +95,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { error: "Customer record not found for this account." },
           { status: 404 }
+        );
+      }
+      if (!customer.phone?.trim()) {
+        return NextResponse.json(
+          {
+            error:
+              "Please add a phone number to your account before checking out",
+          },
+          { status: 400 }
         );
       }
       customer_id = customer.id;
@@ -153,7 +173,7 @@ export async function POST(request: NextRequest) {
     .in("id", variantIds);
 
     if (variantError) {
-      return NextResponse.json({ error: variantError.message }, { status: 500 });
+      return apiErrorResponse(variantError, 500, "checkout");
     }
 
     // Validate stock and build order_items with authoritative prices
@@ -362,7 +382,7 @@ export async function POST(request: NextRequest) {
       .single();
 
       if (orderError) {
-        return NextResponse.json({ error: orderError.message }, { status: 500 });
+        return apiErrorResponse(orderError, 500, "checkout");
       }
 
     // Insert order_items — trg_deduct_stock_order_item locks the variant and
@@ -380,7 +400,7 @@ export async function POST(request: NextRequest) {
     if (itemsError) {
       // Roll back the empty order (restores orders_count via DELETE trigger)
       await supabase.from("orders").delete().eq("id", order.id);
-      return NextResponse.json({ error: itemsError.message }, { status: 500 });
+      return apiErrorResponse(itemsError, 500, "checkout");
     }
 
     // Atomic coupon claim after stock is reserved. On failure, remove items
@@ -393,11 +413,12 @@ export async function POST(request: NextRequest) {
       if (couponIncrementError || couponClaimed !== true) {
         await supabase.from("order_items").delete().eq("order_id", order.id);
         await supabase.from("orders").delete().eq("id", order.id);
+        if (couponIncrementError) {
+          return apiErrorResponse(couponIncrementError, 409, "checkout");
+        }
         return NextResponse.json(
           {
-            error:
-              couponIncrementError?.message ||
-              "This promo code is no longer available. Please remove it and try again.",
+            error: "This promo code is no longer available. Please remove it and try again.",
           },
           { status: 409 }
         );
@@ -451,9 +472,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Invalid request" },
-      { status: 400 }
-    );
+    return apiErrorResponse(err, 400, "checkout");
   }
 }

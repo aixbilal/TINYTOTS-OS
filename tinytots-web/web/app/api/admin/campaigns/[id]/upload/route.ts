@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (file) {
       const storagePath = `campaigns/${id}/banner/original-${stamp}.${extensionFor(file)}`;
       const { error: uploadError } = await uploadFile(storagePath, file);
-      if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      if (uploadError) return apiErrorResponse(uploadError, 500, "admin/campaigns/[id]/upload");
       uploadedPaths.push(storagePath);
 
       const originalUrl = publicUrlFor(storagePath);
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const { error: previewError } = await uploadFile(previewPath, preview);
       if (previewError) {
         if (uploadedPaths.length) await supabaseAdmin.storage.from(BUCKET).remove(uploadedPaths);
-        return NextResponse.json({ error: previewError.message }, { status: 500 });
+        return apiErrorResponse(previewError, 500, "admin/campaigns/[id]/upload");
       }
       uploadedPaths.push(previewPath);
       const previewUrl = publicUrlFor(previewPath);
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .single();
     if (updateError) {
       if (uploadedPaths.length) await supabaseAdmin.storage.from(BUCKET).remove(uploadedPaths);
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+      return apiErrorResponse(updateError, 500, "admin/campaigns/[id]/upload");
     }
 
     await removeUnreferencedCampaignAssets([
@@ -117,10 +118,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       campaign: updated,
     });
   } catch (err: unknown) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Upload failed" },
-      { status: 500 }
-    );
+    return apiErrorResponse(err, 500, "admin/campaigns/[id]/upload");
   }
 }
 
@@ -146,7 +144,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     .eq("id", id)
     .select("*")
     .single();
-  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+  if (updateError) return apiErrorResponse(updateError, 500, "admin/campaigns/[id]/upload");
 
   await removeUnreferencedCampaignAssets([campaign.hero_banner_original_url, campaign.hero_banner_preview_url]);
   return NextResponse.json({ campaign: updated });

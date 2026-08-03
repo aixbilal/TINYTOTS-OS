@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
     .order("created_at", { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return apiErrorResponse(error, 500, "admin/vouchers");
   }
 
   return NextResponse.json({ vouchers: data });
@@ -49,11 +50,11 @@ export async function PATCH(req: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiErrorResponse(error, 500, "admin/vouchers");
     }
 
     return NextResponse.json({ voucher });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to update voucher" }, { status: 500 });
+    return apiErrorResponse(err, 500, "admin/vouchers");
   }
 }

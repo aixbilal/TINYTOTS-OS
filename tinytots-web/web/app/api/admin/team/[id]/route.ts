@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -25,7 +26,7 @@ export async function PUT(
       .select()
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return apiErrorResponse(error, 500, "admin/team/[id]");
     return NextResponse.json({ success: true, data }, { status: 200 });
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });

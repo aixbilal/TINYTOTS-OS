@@ -86,7 +86,7 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
             </button>
           </div>
 
-          <div className="border border-gold-300/40 rounded-xl p-4 bg-white font-mono text-[11px] text-ink-900">
+          <div className="border border-gold-300/40 rounded-xl p-4 bg-white font-mono type-mono type-caption text-ink-900">
             <p className="text-center font-display type-body-lg mb-0.5">RETAIL EDGE</p>
             <p className="text-center type-label text-ink-700 mb-2">ELEVATE EVERY SALE</p>
             <div className="border-t border-dashed border-ink-700/30 my-2" />

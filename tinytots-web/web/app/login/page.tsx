@@ -30,17 +30,19 @@ export default function LoginPage() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
       });
+      const data = await res.json().catch(() => ({}));
 
-      if (error) {
-        if (error.message.toLowerCase().includes("email not confirmed")) {
-          setServerError("Please confirm your email first — check your inbox for the confirmation link.");
-        } else {
-          setServerError("Incorrect email or password.");
-        }
+      if (!res.ok) {
+        setServerError(
+          typeof data.error === "string"
+            ? data.error
+            : "Incorrect email or password."
+        );
         setSubmitting(false);
         return;
       }

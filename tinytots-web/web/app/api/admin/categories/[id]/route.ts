@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -49,12 +50,12 @@ export async function PATCH(
       if (error.message.toLowerCase().includes("duplicate")) {
         return NextResponse.json({ error: "A category with this name already exists" }, { status: 400 });
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiErrorResponse(error, 500, "admin/categories/[id]");
     }
 
     return NextResponse.json({ category: data });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to update category" }, { status: 500 });
+    return apiErrorResponse(err, 500, "admin/categories/[id]");
   }
 }
 
@@ -91,6 +92,6 @@ export async function DELETE(
   }
 
   const { error } = await supabaseAdmin.from("categories").delete().eq("id", params.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/categories/[id]");
   return NextResponse.json({ success: true });
 }

@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -29,7 +30,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/ugc-posts/[id]");
   return NextResponse.json({ post: data });
 }
 
@@ -39,6 +40,6 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
 
   const { id } = await context.params;
   const { error } = await supabaseAdmin.from("ugc_posts").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/ugc-posts/[id]");
   return NextResponse.json({ ok: true });
 }

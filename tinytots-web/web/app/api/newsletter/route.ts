@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
@@ -5,7 +6,7 @@ import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
 
 // POST /api/newsletter - subscribe an email from the footer form
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(`newsletter:${clientIp(req)}`, {
+  const limited = await rateLimit(`newsletter:${clientIp(req)}`, {
     limit: 5,
     windowMs: 60_000,
   });
@@ -27,11 +28,11 @@ export async function POST(req: NextRequest) {
       if (error.code === "23505") {
         return NextResponse.json({ ok: true, already_subscribed: true });
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiErrorResponse(error, 500, "newsletter");
     }
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to subscribe." }, { status: 500 });
+    return apiErrorResponse(err, 500, "newsletter");
   }
 }

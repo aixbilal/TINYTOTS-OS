@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
       .lte("created_at", end);
 
     if (ordersError) {
-      return NextResponse.json({ error: ordersError.message }, { status: 500 });
+      return apiErrorResponse(ordersError, 500, "admin/reports");
     }
 
     const validOrders = (orders || []).filter((o) => o.status !== "cancelled");
@@ -158,6 +159,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("Reports API error:", err);
-    return NextResponse.json({ error: err.message || "Failed to generate report" }, { status: 500 });
+    return apiErrorResponse(err, 500, "admin/reports");
   }
 }

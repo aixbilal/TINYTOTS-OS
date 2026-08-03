@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -59,9 +60,9 @@ export async function PATCH(
       .select()
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return apiErrorResponse(error, 500, "admin/pages/[slug]");
     return NextResponse.json({ page });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to update page" }, { status: 500 });
+    return apiErrorResponse(err, 500, "admin/pages/[slug]");
   }
 }

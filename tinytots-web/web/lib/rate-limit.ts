@@ -1,37 +1,68 @@
 /**
- * Simple in-memory per-IP rate limiter for public write endpoints.
- * Fine for a single Node process at TinyTots scale; resets on restart.
+ * Shared sliding-window rate limiter backed by Upstash Redis.
+ * Survives cold starts and is consistent across serverless instances.
+ *
+ * Requires env:
+ *   UPSTASH_REDIS_REST_URL
+ *   UPSTASH_REDIS_REST_TOKEN
  */
 
-type Bucket = { count: number; resetAt: number };
-
-const buckets = new Map<string, Bucket>();
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
 export type RateLimitResult =
   | { ok: true }
   | { ok: false; retryAfterSec: number };
 
-export function rateLimit(
+const limiterCache = new Map<string, Ratelimit>();
+
+function getRedis(): Redis {
+  const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  if (!url || !token) {
+    throw new Error(
+      "Rate limiting requires UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN"
+    );
+  }
+  return new Redis({ url, token });
+}
+
+function getLimiter(limit: number, windowMs: number): Ratelimit {
+  const windowSec = Math.max(1, Math.ceil(windowMs / 1000));
+  const cacheKey = `${limit}:${windowSec}`;
+  const cached = limiterCache.get(cacheKey);
+  if (cached) return cached;
+
+  const limiter = new Ratelimit({
+    redis: getRedis(),
+    limiter: Ratelimit.slidingWindow(limit, `${windowSec} s`),
+    prefix: "tinytots-rl",
+    analytics: false,
+  });
+  limiterCache.set(cacheKey, limiter);
+  return limiter;
+}
+
+/**
+ * Same call shape as before; now async (Upstash REST). Callers must await.
+ */
+export async function rateLimit(
   key: string,
   { limit, windowMs }: { limit: number; windowMs: number }
-): RateLimitResult {
-  const now = Date.now();
-  const existing = buckets.get(key);
+): Promise<RateLimitResult> {
+  try {
+    const result = await getLimiter(limit, windowMs).limit(key);
+    if (result.success) return { ok: true };
 
-  if (!existing || existing.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return { ok: true };
+    const retryAfterSec = Math.max(
+      1,
+      Math.ceil((result.reset - Date.now()) / 1000)
+    );
+    return { ok: false, retryAfterSec };
+  } catch (err) {
+    console.error("[rate-limit] Upstash error — failing closed", err);
+    return { ok: false, retryAfterSec: 60 };
   }
-
-  if (existing.count >= limit) {
-    return {
-      ok: false,
-      retryAfterSec: Math.max(1, Math.ceil((existing.resetAt - now) / 1000)),
-    };
-  }
-
-  existing.count += 1;
-  return { ok: true };
 }
 
 export function clientIp(req: Request): string {

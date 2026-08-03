@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 
 export type ShopMoreCategory = {
   name: string;

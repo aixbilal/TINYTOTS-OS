@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -15,7 +16,7 @@ const VALID_PREFERRED_REFUND_METHODS = ["voucher", "original_payment"];
 const MAX_MESSAGE_LEN = 1000;
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(`complaint:${clientIp(req)}`, {
+  const limited = await rateLimit(`complaint:${clientIp(req)}`, {
     limit: 8,
     windowMs: 60_000,
   });
@@ -123,14 +124,11 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiErrorResponse(error, 500, "complaints");
     }
 
     return NextResponse.json({ complaint }, { status: 201 });
   } catch (err: unknown) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to submit complaint" },
-      { status: 400 }
-    );
+    return apiErrorResponse(err, 400, "complaints");
   }
 }

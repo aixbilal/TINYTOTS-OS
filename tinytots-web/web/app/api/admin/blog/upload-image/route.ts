@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
       .upload(fileName, arrayBuffer, { contentType: sniffed });
 
     if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      return apiErrorResponse(uploadError, 500, "admin/blog/upload-image");
     }
 
     const { data: publicUrlData } = supabaseAdmin.storage
@@ -82,9 +83,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: publicUrlData.publicUrl });
   } catch (err: unknown) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Upload failed" },
-      { status: 500 }
-    );
+    return apiErrorResponse(err, 500, "admin/blog/upload-image");
   }
 }

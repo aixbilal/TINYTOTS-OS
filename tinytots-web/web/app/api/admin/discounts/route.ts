@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/discounts");
   return NextResponse.json({ data }, { status: 200 });
 }
 
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
         .from("products")
         .select("id")
         .eq("category", category);
-      if (catError) return NextResponse.json({ error: catError.message }, { status: 500 });
+      if (catError) return apiErrorResponse(catError, 500, "admin/discounts");
       targetProductIds = (catProducts || []).map((p) => p.id);
     }
 
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
+    if (insertError) return apiErrorResponse(insertError, 500, "admin/discounts");
 
   // Fetch current base prices so we can compute discounted prices, same as the
     // existing single-product discount flow — base_price/web_base_price stay
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     if (variantsFetchError) {
       await supabaseAdmin.from("discounts").delete().eq("id", discountRow.id);
-      return NextResponse.json({ error: variantsFetchError.message }, { status: 500 });
+      return apiErrorResponse(variantsFetchError, 500, "admin/discounts");
     }
 
     const updates = (targetVariants || []).map((v) => {
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     if (failed?.error) {
       await supabaseAdmin.from("discounts").delete().eq("id", discountRow.id);
-      return NextResponse.json({ error: "Failed to apply discount to variants: " + failed.error.message }, { status: 500 });
+      return apiErrorResponse(failed.error, 500, "admin/discounts");
     }
 
     return NextResponse.json({ success: true, data: discountRow, affected_products: targetProductIds.length }, { status: 201 });

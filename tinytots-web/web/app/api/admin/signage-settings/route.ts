@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -9,7 +10,7 @@ export async function GET(req: NextRequest) {
   if (denied) return denied;
 
   const { data, error } = await supabaseAdmin.from("signage_revision").select("*").eq("id", 1).maybeSingle();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/signage-settings");
 
   return NextResponse.json({
     settings: {
@@ -63,7 +64,7 @@ export async function PATCH(req: NextRequest) {
     .select("*")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/signage-settings");
 
   return NextResponse.json({
     settings: {

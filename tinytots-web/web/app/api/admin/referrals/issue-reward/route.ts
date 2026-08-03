@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (voucherError) {
-      return NextResponse.json({ error: voucherError.message }, { status: 500 });
+      return apiErrorResponse(voucherError, 500, "admin/referrals/issue-reward");
     }
 
     const { error: updateError } = await supabaseAdmin
@@ -77,9 +78,14 @@ export async function POST(req: NextRequest) {
       .eq("id", referral_id);
 
     if (updateError) {
+      console.error(
+        `Voucher created (id ${voucher.id}) but failed to flag referral as rewarded:`,
+        updateError
+      );
       return NextResponse.json(
         {
-          error: `Voucher created (id ${voucher.id}) but failed to flag referral as rewarded: ${updateError.message}. Needs manual fix.`,
+          error:
+            "Voucher was created but could not mark the referral as rewarded. Please check admin and fix manually if needed.",
         },
         { status: 500 }
       );
@@ -87,9 +93,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ voucher });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to issue reward" },
-      { status: 500 }
-    );
+    return apiErrorResponse(err, 500, "admin/referrals/issue-reward");
   }
 }

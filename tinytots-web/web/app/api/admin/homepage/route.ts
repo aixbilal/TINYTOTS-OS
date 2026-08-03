@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
     supabaseAdmin.from("categories").select("name, slug").order("display_order", { ascending: true }).order("name", { ascending: true }),
   ]);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/homepage");
   return NextResponse.json({ content, products: products || [], categories: categories || [] });
 }
 
@@ -147,9 +148,9 @@ export async function PATCH(req: NextRequest) {
       .select()
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return apiErrorResponse(error, 500, "admin/homepage");
     return NextResponse.json({ content: data });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to update homepage content" }, { status: 500 });
+    return apiErrorResponse(err, 500, "admin/homepage");
   }
 }

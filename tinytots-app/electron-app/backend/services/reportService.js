@@ -33,8 +33,10 @@ export async function generateDailyReport(reportDate) {
     const parser = new Parser();
     const csv = parser.parse(data);
 
-    // Ensure reports directory exists
-    const reportsDir = path.resolve("reports");
+    // Prefer POS_DATA_DIR (Electron userData) over CWD-relative reports/
+    const reportsDir = process.env.POS_DATA_DIR
+      ? path.join(path.resolve(process.env.POS_DATA_DIR), "reports")
+      : path.resolve("reports");
 
     if (!fs.existsSync(reportsDir)) {
       fs.mkdirSync(reportsDir, { recursive: true });

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -12,8 +11,6 @@ import { isValidPakPhone, PAK_PHONE_ERROR } from "@/lib/validate-phone";
 const MAX_LEN = { name: 80, phone: 20, email: 100, password: 72 };
 
 export default function SignupPage() {
-  const router = useRouter();
-
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -44,19 +41,24 @@ export default function SignupPage() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            full_name: fullName.trim(),
-            phone: phone.trim(),
-          },
-        },
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          full_name: fullName.trim(),
+          phone: phone.trim(),
+        }),
       });
+      const data = await res.json().catch(() => ({}));
 
-      if (error) {
-        setServerError(error.message);
+      if (!res.ok) {
+        setServerError(
+          typeof data.error === "string"
+            ? data.error
+            : "Could not create account. Please try again."
+        );
         setSubmitting(false);
         return;
       }

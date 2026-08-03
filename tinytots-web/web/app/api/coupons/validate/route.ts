@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -85,12 +86,8 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err: unknown) {
-    return NextResponse.json(
-      {
-        valid: false,
-        error: err instanceof Error ? err.message : "Failed to validate coupon.",
-      },
-      { status: 500 }
-    );
+    const res = apiErrorResponse(err, 500, "coupons/validate");
+    const body = await res.json();
+    return NextResponse.json({ valid: false, ...body }, { status: 500 });
   }
 }

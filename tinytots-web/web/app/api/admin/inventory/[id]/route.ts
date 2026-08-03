@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -66,7 +67,7 @@ export async function PUT(
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiErrorResponse(error, 500, "admin/inventory/[id]");
     }
     return NextResponse.json({ success: true, data }, { status: 200 });
   } catch {
@@ -85,7 +86,7 @@ export async function DELETE(
   const { id } = await params;
   const { error } = await supabaseAdmin.from("variants").delete().eq("id", id);
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return apiErrorResponse(error, 500, "admin/inventory/[id]");
   }
   return NextResponse.json({ success: true }, { status: 200 });
 }

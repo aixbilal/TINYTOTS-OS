@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
     .order("display_order", { ascending: true })
     .order("name", { ascending: true });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/categories");
   return NextResponse.json({ categories: data });
 }
 
@@ -51,11 +52,11 @@ export async function POST(req: NextRequest) {
       if (error.message.toLowerCase().includes("duplicate")) {
         return NextResponse.json({ error: "A category with this name already exists" }, { status: 400 });
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return apiErrorResponse(error, 500, "admin/categories");
     }
 
     return NextResponse.json({ category: data }, { status: 201 });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to create category" }, { status: 500 });
+    return apiErrorResponse(err, 500, "admin/categories");
   }
 }

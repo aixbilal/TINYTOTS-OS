@@ -1,6 +1,8 @@
+import DOMPurify from "isomorphic-dompurify";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import LegalPageLayout from "@/components/LegalPageLayout";
 import { extractTocAndAnnotate } from "@/lib/site-page-toc";
+import { normalizeQuillHtml } from "@/lib/html-text";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +14,10 @@ export default async function TermsPage() {
     .single();
 
   const { html, sections } = extractTocAndAnnotate(page?.content || "<p>Content coming soon.</p>");
+  // Sanitize after TOC annotation so heading `id` attrs for scroll-spy survive.
+  const safeHtml = normalizeQuillHtml(
+    DOMPurify.sanitize(html, { ADD_ATTR: ["id"] })
+  );
 
   return (
     <LegalPageLayout
@@ -27,7 +33,7 @@ export default async function TermsPage() {
           [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
           [&_strong]:font-semibold [&_strong]:text-on-surface
           [&_a]:text-primary [&_a]:underline"
-        dangerouslySetInnerHTML={{ __html: html }}
+        dangerouslySetInnerHTML={{ __html: safeHtml }}
       />
     </LegalPageLayout>
   );

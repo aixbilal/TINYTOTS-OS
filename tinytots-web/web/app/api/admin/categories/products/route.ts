@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     .eq("is_active", true)
     .order("name", { ascending: true });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/categories/products");
   return NextResponse.json({ products: data });
 }
 
@@ -47,9 +48,9 @@ export async function PATCH(request: NextRequest) {
       .in("id", productIds)
       .select("id, name, category");
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return apiErrorResponse(error, 500, "admin/categories/products");
     return NextResponse.json({ products: data });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to assign products" }, { status: 500 });
+    return apiErrorResponse(err, 500, "admin/categories/products");
   }
 }

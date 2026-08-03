@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -79,14 +80,16 @@ export async function POST(req: NextRequest) {
     const needsMigration =
       message.toLowerCase().includes("unique") ||
       message.toLowerCase().includes("campaigns_single_active");
-    return NextResponse.json(
-      {
-        error: needsMigration
-          ? "Database still enforces a single active campaign. Run migration 20260801110000_multi_active_campaign_rotation.sql in Supabase, then try again."
-          : message,
-      },
-      { status: 500 }
-    );
+    if (needsMigration) {
+      return NextResponse.json(
+        {
+          error:
+            "Database still enforces a single active campaign. Run migration 20260801110000_multi_active_campaign_rotation.sql in Supabase, then try again.",
+        },
+        { status: 500 }
+      );
+    }
+    return apiErrorResponse(error, 500, "admin/campaigns/activate");
   }
 
   if (!campaign) {

@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: testimonial, error: fetchError } = await loadTestimonial(id);
   if (fetchError) {
-    return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    return apiErrorResponse(fetchError, 500, "admin/testimonials/[id]/photo-upload");
   }
   if (!testimonial) {
     return NextResponse.json({ error: "Testimonial not found" }, { status: 404 });
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     Buffer.from(await file.arrayBuffer()),
     { contentType: file.type, upsert: false }
   );
-  if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
+  if (uploadError) return apiErrorResponse(uploadError, 500, "admin/testimonials/[id]/photo-upload");
 
   const url = publicUrlFor(storagePath);
   const { data: updated, error: updateError } = await supabaseAdmin
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .single();
   if (updateError) {
     await supabaseAdmin.storage.from(BUCKET).remove([storagePath]);
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
+    return apiErrorResponse(updateError, 500, "admin/testimonials/[id]/photo-upload");
   }
 
   const oldPath = storagePathFromPublicUrl(oldUrl);
@@ -94,7 +95,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
   const { data: testimonial, error: fetchError } = await loadTestimonial(id);
   if (fetchError) {
-    return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    return apiErrorResponse(fetchError, 500, "admin/testimonials/[id]/photo-upload");
   }
   if (!testimonial) {
     return NextResponse.json({ error: "Testimonial not found" }, { status: 404 });
@@ -107,7 +108,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     .eq("id", testimonial.id)
     .select("*")
     .single();
-  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+  if (updateError) return apiErrorResponse(updateError, 500, "admin/testimonials/[id]/photo-upload");
 
   const oldPath = storagePathFromPublicUrl(oldUrl);
   if (oldPath) await supabaseAdmin.storage.from(BUCKET).remove([oldPath]);

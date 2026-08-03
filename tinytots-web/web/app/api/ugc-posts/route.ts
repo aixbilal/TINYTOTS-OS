@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { apiErrorResponse } from "@/lib/api-error";
+import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,6 @@ export async function GET() {
     .order("created_at", { ascending: false })
     .limit(12);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "ugc-posts");
   return NextResponse.json({ posts: data });
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { supabase } from "@/lib/supabase";
+import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import Link from "next/link";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 import UspMarquee from "@/components/UspMarquee";

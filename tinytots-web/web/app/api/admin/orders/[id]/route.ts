@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -17,14 +18,14 @@ export async function GET(
     .eq("id", id)
     .single();
 
-  if (orderError) return NextResponse.json({ error: orderError.message }, { status: 404 });
+  if (orderError) return apiErrorResponse(orderError, 404, "admin/orders/[id]");
 
   const { data: items, error: itemsError } = await supabaseAdmin
     .from("order_items")
     .select("id, quantity, unit_price, line_total, variants(id, color, size, products(name, sku))")
     .eq("order_id", id);
 
-  if (itemsError) return NextResponse.json({ error: itemsError.message }, { status: 500 });
+  if (itemsError) return apiErrorResponse(itemsError, 500, "admin/orders/[id]");
 
   return NextResponse.json({ data: { ...order, items } }, { status: 200 });
 }
@@ -53,7 +54,7 @@ export async function PUT(
       .select()
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return apiErrorResponse(error, 500, "admin/orders/[id]");
     return NextResponse.json({ success: true, data }, { status: 200 });
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });

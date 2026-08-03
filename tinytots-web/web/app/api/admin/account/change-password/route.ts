@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-error";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { validatePassword } from "@/lib/validate-password";
@@ -88,10 +89,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (updateError) {
-    return NextResponse.json(
-      { error: updateError.message || "Failed to update password." },
-      { status: 500 }
-    );
+    return apiErrorResponse(updateError, 500, "admin/account/change-password");
   }
 
   return NextResponse.json({ ok: true });

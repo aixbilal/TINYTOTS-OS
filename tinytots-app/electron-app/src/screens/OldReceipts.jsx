@@ -137,7 +137,7 @@ export default function OldReceipts() {
                 setShowDatePicker((v) => !v);
                 setShowFilterMenu(false);
               }}
-              className="flex items-center gap-2 border border-white/40 rounded-lg px-4 py-2.5 bg-white/25 backdrop-blur-sm text-sm text-ink-700 whitespace-nowrap"
+              className="flex items-center gap-2 border border-white/40 rounded-lg px-4 py-2.5 bg-white/25 backdrop-blur-sm type-body-sm text-ink-700 whitespace-nowrap"
             >
               <Calendar size={16} />
               {dateRangeLabel}
@@ -145,7 +145,7 @@ export default function OldReceipts() {
             {showDatePicker && (
               <div className={`absolute right-0 top-11 z-20 p-4 w-64 flex flex-col gap-3 ${glassCard}`} style={glassCardStyle}>
                 <div>
-                  <label className="block text-xs text-ink-700 mb-1">From</label>
+                  <label className="block type-field-label text-ink-700 mb-1">From</label>
                   <input
                     type="date"
                     value={from}

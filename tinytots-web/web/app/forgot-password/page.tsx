@@ -3,7 +3,6 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
 
 const RESET_NEXT_KEY = "tt_password_reset_next";
@@ -42,12 +41,26 @@ function ForgotPasswordForm() {
         /* private mode / blocked storage — next=admin in redirectTo is the fallback */
       }
 
+      const resetPath = isAdmin ? "/reset-password?next=admin" : "/reset-password";
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed, redirectTo: resetPath }),
+      });
+
+      if (res.status === 429) {
+        const data = await res.json().catch(() => ({}));
+        setFormError(
+          typeof data.error === "string"
+            ? data.error
+            : "Too many requests. Please try again shortly."
+        );
+        setSubmitting(false);
+        return;
+      }
+
       // Always show the same confirmation — do not surface API errors that
       // could reveal whether an email is registered.
-      const resetPath = isAdmin ? "/reset-password?next=admin" : "/reset-password";
-      await supabase.auth.resetPasswordForEmail(trimmed, {
-        redirectTo: `${window.location.origin}${resetPath}`,
-      });
     } catch {
       // Network failures still get the generic confirmation for privacy.
     }

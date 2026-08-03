@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { supabase } from "@/lib/supabase";
+import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import { absoluteUrl } from "@/lib/site-url";
 
 export async function generateMetadata({

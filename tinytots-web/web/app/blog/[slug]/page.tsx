@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import DOMPurify from "isomorphic-dompurify";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { htmlToPlainText, normalizeQuillHtml } from "@/lib/html-text";
 import { absoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
+
+function sanitizePostHtml(html: string): string {
+  return normalizeQuillHtml(DOMPurify.sanitize(html));
+}
 
 export async function generateMetadata({
   params,
@@ -115,7 +120,7 @@ break-words [&_*]:max-w-full [&_*]:box-border
             [&_strong]:font-semibold [&_strong]:text-on-surface
 [&_a]:text-primary [&_a]:underline [&_a]:break-all
             [&_img]:rounded-xl [&_img]:my-6 [&_img]:h-auto"
-          dangerouslySetInnerHTML={{ __html: normalizeQuillHtml(post.content) }}
+          dangerouslySetInnerHTML={{ __html: sanitizePostHtml(post.content) }}
         />
       </article>
     </div>

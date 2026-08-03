@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     Buffer.from(await file.arrayBuffer()),
     { contentType: file.type, upsert: false }
   );
-  if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
+  if (uploadError) return apiErrorResponse(uploadError, 500, "admin/campaigns/[id]/qr-upload");
 
   const { data: publicData } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(storagePath);
   const footerSettings = {
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .single();
   if (updateError) {
     await supabaseAdmin.storage.from(BUCKET).remove([storagePath]);
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
+    return apiErrorResponse(updateError, 500, "admin/campaigns/[id]/qr-upload");
   }
 
   await removeUnreferencedCampaignAssets([oldUrl]);
@@ -81,7 +82,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     .eq("id", id)
     .select("*")
     .single();
-  if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+  if (updateError) return apiErrorResponse(updateError, 500, "admin/campaigns/[id]/qr-upload");
 
   await removeUnreferencedCampaignAssets([oldUrl]);
   return NextResponse.json({ campaign: updated });

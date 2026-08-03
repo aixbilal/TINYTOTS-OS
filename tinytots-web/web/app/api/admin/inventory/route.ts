@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest) {
     .from("variants")
     .select("*, products(name, sku, cost_price, selling_price, is_active)");
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/inventory");
   return NextResponse.json({ data }, { status: 200 });
 }
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       ])
       .select();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return apiErrorResponse(error, 500, "admin/inventory");
     return NextResponse.json({ data }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });

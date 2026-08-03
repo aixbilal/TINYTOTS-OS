@@ -1,3 +1,4 @@
+import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     .select("id, name, email, role, is_active, created_at")
     .order("created_at", { ascending: true });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return apiErrorResponse(error, 500, "admin/team");
   return NextResponse.json({ data }, { status: 200 });
 }
 
@@ -57,10 +58,7 @@ export async function POST(request: NextRequest) {
         // @ts-expect-error
         console.error("createUser failed — CAUSE STACK:", authError?.cause?.stack);
         console.error("createUser failed — full object:", authError);
-        return NextResponse.json(
-          { error: authError?.message || "Failed to create login (see server terminal)" },
-          { status: 500 }
-        );
+        return apiErrorResponse(authError ?? new Error("Failed to create login"), 500, "admin/team");
       }
   
       const { data: adminRow, error: adminError } = await supabaseAdmin
@@ -72,12 +70,12 @@ export async function POST(request: NextRequest) {
       if (adminError) {
         console.error("admin_users insert failed:", JSON.stringify(adminError, null, 2));
         await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
-        return NextResponse.json({ error: adminError.message || "Failed to create admin role" }, { status: 500 });
+        return apiErrorResponse(adminError, 500, "admin/team");
       }
   
       return NextResponse.json({ success: true, data: adminRow, temp_password: tempPassword }, { status: 201 });
     } catch (err: any) {
       console.error("POST /api/admin/team crashed:", err);
-      return NextResponse.json({ error: err?.message || "Unexpected server error" }, { status: 500 });
+      return apiErrorResponse(err, 500, "admin/team");
     }
   }

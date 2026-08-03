@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-error";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { Agent, setGlobalDispatcher } from "undici";
@@ -74,10 +75,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (deleteError) {
-    return NextResponse.json(
-      { error: deleteError.message || "Failed to disable 2FA." },
-      { status: 500 }
-    );
+    return apiErrorResponse(deleteError, 500, "admin/account/mfa-disable");
   }
 
   return NextResponse.json({ ok: true });
