@@ -27,6 +27,7 @@ const { getPrinters, print } = pdfPrinterPkg;
 import { createClient } from "@supabase/supabase-js";
 import multer from "multer";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { writeReceiptPdf } from "./lib/receiptPdf.js";
 
 dotenv.config();
 
@@ -559,7 +560,6 @@ app.post("/api/checkout", async (req, res) => {
 // ----------------------------------------------------
 
 async function generateReceiptPDF(sale_id) {
-
   const { data: sale, error: saleError } = await supabase
     .from("sales")
     .select("*")
@@ -585,127 +585,34 @@ async function generateReceiptPDF(sale_id) {
 
   if (itemsError) throw itemsError;
 
-  const pdfDoc = await PDFDocument.create();
-  // Adjusted pageWidth to 212pt. This slightly narrower canvas acts as a 
-  // built-in hardware padding offset so thermal printer drivers don't push it off-center.
-  const pageWidth = 212; 
-  const pageHeight = 900;
-  const page = pdfDoc.addPage([pageWidth, pageHeight]);
-
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const black = rgb(0, 0, 0);
-  const gray = rgb(0.45, 0.45, 0.45);
-
-  let y = pageHeight - 35; // Generous top margins for tearing off paper cleanly
-  const marginX = 12;      // 12pt side margins on a 212pt canvas leaves a perfect printable gap
-  const contentWidth = pageWidth - (marginX * 2);
-
-  const center = (text, size, useBold = false) => {
-    const f = useBold ? fontBold : font;
-    const width = f.widthOfTextAtSize(text, size);
-    page.drawText(text, { x: (pageWidth - width) / 2, y, size, font: f, color: black });
-    y -= size + 6;
-  };
-
-  const divider = (thickness = 0.7) => {
-    page.drawLine({
-      start: { x: marginX, y },
-      end: { x: pageWidth - marginX, y },
-      thickness,
-      color: black,
-    });
-    y -= 12;
-  };
-
-  const row = (left, right, size = 8, useBold = false) => {
-    const f = useBold ? fontBold : font;
-    page.drawText(left, { x: marginX, y, size, font: f, color: black });
-    const rightWidth = f.widthOfTextAtSize(right, size);
-    page.drawText(right, { x: pageWidth - marginX - rightWidth, y, size, font: f, color: black });
-    y -= size + 6;
-  };
-
-  // ---- header ----
-  center("TINY TOTS", 16, true);
-  center("Toddler-to-Tween Outfitters", 8);
-  center("Shop 169, Markazi Jamia Masjid", 7);
-  center("Toba Tek Singh", 7);
-  center("0301-7278797", 7);
-
-  y -= 4;
-  divider(1.2);
-
-  // ---- meta ----
-  row("Receipt", sale.receipt_number, 8, true);
-  row("Cashier", sale.cashier || "—", 8);
-  row("Date", new Date(sale.created_at).toLocaleString(), 7);
-
-  divider();
-
-  // ---- items ----
   let subtotal = 0;
-  for (const item of items) {
+  const mappedItems = (items || []).map((item) => {
     const qty = item.quantity;
     const price = item.unit_price;
     const lineTotal = qty * price;
     subtotal += lineTotal;
     const name = item.variants?.product?.name || "Item";
-
-    row(`${qty} x ${name}`, money(lineTotal), 8);
-
-    const variant = `${item.variants?.size || ""} / ${item.variants?.color || ""}`.trim();
-    if (variant && variant !== "/") {
-      page.drawText(variant, { x: marginX + 6, y: y + 4, size: 6.5, font, color: gray });
-      y -= 6;
-    }
-  }
-
-  divider();
-
-  // ---- totals ----
-  row("Subtotal", money(subtotal), 8);
-  row("Discount", `-${money(sale.discount || 0)}`, 8);
-  row("Tax", money(sale.tax), 8);
-
-  divider(1.2);
-
-  // ---- boxed total ----
-  const boxHeight = 26;
-  page.drawRectangle({
-    x: marginX,
-    y: y - boxHeight + 10,
-    width: contentWidth,
-    height: boxHeight,
-    borderColor: black,
-    borderWidth: 1,
+    const variant = [item.variants?.color, item.variants?.size].filter(Boolean).join(" / ");
+    return { qty, name, lineTotal, variant };
   });
-  const totalLabel = "TOTAL";
-  const totalValue = `Rs. ${money(sale.total)}`;
-  page.drawText(totalLabel, { x: marginX + 8, y: y - 8, size: 11, font: fontBold, color: black });
-  const totalValueWidth = fontBold.widthOfTextAtSize(totalValue, 11);
-  page.drawText(totalValue, {
-    x: pageWidth - marginX - 8 - totalValueWidth,
-    y: y - 8,
-    size: 11,
-    font: fontBold,
-    color: black,
-  });
-  y -= boxHeight + 10;
 
-  row("Paid via", (sale.payment_method || "cash").toUpperCase(), 8);
-
-  y -= 6;
-  divider(1.2);
-
-  center("Thanks for coming!", 9, true);
-  center("We love watching them grow.", 8);
-
-  const pdfBytes = await pdfDoc.save();
-  const pdfPath = path.join(RECEIPT_FOLDER, `${sale.receipt_number}.pdf`);
-  fs.writeFileSync(pdfPath, pdfBytes);
-  return pdfPath;
+  return writeReceiptPdf(
+    {
+      id: sale.id,
+      receiptNumber: sale.receipt_number,
+      cashier: sale.cashier,
+      created_at: sale.created_at,
+      subtotal,
+      discount: sale.discount || 0,
+      tax: sale.tax,
+      total: sale.total,
+      paymentMethod: sale.payment_method || "cash",
+      items: mappedItems,
+    },
+    RECEIPT_FOLDER
+  );
 }
+
 // ----------------------------------------------------
 // DOWNLOAD RECEIPT PDF
 // ----------------------------------------------------
@@ -1410,30 +1317,56 @@ app.put("/api/variants/:id", async (req, res) => {
     const { id } = req.params;
     const { stock, price, cost_price, status, base_price, discount_percent } = req.body;
 
-    const update = { stock, status };
+    const update = { status };
 
-    // Include cost_price if it's explicitly passed in the request body
+    if (stock !== undefined) {
+      const stockNum = Number(stock);
+      if (!Number.isFinite(stockNum) || stockNum < 0) {
+        return res.status(400).json({
+          success: false,
+          error: "stock must be a non-negative number",
+        });
+      }
+      update.stock = stockNum;
+    }
+
     if (cost_price !== undefined) {
-      update.cost_price = Number(cost_price);
+      const costNum = Number(cost_price);
+      if (!Number.isFinite(costNum) || costNum < 0) {
+        return res.status(400).json({
+          success: false,
+          error: "cost_price must be a non-negative number",
+        });
+      }
+      update.cost_price = costNum;
     }
 
     if (base_price !== undefined || discount_percent !== undefined) {
-      // Discount-driven edit: recompute price from base_price + discount%.
       const { data: current } = await supabase.from("variants").select("base_price").eq("id", id).single();
       const bp = base_price !== undefined ? Number(base_price) : Number(current?.base_price || 0);
       const dp = discount_percent !== undefined ? Number(discount_percent) : 0;
+      if (!Number.isFinite(bp) || bp < 0 || !Number.isFinite(dp) || dp < 0) {
+        return res.status(400).json({
+          success: false,
+          error: "base_price and discount_percent must be non-negative numbers",
+        });
+      }
       update.base_price = bp;
       update.discount_percent = dp;
       update.price = Math.round(bp * (1 - dp / 100) * 100) / 100;
     } else if (price !== undefined) {
-      // Plain price edit (no discount involved) — keep base_price in sync
-      // so a later discount edit still computes from the right number.
-      update.price = Number(price);
-      update.base_price = Number(price);
+      const priceNum = Number(price);
+      if (!Number.isFinite(priceNum) || priceNum < 0) {
+        return res.status(400).json({
+          success: false,
+          error: "price must be a non-negative number",
+        });
+      }
+      update.price = priceNum;
+      update.base_price = priceNum;
       update.discount_percent = 0;
     }
 
-    // Strip out undefined properties just in case
     Object.keys(update).forEach((k) => update[k] === undefined && delete update[k]);
 
     const { data, error } = await supabase
@@ -1442,7 +1375,7 @@ app.put("/api/variants/:id", async (req, res) => {
       .eq("id", id)
       .select()
       .single();
-      
+
     if (error) throw error;
 
     res.json({ success: true, variant: data });
@@ -1451,6 +1384,7 @@ app.put("/api/variants/:id", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 // ----------------------------------------------------
 // DELETE A SINGLE VARIANT
 // ----------------------------------------------------
@@ -1773,7 +1707,7 @@ app.post("/api/receipts/:id/reprint", async (req, res) => {
       // Fall back to regenerating it on demand instead of failing
       await generateReceiptPDF(sale.id);
     }
-    await print(pdfPath, { printer: "POS-80C" });
+    await print(pdfPath, { printer: "POS-80C", scale: "noscale" });
     res.json({ success: true });
   } catch (err) {
     console.error("POST /api/receipts/:id/reprint error:", err);

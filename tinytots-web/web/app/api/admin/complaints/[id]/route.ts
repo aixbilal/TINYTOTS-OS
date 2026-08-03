@@ -6,6 +6,7 @@ import { getSettingNumber } from "@/lib/settings";
 
 const VALID_STATUSES = ["open", "in_progress", "resolved", "approved", "rejected", "refunded", "exchanged"];
 const VALID_REFUND_METHODS = ["voucher", "original_payment", "bank_transfer"];
+const RESTOCK_STATUSES = new Set(["refunded", "exchanged"]);
 
 // GET /api/admin/complaints/[id] - full detail: the complaint, its selected
 // order items (for returns), plus the customer's other orders and other
@@ -39,6 +40,7 @@ export async function GET(
       preferred_refund_method,
       voucher_id,
       resolved_at,
+      stock_restored,
       created_at,
       customer:customers(id, full_name, phone, email, orders_count),
       order:orders(id, order_number, total, status, created_at),
@@ -99,6 +101,16 @@ export async function PATCH(
       const body = await req.json();
     const { status, admin_notes, refund_method } = body;
 
+    const { data: existing, error: existingError } = await supabaseAdmin
+      .from("complaints")
+      .select("id, customer_id, order_id, voucher_id, order_item_ids, status, stock_restored")
+      .eq("id", params.id)
+      .single();
+
+    if (existingError || !existing) {
+      return NextResponse.json({ error: "Complaint not found" }, { status: 404 });
+    }
+
     const updates: Record<string, any> = {};
     if (status) {
       if (!VALID_STATUSES.includes(status)) {
@@ -123,15 +135,6 @@ export async function PATCH(
     const shouldIssueVoucher = status === "refunded" && refund_method === "voucher";
 
     if (shouldIssueVoucher) {
-      const { data: existing } = await supabaseAdmin
-        .from("complaints")
-        .select("id, customer_id, order_id, voucher_id, order_item_ids")
-        .eq("id", params.id)
-        .single();
-
-      if (!existing) {
-        return NextResponse.json({ error: "Complaint not found" }, { status: 404 });
-      }
       if (existing.voucher_id) {
         return NextResponse.json(
           { error: "A voucher has already been issued for this complaint." },
@@ -204,7 +207,24 @@ export async function PATCH(
       return apiErrorResponse(error, 500, "admin/complaints/[id]");
     }
 
-    return NextResponse.json({ complaint });
+    // Restock on approved return/refund/exchange. Idempotent via
+    // complaints.stock_restored inside restore_complaint_stock().
+    let stockRestoredThisCall: boolean | null = null;
+    if (status && RESTOCK_STATUSES.has(status) && !RESTOCK_STATUSES.has(existing.status)) {
+      const { data: restored, error: restockError } = await supabaseAdmin.rpc(
+        "restore_complaint_stock",
+        { p_complaint_id: Number(params.id) }
+      );
+      if (restockError) {
+        return apiErrorResponse(restockError, 500, "admin/complaints/[id]/restock");
+      }
+      stockRestoredThisCall = restored === true;
+    }
+
+    return NextResponse.json({
+      complaint,
+      stock_restored_this_call: stockRestoredThisCall,
+    });
   } catch (err: any) {
     return apiErrorResponse(err, 500, "admin/complaints/[id]");
   }

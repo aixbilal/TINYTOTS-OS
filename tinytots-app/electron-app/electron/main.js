@@ -237,9 +237,13 @@ function writeAuthCache(users) {
 ======================================================= */
 
 function createMainWindow() {
+  const iconPath = path.join(__dirname, "assets", "icon.ico");
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    title: "TINYTOTS OS",
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -247,6 +251,7 @@ function createMainWindow() {
     },
   });
 
+  mainWindow.setTitle("TINYTOTS OS");
   const useDev = shouldUseDevServer();
 
   if (useDev) {
@@ -266,11 +271,11 @@ function createMainWindow() {
   const indexHtml = distIndexPath();
   if (!fs.existsSync(indexHtml)) {
     const message =
-      "TinyTots POS UI is missing.\n\n" +
+      "TINYTOTS OS UI is missing.\n\n" +
       `Expected built files at:\n${indexHtml}\n\n` +
       "Run `npm run build` (Vite) before packaging or launching with ELECTRON_USE_DIST=1.";
     console.error(message);
-    dialog.showErrorBox("TinyTots POS — missing UI build", message);
+    dialog.showErrorBox("TINYTOTS OS — missing UI build", message);
     app.quit();
     return;
   }
@@ -288,7 +293,7 @@ app.whenReady().then(async () => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[POS] Backend startup failed:", message);
-    dialog.showErrorBox("TinyTots POS — API failed to start", message);
+    dialog.showErrorBox("TINYTOTS OS — API failed to start", message);
     app.quit();
     return;
   }
@@ -347,6 +352,7 @@ ipcMain.handle("receipt:print", async (_event, sale) => {
 
     await print(pdfPath, {
       printer: PRINTER_NAME,
+      scale: "noscale",
     });
 
     return { success: true };

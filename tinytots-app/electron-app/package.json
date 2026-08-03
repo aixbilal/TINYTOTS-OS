@@ -16,10 +16,11 @@
     "dist": "npm run build && electron-builder"
   },
   "build": {
-    "appId": "com.tinytots.pos",
-    "productName": "TinyTots POS",
+    "appId": "com.tinytots.os",
+    "productName": "TINYTOTS OS",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
@@ -43,6 +44,7 @@
     "afterPack": "./electron/afterPack.cjs",
     "asar": true,
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -60,7 +62,8 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "TINYTOTS OS"
     }
   },
   "dependencies": {
