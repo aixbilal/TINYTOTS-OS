@@ -129,14 +129,10 @@ export default async function ProductDetailPage({
                 href={`/collections/${cat.slug}`}
                 className="relative aspect-[4/5] md:aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[140px]"
               >
-                {cat.image_url ? (
-                  <div
-                    className="absolute inset-0 bg-cover bg-center w-full h-full transition-transform duration-700 group-hover:scale-105"
-                    style={{ backgroundImage: `url('${cat.image_url}')` }}
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-surface-container" />
-                )}
+                <div
+                  className="absolute inset-0 bg-cover bg-center w-full h-full transition-transform duration-700 group-hover:scale-105"
+                  style={{ backgroundImage: `url('${cat.image_url}')` }}
+                />
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
                 <div className="absolute bottom-4 left-4 right-4 z-10">
                   <h3 className="font-headline-md text-headline-md text-white mb-1">{cat.name}</h3>

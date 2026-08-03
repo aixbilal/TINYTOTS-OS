@@ -3,20 +3,21 @@ import { supabase } from "@/lib/supabase";
 export type ShopMoreCategory = {
   name: string;
   slug: string;
-  image_url: string | null;
+  image_url: string;
 };
 
 /**
  * Top categories by active product count, excluding the current product's
- * category. Tile image = first in-stock product's primary/gallery image
- * (falls back to products.image_url).
+ * category. Deterministic: products ordered by id, candidates sorted by id,
+ * categories ranked by count then name. Tiles without a resolvable image are
+ * omitted so empty placeholders never render.
  */
 export async function getShopMoreCategories(
   excludeCategory: string | null | undefined,
   limit = 4
 ): Promise<ShopMoreCategory[]> {
   const [{ data: categories }, { data: products }] = await Promise.all([
-    supabase.from("categories").select("name, slug"),
+    supabase.from("categories").select("name, slug").order("name", { ascending: true }),
     supabase
       .from("products")
       .select(
@@ -26,12 +27,16 @@ export async function getShopMoreCategories(
         product_images ( storage_path, is_primary, sort_order )
       `
       )
-      .eq("is_active", true),
+      .eq("is_active", true)
+      .order("id", { ascending: true }),
   ]);
 
   if (!categories?.length || !products?.length) return [];
 
   const exclude = (excludeCategory || "").trim().toLowerCase();
+  const slugByName = new Map(
+    categories.map((c) => [c.name.trim().toLowerCase(), { name: c.name, slug: c.slug }])
+  );
 
   type Prod = {
     id: number;
@@ -44,45 +49,53 @@ export async function getShopMoreCategories(
   const byCategory = new Map<string, Prod[]>();
   for (const p of products as Prod[]) {
     if (!p.category) continue;
-    if (p.category.trim().toLowerCase() === exclude) continue;
-    const list = byCategory.get(p.category) || [];
+    const key = p.category.trim();
+    if (!key || key.toLowerCase() === exclude) continue;
+    // Only count categories that exist in the categories table.
+    if (!slugByName.has(key.toLowerCase())) continue;
+    const list = byCategory.get(key) || [];
     list.push(p);
-    byCategory.set(p.category, list);
+    byCategory.set(key, list);
   }
 
   const ranked = [...byCategory.entries()]
-    .map(([name, list]) => ({ name, count: list.length, products: list }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    .slice(0, limit);
+    .map(([name, list]) => ({
+      name,
+      count: list.length,
+      products: [...list].sort((a, b) => a.id - b.id),
+    }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
-  const slugByName = new Map(categories.map((c) => [c.name, c.slug]));
+  const results: ShopMoreCategory[] = [];
+  for (const { name, products: list } of ranked) {
+    if (results.length >= limit) break;
 
-  return ranked
-    .map(({ name, products: list }) => {
-      const slug = slugByName.get(name);
-      if (!slug) return null;
+    const meta = slugByName.get(name.trim().toLowerCase());
+    if (!meta) continue;
 
-      const withStock = list.filter((p) => (p.variants || []).some((v) => (v.stock || 0) > 0));
-      const candidates = withStock.length > 0 ? withStock : list;
+    const withStock = list.filter((p) => (p.variants || []).some((v) => (v.stock || 0) > 0));
+    const candidates = withStock.length > 0 ? withStock : list;
 
-      let image_url: string | null = null;
-      for (const p of candidates) {
-        const primary = (p.product_images || [])
-          .filter((img) => img.is_primary)
-          .sort((a, b) => a.sort_order - b.sort_order)[0];
-        const anyImg = (p.product_images || []).sort((a, b) => a.sort_order - b.sort_order)[0];
-        const path = primary?.storage_path || anyImg?.storage_path;
-        if (path) {
-          image_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-          break;
-        }
-        if (p.image_url) {
-          image_url = p.image_url;
-          break;
-        }
+    let image_url: string | null = null;
+    for (const p of candidates) {
+      const gallery = [...(p.product_images || [])].sort((a, b) => a.sort_order - b.sort_order);
+      const primary = gallery.find((img) => img.is_primary);
+      const path = primary?.storage_path || gallery[0]?.storage_path;
+      if (path) {
+        image_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+        break;
       }
+      if (p.image_url) {
+        image_url = p.image_url;
+        break;
+      }
+    }
 
-      return { name, slug, image_url };
-    })
-    .filter((t): t is ShopMoreCategory => !!t);
+    // Hide empty/placeholder tiles — only show categories with a real image.
+    if (!image_url) continue;
+
+    results.push({ name: meta.name, slug: meta.slug, image_url });
+  }
+
+  return results;
 }

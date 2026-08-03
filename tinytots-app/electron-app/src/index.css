@@ -1,5 +1,8 @@
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
+
+/* Local font faces + semantic type scale */
+@import "./styles/fonts.css";
+@import "./styles/typography.css";
 
 @theme {
   /* Backgrounds */
@@ -27,18 +30,121 @@
   --color-charcoal-900: #1c1917;
   --color-charcoal-800: #262220;
 
-  --font-display: "Playfair Display", "Georgia", serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Font families */
+  --font-display: "Playfair Display", "Georgia", "Times New Roman", serif;
+  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* Type scale → Tailwind text-* utilities (e.g. text-display-l) */
+  --text-display-xxl: 72px;
+  --text-display-xxl--line-height: 1;
+  --text-display-xxl--letter-spacing: -0.04em;
+  --text-display-xxl--font-weight: 700;
+
+  --text-display-xl: 60px;
+  --text-display-xl--line-height: 1;
+  --text-display-xl--letter-spacing: -0.04em;
+  --text-display-xl--font-weight: 700;
+
+  --text-display-l: 48px;
+  --text-display-l--line-height: 1;
+  --text-display-l--letter-spacing: -0.04em;
+  --text-display-l--font-weight: 700;
+
+  --text-heading-xl: 40px;
+  --text-heading-xl--line-height: 1.15;
+  --text-heading-xl--letter-spacing: -0.03em;
+  --text-heading-xl--font-weight: 700;
+
+  --text-heading-lg: 32px;
+  --text-heading-lg--line-height: 1.15;
+  --text-heading-lg--letter-spacing: -0.03em;
+  --text-heading-lg--font-weight: 700;
+
+  --text-heading-md: 28px;
+  --text-heading-md--line-height: 1.15;
+  --text-heading-md--letter-spacing: -0.02em;
+  --text-heading-md--font-weight: 700;
+
+  --text-heading-sm: 24px;
+  --text-heading-sm--line-height: 1.15;
+  --text-heading-sm--letter-spacing: -0.02em;
+  --text-heading-sm--font-weight: 700;
+
+  --text-section: 20px;
+  --text-section--line-height: 1.15;
+  --text-section--letter-spacing: -0.02em;
+  --text-section--font-weight: 700;
+
+  --text-card-title: 18px;
+  --text-card-title--line-height: 1.45;
+  --text-card-title--letter-spacing: -0.02em;
+  --text-card-title--font-weight: 700;
+
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 1.6;
+  --text-body-lg--letter-spacing: 0;
+  --text-body-lg--font-weight: 500;
+
+  --text-body: 15px;
+  --text-body--line-height: 1.6;
+  --text-body--letter-spacing: 0;
+  --text-body--font-weight: 400;
+
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.6;
+  --text-body-sm--letter-spacing: 0;
+  --text-body-sm--font-weight: 400;
+
+  --text-caption: 13px;
+  --text-caption--line-height: 1.6;
+  --text-caption--letter-spacing: 0.01em;
+  --text-caption--font-weight: 400;
+
+  --text-tiny: 12px;
+  --text-tiny--line-height: 1.6;
+  --text-tiny--letter-spacing: 0.01em;
+  --text-tiny--font-weight: 500;
+}
+
+/* CSS custom properties for .type-* utilities (mirror of @theme scale) */
+:root {
+  --type-display-xxl-size: 72px;
+  --type-display-xl-size: 60px;
+  --type-display-l-size: 48px;
+  --type-heading-xl-size: 40px;
+  --type-heading-lg-size: 32px;
+  --type-heading-md-size: 28px;
+  --type-heading-sm-size: 24px;
+  --type-section-size: 20px;
+  --type-card-title-size: 18px;
+  --type-stat-size: 32px;
+  --type-body-lg-size: 16px;
+  --type-body-size: 15px;
+  --type-body-sm-size: 14px;
+  --type-caption-size: 13px;
+  --type-tiny-size: 12px;
+  --type-btn-size: 15px;
+  --type-input-size: 15px;
+  --type-table-size: 14px;
+  --type-nav-size: 15px;
+
+  --type-display-lh: 1;
+  --type-heading-lh: 1.15;
+  --type-body-lh: 1.6;
+  --type-card-lh: 1.45;
+  --type-table-lh: 1.4;
+
+  --type-tracking-display: -0.04em;
+  --type-tracking-heading-lg: -0.03em;
+  --type-tracking-heading: -0.02em;
+  --type-tracking-body: 0;
+  --type-tracking-caption: 0.01em;
 }
 
 body {
-  font-family: var(--font-sans);
   background-color: var(--color-cream);
   color: var(--color-ink-900);
-}
-
-.font-display {
-  font-family: var(--font-display);
 }
 
 /* soft ambient scrollbar to match the quiet aesthetic */

@@ -99,7 +99,7 @@ export default function Inventory() {
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => navigate("/dashboard")}
-          className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-maroon-700"
+          className="type-nav inline-flex items-center gap-2 text-ink-800 hover:text-maroon-700"
         >
           <ArrowLeft size={15} /> Dashboard
         </button>
@@ -111,7 +111,7 @@ export default function Inventory() {
           >
             <Bell size={17} />
           </button>
-          <div className="w-10 h-10 rounded-full bg-maroon-700 text-cream-50 flex items-center justify-center font-semibold">
+          <div className="type-btn w-10 h-10 rounded-full bg-maroon-700 text-cream-50 flex items-center justify-center">
             M
           </div>
         </div>
@@ -121,19 +121,19 @@ export default function Inventory() {
       <div className="relative flex items-start justify-between mb-8">
         <FloralFlourish className="absolute -top-4 right-0 w-80 h-40 pointer-events-none hidden md:block" />
         <div className="relative">
-          <h1 className="font-display text-4xl text-maroon-800">
+          <h1 className="type-heading-lg text-maroon-800">
             Dynamic Inventory
           </h1>
-          <p className="text-ink-800 mt-1">Add, manage and track all your products &amp; variants.</p>
+          <p className="type-body text-ink-800 mt-1">Add, manage and track all your products &amp; variants.</p>
         </div>
 
         <div className="flex gap-3 relative">
-          <button className="px-4 py-2.5 rounded-lg border border-white/40 text-ink-900 text-sm font-medium hover:bg-white/20 backdrop-blur-sm">
+          <button className="type-btn px-4 py-2.5 rounded-lg border border-white/40 text-ink-900 hover:bg-white/20 backdrop-blur-sm">
             Import Products
           </button>
           <button
             onClick={() => setModal("create")}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-maroon-700 text-cream-50 text-sm font-medium hover:bg-maroon-800"
+            className="type-btn inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-maroon-700 text-cream-50 hover:bg-maroon-800"
           >
             <Plus size={16} /> Add New Product
           </button>
@@ -144,10 +144,11 @@ export default function Inventory() {
         <p className="text-center text-ink-800 py-20">Loading inventory…</p>
       ) : !selectedProduct ? (
         <div className={`text-center py-24 ${glassCard}`} style={glassCardStyle}>
-          <p className="text-ink-800 mb-4">No products yet.</p>
+          <p className="font-display type-heading-sm text-maroon-800 mb-2">No products yet</p>
+          <p className="type-body text-ink-800 mb-4">Add your first product to start managing inventory.</p>
           <button
             onClick={() => setModal("create")}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-maroon-700 text-cream-50 text-sm font-medium hover:bg-maroon-800"
+            className="type-btn inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-maroon-700 text-cream-50 hover:bg-maroon-800"
           >
             <Plus size={16} /> Add Your First Product
           </button>
@@ -159,9 +160,9 @@ export default function Inventory() {
             <div className="relative">
               <button
                 onClick={() => setPickerOpen((o) => !o)}
-                className="inline-flex items-center gap-2 text-sm bg-white/25 backdrop-blur-sm border border-white/40 rounded-lg px-3 py-2 text-ink-900"
+                className="type-body inline-flex items-center gap-2 bg-white/25 backdrop-blur-sm border border-white/40 rounded-lg px-3 py-2 text-ink-900"
               >
-                Viewing: <span className="font-semibold">{selectedProduct.name}</span>
+                Viewing: <span className="font-medium">{selectedProduct.name}</span>
                 <ChevronDown size={14} />
               </button>
               {pickerOpen && (
@@ -173,7 +174,7 @@ export default function Inventory() {
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search product or SKU…"
-                      className="w-full text-sm outline-none"
+                      className="type-input w-full outline-none"
                     />
                   </div>
                   <div className="max-h-64 overflow-y-auto">
@@ -186,12 +187,12 @@ export default function Inventory() {
                           setPickerOpen(false);
                           setSearch("");
                         }}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-cream-50 flex justify-between ${
+                        className={`type-body w-full text-left px-3 py-2 hover:bg-cream-50 flex justify-between ${
                           p.id === selectedProductId ? "bg-maroon-100 text-maroon-800" : ""
                         }`}
                       >
                         <span>{p.name}</span>
-                        <span className="text-ink-700/50 text-xs">{p.total_variants} variants</span>
+                        <span className="type-caption text-ink-700/50">{p.total_variants} variants</span>
                       </button>
                     ))}
                   </div>
@@ -202,7 +203,7 @@ export default function Inventory() {
             {/* Product Information */}
             <div className={`p-6 hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-xl text-maroon-800">Product Information</h2>
+                <h2 className="type-section text-maroon-800">Product Information</h2>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setModal("edit")}
@@ -213,7 +214,7 @@ export default function Inventory() {
                   </button>
                   <button
                     onClick={handleDeleteProduct}
-                    className="text-xs text-maroon-700 hover:underline px-2"
+                    className="type-caption text-maroon-700 hover:underline px-2"
                   >
                     Delete product
                   </button>
@@ -231,19 +232,19 @@ export default function Inventory() {
                   ) : (
                     <>
                       <Camera size={22} className="text-ink-800/50 mb-1" />
-                      <span className="text-[10px] text-ink-800/60">Change Image</span>
+                      <span className="type-label text-ink-800/60">Change Image</span>
                     </>
                   )}
                 </button>
 
-                <div className="grid grid-cols-3 gap-x-6 gap-y-3 flex-1 text-sm">
-                  <Field label="Product Name" value={selectedProduct.name} />
+                <div className="grid grid-cols-3 gap-x-6 gap-y-4 flex-1">
+                  <Field label="Product Name" value={selectedProduct.name} emphasize />
                   <Field label="Category" value={selectedProduct.category || "—"} />
                   <Field label="Status" value={selectedProduct.status || "active"} pill />
                   <Field label="Brand" value={selectedProduct.brand || "—"} />
                   <Field label="SKU ID (Base)" value={selectedProduct.sku} mono />
                   <Field label="Total Variants" value={selectedProduct.total_variants} />
-                  <Field label="HSN Code" value={selectedProduct.hsn_code || "—"} />
+                  <Field label="HSN Code" value={selectedProduct.hsn_code || "—"} mono />
                   <Field label="Unit" value={selectedProduct.unit || "Pcs"} />
                   <Field label="Total Stock" value={selectedProduct.total_stock} />
                   <Field
@@ -267,7 +268,7 @@ export default function Inventory() {
             {/* Variants */}
             <div className={`p-6 hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
               <div className="flex items-center justify-between mb-4">
-                <div className="flex gap-6 text-sm font-medium">
+                <div className="flex gap-6 type-nav">
                   <button
                     onClick={() => setTab("variants")}
                     className={`pb-2 border-b-2 ${
@@ -326,7 +327,7 @@ export default function Inventory() {
         <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
           <div className="bg-cream-50 rounded-2xl w-full max-w-md p-7">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display text-xl text-maroon-800">
+              <h2 className="type-section text-maroon-800">
                 Photos — {selectedProduct.name}
               </h2>
               <button
@@ -334,7 +335,7 @@ export default function Inventory() {
                   setPhotosOpen(false);
                   loadInventory(); // refresh so the primary thumbnail reflects any change
                 }}
-                className="text-ink-700 hover:text-maroon-700 text-sm"
+                className="type-btn text-ink-700 hover:text-maroon-700"
               >
                 Done
               </button>
@@ -351,21 +352,31 @@ export default function Inventory() {
   );
 }
 
-function Field({ label, value, mono, pill, className = "", html = false }) {
+function Field({ label, value, mono, pill, className = "", html = false, emphasize = false }) {
   return (
     <div className={`min-w-0 ${className}`}>
-      <p className="text-xs text-ink-800/70">{label}</p>
+      <p className="type-field-label text-ink-800/70">{label}</p>
       {pill ? (
-        <span className="inline-block mt-0.5 text-xs px-2 py-0.5 rounded-full bg-white/30 text-ink-900 capitalize">
+        <span className="type-label inline-block mt-0.5 px-2 py-0.5 rounded-full bg-white/30 text-ink-900 capitalize">
           {value}
         </span>
       ) : html ? (
         <div
-          className="text-ink-900 font-medium prose prose-sm max-w-none break-words [overflow-wrap:anywhere]"
+          className="type-prose text-ink-900 mt-0.5 break-words [overflow-wrap:anywhere] prose prose-sm max-w-[70ch] prose-headings:font-sans prose-headings:font-bold prose-p:font-sans prose-p:text-[15px] prose-p:leading-[1.6] prose-p:font-normal"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }}
         />
       ) : (
-        <p className={`text-ink-900 ${mono ? "font-mono text-sm" : "font-medium"}`}>{value}</p>
+        <p
+          className={`mt-0.5 text-ink-900 ${
+            mono
+              ? "font-mono type-mono type-body-sm font-medium"
+              : emphasize
+                ? "type-heading-sm"
+                : "type-body-lg"
+          }`}
+        >
+          {value}
+        </p>
       )}
     </div>
   );
@@ -382,18 +393,18 @@ function StockOverview({ variants }) {
     <div className="space-y-3">
       {Object.entries(byColor).map(([color, stock]) => (
         <div key={color} className="flex items-center gap-3">
-          <span className="w-20 text-sm text-ink-900 flex-shrink-0">{color}</span>
+          <span className="w-20 type-body text-ink-900 flex-shrink-0">{color}</span>
           <div className="flex-1 h-3 bg-white/20 rounded-full overflow-hidden">
             <div
               className="h-full bg-maroon-700 rounded-full"
               style={{ width: `${(stock / max) * 100}%` }}
             />
           </div>
-          <span className="w-10 text-sm text-ink-800 text-right">{stock}</span>
+          <span className="w-10 type-body text-ink-800 text-right">{stock}</span>
         </div>
       ))}
       {variants.length === 0 && (
-        <p className="text-center text-ink-800/60 py-8 text-sm">No stock data yet.</p>
+        <p className="text-center text-ink-800/60 py-8 type-body-sm">No stock data yet.</p>
       )}
     </div>
   );

@@ -65,7 +65,7 @@ export default function Splash() {
           {/* Main Title 3D Entrance */}
           <FlipText 
             delay={0.1} 
-            className="font-sans font-black tracking-tight text-5xl md:text-7xl mb-2"
+            className="font-display text-display-xl md:text-display-xxl mb-2"
           >
             <span style={{ color: "#710014" }}>TINYTOTS OS</span>
           </FlipText>

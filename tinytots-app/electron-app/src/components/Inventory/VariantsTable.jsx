@@ -66,9 +66,9 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full type-table">
           <thead>
-            <tr className="bg-maroon-700 text-cream-50 text-left">
+            <tr className="type-table-head bg-maroon-700 text-cream-50 text-left">
               <th className="p-3 rounded-l-lg w-10">
                 <input type="checkbox" checked={allSelected} onChange={(e) => onSelectAll(e.target.checked)} />
               </th>
@@ -107,8 +107,8 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
                     </span>
                   </td>
                   <td className="p-3 text-ink-900">{v.size}</td>
-                  <td className="p-3 font-mono text-xs text-ink-800">{v.sku}</td>
-                  <td className="p-3 font-mono text-xs text-maroon-800 font-semibold">{publicCode(v)}</td>
+                  <td className="p-3 font-mono type-mono type-caption text-ink-800">{v.sku}</td>
+                  <td className="p-3 font-mono type-mono type-caption text-maroon-800 font-semibold">{publicCode(v)}</td>
                   <td className="p-3">
                     {isEditing ? (
                       <input
@@ -279,7 +279,7 @@ function AddVariantModal({ productId, onClose, onAdded }) {
     <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
       <form onSubmit={handleSubmit} className="bg-cream-50 rounded-2xl w-full max-w-md p-6 space-y-3">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-display text-xl text-ink-900">Add Variant(s)</h3>
+          <h3 className="type-section text-ink-900">Add Variant(s)</h3>
           <button type="button" onClick={onClose} className="text-ink-700 hover:text-maroon-700">
             <X size={18} />
           </button>

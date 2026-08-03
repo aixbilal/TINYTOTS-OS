@@ -30,7 +30,7 @@ export default function SalesOverviewChart({ data }) {
   return (
     <div className={`p-6 hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
     <div className="flex items-center justify-between mb-5">
-      <h3 className="font-display text-xl text-ink-900">Sales Overview</h3>
+      <h3 className="type-section text-ink-900">Sales Overview</h3>
         <select className="border border-white/40 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1.5 text-sm text-ink-700">
           <option>Daily</option>
           <option>Weekly</option>

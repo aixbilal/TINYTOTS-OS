@@ -15,7 +15,7 @@ function CartSidebar({ cart, onCheckout }) {
 
   return (
     <div className="bg-white shadow p-4 h-full rounded-lg">
-      <h2 className="text-xl font-bold mb-4">
+      <h2 className="type-section mb-4">
         Active Cart
       </h2>
 

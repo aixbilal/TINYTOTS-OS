@@ -17,7 +17,7 @@ export default function KpiCard({ icon: Icon, label, value, delta }) {
         </div>
         <p className="text-sm text-ink-700">{label}</p>
       </div>
-      <p className="font-display text-2xl text-ink-900 mb-1.5">{value}</p>
+      <p className="type-stat text-ink-900 mb-1.5">{value}</p>
       <div className={`flex items-center gap-1 text-xs font-medium ${up ? "text-emerald-600" : "text-maroon-700"}`}>
         {up ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
         {Math.abs(delta).toFixed(1)}% vs last month

@@ -71,7 +71,7 @@ export default function PerformanceGoals() {
       {/* Header */}
       <div className="flex items-start justify-between mb-7 relative">
         <div>
-          <h1 className="font-display text-4xl text-ink-900">
+          <h1 className="type-heading-lg text-ink-900">
             Performance <span className="text-maroon-700">x</span> Goals
           </h1>
           <p className="text-ink-700 mt-1.5">Track performance, analyze trends and achieve your targets.</p>
@@ -149,7 +149,7 @@ export default function PerformanceGoals() {
 
       {/* Insights */}
       <div>
-        <h3 className="font-display text-xl text-ink-900 mb-4">Recent Performance Insights</h3>
+        <h3 className="type-section text-ink-900 mb-4">Recent Performance Insights</h3>
         <div className="flex flex-wrap gap-4">
           <InsightCard
             icon={ArrowUpRight}

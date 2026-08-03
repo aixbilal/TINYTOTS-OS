@@ -69,9 +69,18 @@ function ProductsContent() {
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const ids = searchParams.get("ids");
+  const gender = (searchParams.get("gender") || "").trim().toLowerCase();
+  const genderFilter =
+    gender === "boy" || gender === "girl" || gender === "unisex" ? gender : null;
+  const pageTitle =
+    genderFilter === "boy" ? "Boys" : genderFilter === "girl" ? "Girls" : genderFilter === "unisex" ? "Unisex" : "Shop All";
 
   useEffect(() => {
-    const url = ids ? `/api/products?ids=${ids}` : "/api/products";
+    const params = new URLSearchParams();
+    if (ids) params.set("ids", ids);
+    if (genderFilter) params.set("gender", genderFilter);
+    const qs = params.toString();
+    const url = qs ? `/api/products?${qs}` : "/api/products";
     setLoading(true);
     fetch(url)
       .then((res) => res.json())
@@ -81,12 +90,12 @@ function ProductsContent() {
       })
       .catch(() => setError("Couldn't load products right now. Please try again shortly."))
       .finally(() => setLoading(false));
-  }, [ids]);
+  }, [ids, genderFilter]);
 
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
       <div className="flex items-center justify-between mb-stack-md">
-        <h1 className="font-display-md text-display-md text-on-surface">Shop All</h1>
+        <h1 className="font-display-md text-display-md text-on-surface">{pageTitle}</h1>
         <CategoriesDropdown />
       </div>
 

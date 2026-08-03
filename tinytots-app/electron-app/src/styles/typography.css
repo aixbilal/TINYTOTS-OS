@@ -1,0 +1,279 @@
+/* ============================================================
+   TinyTots OS — Unified Typography System
+   ============================================================
+   Brand Display : Playfair Display  (login / welcome / brand only)
+   Primary UI    : Geist → Inter fallback
+   Monospace     : JetBrains Mono    (SKU / barcode / IDs only)
+   Weights       : 400 · 500 · 600 · 700 only
+   ============================================================ */
+
+/* ---- Semantic type scale utilities ---- */
+
+.type-display-xxl {
+  font-size: var(--type-display-xxl-size);
+  font-weight: 700;
+  line-height: var(--type-display-lh);
+  letter-spacing: var(--type-tracking-display);
+}
+
+.type-display-xl {
+  font-size: var(--type-display-xl-size);
+  font-weight: 700;
+  line-height: var(--type-display-lh);
+  letter-spacing: var(--type-tracking-display);
+}
+
+.type-display-l {
+  font-size: var(--type-display-l-size);
+  font-weight: 700;
+  line-height: var(--type-display-lh);
+  letter-spacing: var(--type-tracking-display);
+}
+
+.type-heading-xl {
+  font-size: var(--type-heading-xl-size);
+  font-weight: 700;
+  line-height: var(--type-heading-lh);
+  letter-spacing: var(--type-tracking-heading-lg);
+}
+
+.type-heading-lg {
+  font-size: var(--type-heading-lg-size);
+  font-weight: 700;
+  line-height: var(--type-heading-lh);
+  letter-spacing: var(--type-tracking-heading-lg);
+}
+
+.type-heading-md {
+  font-size: var(--type-heading-md-size);
+  font-weight: 700;
+  line-height: var(--type-heading-lh);
+  letter-spacing: var(--type-tracking-heading);
+}
+
+.type-heading-sm {
+  font-size: var(--type-heading-sm-size);
+  font-weight: 700;
+  line-height: var(--type-heading-lh);
+  letter-spacing: var(--type-tracking-heading);
+}
+
+.type-section {
+  font-size: var(--type-section-size);
+  font-weight: 700;
+  line-height: var(--type-heading-lh);
+  letter-spacing: var(--type-tracking-heading);
+}
+
+.type-card-title {
+  font-size: var(--type-card-title-size);
+  font-weight: 700;
+  line-height: var(--type-card-lh);
+  letter-spacing: var(--type-tracking-heading);
+}
+
+.type-stat {
+  font-size: var(--type-stat-size);
+  font-weight: 700;
+  line-height: var(--type-heading-lh);
+  letter-spacing: var(--type-tracking-heading-lg);
+}
+
+.type-body-lg {
+  font-size: var(--type-body-lg-size);
+  font-weight: 500;
+  line-height: var(--type-body-lh);
+  letter-spacing: var(--type-tracking-body);
+}
+
+.type-body {
+  font-size: var(--type-body-size);
+  font-weight: 400;
+  line-height: var(--type-body-lh);
+  letter-spacing: var(--type-tracking-body);
+}
+
+.type-body-sm {
+  font-size: var(--type-body-sm-size);
+  font-weight: 400;
+  line-height: var(--type-body-lh);
+  letter-spacing: var(--type-tracking-body);
+}
+
+.type-caption {
+  font-size: var(--type-caption-size);
+  font-weight: 400;
+  line-height: var(--type-body-lh);
+  letter-spacing: var(--type-tracking-caption);
+}
+
+.type-label {
+  font-size: var(--type-tiny-size);
+  font-weight: 500;
+  line-height: var(--type-body-lh);
+  letter-spacing: var(--type-tracking-caption);
+}
+
+.type-field-label {
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  line-height: var(--type-body-lh);
+  letter-spacing: var(--type-tracking-caption);
+}
+
+.type-btn {
+  font-family: var(--font-sans);
+  font-size: var(--type-btn-size);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: var(--type-tracking-body);
+}
+
+.type-input {
+  font-family: var(--font-sans);
+  font-size: var(--type-input-size);
+  font-weight: 500;
+  line-height: var(--type-body-lh);
+  letter-spacing: var(--type-tracking-body);
+}
+
+.type-table-head {
+  font-size: var(--type-table-size);
+  font-weight: 700;
+  line-height: var(--type-table-lh);
+  letter-spacing: var(--type-tracking-body);
+}
+
+.type-table {
+  font-size: var(--type-table-size);
+  font-weight: 500;
+  line-height: var(--type-table-lh);
+  letter-spacing: var(--type-tracking-body);
+}
+
+.type-nav {
+  font-family: var(--font-sans);
+  font-size: var(--type-nav-size);
+  font-weight: 600;
+  line-height: var(--type-card-lh);
+  letter-spacing: var(--type-tracking-body);
+}
+
+.type-mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1;
+  letter-spacing: 0;
+}
+
+/* Readable prose measure for long product copy */
+.type-prose {
+  font-size: var(--type-body-size);
+  font-weight: 400;
+  line-height: var(--type-body-lh);
+  letter-spacing: var(--type-tracking-body);
+  max-width: 70ch;
+}
+
+/* ---- Base element defaults (Geist everywhere unless overridden) ---- */
+
+html {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: var(--type-body-lh);
+  letter-spacing: var(--type-tracking-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--type-body-size);
+  font-weight: 400;
+  line-height: var(--type-body-lh);
+  letter-spacing: var(--type-tracking-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  line-height: var(--type-heading-lh);
+  letter-spacing: var(--type-tracking-heading);
+}
+
+button,
+[type="button"],
+[type="submit"],
+[type="reset"],
+.btn {
+  font-family: var(--font-sans);
+  font-size: var(--type-btn-size);
+  font-weight: 600;
+  letter-spacing: var(--type-tracking-body);
+}
+
+input,
+textarea,
+select {
+  font-family: var(--font-sans);
+  font-size: var(--type-input-size);
+  font-weight: 500;
+  letter-spacing: var(--type-tracking-body);
+}
+
+input::placeholder,
+textarea::placeholder {
+  font-family: var(--font-sans);
+  font-size: var(--type-body-sm-size);
+  font-weight: 400;
+  letter-spacing: var(--type-tracking-body);
+  opacity: 1;
+}
+
+label {
+  font-family: var(--font-sans);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  letter-spacing: var(--type-tracking-caption);
+}
+
+table {
+  font-family: var(--font-sans);
+  font-size: var(--type-table-size);
+  line-height: var(--type-table-lh);
+}
+
+th {
+  font-weight: 700;
+  font-size: var(--type-table-size);
+  letter-spacing: var(--type-tracking-body);
+}
+
+td {
+  font-weight: 500;
+  font-size: var(--type-table-size);
+  letter-spacing: var(--type-tracking-body);
+}
+
+/* Brand display — opt-in only via .font-display */
+.font-display {
+  font-family: var(--font-display);
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+.font-mono,
+.type-mono {
+  font-family: var(--font-mono);
+}
+
+/* Kill accidental ultra-heavy weights from legacy classes */
+.font-extrabold,
+.font-black {
+  font-weight: 700;
+}

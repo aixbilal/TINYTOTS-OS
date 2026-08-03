@@ -24,7 +24,7 @@ export default function DailyHeatmap({ heatmap }) {
 
   return (
     <div className={`p-6 hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
-      <h3 className="font-display text-xl text-ink-900 mb-5">Daily Sales Breakdown</h3>
+      <h3 className="type-section text-ink-900 mb-5">Daily Sales Breakdown</h3>
 
       <div className="grid" style={{ gridTemplateColumns: "60px repeat(7, 1fr)", rowGap: "8px", columnGap: "8px" }}>
         <div />

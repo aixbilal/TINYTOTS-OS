@@ -12,8 +12,8 @@ export default function InsightCard({ icon: Icon, iconBg, title, description }) 
         <Icon size={18} />
       </div>
       <div>
-        <p className="font-medium text-ink-900 mb-1">{title}</p>
-        <p className="text-sm text-ink-700 leading-snug">{description}</p>
+        <p className="type-body-lg text-ink-900 mb-1">{title}</p>
+        <p className="type-body-sm text-ink-700">{description}</p>
       </div>
     </div>
   );

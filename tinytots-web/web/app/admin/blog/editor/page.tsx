@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { adminFetch } from "@/lib/admin-fetch";
+import { BLOG_CATEGORIES, slugifyBlog } from "@/lib/blog-categories";
 import DOMPurify from "dompurify";
 import "react-quill-new/dist/quill.snow.css";
 
@@ -39,6 +40,9 @@ export default function BlogEditorPage() {
   const isEditing = !!postId;
 
   const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [category, setCategory] = useState("");
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
   const [featuredImageUrl, setFeaturedImageUrl] = useState("");
@@ -57,6 +61,9 @@ export default function BlogEditorPage() {
     const data = await res.json();
     if (res.ok) {
       setTitle(data.post.title);
+      setSlug(data.post.slug || "");
+      setSlugTouched(true);
+      setCategory(data.post.category || "");
       setAuthor(data.post.author || "");
       setContent(data.post.content);
       setFeaturedImageUrl(data.post.featured_image_url || "");
@@ -140,6 +147,8 @@ export default function BlogEditorPage() {
     try {
       const payload = {
         title,
+        slug: slug.trim() || slugifyBlog(title),
+        category: category || null,
         content,
         author,
         featured_image_url: featuredImageUrl,
@@ -194,10 +203,48 @@ export default function BlogEditorPage() {
           <input
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setTitle(next);
+              if (!slugTouched) setSlug(slugifyBlog(next));
+            }}
             className="w-full border rounded-md px-3 py-2 text-sm"
             placeholder="Post title"
           />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Slug</label>
+          <input
+            type="text"
+            value={slug}
+            onChange={(e) => {
+              setSlugTouched(true);
+              setSlug(e.target.value);
+            }}
+            onBlur={() => setSlug(slugifyBlog(slug))}
+            className="w-full border rounded-md px-3 py-2 text-sm font-mono"
+            placeholder="url-slug-for-this-post"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Auto-fills from the title; edit to override. Live URL: /blog/{slug || "…"}
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Category</label>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full border rounded-md px-3 py-2 text-sm bg-white"
+          >
+            <option value="">Select a category…</option>
+            {BLOG_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

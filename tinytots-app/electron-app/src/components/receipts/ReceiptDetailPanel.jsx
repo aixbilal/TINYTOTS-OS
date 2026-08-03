@@ -40,7 +40,7 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
   return (
     <div className="w-[380px] bg-cream-50 border border-gold-300/40 rounded-2xl p-6 h-fit sticky top-7 hover:shadow-md transition-shadow duration-200">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="font-display text-xl text-ink-900">Receipt Details</h3>
+        <h3 className="type-section text-ink-900">Receipt Details</h3>
         <button onClick={onClose} className="text-ink-700 hover:text-ink-900">
           <X size={18} />
         </button>
@@ -87,8 +87,8 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
           </div>
 
           <div className="border border-gold-300/40 rounded-xl p-4 bg-white font-mono text-[11px] text-ink-900">
-            <p className="text-center font-display text-base mb-0.5">RETAIL EDGE</p>
-            <p className="text-center text-[10px] text-ink-700 mb-2">ELEVATE EVERY SALE</p>
+            <p className="text-center font-display type-body-lg mb-0.5">RETAIL EDGE</p>
+            <p className="text-center type-label text-ink-700 mb-2">ELEVATE EVERY SALE</p>
             <div className="border-t border-dashed border-ink-700/30 my-2" />
             <p>Receipt ID : {receipt.receiptId}</p>
             <p>Date : {new Date(receipt.dateTime).toLocaleString("en-GB")}</p>
@@ -120,11 +120,11 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
               <span>Rs. {receipt.tax.toLocaleString("en-PK")}</span>
             </div>
             <div className="border-t border-dashed border-ink-700/30 my-2" />
-            <div className="flex justify-between font-display text-sm">
+            <div className="flex justify-between type-body-lg font-bold">
               <span>Total</span>
               <span>Rs. {receipt.total.toLocaleString("en-PK")}</span>
             </div>
-            <p className="text-center mt-3 text-[10px] text-ink-700">Thank you for shopping with us!<br />Visit again!</p>
+            <p className="text-center mt-3 type-label text-ink-700">Thank you for shopping with us!<br />Visit again!</p>
           </div>
 
           {message && <p className="text-xs text-ink-700 mt-3 text-center">{message}</p>}

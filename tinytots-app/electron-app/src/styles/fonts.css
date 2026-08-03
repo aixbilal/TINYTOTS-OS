@@ -1,0 +1,38 @@
+/* Local font faces — offline-safe for Electron.
+   Weights limited to 400 / 500 / 600 / 700 per the design system. */
+
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../../node_modules/geist/dist/fonts/geist-sans/Geist-Regular.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../../node_modules/geist/dist/fonts/geist-sans/Geist-Medium.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../../node_modules/geist/dist/fonts/geist-sans/Geist-SemiBold.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../../node_modules/geist/dist/fonts/geist-sans/Geist-Bold.woff2")
+    format("woff2");
+}

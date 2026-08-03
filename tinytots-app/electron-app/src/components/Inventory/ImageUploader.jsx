@@ -207,7 +207,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
                   <button
                     type="button"
                     onClick={() => setPrimary(img.id)}
-                    className="text-white text-[10px] bg-white/20 rounded px-1.5 py-1 hover:bg-white/30"
+                    className="text-white type-label bg-white/20 rounded px-1.5 py-1 hover:bg-white/30"
                   >
                     Primary
                   </button>
@@ -216,7 +216,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
                   type="button"
                   disabled={deletingIds.has(img.id)}
                   onClick={() => deleteImage(img.id)}
-                  className="text-white text-[10px] bg-red-600/80 rounded px-1.5 py-1 hover:bg-red-600 disabled:opacity-50"
+                  className="text-white type-label bg-red-600/80 rounded px-1.5 py-1 hover:bg-red-600 disabled:opacity-50"
                 >
                   {deletingIds.has(img.id) ? "..." : "Delete"}
                 </button>

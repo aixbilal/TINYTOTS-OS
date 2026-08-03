@@ -310,8 +310,8 @@ export default function POS() {
       <div className="relative flex items-start justify-between mb-6">
         <FloralFlourish className="absolute -top-4 right-24 w-80 h-40 pointer-events-none hidden md:block" />
         <div className="relative">
-          <h1 className="font-display text-4xl text-maroon-800 flex items-baseline gap-3">
-            POS <span className="text-base font-sans font-normal text-ink-800">| Point of Sale</span>
+          <h1 className="type-heading-lg text-maroon-800 flex items-baseline gap-3">
+            POS <span className="type-body font-normal text-ink-800">| Point of Sale</span>
           </h1>
           <p className="text-ink-800 mt-1">Scan product barcode or search to add to cart</p>
         </div>
@@ -363,7 +363,7 @@ export default function POS() {
           <div className="w-24 h-24 rounded-full bg-white/25 border border-white/40 flex items-center justify-center mb-6">
             <ScanBarcode size={34} className="text-maroon-800" strokeWidth={1.4} />
           </div>
-          <h2 className="font-display text-xl text-maroon-800 mb-2">Scan Barcode / QR Code</h2>
+          <h2 className="type-section text-maroon-800 mb-2">Scan Barcode / QR Code</h2>
           <p className="text-sm text-ink-800 mb-6 max-w-[220px]">
             Scan a product barcode or QR code to add it to the cart
           </p>
@@ -383,7 +383,7 @@ export default function POS() {
         {/* Cart */}
         <div className={`lg:col-span-2 p-6 ${glassCard}`} style={glassCardStyle}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl text-maroon-800">Cart ({cart.length})</h2>
+            <h2 className="type-section text-maroon-800">Cart ({cart.length})</h2>
             {cart.length > 0 && (
               <button
                 onClick={() => setCart([])}
@@ -419,8 +419,8 @@ export default function POS() {
                       {item.image_url && <img src={item.image_url} alt="" className="w-full h-full object-cover" />}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-ink-900 truncate">{item.name}</p>
-                      <p className="text-xs text-ink-800/60 font-mono truncate">{item.sku}</p>
+                      <p className="type-body-lg truncate text-ink-900">{item.name}</p>
+                      <p className="type-caption text-ink-800/60 font-mono type-mono truncate">{item.sku}</p>
                     </div>
                   </div>
                   <span className="text-sm text-ink-900">{item.size || "—"}</span>
@@ -524,12 +524,12 @@ export default function POS() {
           <div className="border-t border-white/40 my-2" />
           <div className="flex items-center justify-between mb-4">
             <span className="font-semibold text-ink-900">Total</span>
-            <span className="font-display text-2xl text-maroon-800">{formatPKR(total)}</span>
+            <span className="type-stat text-maroon-800">{formatPKR(total)}</span>
           </div>
           <button
             onClick={checkout}
             disabled={processing || cart.length === 0}
-            className="w-full flex items-center justify-center gap-2 bg-maroon-700 text-cream-50 font-medium py-3 rounded-lg hover:bg-maroon-800 disabled:opacity-50"
+            className="type-btn w-full flex items-center justify-center gap-2 bg-maroon-700 text-cream-50 py-3 rounded-lg hover:bg-maroon-800 disabled:opacity-50"
           >
             <Lock size={15} /> {processing ? "Processing…" : "Checkout"}
           </button>
@@ -544,7 +544,7 @@ export default function POS() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display text-lg text-maroon-800">Pending & Failed Sales</h3>
+              <h3 className="type-section text-maroon-800">Pending & Failed Sales</h3>
               <button onClick={() => setShowPending(false)}><X size={18} /></button>
             </div>
             {failedSales.length === 0 && pendingSales === 0 && (

@@ -95,7 +95,7 @@ export default function EmployeesModal({ onClose }) {
     <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 px-4">
       <div className="bg-cream-50 rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gold-300/30">
-          <h2 className="font-display text-xl text-ink-900">Manage Employees</h2>
+          <h2 className="type-section text-ink-900">Manage Employees</h2>
           <button onClick={onClose} className="text-ink-700 hover:text-maroon-700">
             <X size={18} />
           </button>

@@ -8,6 +8,7 @@ interface Post {
   id: number;
   title: string;
   slug: string;
+  category: string | null;
   author: string | null;
   is_published: boolean;
   published_at: string | null;
@@ -79,7 +80,8 @@ export default function AdminBlogListPage() {
             <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
               <tr>
                 <th className="px-6 py-3">Title</th>
-                <th className="px-6 py-3">Author</th>
+                <th className="px-6 py-3">Category</th>
+                <th className="px-6 py-3">Slug</th>
                 <th className="px-6 py-3">Status</th>
                 <th className="px-6 py-3">Created</th>
                 <th className="px-6 py-3 text-right">Actions</th>
@@ -89,7 +91,8 @@ export default function AdminBlogListPage() {
               {posts.map((p) => (
                 <tr key={p.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium text-gray-900">{p.title}</td>
-                  <td className="px-6 py-4">{p.author || "—"}</td>
+                  <td className="px-6 py-4">{p.category || "—"}</td>
+                  <td className="px-6 py-4 font-mono text-xs text-gray-500">{p.slug}</td>
                   <td className="px-6 py-4">
                     <span
                       className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${

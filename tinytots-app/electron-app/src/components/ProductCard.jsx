@@ -4,29 +4,17 @@ function ProductCard({ product, onAdd }) {
       onClick={() => onAdd(product)}
       className="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-lg transition"
     >
-      <h2 className="text-lg font-bold">
-        {product.name}
-      </h2>
+      <h2 className="type-card-title text-ink-900">{product.name}</h2>
 
-      <p className="text-gray-500 text-sm">
-        SKU: {product.sku}
-      </p>
+      <p className="type-caption text-ink-700 mt-1 font-mono type-mono">SKU: {product.sku}</p>
 
-      <p className="text-gray-500 text-sm">
-        Color: {product.color}
-      </p>
+      <p className="type-body-sm text-ink-700 mt-1">Color: {product.color}</p>
 
-      <p className="text-gray-500 text-sm">
-        Size: {product.size}
-      </p>
+      <p className="type-body-sm text-ink-700">Size: {product.size}</p>
 
-      <p className="text-blue-600 font-semibold">
-        ${product.price}
-      </p>
+      <p className="type-body-lg text-maroon-700 mt-2">{product.price}</p>
 
-      <p className="text-green-600 text-sm">
-        Stock: {product.stock}
-      </p>
+      <p className="type-caption text-ink-700 mt-1">Stock: {product.stock}</p>
     </div>
   );
 }

@@ -49,8 +49,8 @@ export default function Header() {
         }}
       >
         <div className="text-right hidden sm:block">
-          <p className="text-xs text-ink-800/80">{getGreeting()},</p>
-          <p className="font-semibold text-maroon-700">{session?.name || "Guest"}</p>
+          <p className="type-caption text-ink-800/80">{getGreeting()},</p>
+          <p className="type-body-lg text-maroon-700">{session?.name || "Guest"}</p>
         </div>
 
         <NotificationBell />
@@ -58,7 +58,7 @@ export default function Header() {
         <div className="relative" ref={profileRef}>
           <button
             onClick={() => setProfileOpen((v) => !v)}
-            className="w-9 h-9 rounded-full bg-maroon-700 text-cream-50 flex items-center justify-center font-semibold text-sm"
+            className="type-btn w-9 h-9 rounded-full bg-maroon-700 text-cream-50 flex items-center justify-center"
           >
             {initial}
           </button>
@@ -66,8 +66,8 @@ export default function Header() {
           {profileOpen && (
          <div className="absolute right-0 top-11 z-[60] w-56 bg-white border border-gold-300/40 rounded-xl shadow-lg overflow-hidden">
               <div className="px-4 py-3 border-b border-gold-300/30">
-                <p className="text-sm font-medium text-ink-900">{session?.name}</p>
-                <p className="text-xs text-ink-700/60 capitalize">
+                <p className="type-body-lg text-ink-900">{session?.name}</p>
+                <p className="type-caption text-ink-700/60 capitalize">
                   {session?.role} · @{session?.username}
                 </p>
               </div>
@@ -78,7 +78,7 @@ export default function Header() {
                     setEmployeesOpen(true);
                     setProfileOpen(false);
                   }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-ink-900 hover:bg-cream-100 inline-flex items-center gap-2"
+                  className="type-body w-full text-left px-4 py-2.5 text-ink-900 hover:bg-cream-100 inline-flex items-center gap-2"
                 >
                   <Users size={14} /> Manage Employees
                 </button>
@@ -86,7 +86,7 @@ export default function Header() {
 
               <button
                 onClick={handleLogout}
-                className="w-full text-left px-4 py-2.5 text-sm text-maroon-700 hover:bg-cream-100 inline-flex items-center gap-2"
+                className="type-body w-full text-left px-4 py-2.5 text-maroon-700 hover:bg-cream-100 inline-flex items-center gap-2"
               >
                 <LogOut size={14} /> Log Out
               </button>

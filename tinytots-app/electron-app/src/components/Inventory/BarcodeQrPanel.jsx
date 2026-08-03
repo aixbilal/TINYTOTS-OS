@@ -143,14 +143,14 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds, onSe
         boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
       }}
     >
-      <h3 className="font-display text-xl text-maroon-800 mb-1">Generate Barcode / QR</h3>
-      <p className="text-sm text-ink-800 mb-5">
+      <h3 className="type-section text-maroon-800 mb-1">Generate Barcode / QR</h3>
+      <p className="type-body text-ink-800 mb-5">
         Select variants to generate Barcode or QR codes for easy tagging.
       </p>
 
-      <p className="text-sm font-medium text-ink-900 mb-2">Select Variants</p>
+      <p className="type-field-label text-ink-900 mb-2">Select Variants</p>
       <div className="space-y-2 mb-5">
-        <label className="flex items-center gap-2 text-sm cursor-pointer text-ink-900">
+        <label className="type-body flex items-center gap-2 cursor-pointer text-ink-900">
           <input
             type="radio"
             checked={selectionMode === "all"}
@@ -158,7 +158,7 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds, onSe
           />
           All Variants ({allVariants.length})
         </label>
-        <label className="flex items-center gap-2 text-sm cursor-pointer text-ink-900">
+        <label className="type-body flex items-center gap-2 cursor-pointer text-ink-900">
           <input
             type="radio"
             checked={selectionMode === "custom"}
@@ -167,10 +167,10 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds, onSe
           Custom Selection ({selectedIds.length} checked in table)
         </label>
       </div>
-      <p className="text-sm font-medium text-ink-900 mb-2">
+      <p className="type-field-label text-ink-900 mb-2">
         Label Quantities <span className="font-normal text-ink-800/70">(defaults to stock, editable)</span>
       </p>
-      <div className="max-h-32 overflow-y-auto space-y-1 mb-2 text-xs pr-1">
+      <div className="max-h-32 overflow-y-auto space-y-1 mb-2 type-caption pr-1">
         {effectiveIds.map((id) => {
           const v = allVariants.find((v) => v.id === id);
           if (!v) return null;

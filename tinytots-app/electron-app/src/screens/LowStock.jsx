@@ -35,7 +35,7 @@ export default function LowStock() {
           Back to Dashboard
         </button>
 
-        <h1 className="font-display font-semibold text-3xl md:text-4xl text-ink-900 leading-tight">
+        <h1 className="type-heading-lg text-ink-900">
           Low Stock Items
         </h1>
         <p className="mt-2 text-ink-700 flex items-center gap-2">

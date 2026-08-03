@@ -14,7 +14,7 @@ export default function CategoryDonut({ data }) {
 
   return (
     <div className={`p-6 hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
-      <h3 className="font-display text-xl text-ink-900 mb-5">Sales by Category</h3>
+      <h3 className="type-section text-ink-900 mb-5">Sales by Category</h3>
       <div className="flex items-center gap-6">
         <PieChart width={150} height={150}>
           <Pie data={chartData} dataKey="value" innerRadius={45} outerRadius={70} stroke="none">

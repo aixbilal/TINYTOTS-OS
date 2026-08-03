@@ -16,7 +16,7 @@ export default function GoalSummaryCard({ goal }) {
 
   return (
     <div className={`p-6 flex flex-col hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
-      <h3 className="font-display text-xl text-ink-900 mb-5">Goal Summary</h3>
+      <h3 className="type-section text-ink-900 mb-5">Goal Summary</h3>
 
       <div className="flex items-center gap-6 mb-5">
         <div className="relative w-[130px] h-[130px] flex-shrink-0">
@@ -35,7 +35,7 @@ export default function GoalSummaryCard({ goal }) {
             </Pie>
           </PieChart>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="font-display text-2xl text-ink-900">{goal ? `${goal.percent}%` : "—"}</p>
+            <p className="type-stat text-ink-900">{goal ? `${goal.percent}%` : "—"}</p>
             <p className="text-[11px] text-ink-700 text-center leading-tight">of monthly<br />goal</p>
           </div>
         </div>

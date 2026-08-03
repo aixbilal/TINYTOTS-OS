@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 import { normalizeQuillHtml } from "@/lib/html-text";
+import { isBlogCategory, slugifyBlog } from "@/lib/blog-categories";
 import DOMPurify from "isomorphic-dompurify";
 
 function sanitizeContent(html: string): string {
@@ -13,6 +14,7 @@ function sanitizeContent(html: string): string {
     }).replace(/\p{Cf}/gu, "")
   );
 }
+
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> } | { params: { id: string } }
@@ -41,13 +43,38 @@ export async function PATCH(
   try {
     const params = await (context.params as any);
     const body = await req.json();
-    const { title, content, author, featured_image_url, is_published } = body;
+    const { title, content, author, featured_image_url, is_published, slug: rawSlug, category } = body;
 
     const updates: Record<string, any> = {};
     if (title !== undefined) updates.title = title.trim();
     if (content !== undefined) updates.content = sanitizeContent(content);
     if (author !== undefined) updates.author = author?.trim() || null;
     if (featured_image_url !== undefined) updates.featured_image_url = featured_image_url || null;
+    if (category !== undefined) {
+      if (category === null || category === "") {
+        updates.category = null;
+      } else if (!isBlogCategory(category)) {
+        return NextResponse.json({ error: "Invalid blog category" }, { status: 400 });
+      } else {
+        updates.category = category;
+      }
+    }
+    if (rawSlug !== undefined) {
+      const slug = slugifyBlog(String(rawSlug || ""));
+      if (!slug) {
+        return NextResponse.json({ error: "A valid slug is required" }, { status: 400 });
+      }
+      const { data: existing } = await supabaseAdmin
+        .from("blog_posts")
+        .select("id")
+        .eq("slug", slug)
+        .neq("id", params.id)
+        .maybeSingle();
+      if (existing) {
+        return NextResponse.json({ error: `Slug "${slug}" is already in use` }, { status: 409 });
+      }
+      updates.slug = slug;
+    }
     if (is_published !== undefined) {
       updates.is_published = !!is_published;
       if (is_published) {

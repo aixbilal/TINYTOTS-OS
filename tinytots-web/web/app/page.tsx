@@ -107,7 +107,7 @@ const HOMEPAGE_DEFAULTS = {
   meadow_image_url:
     "https://lh3.googleusercontent.com/aida-public/AB6AXuD8Kx1YOh37r9_tpddrRx-z8ThyZ74VSqpZ8NqUnuAkyKpMprUo6QvWwqSSsEAdqYjmB8_VspVcq243mW9a22_3h2uBkoj0HsGYa9zMowQLOW9MHk0XF5DbcrXkdkT-N_-7h5kT9AGG2BKHkZ6lR4Z-1-JuIolvhibU6NmMriHSQUJDGTJf97EnY-lHUWEAB0lC50ARUK0xVIRuln4l0asI6-ON9Q36p900XcyxhlFoKFDQGDSKpihL40rJhWsAylmx-xlFJabMaUOM",
   meadow_badge_text: "Spring Collection",
-  meadow_heading: "The Meadow Edit",
+  meadow_heading: "Soft Pastels Edit",
   meadow_button_text: "Explore Collection",
   meadow_link: "/products",
   boys_image_url:
@@ -253,12 +253,7 @@ export default async function Home() {
             </Link>
             <div className="flex flex-col gap-bento-gap">
               <Link
-                href={sectionLink(
-                  content.boys_selection_type,
-                  content.boys_category,
-                  content.boys_product_ids,
-                  content.boys_link ?? HOMEPAGE_DEFAULTS.boys_link
-                )}
+                href="/products?gender=boy"
                 className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[140px] md:min-h-[200px]"
               >
                 <div
@@ -279,12 +274,7 @@ export default async function Home() {
                 </div>
               </Link>
               <Link
-                href={sectionLink(
-                  content.girls_selection_type,
-                  content.girls_category,
-                  content.girls_product_ids,
-                  content.girls_link ?? HOMEPAGE_DEFAULTS.girls_link
-                )}
+                href="/products?gender=girl"
                 className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[140px] md:min-h-[200px]"
               >
                 <div

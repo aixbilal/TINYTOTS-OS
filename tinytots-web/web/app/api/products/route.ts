@@ -13,6 +13,11 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const idsParam = searchParams.get("ids");
+  const genderParam = (searchParams.get("gender") || "").trim().toLowerCase();
+  const genderFilter =
+    genderParam === "boy" || genderParam === "girl" || genderParam === "unisex"
+      ? genderParam
+      : null;
 
   let query = supabase
     .from("products")
@@ -37,6 +42,10 @@ export async function GET(request: Request) {
     query = query.in("id", ids);
   } else {
     query = query.order("created_at", { ascending: false });
+  }
+
+  if (genderFilter) {
+    query = query.eq("gender", genderFilter);
   }
 
   const { data: rawProducts, error } = await query;

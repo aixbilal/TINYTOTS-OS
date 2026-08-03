@@ -186,7 +186,7 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
     return (
       <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
         <div className="bg-cream-50 rounded-2xl w-full max-w-md p-7">
-          <h2 className="font-display text-2xl text-ink-900 mb-1">Product Created!</h2>
+          <h2 className="type-heading-sm text-ink-900 mb-1">Product Created!</h2>
           <p className="text-sm text-ink-700 mb-4">Add photos now, or skip and add them later.</p>
 
           <ImageUploader productId={createdProductId} images={images} onImagesChange={setImages} />
@@ -208,7 +208,7 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
     <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
       <div className="bg-cream-50 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-7">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display text-2xl text-ink-900">
+          <h2 className="type-heading-sm text-ink-900">
             {mode === "create" ? "Add New Product" : "Edit Product"}
           </h2>
           <button onClick={onClose} className="text-ink-700 hover:text-maroon-700">

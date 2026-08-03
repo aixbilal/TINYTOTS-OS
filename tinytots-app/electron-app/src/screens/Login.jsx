@@ -99,10 +99,10 @@ export default function Login() {
             "0 8px 32px rgba(70,10,20,0.25), inset 0 1px 1px rgba(255,255,255,0.5)",
         }}
       >
-        <h1 className="font-display text-5xl font-extrabold text-maroon-800 text-center mb-2 tracking-tight">
+        <h1 className="font-display type-display-l text-maroon-800 text-center mb-2">
           Tiny Tots
         </h1>
-        <p className="text-base text-ink-700/80 text-center mb-8">Sign in to continue</p>
+        <p className="type-body text-ink-700/80 text-center mb-8">Sign in to continue</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex items-center gap-3 border border-white/50 rounded-xl px-4 py-3.5 bg-white/20 backdrop-blur-sm">
@@ -112,7 +112,7 @@ export default function Login() {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Username"
               autoFocus
-              className="w-full bg-transparent text-base outline-none placeholder:text-ink-800/50 text-ink-900"
+              className="type-input w-full bg-transparent outline-none placeholder:text-ink-800/50 text-ink-900"
             />
           </div>
 
@@ -123,16 +123,16 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full bg-transparent text-base outline-none placeholder:text-ink-800/50 text-ink-900"
+              className="type-input w-full bg-transparent outline-none placeholder:text-ink-800/50 text-ink-900"
             />
           </div>
 
-          {error && <p className="text-sm text-maroon-700">{error}</p>}
+          {error && <p className="type-caption text-maroon-700">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full text-cream-50 font-semibold text-lg py-3.5 rounded-xl disabled:opacity-50 transition-opacity"
+            className="type-btn w-full text-cream-50 py-3.5 rounded-xl disabled:opacity-50 transition-opacity"
             style={{
               background: "linear-gradient(180deg, #8a1f2d 0%, #6b1420 100%)",
               boxShadow: "0 4px 14px rgba(90,15,25,0.4)",

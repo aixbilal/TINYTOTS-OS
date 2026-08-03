@@ -685,8 +685,8 @@ export default function AdminHomepagePage() {
           </p>
         </SectionCard>
 
-        {/* 6. Meadow */}
-        <SectionCard title="6. Meadow Edit banner" hint="Large left tile in the bento grid.">
+        {/* 6. Soft Pastels Edit */}
+        <SectionCard title="6. Soft Pastels Edit banner" hint="Large left tile in the bento grid.">
           <div className="flex flex-col gap-3 mb-4">
             <TextField
               label="Image URL"
@@ -825,7 +825,7 @@ export default function AdminHomepagePage() {
         {/* 9. Perspective card stack — independent from section 4 */}
         <SectionCard
           title="9. Trending Now — perspective carousel"
-          hint="Homepage: stacked rotating cards below Meadow/Boys/Girls. Own heading + product list (stack_*), not shared with the grid above."
+          hint="Homepage: stacked rotating cards below Soft Pastels/Boys/Girls. Own heading + product list (stack_*), not shared with the grid above."
         >
           <div className="flex flex-col gap-3">
             <TextField

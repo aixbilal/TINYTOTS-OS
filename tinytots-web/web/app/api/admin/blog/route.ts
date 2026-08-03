@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 import { normalizeQuillHtml } from "@/lib/html-text";
+import { isBlogCategory, slugifyBlog } from "@/lib/blog-categories";
 import DOMPurify from "isomorphic-dompurify";
 
-// The single, guaranteed gate every blog post's HTML passes through before
-// touching the database.
 function sanitizeContent(html: string): string {
   return normalizeQuillHtml(
     DOMPurify.sanitize(html, {
@@ -14,15 +13,6 @@ function sanitizeContent(html: string): string {
       FORBID_ATTR: ["style", "class", "width", "height"],
     }).replace(/\p{Cf}/gu, "")
   );
-}
-
-function slugify(title: string) {
-  return title
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
 }
 
 export async function GET(req: NextRequest) {
@@ -44,14 +34,21 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, content, author, featured_image_url, is_published } = body;
+    const { title, content, author, featured_image_url, is_published, slug: rawSlug, category } = body;
 
     if (!title || !content) {
       return NextResponse.json({ error: "Title and content are required" }, { status: 400 });
     }
 
+    if (category != null && category !== "" && !isBlogCategory(category)) {
+      return NextResponse.json({ error: "Invalid blog category" }, { status: 400 });
+    }
+
     const cleanContent = sanitizeContent(content);
-    let slug = slugify(title);
+    let slug = slugifyBlog(typeof rawSlug === "string" && rawSlug.trim() ? rawSlug : title);
+    if (!slug) {
+      return NextResponse.json({ error: "A valid slug is required" }, { status: 400 });
+    }
 
     const { data: existing } = await supabaseAdmin
       .from("blog_posts")
@@ -59,7 +56,9 @@ export async function POST(req: NextRequest) {
       .eq("slug", slug)
       .maybeSingle();
 
-    if (existing) slug = `${slug}-${Date.now()}`;
+    if (existing) {
+      return NextResponse.json({ error: `Slug "${slug}" is already in use` }, { status: 409 });
+    }
 
     const { data: post, error } = await supabaseAdmin
       .from("blog_posts")
@@ -69,6 +68,7 @@ export async function POST(req: NextRequest) {
         content: cleanContent,
         author: author?.trim() || null,
         featured_image_url: featured_image_url || null,
+        category: category && isBlogCategory(category) ? category : null,
         is_published: !!is_published,
         published_at: is_published ? new Date().toISOString() : null,
       })

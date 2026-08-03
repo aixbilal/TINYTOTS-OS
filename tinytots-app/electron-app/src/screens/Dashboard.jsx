@@ -150,15 +150,15 @@ export default function Dashboard() {
         <Header />
       </div>
 
-      {/* Headline */}
+      {/* Headline — Playfair editorial welcome only */}
       <div className="relative mb-10">
         <FloralFlourish className="absolute -top-6 right-0 w-96 h-48 pointer-events-none hidden md:block" />
-        <h1 className="font-display font-semibold text-4xl md:text-5xl text-ink-900 leading-tight relative">
+        <h1 className="font-display text-heading-xl md:text-display-l text-ink-900 relative">
           {timeGreeting()}
           <br />
           <span className="text-maroon-700">{session?.name || "Retailer"}</span>
         </h1>
-        <p className="mt-3 text-ink-800 flex items-center gap-2">
+        <p className="type-body-sm mt-3 text-ink-800 flex items-center gap-2">
           <span className="inline-block w-6 h-px bg-gold-600" />
           Here&apos;s what&apos;s happening with your store today.
         </p>
@@ -182,13 +182,13 @@ export default function Dashboard() {
                 >
                   <Icon size={22} strokeWidth={1.6} />
                 </div>
-                <h2 className="font-display text-2xl font-semibold whitespace-pre-line leading-snug">
+                <h2 className="type-card-title whitespace-pre-line">
                   {mod.title}
                 </h2>
               </div>
 
               <div>
-                <p className={`text-sm mb-4 ${tone.desc}`}>{mod.description}</p>
+                <p className={`type-body mb-4 ${tone.desc}`}>{mod.description}</p>
                 <span
                   className={`inline-flex w-9 h-9 rounded-full border items-center justify-center transition-colors ${tone.arrowWrap}`}
                 >
@@ -210,8 +210,8 @@ export default function Dashboard() {
         }}
       >
         <div>
-          <p className="text-sm font-semibold text-maroon-800">Today&apos;s Snapshot</p>
-          <p className="text-xs text-ink-800">
+          <p className="type-field-label text-maroon-800">Today&apos;s Snapshot</p>
+          <p className="type-caption text-ink-800">
             {dateLabel} • {timeLabel}
           </p>
         </div>
@@ -256,12 +256,12 @@ function SnapshotStat({ icon: Icon, label, value, action }) {
         <Icon size={18} strokeWidth={1.7} />
       </div>
       <div>
-        <p className="text-xs text-ink-800">{label}</p>
-        <p className="font-semibold text-ink-900">{value}</p>
+        <p className="type-label text-ink-800">{label}</p>
+        <p className="type-body-lg text-ink-900">{value}</p>
         {action && (
           <button
             onClick={action.onClick}
-            className="text-xs text-maroon-700 hover:underline"
+            className="type-caption text-maroon-700 hover:underline"
           >
             {action.label} →
           </button>

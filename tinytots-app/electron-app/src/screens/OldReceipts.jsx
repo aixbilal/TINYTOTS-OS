@@ -106,7 +106,7 @@ export default function OldReceipts() {
         </button>
 
         <div className="relative mb-6">
-          <h1 className="font-display text-4xl text-ink-900">
+          <h1 className="type-heading-lg text-ink-900">
             Old <span className="text-maroon-700">Receipts</span>
           </h1>
           <p className="text-ink-700 mt-1.5">Search, view and manage all your past receipts.</p>
