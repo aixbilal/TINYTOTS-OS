@@ -8,6 +8,7 @@ import {
   buildSizeFilterOptions,
   productMatchesSizeFilter,
 } from "@/lib/size-filter";
+import { CACHE_KEYS, readSessionJson, writeSessionJson } from "@/lib/client-cache";
 
 type Variant = { id: number; color: string | null; size: string | null; price: number; web_price: number | null; stock: number };
 type Product = {
@@ -46,6 +47,31 @@ export default function CollectionPage() {
   const [showAllColors, setShowAllColors] = useState(false);
 
   useEffect(() => {
+    const catCache = readSessionJson<{ id: number; name: string; slug: string }[]>(CACHE_KEYS.categories);
+    const prodCache = readSessionJson<Product[]>(CACHE_KEYS.productsByQuery("all"));
+
+    const applyCached = () => {
+      if (catCache?.length) {
+        const cat = catCache.find((c) => c.slug === slug) || null;
+        setCategory(cat);
+        if (prodCache?.length) {
+          const catName = cat?.name;
+          setProducts(
+            catName ? prodCache.filter((p) => p.category === catName) : prodCache
+          );
+        }
+      }
+    };
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      applyCached();
+      setLoading(false);
+      if (!catCache?.length && !prodCache?.length) {
+        setError("This collection isn’t available offline. Reconnect to load it.");
+      }
+      return;
+    }
+
     Promise.all([
       fetch("/api/categories").then((r) => r.json()),
       fetch("/api/products").then((r) => r.json()),
@@ -54,16 +80,33 @@ export default function CollectionPage() {
         if (catJson.error) throw new Error(catJson.error);
         if (prodJson.error) throw new Error(prodJson.error);
 
-        const cat = (catJson.categories || []).find((c: Category) => c.slug === slug);
+        const cats = catJson.categories || [];
+        writeSessionJson(CACHE_KEYS.categories, cats);
+        const allProducts = prodJson.data || [];
+        writeSessionJson(CACHE_KEYS.productsByQuery("all"), allProducts);
+
+        const cat = cats.find((c: Category) => c.slug === slug);
         setCategory(cat || null);
 
         const catName = cat?.name;
         const filtered = catName
-          ? (prodJson.data || []).filter((p: Product) => p.category === catName)
-          : prodJson.data || [];
+          ? allProducts.filter((p: Product) => p.category === catName)
+          : allProducts;
         setProducts(filtered);
+        setError(null);
       })
-      .catch(() => setError("Couldn't load this collection right now. Please try again shortly."))
+      .catch(() => {
+        applyCached();
+        if (!navigator.onLine) {
+          setError(
+            prodCache?.length
+              ? null
+              : "This collection isn’t available offline. Reconnect to load it."
+          );
+        } else if (!prodCache?.length) {
+          setError("Couldn't load this collection right now. Please try again shortly.");
+        }
+      })
       .finally(() => setLoading(false));
   }, [slug]);
 
@@ -331,7 +374,11 @@ export default function CollectionPage() {
         </div>
       </div>
 
-      {error && <p className="font-body-sm text-body-sm text-error mb-stack-md">{error}</p>}
+      {error && (
+        <p className="font-body-sm text-body-sm text-on-surface-variant border border-outline-variant/40 bg-surface-container-low rounded-lg px-4 py-3 mb-stack-md">
+          {error}
+        </p>
+      )}
 
       <div className="flex flex-col md:flex-row gap-gutter">
         <aside className={`w-full md:w-64 shrink-0 ${showFilters ? "block" : "hidden"} md:block`}>

@@ -11,7 +11,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
+      <main className="max-w-2xl mx-auto py-stack-lg text-center">
         <OfflineNotice feature="Cart and checkout" />
         <span className="material-symbols-outlined text-[48px] text-on-surface-variant">
           shopping_bag
@@ -33,9 +33,8 @@ export default function CartPage() {
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
-      {/* Left: cart items */}
-      <div className="md:col-span-2">
+    <main className="max-w-5xl mx-auto py-stack-lg grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
+      <div className="md:col-span-2 min-w-0">
         <OfflineNotice feature="Cart and checkout" />
         <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Your Cart</h1>
 
@@ -43,13 +42,13 @@ export default function CartPage() {
           {items.map((item) => (
             <div
               key={item.variantId}
-              className="flex items-center justify-between border border-outline-variant/30 rounded-xl p-4 bg-surface-container-lowest"
+              className="flex flex-col gap-3 border border-outline-variant/30 rounded-xl p-4 bg-surface-container-lowest min-w-0"
             >
-              <div>
-                <p className="font-headline-md text-headline-md text-on-surface">
+              <div className="min-w-0">
+                <p className="font-headline-md text-headline-md text-on-surface break-words">
                   {item.productName}
                 </p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">
+                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
                   {item.size ?? "One Size"}
                   {item.color ? ` / ${item.color}` : ""}
                 </p>
@@ -58,33 +57,35 @@ export default function CartPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center border border-outline-variant rounded-lg">
                   <button
                     onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
                     className="px-3 py-1 text-on-surface hover:bg-surface-container-low"
+                    aria-label="Decrease quantity"
                   >
                     −
                   </button>
-                  <span className="px-3 text-on-surface font-body-md text-body-md">
+                  <span className="px-3 text-on-surface font-body-md text-body-md tabular-nums">
                     {item.quantity}
                   </span>
                   <button
                     onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
                     disabled={item.quantity >= item.maxStock}
                     className="px-3 py-1 text-on-surface hover:bg-surface-container-low disabled:opacity-30"
+                    aria-label="Increase quantity"
                   >
                     +
                   </button>
                 </div>
 
-                <p className="w-24 text-right font-body-md text-body-md font-semibold text-on-surface">
+                <p className="font-body-md text-body-md font-semibold text-on-surface tabular-nums">
                   Rs. {(item.price * item.quantity).toLocaleString()}
                 </p>
 
                 <button
                   onClick={() => removeItem(item.variantId)}
-                  className="text-error font-label-md text-label-md hover:underline"
+                  className="text-error font-label-md text-label-md hover:underline shrink-0"
                 >
                   Remove
                 </button>
@@ -94,39 +95,38 @@ export default function CartPage() {
         </div>
       </div>
 
-   {/* Right: sticky order summary */}
-   <div className="md:sticky md:top-24 border border-outline-variant/30 rounded-xl p-6 bg-surface-container-lowest flex flex-col gap-4">
+      <div className="md:sticky md:top-24 border border-outline-variant/30 rounded-xl p-4 sm:p-6 bg-surface-container-lowest flex flex-col gap-4 min-w-0">
         <h2 className="font-headline-md text-headline-md text-on-surface">Order Summary</h2>
 
-        <div className="pb-1">
+        <div className="min-w-0">
           <CouponInput />
         </div>
 
         <VoucherVault />
 
         <div className="flex flex-col gap-2 pt-3 border-t border-outline-variant/30">
-          <div className="flex justify-between font-body-md text-body-md text-on-surface-variant">
+          <div className="flex justify-between gap-3 font-body-md text-body-md text-on-surface-variant">
             <span>Subtotal</span>
-            <span>Rs. {subtotal.toLocaleString()}</span>
+            <span className="tabular-nums shrink-0">Rs. {subtotal.toLocaleString()}</span>
           </div>
 
           {appliedCoupon && (
-            <div className="flex justify-between font-body-md text-body-md text-primary">
-              <span>Discount ({appliedCoupon.code})</span>
-              <span>− Rs. {appliedCoupon.discountAmount.toLocaleString()}</span>
+            <div className="flex justify-between gap-3 font-body-md text-body-md text-primary">
+              <span className="min-w-0 truncate">Discount ({appliedCoupon.code})</span>
+              <span className="tabular-nums shrink-0">− Rs. {appliedCoupon.discountAmount.toLocaleString()}</span>
             </div>
           )}
 
           {appliedVoucher && (
-            <div className="flex justify-between font-body-md text-body-md text-primary">
+            <div className="flex justify-between gap-3 font-body-md text-body-md text-primary">
               <span>Voucher</span>
-              <span>− Rs. {appliedVoucher.amount.toLocaleString()}</span>
+              <span className="tabular-nums shrink-0">− Rs. {appliedVoucher.amount.toLocaleString()}</span>
             </div>
           )}
 
-          <div className="flex justify-between font-headline-lg text-headline-lg text-on-surface pt-2 border-t border-outline-variant/30">
+          <div className="flex justify-between gap-3 font-headline-lg text-headline-lg text-on-surface pt-2 border-t border-outline-variant/30">
             <span>Total</span>
-            <span className="text-primary">Rs. {total.toLocaleString()}</span>
+            <span className="text-primary tabular-nums shrink-0">Rs. {total.toLocaleString()}</span>
           </div>
         </div>
 

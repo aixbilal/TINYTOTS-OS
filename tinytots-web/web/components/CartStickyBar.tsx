@@ -22,26 +22,26 @@ export default function CartStickyBar() {
   return (
     <div
       role="status"
-      className="fixed inset-x-0 bottom-0 z-[80] px-margin-mobile md:px-margin-desktop pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none"
+      className="fixed inset-x-0 bottom-0 z-[80] px-3 sm:px-margin-mobile md:px-margin-desktop pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none"
     >
-      <div className="pointer-events-auto mx-auto max-w-container-max flex items-center gap-3 rounded-2xl border border-outline-variant/40 bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_-4px_24px_rgba(0,0,0,0.08)] px-4 py-3">
-        <div className="min-w-0 flex-1">
-          <p className="font-label-md text-label-md text-on-surface-variant">
+      <div className="pointer-events-auto mx-auto max-w-container-max flex flex-wrap items-center gap-2 sm:gap-3 rounded-2xl border border-outline-variant/40 bg-surface-container-lowest shadow-[0_-8px_32px_rgba(0,0,0,0.12)] px-3 sm:px-4 py-3">
+        <div className="min-w-0 flex-1 basis-[40%] sm:basis-auto">
+          <p className="font-label-md text-label-md text-on-surface-variant whitespace-nowrap">
             {totalItems} {totalItems === 1 ? "item" : "items"} in cart
           </p>
-          <p className="font-headline-md text-headline-md text-on-surface truncate">
+          <p className="font-headline-md text-headline-md text-on-surface whitespace-nowrap tabular-nums">
             Rs. {total.toLocaleString()}
           </p>
         </div>
         <Link
           href="/cart"
-          className="shrink-0 inline-flex items-center justify-center h-11 px-4 rounded-xl border border-outline-variant font-button text-button text-on-surface hover:bg-surface-container-low transition-colors"
+          className="shrink-0 inline-flex items-center justify-center h-10 sm:h-11 px-3 sm:px-4 rounded-xl border border-outline-variant font-button text-button text-on-surface hover:bg-surface-container-low transition-colors"
         >
           View Cart
         </Link>
         <Link
           href="/checkout"
-          className="shrink-0 inline-flex items-center justify-center h-11 px-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors"
+          className="shrink-0 inline-flex items-center justify-center h-10 sm:h-11 px-3 sm:px-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors"
         >
           Checkout
         </Link>

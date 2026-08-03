@@ -76,7 +76,9 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
                 src={mobileUrl}
                 alt=""
                 fill
-                priority={isLcpSlide}
+                // LCP preload is media-scoped in HeroLcpPreload — avoid unconditional
+                // priority here (it would force mobile bytes on desktop too).
+                priority={false}
                 fetchPriority={isLcpSlide ? "high" : "auto"}
                 loading={isLcpSlide ? "eager" : "lazy"}
                 sizes="100vw"
@@ -91,8 +93,8 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
                 src={desktopUrl}
                 alt=""
                 fill
-                // First desktop slide: eager without priority so mobile LCP preload stays sole high-priority.
                 priority={false}
+                fetchPriority={isLcpSlide ? "high" : "auto"}
                 loading={isLcpSlide ? "eager" : "lazy"}
                 sizes="100vw"
                 quality={75}

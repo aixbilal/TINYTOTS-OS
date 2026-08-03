@@ -11,6 +11,10 @@ export default function CouponInput() {
 
   const handleApply = async () => {
     if (!code.trim()) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setError("You're offline — reconnect to apply a coupon.");
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -34,8 +38,12 @@ export default function CouponInput() {
         discountAmount: data.coupon.discount_amount,
       });
       setCode("");
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
+    } catch {
+      setError(
+        typeof navigator !== "undefined" && !navigator.onLine
+          ? "You're offline — reconnect to apply a coupon."
+          : "Something went wrong. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -68,8 +76,8 @@ export default function CouponInput() {
   const canSubmit = !loading && code.trim().length > 0;
 
   return (
-    <div>
-      <div className="flex gap-2">
+    <div className="min-w-0">
+      <div className="flex gap-2 min-w-0">
         <input
           type="text"
           value={code}
@@ -79,20 +87,20 @@ export default function CouponInput() {
           }}
           onKeyDown={(e) => e.key === "Enter" && handleApply()}
           placeholder="Enter coupon code"
-          className={`flex-1 border rounded-lg px-3 py-2 bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none transition-colors ${
+          className={`min-w-0 flex-1 border rounded-lg px-3 py-2 bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none transition-colors ${
             error ? "border-error focus:border-error" : "border-outline-variant focus:border-primary"
           }`}
         />
         <button
           onClick={handleApply}
           disabled={!canSubmit}
-          className={`px-5 py-2 rounded-lg font-button text-button transition-colors ${
+          className={`shrink-0 px-4 sm:px-5 py-2 rounded-lg font-button text-button transition-colors ${
             canSubmit
               ? "bg-primary-container text-on-primary hover:bg-primary cursor-pointer"
               : "bg-surface-container-low text-on-surface-variant cursor-not-allowed"
           }`}
         >
-          {loading ? "Applying..." : "Apply"}
+          {loading ? "…" : "Apply"}
         </button>
       </div>
       {error && (

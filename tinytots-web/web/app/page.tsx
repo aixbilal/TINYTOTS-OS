@@ -1,18 +1,23 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import dynamic from "next/dynamic";
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import Link from "next/link";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 import UspMarquee from "@/components/UspMarquee";
 import HomepageHero from "@/components/HomepageHero";
+import HeroLcpPreload from "@/components/HeroLcpPreload";
 import { resolveHeroSlides } from "@/lib/hero-slides";
 import { absoluteUrl } from "@/lib/site-url";
 
 // ISR: keep homepage fresh for admin edits without force-dynamic TTFB hit on every request.
 // 60s is a good balance for stock/price/image updates vs PageSpeed LCP.
 export const revalidate = 60;
+
+// Pakistan / South Asia traffic: avoid regenerating from US-East (iad1) on STALE misses.
+export const preferredRegion = ["sin1", "bom1", "hnd1"];
 
 // Heavy client islands — code-split so framer-motion / supabase realtime stay off the critical path.
 // Aspect-square stack (~max-w-2xl) — reserve layout so dynamic chunk load doesn't CLS.
@@ -87,13 +92,15 @@ async function getProductsForSection(
   productIds: number[] | null | undefined
 ) {
   if (selectionType === "category" && category) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("products")
-      .select("id")
+      .select(PRODUCT_SELECT)
       .eq("is_active", true)
       .eq("category", category)
+      .order("created_at", { ascending: false })
       .limit(12);
-    return getProducts(data?.map((p: any) => p.id) ?? null);
+    if (error || !data) return [];
+    return withSecondaryImage(data);
   }
   return getProducts(productIds);
 }
@@ -141,10 +148,17 @@ const HOMEPAGE_DEFAULTS = {
   ],
 };
 
-const getHomepageContent = cache(async () => {
+const fetchHomepageContent = async () => {
   const { data } = await supabase.from("homepage_content").select("*").eq("id", 1).single();
   return data || HOMEPAGE_DEFAULTS;
+};
+
+// Cross-request cache for ISR regenerations (React cache() only dedupes within one render).
+const getHomepageContentCached = unstable_cache(fetchHomepageContent, ["homepage-content"], {
+  revalidate: 60,
 });
+
+const getHomepageContent = cache(getHomepageContentCached);
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getHomepageContent();
@@ -225,23 +239,39 @@ async function getHomepageTestimonials() {
   return data || [];
 }
 
+const getHomepageSections = unstable_cache(
+  async (
+    trendingSelectionType: string | null | undefined,
+    trendingCategory: string | null | undefined,
+    trendingProductIds: number[] | null | undefined,
+    stackSelectionType: string | null | undefined,
+    stackCategory: string | null | undefined,
+    stackProductIds: number[] | null | undefined
+  ) => {
+    const [trendingProducts, stackProducts, testimonials] = await Promise.all([
+      getProductsForSection(trendingSelectionType, trendingCategory, trendingProductIds),
+      getProductsForSection(stackSelectionType, stackCategory, stackProductIds),
+      getHomepageTestimonials(),
+    ]);
+    return { trendingProducts, stackProducts, testimonials };
+  },
+  ["homepage-sections"],
+  { revalidate: 60 }
+);
+
 export default async function Home() {
   const content = await getHomepageContent();
-  const [trendingProducts, stackProducts, testimonials] = await Promise.all([
-    getProductsForSection(
-      content.trending_selection_type,
-      content.trending_category,
-      content.trending_product_ids
-    ),
-    getProductsForSection(
-      content.stack_selection_type,
-      content.stack_category,
-      content.stack_product_ids
-    ),
-    getHomepageTestimonials(),
-  ]);
+  const { trendingProducts, stackProducts, testimonials } = await getHomepageSections(
+    content.trending_selection_type,
+    content.trending_category,
+    content.trending_product_ids,
+    content.stack_selection_type,
+    content.stack_category,
+    content.stack_product_ids
+  );
 
   const heroSlides = resolveHeroSlides(content);
+  const lcpSlide = heroSlides[0];
   const trustItems = resolveTrustItems(content.trust_items);
   const uspItems =
     content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items;
@@ -250,6 +280,12 @@ export default async function Home() {
 
   return (
     <>
+      {lcpSlide && (
+        <HeroLcpPreload
+          desktopUrl={lcpSlide.image_url || lcpSlide.image_url_mobile}
+          mobileUrl={lcpSlide.image_url_mobile || lcpSlide.image_url}
+        />
+      )}
       <HomepageHero slides={heroSlides} />
 
       <div className="max-w-container-max mx-auto px-5 md:px-16 md:px-margin-desktop px-margin-mobile">

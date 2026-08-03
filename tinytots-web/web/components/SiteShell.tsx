@@ -3,7 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
 import HeaderCart from "@/components/HeaderCart";
@@ -13,6 +13,9 @@ import { shouldShowFooterFaq } from "@/components/FooterFaq";
 import { useAuth } from "@/lib/auth-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
 import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
+import { CACHE_KEYS, readSessionJson, writeSessionJson } from "@/lib/client-cache";
+import { useOnline } from "@/hooks/useOnline";
+import { useCart } from "@/lib/cart-context";
 
 // Below-fold chrome — keep off the homepage critical JS path.
 const UgcFeed = dynamic(() => import("@/components/UgcFeed"), { ssr: false });
@@ -150,17 +153,31 @@ function AnnouncementBar({ data }: { data: { enabled: boolean; text: string; lin
 }
 
 function ShopMenu() {
+  const online = useOnline();
   const [open, setOpen] = useState(false);
   const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!open || categories.length > 0) return;
+    if (!open) return;
+    const cached = readSessionJson<{ name: string; slug: string }[]>(CACHE_KEYS.categories) ?? [];
+    if (cached.length > 0 && categories.length === 0) setCategories(cached);
+    if (!online) return;
+    if (categories.length > 0) return;
+
     fetch("/api/categories")
       .then((res) => res.json())
-      .then((json) => setCategories(json.categories || []))
-      .catch(() => setCategories([]));
-  }, [open, categories.length]);
+      .then((json) => {
+        const list = json.categories || [];
+        setCategories(list);
+        writeSessionJson(CACHE_KEYS.categories, list);
+      })
+      .catch(() => {
+        const fallback = readSessionJson<{ name: string; slug: string }[]>(CACHE_KEYS.categories);
+        if (fallback?.length) setCategories(fallback);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, online]);
 
   function show() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -197,6 +214,11 @@ function ShopMenu() {
               {c.name}
             </Link>
           ))}
+          {categories.length === 0 && (
+            <p className="px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">
+              {online ? "Loading…" : "Categories unavailable offline"}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -284,15 +306,27 @@ function MegaMenu() {
 }
 
 function MobileMenu({ open, onClose, topOffset }: { open: boolean; onClose: () => void; topOffset: number }) {
+  const online = useOnline();
   const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
 
   useEffect(() => {
-    if (!open || categories.length > 0) return;
+    if (!open) return;
+    const cached = readSessionJson<{ name: string; slug: string }[]>(CACHE_KEYS.categories) ?? [];
+    if (cached.length > 0) setCategories(cached);
+    if (!online) return;
+
     fetch("/api/categories")
       .then((res) => res.json())
-      .then((json) => setCategories(json.categories || []))
-      .catch(() => setCategories([]));
-  }, [open, categories.length]);
+      .then((json) => {
+        const list = json.categories || [];
+        setCategories(list);
+        writeSessionJson(CACHE_KEYS.categories, list);
+      })
+      .catch(() => {
+        const fallback = readSessionJson<{ name: string; slug: string }[]>(CACHE_KEYS.categories);
+        if (fallback?.length) setCategories(fallback);
+      });
+  }, [open, online]);
 
   if (!open) return null;
 
@@ -317,6 +351,11 @@ function MobileMenu({ open, onClose, topOffset }: { open: boolean; onClose: () =
           {categories.map((c) => (
             <MenuLink key={c.slug} href={`/collections/${c.slug}`} label={c.name} />
           ))}
+          {categories.length === 0 && (
+            <p className="px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">
+              {online ? "Loading categories…" : "Categories unavailable offline"}
+            </p>
+          )}
         </div>
         <div>
           <p className="font-label-lg text-label-lg text-primary font-semibold uppercase tracking-wider mb-1 px-3">My TinyTots</p>
@@ -460,10 +499,10 @@ function NewsletterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2 w-full max-w-[280px]">
-      <div className="flex flex-col rounded-lg border border-outline-variant/50 overflow-hidden">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2 w-full max-w-[320px]">
+      <div className="flex flex-col rounded-xl border border-outline-variant/50 overflow-hidden bg-surface-container-lowest">
         <input
-          className="w-full min-w-0 bg-transparent border-none px-4 py-3 font-body-sm text-body-sm text-on-surface focus:ring-0 focus:outline-none"
+          className="w-full min-w-0 bg-transparent border-none px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/70 focus:ring-0 focus:outline-none"
           placeholder="Email Address"
           type="email"
           required
@@ -480,6 +519,39 @@ function NewsletterForm() {
       </div>
       {status === "error" && <p className="font-label-md text-label-md text-error">{errorMsg}</p>}
     </form>
+  );
+}
+
+function StickyBarSpacer() {
+  const { cartBarVisible, totalItems } = useCart();
+  const pathname = usePathname();
+  const hide =
+    pathname?.startsWith("/cart") ||
+    pathname?.startsWith("/checkout") ||
+    pathname?.startsWith("/signage");
+  if (!cartBarVisible || totalItems <= 0 || hide) return null;
+  // Reserves scroll room so the fixed sticky bar never covers footer/content.
+  return <div className="h-24 md:h-20 w-full shrink-0" aria-hidden />;
+}
+
+function MainContent({ children }: { children: ReactNode }) {
+  const { cartBarVisible, totalItems } = useCart();
+  const pathname = usePathname();
+  const padForBar =
+    cartBarVisible &&
+    totalItems > 0 &&
+    !pathname?.startsWith("/cart") &&
+    !pathname?.startsWith("/checkout") &&
+    !pathname?.startsWith("/signage");
+
+  return (
+    <main
+      className={`w-full max-w-container-max mx-auto min-w-0 px-margin-mobile md:px-margin-desktop ${
+        padForBar ? "pb-28" : "pb-8"
+      }`}
+    >
+      {children}
+    </main>
   );
 }
 
@@ -571,50 +643,50 @@ export default function SiteShell({
             {!mobileMenuOpen && <MobileSubNav />}
             <CartStickyBar />
 
-            {/* MAIN CONTENT AREA */}
-            <main className="flex-grow w-full max-w-container-max mx-auto min-w-0 px-margin-mobile md:px-margin-desktop pb-24 md:pb-8">
-              {children}
-            </main>
+            {/* MAIN CONTENT — no flex-grow (that created a huge empty gap above the footer) */}
+            <MainContent>{children}</MainContent>
 
-            {/* FOOTER */}
-            <UgcFeed />
-            {shouldShowFooterFaq(pathname) && <FooterFaq />}
-            <footer className="bg-surface-container-lowest border-t border-outline-variant/20 w-full mt-stack-lg">
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-8 px-margin-mobile md:px-margin-desktop py-stack-md max-w-container-max mx-auto">
-                <div className="col-span-2 lg:col-span-1 flex flex-col gap-2">
-                  <span className="font-headline-lg text-headline-lg text-primary">TinyTots</span>
-                  <a href="mailto:support@tinytotsofficial.com" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">
-                    support@tinytotsofficial.com
-                  </a>
-                  <p className="font-label-md text-label-md text-secondary">© 2026 TinyTots Premium Kids. All rights reserved.</p>
+            <div className="mt-auto w-full">
+              <UgcFeed />
+              {shouldShowFooterFaq(pathname) && <FooterFaq />}
+              <footer className="bg-surface-container border-t border-outline-variant/30 w-full">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-8 px-margin-mobile md:px-margin-desktop py-10 md:py-12 max-w-container-max mx-auto">
+                  <div className="col-span-2 md:col-span-3 lg:col-span-1 flex flex-col gap-3">
+                    <span className="font-headline-lg text-headline-lg text-primary tracking-tight">TinyTots</span>
+                    <a href="mailto:support@tinytotsofficial.com" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline">
+                      support@tinytotsofficial.com
+                    </a>
+                    <p className="font-label-md text-label-md text-on-surface-variant">© 2026 TinyTots Premium Kids. All rights reserved.</p>
+                  </div>
+                  <div className="flex flex-col gap-2.5">
+                    <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-1">Explore</h4>
+                    <Link href="/products" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Shop All</Link>
+                    <Link href="/our-story" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">About Us</Link>
+                    <Link href="/blog" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Blog</Link>
+                  </div>
+                  <div className="flex flex-col gap-2.5">
+                    <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-1">Support</h4>
+                    <Link href="/help" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Help Center</Link>
+                    <Link href="/contact" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Contact Us</Link>
+                    <Link href="/size-guide" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Size Guide</Link>
+                    <Link href="/track-order" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Track Order</Link>
+                    <Link href="/account/returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Returns & Refunds</Link>
+                    <Link href="/report-issue" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Report an Issue</Link>
+                  </div>
+                  <div className="flex flex-col gap-2.5">
+                    <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-1">Legal</h4>
+                    <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Shipping &amp; Returns</Link>
+                    <Link href="/privacy-policy" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Privacy Policy</Link>
+                    <Link href="/terms" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Terms &amp; Conditions</Link>
+                  </div>
+                  <div className="col-span-2 md:col-span-3 lg:col-span-1 flex flex-col gap-3 min-w-0 pt-2 lg:pt-0 border-t border-outline-variant/20 lg:border-0">
+                    <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Join Our Newsletter</h4>
+                    <NewsletterForm />
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wide">Explore</h4>
-                  <Link href="/products" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Shop All</Link>
-                  <Link href="/our-story" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">About Us</Link>
-                  <Link href="/blog" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Blog</Link>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wide">Support</h4>
-                  <Link href="/help" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Help Center</Link>
-                  <Link href="/contact" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Contact Us</Link>
-                  <Link href="/size-guide" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Size Guide</Link>
-                  <Link href="/track-order" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Track Order</Link>
-                  <Link href="/account/returns" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Returns & Refunds</Link>
-                  <Link href="/report-issue" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Report an Issue</Link>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wide">Legal</h4>
-                  <Link href="/shipping-returns" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Shipping &amp; Returns</Link>
-                  <Link href="/privacy-policy" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Privacy Policy</Link>
-                  <Link href="/terms" className="font-label-md text-label-md text-on-surface-variant hover:text-secondary hover:underline">Terms &amp; Conditions</Link>
-                </div>
-                <div className="col-span-2 lg:col-span-1 flex flex-col gap-2 min-w-0">
-                  <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wide">Join Our Newsletter</h4>
-                  <NewsletterForm />
-                </div>
-              </div>
-            </footer>
+              </footer>
+              <StickyBarSpacer />
+            </div>
             </WishlistProvider>
           </CartProvider>
         </AuthProvider>
