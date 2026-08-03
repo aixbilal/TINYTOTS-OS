@@ -62,17 +62,17 @@
   --spacing-bento-gap: 20px;
   --spacing-gutter: 24px;
 
-  /* Fonts */
-  --font-display-lg: "Plus Jakarta Sans", sans-serif;
-  --font-display-md: "Plus Jakarta Sans", sans-serif;
-  --font-headline-lg: "Plus Jakarta Sans", sans-serif;
-  --font-headline-md: "Plus Jakarta Sans", sans-serif;
-  --font-body-lg: "Inter", sans-serif;
-  --font-body-md: "Inter", sans-serif;
-  --font-body-sm: "Inter", sans-serif;
-  --font-label-lg: "Inter", sans-serif;
-  --font-label-md: "Inter", sans-serif;
-  --font-button: "Inter", sans-serif;
+  /* Fonts — next/font variables from app/layout.tsx */
+  --font-display-lg: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
+  --font-display-md: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
+  --font-headline-lg: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
+  --font-headline-md: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
+  --font-body-lg: var(--font-inter), Inter, sans-serif;
+  --font-body-md: var(--font-inter), Inter, sans-serif;
+  --font-body-sm: var(--font-inter), Inter, sans-serif;
+  --font-label-lg: var(--font-inter), Inter, sans-serif;
+  --font-label-md: var(--font-inter), Inter, sans-serif;
+  --font-button: var(--font-inter), Inter, sans-serif;
 
   /* Font sizes (size + line-height pairs, Tailwind v4 compound syntax) */
   --text-display-lg: 48px;
@@ -81,7 +81,7 @@
   --text-display-md--line-height: 1.2;
   --text-headline-lg: 30px;
   --text-headline-lg--line-height: 1.3;
-  --font-headline-lg-mobile: "Plus Jakarta Sans", sans-serif;
+  --font-headline-lg-mobile: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
   --text-headline-lg-mobile: 24px;
   --text-headline-lg-mobile--line-height: 1.3;
   --text-headline-lg-mobile--font-weight: 600;

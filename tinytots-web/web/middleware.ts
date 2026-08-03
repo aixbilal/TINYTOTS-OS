@@ -1,6 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+function hasSupabaseAuthCookie(request: NextRequest): boolean {
+  // Skip Auth network round-trip for anonymous storefront traffic (biggest TTFB win on /).
+  return request.cookies.getAll().some(({ name }) => {
+    if (name === "sb-access-token" || name === "sb-refresh-token") return true;
+    // @supabase/ssr cookie names: sb-<project-ref>-auth-token(+.N)
+    return name.startsWith("sb-") && name.includes("-auth-token");
+  });
+}
+
 /**
  * Phone is a required profile field (self-attested). Any signed-in customer
  * without customers.phone is sent to /account/add-phone — for email and Google.
@@ -8,6 +17,11 @@ import { NextResponse, type NextRequest } from "next/server";
  * Auth sessions must live in cookies (@supabase/ssr) for this to see them.
  */
 export async function middleware(request: NextRequest) {
+  // Anonymous visitors: no JWT refresh / getUser — critical for homepage LCP/TTFB.
+  if (!hasSupabaseAuthCookie(request)) {
+    return NextResponse.next({ request });
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

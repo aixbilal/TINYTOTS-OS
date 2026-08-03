@@ -1,19 +1,29 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, Plus_Jakarta_Sans, Geist } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import SiteShell from "@/components/SiteShell";
 import Analytics from "@/components/Analytics";
+import DeferredStylesheet from "@/components/DeferredStylesheet";
 import { cn } from "@/lib/utils";
 import { getSiteUrl } from "@/lib/site-url";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"], weight: ["400", "500", "600"] });
+// Design system uses Inter (body) + Plus Jakarta (display) only — drop unused Geist families.
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
   subsets: ["latin"],
   weight: ["600", "700"],
+  display: "swap",
 });
+
+// Narrow Material Symbols request (single opsz/weight) — full variable axis range was a major render-block.
+const MATERIAL_SYMBOLS_HREF =
+  "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap";
 
 const siteUrl = getSiteUrl();
 const defaultTitle = "TinyTots | Premium Kids Clothing";
@@ -53,21 +63,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html
       lang="en"
-      className={cn(
-        "antialiased",
-        geistMono.variable,
-        inter.variable,
-        plusJakarta.variable,
-        "font-sans",
-        geist.variable
-      )}
+      className={cn("antialiased", inter.variable, plusJakarta.variable)}
     >
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          rel="stylesheet"
-          precedence="default"
-        />
+        <DeferredStylesheet href={MATERIAL_SYMBOLS_HREF} />
       </head>
       <body className="bg-surface font-body-md text-on-surface antialiased min-h-screen">
         <SiteShell>{children}</SiteShell>

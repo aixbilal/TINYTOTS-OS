@@ -62,6 +62,9 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
         const desktopUrl = slide.image_url || slide.image_url_mobile;
         const mobileUrl = slide.image_url_mobile || slide.image_url;
         const isActive = i === index;
+        // Mobile PageSpeed LCP is the mobile hero — only preload that one.
+        // Do NOT priority both breakpoints (double LCP candidates).
+        const isLcpSlide = i === 0;
         return (
           <div
             key={`${desktopUrl}-${mobileUrl}-${i}`}
@@ -75,8 +78,11 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
                 src={mobileUrl}
                 alt=""
                 fill
-                priority={i === 0}
+                priority={isLcpSlide}
+                fetchPriority={isLcpSlide ? "high" : "auto"}
+                loading={isLcpSlide ? "eager" : "lazy"}
                 sizes="100vw"
+                quality={75}
                 className="object-cover md:hidden"
               />
             ) : (
@@ -87,8 +93,11 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
                 src={desktopUrl}
                 alt=""
                 fill
-                priority={i === 0}
+                // Desktop image must not compete with mobile LCP preload.
+                priority={false}
+                loading="lazy"
                 sizes="100vw"
+                quality={75}
                 className="object-cover hidden md:block"
               />
             ) : (

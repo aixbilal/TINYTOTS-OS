@@ -1,21 +1,26 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import dynamic from "next/dynamic";
+import { cache } from "react";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import Link from "next/link";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 import UspMarquee from "@/components/UspMarquee";
-import ProductCardStack from "@/components/ProductCardStack";
-import TestimonialsCarousel from "@/components/TestimonialsCarousel";
 import HomepageHero from "@/components/HomepageHero";
 import { resolveHeroSlides } from "@/lib/hero-slides";
 import { absoluteUrl } from "@/lib/site-url";
 
-// Same root cause and fix as app/products/[id]/page.tsx and
-// app/api/products/route.ts — without this, Next.js caches this Server
-// Component's Supabase data fetch indefinitely, so newly uploaded images,
-// price changes, and stock updates never show up on the homepage until a
-// full rebuild.
-export const dynamic = "force-dynamic";
+// ISR: keep homepage fresh for admin edits without force-dynamic TTFB hit on every request.
+// 60s is a good balance for stock/price/image updates vs PageSpeed LCP.
+export const revalidate = 60;
+
+// Heavy client islands — code-split so framer-motion / supabase realtime stay off the critical path.
+const ProductCardStack = dynamic(() => import("@/components/ProductCardStack"), {
+  loading: () => <div className="min-h-[320px]" aria-hidden />,
+});
+const TestimonialsCarousel = dynamic(() => import("@/components/TestimonialsCarousel"), {
+  loading: () => <div className="min-h-[180px]" aria-hidden />,
+});
 
 const HOME_TITLE = "TinyTots | Premium Kids Clothing";
 const HOME_DESCRIPTION =
@@ -135,10 +140,10 @@ const HOMEPAGE_DEFAULTS = {
   ],
 };
 
-async function getHomepageContent() {
+const getHomepageContent = cache(async () => {
   const { data } = await supabase.from("homepage_content").select("*").eq("id", 1).single();
   return data || HOMEPAGE_DEFAULTS;
-}
+});
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getHomepageContent();
