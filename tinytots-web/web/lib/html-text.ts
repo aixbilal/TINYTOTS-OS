@@ -1,3 +1,11 @@
+/** Strip tags/entities for meta descriptions and other plain-text excerpts. */
+export function htmlToPlainText(html: string, maxLen = 160): string {
+  const text = decodeHtmlEntities(String(html || "").replace(/<[^>]+>/g, " "));
+  if (!text) return "";
+  if (text.length <= maxLen) return text;
+  return `${text.slice(0, maxLen - 1).trimEnd()}…`;
+}
+
 /** Decode common HTML entities in stripped/plain text (TOC labels, excerpts). */
 export function decodeHtmlEntities(text: string): string {
   return text

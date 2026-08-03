@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -362,19 +363,23 @@ export default function CollectionPage() {
                     <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-outline-variant/30 mb-3 bg-surface-container-lowest">
                       {p.image_url ? (
                         <>
-                          <img
-                            className={`w-full h-full object-cover transition-opacity duration-300 ${
+                          <Image
+                            className={`object-cover transition-opacity duration-300 ${
                               (p as any).secondary_image_url ? "group-hover:opacity-0" : "group-hover:scale-105 transition-transform duration-500"
                             }`}
                             src={p.image_url}
                             alt={p.name}
+                            fill
+                            sizes="(max-width: 1024px) 50vw, 33vw"
                           />
                           {(p as any).secondary_image_url && (
-                            <img
-                              className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            <Image
+                              className="object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                               src={(p as any).secondary_image_url}
                               alt=""
                               aria-hidden="true"
+                              fill
+                              sizes="(max-width: 1024px) 50vw, 33vw"
                             />
                           )}
                         </>

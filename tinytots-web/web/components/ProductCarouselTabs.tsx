@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 interface Product {
@@ -40,19 +41,23 @@ function ProductCard({ product, layout }: { product: Product; layout: Layout }) 
         )}
         {product.image_url ? (
           <>
-            <img
-              className={`w-full h-full object-cover transition-opacity duration-300 ${
+            <Image
+              className={`object-cover transition-opacity duration-300 ${
                 product.secondary_image_url ? "group-hover:opacity-0" : "group-hover:scale-105 transition-transform duration-500"
               }`}
               src={product.image_url}
               alt={product.name}
+              fill
+              sizes="(max-width: 768px) 45vw, 25vw"
             />
             {product.secondary_image_url && (
-              <img
-                className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              <Image
+                className="object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 src={product.secondary_image_url}
                 alt=""
                 aria-hidden="true"
+                fill
+                sizes="(max-width: 768px) 45vw, 25vw"
               />
             )}
           </>

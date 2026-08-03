@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import WishlistButton from "@/components/WishlistButton";
@@ -128,19 +129,23 @@ function ProductsContent() {
            <div className="relative aspect-square bg-surface-container-low overflow-hidden">
                 {p.image_url ? (
                   <>
-                    <img
+                    <Image
                       src={p.image_url}
                       alt={p.name}
-                      className={`w-full h-full object-cover transition-opacity ${
+                      fill
+                      sizes="(max-width: 768px) 50vw, 25vw"
+                      className={`object-cover transition-opacity ${
                         p.secondary_image_url ? "group-hover:opacity-0" : "group-hover:scale-105 transition-transform"
                       }`}
                     />
                     {p.secondary_image_url && (
-                      <img
+                      <Image
                         src={p.secondary_image_url}
                         alt=""
                         aria-hidden="true"
-                        className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity"
+                        fill
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        className="object-cover opacity-0 group-hover:opacity-100 transition-opacity"
                       />
                     )}
                   </>

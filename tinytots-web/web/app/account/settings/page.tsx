@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import AccountSidebar from "@/components/AccountSidebar";
-
-const MIN_PASSWORD_LEN = 8;
+import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
 
 export default function AccountSettingsPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, session } = useAuth();
   const [customerName, setCustomerName] = useState<string | null>(null);
 
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -38,8 +38,13 @@ export default function AccountSettingsPage() {
     setError(null);
     setSuccess(false);
 
-    if (newPassword.length < MIN_PASSWORD_LEN) {
-      setError(`Password must be at least ${MIN_PASSWORD_LEN} characters.`);
+    if (!currentPassword) {
+      setError("Current password is required.");
+      return;
+    }
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -47,18 +52,35 @@ export default function AccountSettingsPage() {
       return;
     }
 
-    setSaving(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-    setSaving(false);
-
-    if (updateError) {
-      setError(updateError.message || "Couldn't update your password. Please try again.");
+    const token = session?.access_token;
+    if (!token) {
+      setError("Your session expired. Please log in again.");
       return;
     }
 
-    setSuccess(true);
-    setNewPassword("");
-    setConfirmPassword("");
+    setSaving(true);
+    try {
+      const res = await fetch("/api/account/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error || "Couldn't update your password. Please try again.");
+      } else {
+        setSuccess(true);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    }
+    setSaving(false);
   }
 
   const inputClass =
@@ -98,6 +120,20 @@ export default function AccountSettingsPage() {
           className="border border-on-surface/5 rounded-2xl p-6 bg-surface-container-lowest flex flex-col gap-4"
         >
           <h2 className="font-headline-md text-headline-md text-on-surface">Change Password</h2>
+          <p className="font-body-sm text-body-sm text-on-surface-variant -mt-2">{PASSWORD_HINT}</p>
+
+          <div>
+            <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
+              Current password
+            </label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              autoComplete="current-password"
+              className={inputClass}
+            />
+          </div>
 
           <div>
             <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
@@ -107,7 +143,8 @@ export default function AccountSettingsPage() {
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder={`At least ${MIN_PASSWORD_LEN} characters`}
+              placeholder={PASSWORD_HINT}
+              autoComplete="new-password"
               className={inputClass}
             />
           </div>
@@ -120,6 +157,7 @@ export default function AccountSettingsPage() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
               className={inputClass}
             />
           </div>

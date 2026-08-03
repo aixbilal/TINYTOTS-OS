@@ -1,13 +1,38 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { normalizeQuillHtml } from "@/lib/html-text";
+import { htmlToPlainText, normalizeQuillHtml } from "@/lib/html-text";
 import {
   helpCategoryLabel,
   normalizeHelpCategory,
 } from "@/lib/help-categories";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const { data: article } = await supabaseAdmin
+    .from("help_articles")
+    .select("title, content, is_published")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (!article || !article.is_published) {
+    return { title: "Help Center" };
+  }
+
+  return {
+    title: article.title,
+    description:
+      htmlToPlainText(article.content || "", 155) ||
+      `${article.title} — TinyTots Help Center`,
+  };
+}
 
 export default async function HelpArticlePage({
   params,

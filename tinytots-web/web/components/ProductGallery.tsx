@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 type GalleryImage = {
@@ -55,11 +56,14 @@ export default function ProductGallery({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 bg-surface-container-low">
-        <img
-          className="w-full h-full object-cover"
+      <div className="relative aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 bg-surface-container-low">
+        <Image
+          className="object-cover"
           src={displayImage.url}
           alt={productName}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          priority
         />
       </div>
 
@@ -70,10 +74,10 @@ export default function ProductGallery({
               key={img.id}
               type="button"
               onClick={() => setActiveIndex(i)}
-              className="w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition-colors"
+              className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition-colors"
               style={{ borderColor: img.id === displayImage.id ? "#9c422e" : "transparent" }}
             >
-              <img src={img.url} alt="" className="w-full h-full object-cover" />
+              <Image src={img.url} alt="" fill sizes="64px" className="object-cover" />
             </button>
           ))}
         </div>

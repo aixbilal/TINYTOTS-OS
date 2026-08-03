@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth-context";
 import { can } from "@/lib/admin-permissions";
+import { supabase } from "@/lib/supabase";
 
 // Maps each admin route prefix to the permission required to view it.
 // This is a client-side guard, not a substitute for the requireAdmin checks
@@ -56,6 +57,24 @@ function AdminShell({ children }: { children: React.ReactNode }) {
       router.replace("/admin/login");
     }
   }, [loading, admin, isLoginPage, router]);
+
+  // Opt-in MFA: if this admin has verified factors, block the panel until aal2.
+  // Never force enrollment — only enforce the challenge after they opted in.
+  useEffect(() => {
+    if (loading || isLoginPage || !admin) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (cancelled) return;
+      if (data?.nextLevel === "aal2" && data.currentLevel !== "aal2") {
+        await signOut();
+        router.replace("/admin/login");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, admin, isLoginPage, router, signOut]);
 
   if (isLoginPage) return <>{children}</>;
 

@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
@@ -13,6 +15,14 @@ import { resolveHeroSlides } from "@/lib/hero-slides";
 // price changes, and stock updates never show up on the homepage until a
 // full rebuild.
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: {
+    absolute: "TinyTots | Premium Kids Clothing",
+  },
+  description:
+    "Ethically crafted, modern essentials for every stage of your child's early journey. Soft, durable kids clothing with free delivery and easy 7-day returns.",
+};
 
 const PRODUCT_SELECT = `
   id,
@@ -232,11 +242,12 @@ export default async function Home() {
               )}
               className="md:col-span-2 relative rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[220px] md:min-h-0"
             >
-              <div
-                className="absolute inset-0 bg-cover bg-center w-full h-full transition-transform duration-700 group-hover:scale-105"
-                style={{
-                  backgroundImage: `url('${content.meadow_image_url ?? HOMEPAGE_DEFAULTS.meadow_image_url}')`,
-                }}
+              <Image
+                src={content.meadow_image_url ?? HOMEPAGE_DEFAULTS.meadow_image_url}
+                alt=""
+                fill
+                sizes="(max-width: 768px) 100vw, 66vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300" />
               <div className="absolute bottom-6 left-6 right-6 z-10 flex flex-col items-start">
@@ -256,11 +267,12 @@ export default async function Home() {
                 href="/products?gender=boy"
                 className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[140px] md:min-h-[200px]"
               >
-                <div
-                  className="absolute inset-0 bg-cover bg-center w-full h-full transition-transform duration-700 group-hover:scale-105"
-                  style={{
-                    backgroundImage: `url('${content.boys_image_url ?? HOMEPAGE_DEFAULTS.boys_image_url}')`,
-                  }}
+                <Image
+                  src={content.boys_image_url ?? HOMEPAGE_DEFAULTS.boys_image_url}
+                  alt=""
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300" />
                 <div className="absolute bottom-4 left-4 z-10">
@@ -277,11 +289,12 @@ export default async function Home() {
                 href="/products?gender=girl"
                 className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[140px] md:min-h-[200px]"
               >
-                <div
-                  className="absolute inset-0 bg-cover bg-center w-full h-full transition-transform duration-700 group-hover:scale-105"
-                  style={{
-                    backgroundImage: `url('${content.girls_image_url ?? HOMEPAGE_DEFAULTS.girls_image_url}')`,
-                  }}
+                <Image
+                  src={content.girls_image_url ?? HOMEPAGE_DEFAULTS.girls_image_url}
+                  alt=""
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300" />
                 <div className="absolute bottom-4 left-4 z-10">

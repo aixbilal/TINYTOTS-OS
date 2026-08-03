@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { HeroSlide } from "@/lib/hero-slides";
@@ -60,30 +61,39 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
       {valid.map((slide, i) => {
         const desktopUrl = slide.image_url || slide.image_url_mobile;
         const mobileUrl = slide.image_url_mobile || slide.image_url;
+        const isActive = i === index;
         return (
           <div
             key={`${desktopUrl}-${mobileUrl}-${i}`}
             className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-              i === index ? "opacity-100 z-[1]" : "opacity-0 z-0 pointer-events-none"
+              isActive ? "opacity-100 z-[1]" : "opacity-0 z-0 pointer-events-none"
             }`}
-            aria-hidden={i !== index}
+            aria-hidden={!isActive}
           >
-            {/* Mobile crop below md */}
-            <div
-              className="absolute inset-0 bg-cover bg-center md:hidden"
-              style={{
-                backgroundImage: mobileUrl ? `url('${mobileUrl}')` : undefined,
-                backgroundColor: mobileUrl ? undefined : "var(--color-surface-container, #e8e4df)",
-              }}
-            />
-            {/* Desktop crop at md+ */}
-            <div
-              className="absolute inset-0 bg-cover bg-center hidden md:block"
-              style={{
-                backgroundImage: desktopUrl ? `url('${desktopUrl}')` : undefined,
-                backgroundColor: desktopUrl ? undefined : "var(--color-surface-container, #e8e4df)",
-              }}
-            />
+            {mobileUrl ? (
+              <Image
+                src={mobileUrl}
+                alt=""
+                fill
+                priority={i === 0}
+                sizes="100vw"
+                className="object-cover md:hidden"
+              />
+            ) : (
+              <div className="absolute inset-0 md:hidden bg-surface-container" />
+            )}
+            {desktopUrl ? (
+              <Image
+                src={desktopUrl}
+                alt=""
+                fill
+                priority={i === 0}
+                sizes="100vw"
+                className="object-cover hidden md:block"
+              />
+            ) : (
+              <div className="absolute inset-0 hidden md:block bg-surface-container" />
+            )}
           </div>
         );
       })}

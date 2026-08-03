@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import ProductDetailInteractive from "@/components/ProductDetailInteractive";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 import { getRelatedProductsForPdp } from "@/lib/related-products";
 import { getShopMoreCategories } from "@/lib/shop-more-categories";
+import { htmlToPlainText } from "@/lib/html-text";
 import Link from "next/link";
 
 // Without this, Next.js caches the Supabase data fetch indefinitely, so
@@ -10,6 +13,39 @@ import Link from "next/link";
 // storefront until a full rebuild. Product pages change often enough
 // (inventory, pricing, images) that always-fresh is the right tradeoff here.
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const { data: product } = await supabase
+    .from("products")
+    .select("name, description, brand, category")
+    .eq("id", id)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!product) {
+    return { title: "Product not found" };
+  }
+
+  const fromDescription = htmlToPlainText(product.description || "", 200)
+    .replace(/^(ABOUT THE PRODUCT|WHY YOU'LL LOVE IT|QUICK DETAILS|HOW TO STYLE IT)\s*/i, "")
+    .slice(0, 155)
+    .trim();
+  const fallback = [product.brand, product.category, "kids clothing from TinyTots"]
+    .filter(Boolean)
+    .join(" · ");
+
+  return {
+    // absolute: parent /products layout also sets a title; without absolute,
+    // Next can omit the root `%s | TinyTots` template on this segment.
+    title: { absolute: `${product.name} | TinyTots` },
+    description: fromDescription || fallback,
+  };
+}
 
 async function getProduct(id: string) {
   const { data, error } = await supabase
@@ -129,10 +165,17 @@ export default async function ProductDetailPage({
                 href={`/collections/${cat.slug}`}
                 className="relative aspect-[4/5] md:aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[140px]"
               >
-                <div
-                  className="absolute inset-0 bg-cover bg-center w-full h-full transition-transform duration-700 group-hover:scale-105"
-                  style={{ backgroundImage: `url('${cat.image_url}')` }}
-                />
+                {cat.image_url ? (
+                  <Image
+                    src={cat.image_url}
+                    alt=""
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-surface-container" />
+                )}
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
                 <div className="absolute bottom-4 left-4 right-4 z-10">
                   <h3 className="font-headline-md text-headline-md text-white mb-1">{cat.name}</h3>

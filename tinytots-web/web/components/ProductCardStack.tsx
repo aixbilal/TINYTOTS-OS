@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 
 interface Product {
@@ -107,7 +108,14 @@ export default function ProductCardStack({ products, autoPlay = true, autoPlayIn
                   transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" draggable={false} />
+                    <Image
+                      src={product.image_url}
+                      alt={product.name}
+                      fill
+                      sizes="(max-width: 768px) 70vw, 320px"
+                      className="object-cover"
+                      draggable={false}
+                    />
                   ) : (
                     <div className="w-full h-full bg-surface-container flex items-center justify-center text-on-surface-variant text-sm">
                       No image

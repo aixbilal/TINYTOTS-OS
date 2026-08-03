@@ -1,41 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-export default function ForgotPasswordPage() {
+const RESET_NEXT_KEY = "tt_password_reset_next";
+
+function ForgotPasswordForm() {
+  const searchParams = useSearchParams();
+  const isAdmin = searchParams.get("next") === "admin";
+  const loginHref = isAdmin ? "/admin/login" : "/login";
+
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setServerError(null);
+    setFormError(null);
 
-    if (!email.trim()) {
-      setServerError("Please enter your email address.");
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setFormError("Please enter your email address.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setFormError("Please enter a valid email address.");
       return;
     }
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) {
-        setServerError(error.message);
-        setSubmitting(false);
-        return;
+      // Remember where to send the user after they finish resetting
+      // (survives even if the email redirect drops the query string).
+      try {
+        sessionStorage.setItem(RESET_NEXT_KEY, loginHref);
+      } catch {
+        /* private mode / blocked storage — next=admin in redirectTo is the fallback */
       }
 
-      setSent(true);
+      // Always show the same confirmation — do not surface API errors that
+      // could reveal whether an email is registered.
+      const resetPath = isAdmin ? "/reset-password?next=admin" : "/reset-password";
+      await supabase.auth.resetPasswordForEmail(trimmed, {
+        redirectTo: `${window.location.origin}${resetPath}`,
+      });
     } catch {
-      setServerError("Network error. Please try again.");
-      setSubmitting(false);
+      // Network failures still get the generic confirmation for privacy.
     }
+    setSent(true);
+    setSubmitting(false);
   }
 
   if (sent) {
@@ -43,9 +59,13 @@ export default function ForgotPasswordPage() {
       <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
         <h1 className="font-display-md text-display-md text-on-surface mb-4">Check your email</h1>
         <p className="font-body-md text-body-md text-on-surface-variant">
-          If an account exists for <strong>{email}</strong>, we&apos;ve sent a password reset link.
+          If an account exists for that email, we&apos;ve sent a reset link. Check your inbox
+          (and spam folder) and follow the link to choose a new password.
         </p>
-        <Link href="/login" className="inline-block mt-6 text-primary hover:underline font-body-sm text-body-sm">
+        <Link
+          href={loginHref}
+          className="inline-block mt-6 text-primary hover:underline font-body-sm text-body-sm"
+        >
           Back to login
         </Link>
       </main>
@@ -65,6 +85,7 @@ export default function ForgotPasswordPage() {
           placeholder="Email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
           className="w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors"
         />
 
@@ -76,12 +97,28 @@ export default function ForgotPasswordPage() {
           {submitting ? "Sending..." : "Send reset link"}
         </button>
 
-        {serverError && <p className="font-label-md text-label-md text-error mt-1">{serverError}</p>}
+        {formError && <p className="font-label-md text-label-md text-error mt-1">{formError}</p>}
 
         <p className="font-body-sm text-body-sm text-on-surface-variant text-center mt-2">
-          <Link href="/login" className="text-primary hover:underline">Back to login</Link>
+          <Link href={loginHref} className="text-primary hover:underline">
+            Back to login
+          </Link>
         </p>
       </form>
     </main>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+          <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+        </main>
+      }
+    >
+      <ForgotPasswordForm />
+    </Suspense>
   );
 }

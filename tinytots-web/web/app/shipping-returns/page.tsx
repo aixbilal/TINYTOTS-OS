@@ -59,7 +59,9 @@ export default async function ShippingReturnsPage() {
 
   // Array.isArray(...) preserves intentional empty arrays (e.g. cod_tiers: [])
   // instead of falling back to seed data when length === 0.
-  const content = {
+  // Cast through typeof FALLBACK: spreading the loosely typed Supabase row would
+  // otherwise widen the whole object (and every .map callback param) to `any`.
+  const content: typeof FALLBACK = {
     ...FALLBACK,
     ...(data || {}),
     toc: Array.isArray(data?.toc) ? (data.toc as TocItem[]) : FALLBACK.toc,

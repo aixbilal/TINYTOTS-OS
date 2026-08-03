@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useAdminAuth } from "@/lib/admin-auth-context";
-import { supabase } from "@/lib/supabase";
-import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
+import { PASSWORD_HINT } from "@/lib/validate-password";
+import AdminMfaSettings from "@/components/admin/AdminMfaSettings";
 
 export default function AdminAccountPage() {
-  const { admin } = useAdminAuth();
+  const { admin, session } = useAdminAuth();
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -20,9 +21,8 @@ export default function AdminAccountPage() {
     setError("");
     setSuccess(false);
 
-    const validationError = validatePassword(newPassword);
-    if (validationError) {
-      setError(validationError);
+    if (!currentPassword) {
+      setError("Current password is required.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -30,17 +30,38 @@ export default function AdminAccountPage() {
       return;
     }
 
+    const token = session?.access_token;
+    if (!token) {
+      setError("Your session expired. Please log in again.");
+      return;
+    }
+
     setSaving(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-    if (updateError) {
-      setError(updateError.message || "Failed to update password.");
-    } else {
-      setSuccess(true);
-      setNewPassword("");
-      setConfirmPassword("");
+    try {
+      const res = await fetch("/api/admin/account/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error || "Failed to update password.");
+      } else {
+        setSuccess(true);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch {
+      setError("Network error. Please try again.");
     }
     setSaving(false);
   }
+
+  const inputClass = "border rounded-md px-3 py-2 text-sm w-full";
 
   return (
     <div className="max-w-lg mx-auto">
@@ -71,24 +92,43 @@ export default function AdminAccountPage() {
         </p>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm mb-6">
         <h2 className="text-sm font-semibold text-gray-900 mb-3">Change password</h2>
+        <p className="text-xs text-gray-500 mb-3">{PASSWORD_HINT}</p>
         <form onSubmit={handleChangePassword} className="flex flex-col gap-3">
-          <input
-            type="password"
-            placeholder="New password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm"
-          />
-          <input
-            type="password"
-            placeholder="Confirm new password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="border rounded-md px-3 py-2 text-sm"
-          />
-          <p className="text-xs text-gray-400">{PASSWORD_HINT}</p>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Current password</label>
+            <input
+              type="password"
+              placeholder="Current password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              autoComplete="current-password"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">New password</label>
+            <input
+              type="password"
+              placeholder="New password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              autoComplete="new-password"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Confirm new password</label>
+            <input
+              type="password"
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+              className={inputClass}
+            />
+          </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
           {success && <p className="text-xs text-green-600">Password updated successfully.</p>}
           <button
@@ -100,6 +140,8 @@ export default function AdminAccountPage() {
           </button>
         </form>
       </div>
+
+      <AdminMfaSettings />
     </div>
   );
 }
