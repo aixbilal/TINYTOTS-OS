@@ -6,6 +6,7 @@ import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 import { getRelatedProductsForPdp } from "@/lib/related-products";
 import { getShopMoreCategories } from "@/lib/shop-more-categories";
 import { htmlToPlainText } from "@/lib/html-text";
+import { sanitizeContentHtml } from "@/lib/sanitize";
 import { absoluteUrl } from "@/lib/site-url";
 import Link from "next/link";
 
@@ -129,6 +130,7 @@ export default async function ProductDetailPage({
 }) {
   const { id } = await params;
   const [product, images] = await Promise.all([getProduct(id), getProductImages(id)]);
+  const safeDescription = product?.description ? sanitizeContentHtml(product.description) : null;
   const [relatedProducts, shopMoreCategories] = product
     ? await Promise.all([
         getRelatedProductsForPdp(
@@ -214,12 +216,12 @@ export default async function ProductDetailPage({
       </nav>
 
       <div className="grid md:grid-cols-[minmax(0,420px)_1fr] gap-gutter">
-        <ProductDetailInteractive
+      <ProductDetailInteractive
           productId={product.id}
           productName={product.name}
           brand={product.brand}
           category={product.category}
-          description={product.description}
+          description={safeDescription}
           variants={product.variants}
           images={galleryImages}
         />

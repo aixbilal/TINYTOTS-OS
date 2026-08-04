@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import DOMPurify from "dompurify";
 import { normalizeQuillHtml } from "@/lib/html-text";
 import ProductGallery from "./ProductGallery";
 import AddToCart from "./AddToCart";
@@ -73,7 +72,7 @@ export default function ProductDetailInteractive({
           <div
             className="font-body-md text-body-md text-on-surface-variant mt-4 prose prose-sm max-w-none break-words [overflow-wrap:anywhere]"
             dangerouslySetInnerHTML={{
-              __html: normalizeQuillHtml(DOMPurify.sanitize(description)),
+              __html: normalizeQuillHtml(description),
             }}
           />
         )}
