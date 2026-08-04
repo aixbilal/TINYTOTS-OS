@@ -231,7 +231,7 @@ export default function AddToCart({
         <p className="font-label-lg text-label-lg text-on-surface mb-2">
           Size{showSizeSelector ? "" : selectedSize ? `: ${selectedSize}` : ""}
         </p>
-        {showSizeSelector ? (
+        {showSizeSelector && (
           <div className="flex flex-wrap gap-2" role="listbox" aria-label="Size">
             {allSizes.map((size) => {
               const match = findVariant(variants, selectedColor, size);
@@ -269,8 +269,6 @@ export default function AddToCart({
               );
             })}
           </div>
-        ) : (
-          <p className="font-body-sm text-body-sm text-on-surface-variant">{selectedSize}</p>
         )}
       </div>
 
