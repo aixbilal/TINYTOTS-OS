@@ -315,7 +315,7 @@ export default function CheckoutPage() {
             <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Payment method</h2>
             <div className="flex flex-col gap-2">
               {[
-                { value: "cod", label: "Cash on Delivery (Punjab & Islamabad only, for now)", comingSoon: false },
+          { value: "cod", label: "Cash on Delivery (available across Pakistan)", comingSoon: false },
                 { value: "card", label: "Card", comingSoon: true },
                 { value: "jazzcash", label: "JazzCash", comingSoon: true },
                 { value: "easypaisa", label: "Easypaisa", comingSoon: true },
