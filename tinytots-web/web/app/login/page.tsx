@@ -19,6 +19,11 @@ export default function LoginPage() {
     e.preventDefault();
     setServerError(null);
 
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setServerError("You're offline, please reconnect");
+      return;
+    }
+
     if (!email.trim() || !password) {
       setServerError("Please enter your email and password.");
       return;
@@ -56,8 +61,12 @@ export default function LoginPage() {
   }
 
   async function handleGoogleLogin() {
-    setGoogleLoading(true);
     setServerError(null);
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setServerError("You're offline, please reconnect");
+      return;
+    }
+    setGoogleLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },

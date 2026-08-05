@@ -42,6 +42,11 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setServerError(null);
 
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setServerError("You're offline, please reconnect");
+      return;
+    }
+
     if (!email.trim() || !password) {
       setServerError("Please enter your email and password.");
       return;

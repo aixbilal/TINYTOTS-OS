@@ -37,6 +37,10 @@ export default function SignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setServerError(null);
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setServerError("You're offline, please reconnect");
+      return;
+    }
     if (!validate()) return;
 
     setSubmitting(true);
@@ -71,8 +75,12 @@ export default function SignupPage() {
   }
 
   async function handleGoogleSignup() {
-    setGoogleLoading(true);
     setServerError(null);
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setServerError("You're offline, please reconnect");
+      return;
+    }
+    setGoogleLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
