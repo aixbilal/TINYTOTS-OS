@@ -210,7 +210,6 @@ const runtimeCaching: RuntimeCaching[] = [
     }),
   },
 ];
-
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -230,3 +229,50 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+/**
+ * Full-site warm cache: the page posts a list of URLs (products, blog
+ * posts, policy pages) to this worker, and we fetch + store each one
+ * directly into the same "pages" / "pages-rsc" caches that the normal
+ * NetworkFirst navigation rules read from. This is the only way to
+ * populate those caches without the customer actually visiting every
+ * page first, since background fetch() calls don't have
+ * request.mode === "navigate" and would otherwise be ignored by the
+ * runtimeCaching rules above.
+ */
+self.addEventListener("message", (event: ExtendableMessageEvent) => {
+  const data = event.data as { type?: string; urls?: string[] } | undefined;
+  if (!data || data.type !== "WARM_CACHE" || !Array.isArray(data.urls)) return;
+
+  event.waitUntil(warmCache(data.urls));
+});
+
+async function warmCache(urls: string[]) {
+  const pageCache = await caches.open("pages");
+  const rscCache = await caches.open("pages-rsc");
+
+  for (const url of urls) {
+    // Full HTML (for direct navigation offline)
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (res.ok) await pageCache.put(url, res.clone());
+    } catch {
+      // ignore individual failures, keep warming the rest
+    }
+
+    // RSC payload (for client-side <Link> navigation offline)
+    try {
+      const rscRes = await fetch(url, {
+        cache: "no-store",
+        headers: { RSC: "1" },
+      });
+      if (rscRes.ok) await rscCache.put(url, rscRes.clone());
+    } catch {
+      // ignore
+    }
+
+    // Small delay so we don't hammer the server/DB with hundreds of
+    // simultaneous requests on first visit.
+    await new Promise((r) => setTimeout(r, 150));
+  }
+}

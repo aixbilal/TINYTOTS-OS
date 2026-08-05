@@ -52,3 +52,45 @@ export async function fetchWithSessionCache<T>(
     return { data: cached, fromCache: cached !== null, hadError: cached === null };
   }
 }
+/**
+ * Fetch with automatic caching. Checks cache first, falls back to network,
+ * persists on success, returns stale cache if offline/fetch fails.
+ */
+export async function fetchWithCache<T>(
+  key: string,
+  url: string,
+  options?: { ttl?: number }
+): Promise<T | null> {
+  const ttl = options?.ttl ?? 3600000; // Default 1 hour
+  const now = Date.now();
+
+  // Try cache first
+  const cached = readSessionJson<{ data: T; timestamp: number }>(key);
+  if (cached && now - cached.timestamp < ttl) {
+    console.log(`[Cache HIT] ${key}`);
+    return cached.data;
+  }
+
+  // If offline, return stale cache if available
+  if (isBrowserOffline()) {
+    console.log(`[Offline] Returning stale cache for ${key}`);
+    return cached?.data ?? null;
+  }
+
+  // Fetch fresh from network
+  console.log(`[Cache MISS] Fetching ${key} from ${url}`);
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data: T = await res.json();
+    
+    // Store in cache with timestamp
+    writeSessionJson(key, { data, timestamp: now });
+    console.log(`[Cache STORE] ${key}`);
+    return data;
+  } catch (err) {
+    console.error(`[Fetch Error] ${key}:`, err);
+    // Return stale cache as fallback if fetch fails
+    return cached?.data ?? null;
+  }
+}
