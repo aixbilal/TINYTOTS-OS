@@ -49,7 +49,15 @@ export default function TestimonialsCarousel({
       <h2 className="font-headline-lg text-on-surface mb-stack-md text-center">
         What Parents Are Saying
       </h2>
-      <div className="overflow-hidden py-2 group">
+      <div
+      className="relative w-screen max-w-[100vw] left-1/2 -translate-x-1/2 overflow-hidden py-2 group"
+      style={{
+        maskImage:
+          "linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%)",
+        WebkitMaskImage:
+          "linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%)",
+      }}
+    >
         <div
           className="flex w-max group-hover:[animation-play-state:paused]"
           style={{ animation: "marquee-loop 30s linear infinite" }}

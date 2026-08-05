@@ -284,4 +284,4 @@ export default function AddToCart({
       </button>
     </div>
   );
-}
+} 
