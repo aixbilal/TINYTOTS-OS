@@ -8,6 +8,7 @@ import WishlistButton from "@/components/WishlistButton";
 import {
   CACHE_KEYS,
   isBrowserOffline,
+  fetchWithSessionCache,
   readSessionJson,
   writeSessionJson,
 } from "@/lib/client-cache";
@@ -50,25 +51,17 @@ function CategoriesDropdown() {
 
     setStatus("loading");
     let cancelled = false;
-    fetch("/api/categories")
-      .then((res) => res.json())
-      .then((json) => {
-        if (cancelled) return;
-        const list = (json.categories || []) as Category[];
-        setCategories(list);
-        writeSessionJson(CACHE_KEYS.categories, list);
-        setStatus(list.length > 0 ? "ready" : "unavailable");
-      })
-      .catch(() => {
-        if (cancelled) return;
-        const fallback = readSessionJson<Category[]>(CACHE_KEYS.categories) ?? [];
-        if (fallback.length > 0) {
-          setCategories(fallback);
-          setStatus("ready");
-        } else {
-          setStatus("unavailable");
-        }
-      });
+    fetchWithSessionCache<Category[]>(
+      CACHE_KEYS.categories,
+      "/api/categories",
+      online,
+      (json) => json.categories || []
+    ).then(({ data }) => {
+      if (cancelled) return;
+      const list = data || [];
+      setCategories(list);
+      setStatus(list.length > 0 ? "ready" : "unavailable");
+    });
 
     return () => {
       cancelled = true;
@@ -180,31 +173,24 @@ function ProductsContent() {
     setSoftMessage(null);
 
     let cancelled = false;
-    fetch(url)
-      .then((res) => res.json())
-      .then((json) => {
+    fetchWithSessionCache<any[]>(cacheKey, url, online, (json) => json.data || []).then(
+      ({ data, fromCache, hadError }) => {
         if (cancelled) return;
-        if (json.error) throw new Error(json.error);
-        const list = json.data || [];
-        setProducts(list);
-        writeSessionJson(cacheKey, list);
-        setSoftMessage(null);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        const fallback = readSessionJson<any[]>(cacheKey) ?? [];
-        if (fallback.length > 0) {
-          setProducts(fallback);
-          setSoftMessage("Couldn't refresh products. Showing last saved list.");
-        } else if (!navigator.onLine) {
-          setSoftMessage("Product list unavailable offline. Reconnect to browse.");
+        setProducts(data || []);
+        if (hadError) {
+          setSoftMessage(
+            !online
+              ? "Product list unavailable offline. Reconnect to browse."
+              : "Couldn't load products right now. Please try again shortly."
+          );
+        } else if (fromCache) {
+          setSoftMessage("Showing last viewed products — reconnect for live stock.");
         } else {
-          setSoftMessage("Couldn't load products right now. Please try again shortly.");
+          setSoftMessage(null);
         }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        setLoading(false);
+      }
+    );
 
     return () => {
       cancelled = true;

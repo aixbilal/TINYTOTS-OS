@@ -29,3 +29,26 @@ export const CACHE_KEYS = {
 export function isBrowserOffline() {
   return typeof navigator !== "undefined" && !navigator.onLine;
 }
+export async function fetchWithSessionCache<T>(
+  key: string,
+  url: string,
+  online: boolean,
+  select: (json: any) => T
+): Promise<{ data: T | null; fromCache: boolean; hadError: boolean }> {
+  const cached = readSessionJson<T>(key);
+
+  if (!online) {
+    return { data: cached, fromCache: true, hadError: cached === null };
+  }
+
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    const data = select(json);
+    writeSessionJson(key, data);
+    return { data, fromCache: false, hadError: false };
+  } catch {
+    return { data: cached, fromCache: cached !== null, hadError: cached === null };
+  }
+}
