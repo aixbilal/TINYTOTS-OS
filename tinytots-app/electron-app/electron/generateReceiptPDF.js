@@ -1,16 +1,23 @@
 import path from "node:path";
 import { app } from "electron";
-import { writeReceiptPdf } from "../backend/lib/receiptPdf.js";
+import { pathToFileURL } from "node:url";
 
 /**
- * Builds a thermal receipt PDF from a sale object (same shape as
- * src/receipts/buildSale.js) via the single shared module and writes it
+ * Builds a thermal receipt PDF from a sale object via the shared module and writes it
  * under Electron userData/receipts.
- *
- * Printable width is PENDING physical confirmation — see RECEIPT_PAGE_WIDTH_PT
- * in backend/lib/receiptPdf.js (POS-80C / 80mm class).
  */
 export async function generateReceiptPDF(sale) {
   const receiptsFolder = path.join(app.getPath("userData"), "receipts");
+
+  // Dynamically resolve the backend folder path depending on packaged vs dev state
+  const backendRoot = app.isPackaged
+    ? path.join(process.resourcesPath, "backend")
+    : path.join(__dirname, "..", "backend");
+
+  const receiptPdfModulePath = path.join(backendRoot, "lib", "receiptPdf.js");
+
+  // Import dynamically using file URL for robust ESM/asar compatibility
+  const { writeReceiptPdf } = await import(pathToFileURL(receiptPdfModulePath).href);
+
   return writeReceiptPdf(sale, receiptsFolder);
 }

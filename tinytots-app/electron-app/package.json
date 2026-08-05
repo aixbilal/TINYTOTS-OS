@@ -27,7 +27,7 @@
       "electron/**/*",
       "package.json"
     ],
-    "extraResources": [
+"extraResources": [
       {
         "from": "backend",
         "to": "backend",
