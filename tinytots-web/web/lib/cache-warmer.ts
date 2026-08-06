@@ -11,7 +11,7 @@
  * product/blog slug — we reuse what SEO already produces.
  */
 
-const WARM_VERSION_KEY = "tt_cache_warmed_v1";
+const WARM_VERSION_KEY = "tt_cache_warmed_v2";
 
 function isOffline() {
   return typeof navigator !== "undefined" && navigator.onLine === false;
@@ -42,7 +42,11 @@ async function getUrlsToWarm(): Promise<string[]> {
         p === "/shipping-returns" ||
         p.startsWith("/help/") ||
         p === "/blog" ||
-        p === "/products"
+        p === "/products" ||
+        p === "/" ||
+        p === "/our-story" ||
+        p === "/contact" ||
+        p === "/size-guide"
     );
 }
 
