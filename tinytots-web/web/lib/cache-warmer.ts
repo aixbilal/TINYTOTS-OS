@@ -50,6 +50,31 @@ async function getUrlsToWarm(): Promise<string[]> {
     );
 }
 
+/**
+ * Fetches every active product's image URLs from our own endpoint, and
+ * builds two forms of each: the raw Supabase Storage file, and the
+ * "/_next/image?..." resized form the product page's <Image> component
+ * actually requests (at a common width — matches what we've observed
+ * the storefront request for thumbnails). Warming both maximizes the
+ * chance of a cache hit regardless of which form gets requested.
+ */
+async function getProductImageUrls(): Promise<string[]> {
+  try {
+    const res = await fetch("/api/all-product-images", { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const raw: string[] = Array.isArray(data.urls) ? data.urls : [];
+
+    const wrapped = raw.map(
+      (u) => `/_next/image?url=${encodeURIComponent(u)}&w=640&q=75`
+    );
+
+    return [...raw, ...wrapped];
+  } catch {
+    return [];
+  }
+}
+
 export async function warmFullSiteCache() {
   if (typeof window === "undefined") return;
   if (isOffline()) return;
@@ -64,8 +89,14 @@ export async function warmFullSiteCache() {
   if (!controller) return;
 
   const urls = await getUrlsToWarm();
-  if (urls.length === 0) return;
+  if (urls.length > 0) {
+    controller.postMessage({ type: "WARM_CACHE", urls });
+  }
 
-  controller.postMessage({ type: "WARM_CACHE", urls });
+  const imageUrls = await getProductImageUrls();
+  if (imageUrls.length > 0) {
+    controller.postMessage({ type: "WARM_IMAGES", urls: imageUrls });
+  }
+
   localStorage.setItem(WARM_VERSION_KEY, "done");
 }

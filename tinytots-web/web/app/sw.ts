@@ -48,6 +48,13 @@ function isSupabaseOrUpstash(hostname: string) {
   );
 }
 
+/** Product images live under this path in Supabase Storage — static,
+ * uploaded-once files. Safe to cache, unlike Supabase API/DB traffic
+ * (stock, pricing, orders) which must always stay live. */
+function isProductImagePath(pathname: string) {
+  return pathname.includes("/storage/v1/object/public/product-images/");
+}
+
 /**
  * Next.js's client router appends a cache-busting `_rsc=<random>` query
  * param to every RSC navigation request — a fresh value on every click,
@@ -119,7 +126,23 @@ const runtimeCaching: RuntimeCaching[] = [
     handler: liveNetworkOnly,
     method: "DELETE",
   },
-  // Never cache Supabase / Upstash
+  // NEW — product images from Supabase Storage: static, safe to cache.
+  // MUST come before the general "Never cache Supabase / Upstash" rule
+  // below, since Workbox uses the first matching rule in the list.
+  {
+    matcher: ({ url }) =>
+      isSupabaseOrUpstash(url.hostname) && isProductImagePath(url.pathname),
+    handler: new CacheFirst({
+      cacheName: "product-images",
+      plugins: [
+        new ExpirationPlugin({
+          maxEntries: 400,
+          maxAgeSeconds: YEAR,
+        }),
+      ],
+    }),
+  },
+  // Never cache Supabase / Upstash (everything else — DB/API/auth calls)
   {
     matcher: ({ url }) => isSupabaseOrUpstash(url.hostname),
     handler: liveNetworkOnly,
@@ -285,9 +308,13 @@ serwist.addEventListeners();
  */
 self.addEventListener("message", (event: ExtendableMessageEvent) => {
   const data = event.data as { type?: string; urls?: string[] } | undefined;
-  if (!data || data.type !== "WARM_CACHE" || !Array.isArray(data.urls)) return;
+  if (!data || !Array.isArray(data.urls)) return;
 
-  event.waitUntil(warmCache(data.urls));
+  if (data.type === "WARM_CACHE") {
+    event.waitUntil(warmCache(data.urls));
+  } else if (data.type === "WARM_IMAGES") {
+    event.waitUntil(warmImages(data.urls));
+  }
 });
 
 async function warmCache(urls: string[]) {
@@ -317,5 +344,35 @@ async function warmCache(urls: string[]) {
     // Small delay so we don't hammer the server/DB with hundreds of
     // simultaneous requests on first visit.
     await new Promise((r) => setTimeout(r, 150));
+  }
+}
+
+/**
+ * Product image warmer: fetches every product image URL the page sends
+ * (a mix of raw Supabase Storage URLs and the resized "/_next/image?..."
+ * URLs the storefront actually requests) and stores each one into the
+ * matching cache — "product-images" for raw files, "next-image" for the
+ * resized variants — so gallery thumbnails that would otherwise only
+ * load when a user scrolls/clicks to them are already saved before the
+ * user ever goes offline.
+ */
+async function warmImages(urls: string[]) {
+  const rawCache = await caches.open("product-images");
+  const nextImageCache = await caches.open("next-image");
+
+  for (const url of urls) {
+    const isWrapped = url.startsWith("/_next/image");
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (res.ok) {
+        await (isWrapped ? nextImageCache : rawCache).put(url, res.clone());
+      }
+    } catch {
+      // ignore individual failures, keep warming the rest
+    }
+
+    // Smaller delay than page warming since images are smaller/simpler,
+    // but still throttled so we don't fire 400+ requests at once.
+    await new Promise((r) => setTimeout(r, 60));
   }
 }
