@@ -48,6 +48,41 @@ function isSupabaseOrUpstash(hostname: string) {
   );
 }
 
+/**
+ * Next.js's client router appends a cache-busting `_rsc=<random>` query
+ * param to every RSC navigation request — a fresh value on every click,
+ * even for the same target route. If we cache/match on the raw request
+ * URL, every real navigation is a guaranteed cache miss, forever, because
+ * the value it was warmed with can never equal the value generated at
+ * click time. We strip that (and any other Next-internal `_`-prefixed
+ * params) before the cache reads or writes, so the cache key is stable
+ * per-route regardless of when/how the navigation was triggered.
+ *
+ * Applied both to the runtime NetworkFirst strategy (via plugin) AND to
+ * the manual warmCache() writer below, so both sides agree on the key.
+ */
+const NEXT_INTERNAL_PARAMS = ["_rsc"];
+
+function normalizeCacheKey(request: Request): Request {
+  const url = new URL(request.url);
+  let changed = false;
+  for (const param of NEXT_INTERNAL_PARAMS) {
+    if (url.searchParams.has(param)) {
+      url.searchParams.delete(param);
+      changed = true;
+    }
+  }
+  if (!changed) return request;
+  return new Request(url.toString(), request);
+}
+
+/** Workbox/Serwist plugin: normalize cache key on both read and write. */
+const stripRscParamPlugin = {
+  cacheKeyWillBeUsed: async ({ request }: { request: Request }) => {
+    return normalizeCacheKey(request);
+  },
+};
+
 /** Never serve stale commerce/auth HTML from the HTTP cache. */
 const liveNetworkOnly = new NetworkOnly({
   fetchOptions: { cache: "no-store" },
@@ -188,6 +223,9 @@ const runtimeCaching: RuntimeCaching[] = [
       cacheName: "pages-rsc",
       networkTimeoutSeconds: 5,
       plugins: [
+        // MUST come before ExpirationPlugin so the key is already
+        // normalized when Expiration tracks/evicts entries.
+        stripRscParamPlugin,
         new ExpirationPlugin({
           maxEntries: 64,
           maxAgeSeconds: WEEK,
@@ -239,6 +277,11 @@ serwist.addEventListeners();
  * page first, since background fetch() calls don't have
  * request.mode === "navigate" and would otherwise be ignored by the
  * runtimeCaching rules above.
+ *
+ * NOTE: these URLs come from the sitemap (clean, no `_rsc` param), which
+ * already matches the normalized key the stripRscParamPlugin produces at
+ * read time — so no change needed here, but see normalizeCacheKey() above
+ * for why this now actually matches on real navigations.
  */
 self.addEventListener("message", (event: ExtendableMessageEvent) => {
   const data = event.data as { type?: string; urls?: string[] } | undefined;
