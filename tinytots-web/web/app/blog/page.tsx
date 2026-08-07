@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-export const dynamic = "force-dynamic";
+// Static-generate the blog index at build time, ISR-revalidate every 60s —
+// same trade-off as the homepage, products, and collections. Removes the
+// live Supabase round-trip on every request (was 0% cached, ~2s P75).
+export const revalidate = 60;
 function getPlainTextExcerpt(htmlContent: string, maxLength: number = 130) {
   if (!htmlContent) return "";
   const withoutTags = htmlContent.replace(/<[^>]+>/g, "");

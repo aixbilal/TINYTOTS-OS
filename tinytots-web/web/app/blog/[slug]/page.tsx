@@ -6,7 +6,19 @@ import { htmlToPlainText } from "@/lib/html-text";
 import { sanitizeContentHtml } from "@/lib/sanitize";
 import { absoluteUrl } from "@/lib/site-url";
 
-export const dynamic = "force-dynamic";
+// Static-generate known blog post slugs at build time, ISR-revalidate every
+// 60s — same trade-off as products/collections. This was the single worst
+// route in production (P75 1.94s, 0% cache hit rate).
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  const { data } = await supabaseAdmin
+    .from("blog_posts")
+    .select("slug")
+    .eq("is_published", true);
+
+  return (data || []).map((p) => ({ slug: p.slug }));
+}
 
 function sanitizePostHtml(html: string): string {
   return sanitizeContentHtml(html);
