@@ -10,11 +10,22 @@ import { sanitizeContentHtml } from "@/lib/sanitize";
 import { absoluteUrl } from "@/lib/site-url";
 import Link from "next/link";
 
-// Without this, Next.js caches the Supabase data fetch indefinitely, so
-// admin changes (new photos, price/stock updates) never show up on the live
-// storefront until a full rebuild. Product pages change often enough
-// (inventory, pricing, images) that always-fresh is the right tradeoff here.
-export const dynamic = "force-dynamic";
+// Static-generate top product IDs at build time, then ISR-revalidate every
+// 60s — same trade-off already used on the homepage (app/page.tsx). Removes
+// the live Supabase round-trip on every request without losing freshness
+// beyond a 60s window.
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  const { data } = await supabase
+    .from("products")
+    .select("id")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(200); // cap build time; remaining products still render on-demand + cache via revalidate
+
+  return (data || []).map((p) => ({ id: String(p.id) }));
+}
 
 export async function generateMetadata({
   params,

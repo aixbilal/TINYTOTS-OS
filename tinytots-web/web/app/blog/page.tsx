@@ -17,6 +17,18 @@ function getPlainTextExcerpt(htmlContent: string, maxLength: number = 130) {
   if (decoded.length <= maxLength) return decoded;
   return decoded.substring(0, maxLength) + "...";
 }
+// Explicit locale + UTC timezone so server-render and client-hydrate always
+// produce an identical string — plain .toLocaleDateString() was picking up
+// whatever locale/timezone each environment defaulted to, causing hydration
+// mismatch (#418).
+function formatBlogDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
 export default async function BlogPage() {
   const { data: posts } = await supabaseAdmin
     .from("blog_posts")
@@ -77,10 +89,8 @@ export default async function BlogPage() {
 
               {/* Bottom Footer Line */}
               <div className="flex items-center justify-between text-xs font-medium text-on-surface-variant mt-3 pt-2.5 border-t border-outline-variant/15">
-                <span>
-                  {post.published_at
-                    ? new Date(post.published_at).toLocaleDateString()
-                    : ""}
+              <span>
+                  {post.published_at ? formatBlogDate(post.published_at) : ""}
                 </span>
                 <span className="text-primary group-hover:underline font-semibold">
                   Read Article →

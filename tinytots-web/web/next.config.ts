@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
   // html-encoding-sniffer/@exodus/bytes. Server HTML is sanitized with
   // sanitize-html (lib/sanitize.ts) instead.
   images: {
+    loader: "custom",
+    loaderFile: "./lib/supabase-image-loader.ts",
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [

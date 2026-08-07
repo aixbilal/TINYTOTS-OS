@@ -12,6 +12,19 @@ function sanitizePostHtml(html: string): string {
   return sanitizeContentHtml(html);
 }
 
+// Explicit locale + UTC timezone so server-render and client-hydrate always
+// produce an identical string — plain .toLocaleDateString() was picking up
+// whatever locale/timezone each environment defaulted to, causing hydration
+// mismatch (#418).
+function formatBlogDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -101,9 +114,7 @@ export default async function BlogPostPage({
 
           <p className="text-xs sm:text-sm text-primary uppercase tracking-wider font-semibold">
             By {post.author || "TinyTots Editorial"} ·{" "}
-            {post.published_at
-              ? new Date(post.published_at).toLocaleDateString()
-              : ""}
+            {post.published_at ? formatBlogDate(post.published_at) : ""}
           </p>
         </header>
 
