@@ -10,7 +10,18 @@ import {
 } from "@/lib/help-categories";
 import { absoluteUrl } from "@/lib/site-url";
 
-export const dynamic = "force-dynamic";
+// Static-generate known help article slugs at build time, ISR-revalidate
+// hourly — same pattern as blog/products/collections.
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const { data } = await supabaseAdmin
+    .from("help_articles")
+    .select("slug")
+    .eq("is_published", true);
+
+  return (data || []).map((a) => ({ slug: a.slug }));
+}
 
 function sanitizeArticleHtml(html: string): string {
   return sanitizeContentHtml(html);

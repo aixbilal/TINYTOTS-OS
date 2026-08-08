@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-export const dynamic = "force-dynamic";
+// Static-generate — policy content, edited rarely via admin CMS.
+export const revalidate = 3600;
 
 type TocItem = { id: string; title: string };
 type Timeline = { icon: string; label: string; value: string };

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 
-export const dynamic = "force-dynamic";
+// Static-generate — this is pure marketing content, no per-user data.
+// ISR-revalidate every hour since it changes rarely (updated_at-driven CMS edits).
+export const revalidate = 3600;
 
 const DEFAULTS = {
   hero_image_url:

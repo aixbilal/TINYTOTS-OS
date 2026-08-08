@@ -2,7 +2,8 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import HelpCenterIndex from "@/components/HelpCenterIndex";
 import { normalizeHelpCategory } from "@/lib/help-categories";
 
-export const dynamic = "force-dynamic";
+// Static-generate — policy content, edited rarely via admin CMS.
+export const revalidate = 3600;
 
 export default async function HelpPage() {
   const { data: articles } = await supabaseAdmin

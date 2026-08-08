@@ -3,7 +3,8 @@ import LegalPageLayout from "@/components/LegalPageLayout";
 import { extractTocAndAnnotate } from "@/lib/site-page-toc";
 import { sanitizeContentHtml } from "@/lib/sanitize";
 
-export const dynamic = "force-dynamic";
+// Static-generate — legal content, edited rarely via admin CMS.
+export const revalidate = 3600;
 
 export default async function TermsPage() {
   const { data: page } = await supabaseAdmin
