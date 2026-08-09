@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import { createNotification } from "./services/notifications.js";
-import whatsappWebhook from "./routes/whatsappWebhook.js";
 import { recoverMissedReport } from "./services/recoveryService.js";
 import { startCronJobs } from "./services/cronService.js";
 import { generateDailyReport } from "./services/reportService.js";
@@ -66,7 +65,7 @@ if (!configuredSecret) {
 }
 
 const POS_API_SECRET = configuredSecret || DEV_POS_FALLBACK_SECRET;
-const POS_TAX_RATE = Number(process.env.POS_TAX_RATE ?? 0.05);
+const POS_TAX_RATE = Number(process.env.POS_TAX_RATE ?? 0);
 
 app.use(
   cors({
@@ -102,10 +101,7 @@ app.use("/api", (req, res, next) => {
   return next();
 });
 
-// WhatsApp webhooks need a single always-on public host — skip on each POS till.
-if (!isEmbedded) {
-  app.use("/webhook", whatsappWebhook);
-}
+
 
 // ----------------------------------------------------
 // PATHS

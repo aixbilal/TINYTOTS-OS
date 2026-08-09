@@ -520,7 +520,7 @@ export default function POS() {
               <span className="text-ink-900 w-16 text-right">-{formatPKR(discountAmount)}</span>
             </div>
           </div>
-          <Row label="Tax" value={formatPKR(tax)} />
+          {tax > 0 && <Row label="Tax" value={formatPKR(tax)} />}
           <div className="border-t border-white/40 my-2" />
           <div className="flex items-center justify-between mb-4">
             <span className="font-semibold text-ink-900">Total</span>

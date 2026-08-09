@@ -3,8 +3,8 @@ import cron from "node-cron";
 import { createClient } from "@supabase/supabase-js";
 import { generateDailyReport } from "./reportService.js";
 import { createNotification } from "./notifications.js";
-import { sendMessage } from "../whatsapp/sendMessage.js";
-import { OWNER_PHONE, restoreStockForSale } from "../whatsapp/fastLaneHandler.js";
+import { sendMessage } from "../lib/sendMessage.js";
+import { OWNER_PHONE, restoreStockForSale } from "../lib/stockRestore.js";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,

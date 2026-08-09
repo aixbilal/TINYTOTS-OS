@@ -7,16 +7,16 @@ export const receiptConfig = {
     website: "www.tinytotsofficial.com",
   },
 
-  // Used by the POS screen to compute tax on checkout.
-  taxRatePercent: 5,
+// Used by the POS screen to compute tax on checkout.
+taxRatePercent: 0,
 
-  toggles: {
-    showSubtitle: true,
-    showAddress: true,
-    showPhone: true,
-    showWebsite: true,
+toggles: {
+  showSubtitle: true,
+  showAddress: true,
+  showPhone: true,
+  showWebsite: true,
 
-    showTax: true,
+  showTax: false,
     showDiscount: true,
 
     showFooterMessage: true,

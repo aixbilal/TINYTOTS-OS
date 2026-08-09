@@ -1,0 +1,1439 @@
+# POS
+
+## Document Information
+
+| Field           | Value                                                                  |
+| --------------- | ---------------------------------------------------------------------- |
+| Document ID     | 07-02                                                                  |
+| Folder          | 07 - Screens                                                           |
+| Status          | Planned                                                                |
+| Version         | 1.0.0                                                                  |
+| Primary Source  | TinyTots OS 2.0 — Chapter 10: Point of Sale (POS) System Specification |
+| Target Platform | Electron Desktop                                                       |
+| Primary Users   | Cashiers, Store Managers, Store Owners                                 |
+| Last Updated    | 2026-08-09                                                             |
+
+---
+
+## Purpose
+
+The Point of Sale is the core transactional workspace of TinyTots OS.
+
+Its single objective is:
+
+> Complete a sale as quickly, accurately, and confidently as possible.
+
+The POS is explicitly not an inventory-management screen or reporting tool. Every design decision should reduce checkout time and cognitive load. The redesign prioritizes speed, predictability, keyboard operation, barcode scanning, error prevention, offline capability, and uninterrupted cashier workflow.
+
+---
+
+## Scope
+
+This document defines the redesigned POS screen and its operational behavior, including:
+
+* POS layout
+* product search
+* barcode scanning
+* category filtering
+* product grid
+* cart
+* quantity management
+* discounts
+* customer assignment
+* payment
+* checkout
+* receipt success
+* refunds
+* offline operation
+* printer status
+* keyboard shortcuts
+* error prevention
+* performance
+* accessibility
+* future extensibility
+
+Global application-shell behavior remains defined by Phase 06.
+
+Visual tokens and shared interaction rules remain defined by Phase 05.
+
+Reusable POS components are documented in Phase 08.
+
+Operational capabilities such as printing, offline synchronization, scanner integration, and payment handling are documented in Phase 09.
+
+---
+
+# POS Philosophy
+
+The POS follows one principle:
+
+```text
+Speed
+```
+
+The cashier should be able to complete transactions with minimal thinking and minimal mouse usage.
+
+The redesign explicitly defines the POS workflow as:
+
+```text
+Search
+   ↓
+Scan
+   ↓
+Cart
+   ↓
+Customer
+   ↓
+Payment
+   ↓
+Receipt
+```
+
+Every interface decision must support this flow.
+
+---
+
+# Primary Users
+
+The POS is primarily used by:
+
+* Cashiers
+* Store Managers
+* Store Owners
+
+The design is optimized for cashiers because they use the POS continuously throughout the day.
+
+Management users may access additional operational capabilities such as refunds according to their permissions.
+
+---
+
+# Core Design Principles
+
+The POS must be:
+
+| Principle       | Requirement                                |
+| --------------- | ------------------------------------------ |
+| Fast            | Minimize transaction time                  |
+| Predictable     | Keep behavior consistent                   |
+| Keyboard-first  | Support professional cashier workflows     |
+| Scanner-first   | Make barcode input a primary interaction   |
+| Mouse-friendly  | Preserve conventional pointer interaction  |
+| Error-resistant | Prevent common transaction mistakes        |
+| Offline-capable | Continue selling when connectivity is lost |
+| Easy to learn   | Minimize cognitive overhead                |
+
+The POS must remain visually calm even when processing large amounts of transaction information.
+
+---
+
+# Standard Sale Workflow
+
+Every standard sale follows the same mental model:
+
+```text
+Open POS
+   ↓
+Search / Scan
+   ↓
+Add Products
+   ↓
+Adjust Quantity
+   ↓
+Apply Discount (Optional)
+   ↓
+Assign Customer (Optional)
+   ↓
+Choose Payment
+   ↓
+Complete Sale
+   ↓
+Print Receipt
+   ↓
+Ready for Next Customer
+```
+
+Nothing unrelated should interrupt this flow.
+
+---
+
+# Screen Architecture
+
+The POS uses the permanent Application Shell from Phase 06.
+
+Within the application workspace, the POS has a fixed operational structure:
+
+```text
+┌────────────────────────────────────────────────────────────┐
+│ Top Toolbar                                                │
+├────────────────────────────────────────────────────────────┤
+│ Search │ Categories │ Scanner Status                       │
+├───────────────────────────────────────┬────────────────────┤
+│                                       │                    │
+│ Products                              │ Cart               │
+│                                       │                    │
+│ Product Grid                          │ Cart Items         │
+│                                       │                    │
+│                                       │ Summary            │
+│                                       │ Customer           │
+│                                       │ Payment            │
+│                                       │ Checkout           │
+│                                       │                    │
+└───────────────────────────────────────┴────────────────────┘
+```
+
+The redesign specifies this structure as fixed.
+
+It should not be independently redesigned for different POS states.
+
+---
+
+# Screen Distribution
+
+The recommended horizontal distribution is:
+
+| Region          | Width |
+| --------------- | ----: |
+| Products        |   68% |
+| Cart / Checkout |   32% |
+
+The two regions must not be equal width.
+
+The product workspace receives more space because product discovery and selection are primary POS activities.
+
+---
+
+# Primary Regions
+
+The POS consists of the following major regions:
+
+1. Top Toolbar
+2. Search
+3. Categories
+4. Scanner Status
+5. Product Grid
+6. Cart
+7. Cart Summary
+8. Customer Assignment
+9. Payment Panel
+10. Checkout
+11. Receipt Success
+12. Printer Status
+
+Conceptually:
+
+```text
+POS
+├── Toolbar
+├── Search
+├── Categories
+├── Scanner Status
+├── Product Grid
+│   └── Product Card
+├── Cart
+│   └── Cart Item
+├── Summary
+├── Customer
+├── Payment
+├── Checkout
+├── Receipt Success
+└── Printer Status
+```
+
+This component structure is directly specified by Chapter 10.
+
+---
+
+# Top Toolbar
+
+The toolbar provides the immediate operational context of the POS.
+
+It should expose high-value POS controls without becoming a secondary navigation system.
+
+The toolbar must remain subordinate to the transaction workflow.
+
+Global application controls such as global search, notifications, session behavior, and command infrastructure remain governed by Phase 06.
+
+---
+
+# Search
+
+Search is one of the most important POS controls.
+
+It must support:
+
+* Product Name
+* SKU
+* Barcode
+* Category
+* Variant
+* Partial Match
+
+Search begins immediately while the user types.
+
+There should be no separate Search button.
+
+Example:
+
+```text
+┌──────────────────────────────────────┐
+│ Search product, SKU or barcode...    │
+└──────────────────────────────────────┘
+```
+
+The search interaction must feel immediate and must not require unnecessary confirmation.
+
+Target performance:
+
+```text
+Product Search < 100ms
+```
+
+where technically achievable under the specified application conditions.
+
+---
+
+# Barcode Scanner
+
+Barcode input remains active as a primary POS interaction.
+
+When the scanner sends Enter:
+
+```text
+Scanner Input
+    ↓
+Find Product
+    ↓
+Add Product
+    ↓
+If Product Already Exists
+    ↓
+Increase Quantity
+    ↓
+Return Focus to Search
+```
+
+The cashier should not need to reach for the mouse after scanning.
+
+Scanner events should be handled through the application's global scanner handling rather than being embedded as ad-hoc logic inside individual product components.
+
+---
+
+# Categories
+
+Categories are displayed as horizontal chips.
+
+Example:
+
+```text
+All   Girls   Boys   Accessories   Footwear   Baby
+```
+
+Selecting a category filters the product grid immediately.
+
+There should be no additional Apply or Search action.
+
+Category presentation must consume the shared component and token systems.
+
+---
+
+# Product Grid
+
+The Product Grid occupies the majority of the POS workspace.
+
+Its purpose is rapid product discovery and selection.
+
+Each product card displays:
+
+* Product Image
+* Product Name
+* Variant
+* Price
+* Available Stock
+* Add Button
+
+Optional:
+
+* Low Stock Badge
+* Quick Details on hover
+
+The card must not expose unnecessary metadata.
+
+---
+
+# Product Card
+
+The Product Card follows a clear information hierarchy:
+
+```text
+Product Image
+      ↓
+Product Name
+      ↓
+Variant
+      ↓
+Price
+      ↓
+Stock
+      ↓
+Add
+```
+
+The Add action should be immediately understandable.
+
+Hover may reveal Quick Details, but hover content must not become necessary for completing a sale.
+
+---
+
+# Adding Products
+
+A product can enter the cart through:
+
+1. Barcode scan
+2. Search result
+3. Product Card Add action
+
+When a product already exists in the cart, scanning it again should increase its quantity rather than create an unnecessary duplicate cart line.
+
+---
+
+# Cart
+
+The Cart is the second most important area of the POS.
+
+It must provide immediate visibility into the current transaction.
+
+Each cart item contains:
+
+* Image
+* Product Name
+* Variant
+* Quantity
+* Price
+* Remove action
+
+All changes update live.
+
+No confirmation dialog is required for ordinary quantity changes or item removal unless a higher-risk business rule explicitly requires one.
+
+---
+
+# Cart Item
+
+Each cart row follows:
+
+```text
+Image
+  ↓
+Product Name
+  ↓
+Variant
+  ↓
+Quantity Stepper
+  ↓
+Price
+  ↓
+Remove
+```
+
+The cart item must allow rapid manipulation without opening secondary dialogs.
+
+---
+
+# Quantity Editing
+
+Quantity changes support:
+
+* direct typing
+* keyboard interaction
+* optional mouse-wheel interaction
+
+Quantity updates must occur immediately.
+
+The POS must prevent invalid quantities such as negative stock or invalid quantity values.
+
+---
+
+# Cart Summary
+
+The Cart Summary displays:
+
+* Items
+* Subtotal
+* Discount
+* Tax
+* Grand Total
+* Savings
+* Payment Method
+
+The Grand Total must have the strongest visual emphasis within the summary.
+
+Example:
+
+```text
+Items              4
+Subtotal       Rs. 8,500
+Discount         -500
+Tax              +680
+Savings          Rs. 500
+───────────────────────
+Grand Total    Rs. 8,680
+```
+
+Actual tax and discount calculations must remain in the appropriate business/service layer rather than being implemented directly inside presentation components.
+
+---
+
+# Discount System
+
+The POS supports:
+
+* Percentage discount
+* Fixed-amount discount
+* Coupon
+* Manager override
+* Reason
+
+Discount history must be stored.
+
+Manager override must respect centralized permissions.
+
+The POS must not invent an independent permission system for discount authorization.
+
+---
+
+# Customer Assignment
+
+Customer assignment is optional.
+
+The cashier can:
+
+* search for an existing customer
+* create a customer inline
+
+Customer creation must never be mandatory for completing an ordinary sale.
+
+The workflow should therefore remain:
+
+```text
+Sale
+  ├── Customer assigned
+  └── No customer
+```
+
+Both paths must remain valid unless a specific business rule requires customer identification.
+
+---
+
+# Payment Panel
+
+The Payment Panel supports:
+
+* Cash
+* Card
+* Online
+* Split Payment
+
+Future payment types include:
+
+* Gift Card
+* Store Credit
+
+Future payment methods must be designed to integrate without restructuring the POS.
+
+---
+
+# Cash Payment
+
+For cash payment:
+
+1. Enter amount received.
+2. Calculate Change Due automatically.
+3. Display the change prominently.
+4. Allow checkout only when payment requirements are satisfied.
+
+Example:
+
+```text
+Amount Due
+
+Rs. 8,680
+
+Cash Received
+
+Rs. 10,000
+
+Change Due
+
+Rs. 1,320
+```
+
+The Change Due value should be large, centered, and easy to read.
+
+---
+
+# Card Payment
+
+Card payment has explicit transaction states:
+
+```text
+Waiting
+   ↓
+Approved
+
+or
+
+Waiting
+   ↓
+Failed
+
+or
+
+Waiting
+   ↓
+Cancelled
+```
+
+The interface must never freeze while waiting for card-payment state changes.
+
+Payment status must remain visible to the cashier.
+
+---
+
+# Split Payment
+
+Split Payment supports combinations including:
+
+```text
+Cash + Card
+Cash + Online
+```
+
+Multiple-card payment is a future capability.
+
+The remaining unpaid balance must always remain visible.
+
+Example:
+
+```text
+Total Due       Rs. 10,000
+Cash            Rs. 4,000
+Card            Rs. 3,000
+─────────────────────────
+Remaining       Rs. 3,000
+```
+
+---
+
+# Checkout Button
+
+The Checkout button is the largest primary action in the POS.
+
+Requirements:
+
+* accent color
+* pinned at the bottom of the checkout region
+* visually dominant
+* disabled only when the cart is empty or another explicitly invalid checkout condition exists
+* never hidden behind unnecessary scrolling
+
+The checkout action must be resistant to accidental duplicate execution.
+
+---
+
+# Payment Idempotency
+
+Payment processing must be idempotent.
+
+The system must prevent:
+
+* double payment
+* duplicate transaction creation
+* repeated checkout caused by double-clicking
+* payment races caused by asynchronous responses
+
+The UI should communicate processing state immediately while allowing the backend/payment layer to guarantee transaction uniqueness.
+
+This is an engineering requirement explicitly defined by the POS specification.
+
+---
+
+# Receipt Success
+
+After successful payment, the POS transitions into a success state.
+
+The success view displays:
+
+* large success indicator
+* receipt number
+* Print Again
+* Email — future
+* New Sale
+
+Example:
+
+```text
+✓
+
+Sale Completed
+
+Receipt #10045
+
+[Print Again]
+
+[New Sale]
+```
+
+The success animation must remain below 400ms.
+
+Receipt generation must be asynchronous and printing must never block the POS interface.
+
+---
+
+# New Sale
+
+After completion, the POS should return to a ready-to-sell state without unnecessary navigation.
+
+The intended operational loop is:
+
+```text
+Sale Completed
+      ↓
+Receipt
+      ↓
+New Sale
+      ↓
+Ready for Search / Scan
+```
+
+The cashier should be able to begin the next transaction immediately.
+
+---
+
+# Refund Workflow
+
+Refunds require Manager permission.
+
+The workflow is:
+
+```text
+Search Receipt
+      ↓
+Select Items
+      ↓
+Reason
+      ↓
+Refund
+      ↓
+Inventory Update
+      ↓
+New Receipt
+```
+
+All refund actions must be logged.
+
+Refunds are therefore both a transactional workflow and an auditable business operation.
+
+The POS screen must not bypass permission checks simply because the Refund action is visible.
+
+---
+
+# Hold Sale
+
+Hold Sale is explicitly a future capability.
+
+It is intended to support:
+
+* saving the current cart
+* returning to it later
+* multiple held carts
+
+Current status:
+
+```text
+TODO — Future capability.
+```
+
+No current implementation should be assumed.
+
+---
+
+# Offline Mode
+
+The POS must continue operating when Internet connectivity is lost.
+
+When offline:
+
+```text
+Internet Lost
+      ↓
+Continue Selling
+      ↓
+Queue Sale Locally
+      ↓
+Display Pending Sync
+      ↓
+Connectivity Restored
+      ↓
+Automatic Retry / Synchronization
+```
+
+Offline mode must never unnecessarily block checkout.
+
+The pending synchronization state must remain visible.
+
+The offline queue must retry automatically when connectivity returns.
+
+---
+
+# Printer Status
+
+Printer status is always visible.
+
+Possible states include:
+
+```text
+Ready
+Printing
+Offline
+Paper Low
+Disconnected
+```
+
+The cashier must know printer availability before or during checkout.
+
+Printer operations must not block the main POS interface.
+
+The printer status component should consume the shared Printer Status Widget defined by the component system rather than implementing a separate visual language.
+
+---
+
+# Error Prevention
+
+The POS must actively prevent or safely handle:
+
+* Negative stock
+* Duplicate payments
+* Empty checkout
+* Double-click payment
+* Network race conditions
+
+Errors should be prevented where possible instead of merely reported after the fact.
+
+Any unrecoverable or recoverable error must use the universal error-state architecture rather than exposing raw technical information.
+
+---
+
+# Empty Cart State
+
+When there are no products in the cart, the cart area should not appear broken or empty.
+
+It should communicate:
+
+```text
+Scan or search for a product.
+```
+
+It should also provide a keyboard shortcut reminder where applicable.
+
+The empty state should use the shared Empty State component.
+
+No unnecessary visual content should consume the transaction workspace.
+
+---
+
+# Loading States
+
+The POS must not display unexplained blank areas while data is loading.
+
+Required loading representations include:
+
+* Product Grid skeleton
+* Cart skeleton
+* Payment skeleton
+
+Skeleton layouts should correspond to the final structure so the interface does not jump when data becomes available.
+
+Universal loading rules remain defined by Phase 15.
+
+---
+
+# POS Interaction States
+
+The POS inherits the global component state system:
+
+```text
+Default
+Hover
+Active
+Disabled
+Loading
+Success
+Warning
+Error
+Offline
+```
+
+Individual POS controls must not invent alternate state behavior.
+
+Visual state definitions come from Phase 05 and Phase 08.
+
+---
+
+# Keyboard Shortcuts
+
+The redesign specifies the following POS shortcuts:
+
+| Shortcut      | Action        |
+| ------------- | ------------- |
+| F2            | Search        |
+| F4            | Discount      |
+| F5            | Customer      |
+| F8            | Payment       |
+| F9            | Checkout      |
+| Ctrl + Delete | Clear Cart    |
+| Esc           | Cancel Dialog |
+| Enter         | Confirm       |
+
+These shortcuts are designed so professional cashiers can perform most operations with minimal mouse usage.
+
+The implementation must integrate with the centralized keyboard infrastructure defined in Phase 06.
+
+---
+
+# Keyboard-First Workflow
+
+A typical scanner-first transaction should be possible without unnecessary pointer interaction:
+
+```text
+Focus Search
+      ↓
+Scan Barcode
+      ↓
+Product Added
+      ↓
+Scan Next Product
+      ↓
+F5 → Customer (optional)
+      ↓
+F4 → Discount (optional)
+      ↓
+F8 → Payment
+      ↓
+Select / Enter Payment
+      ↓
+F9 → Checkout
+      ↓
+Receipt
+```
+
+The exact focus transitions must be implemented consistently and must never leave the cashier without a predictable active control.
+
+---
+
+# Focus Management
+
+Focus must remain predictable.
+
+Important rules:
+
+* Scanner completion returns focus to Search.
+* Dialog opening moves focus into the dialog.
+* Dialog closing returns focus to the initiating control where appropriate.
+* Payment flow maintains focus on the active payment control.
+* Successful checkout prepares the POS for the next transaction.
+* Keyboard users must always have a visible focus state.
+
+These behaviors inherit the global accessibility and interaction standards.
+
+---
+
+# Accessibility
+
+The POS must be operable using:
+
+* keyboard
+* barcode scanner
+* mouse
+
+The redesign additionally requires:
+
+* large touch targets
+* readable typography
+* visible focus states
+* screen-reader compatibility where applicable
+* accessible status communication
+* reduced-motion support
+
+Accessibility is mandatory rather than optional enhancement.
+
+---
+
+# Touch Targets
+
+Controls used during active checkout should provide sufficiently large interaction targets for reliable use.
+
+This is particularly important for:
+
+* Add Product
+* Quantity controls
+* Remove
+* Payment selection
+* Checkout
+* Quick Actions
+
+Exact component sizing must come from the shared design/component system rather than being independently invented here.
+
+---
+
+# Responsive / Window Behavior
+
+The POS is a desktop-first Electron workspace.
+
+It must preserve the fixed workflow and product/cart priority across supported desktop resolutions.
+
+The design must not collapse into a conventional mobile layout.
+
+At smaller supported desktop dimensions, secondary information may reduce in density, but the primary transaction path must remain accessible:
+
+```text
+Search
+→ Products
+→ Cart
+→ Payment
+→ Checkout
+```
+
+---
+
+# Performance Requirements
+
+The redesign specifies the following targets:
+
+| Operation      |  Target |
+| -------------- | ------: |
+| Product Search | < 100ms |
+| Barcode Scan   | < 100ms |
+| Cart Update    | Instant |
+| Checkout       | < 300ms |
+| Receipt        | < 500ms |
+| UI blocking    |    None |
+
+These are target requirements, not claims about current implementation performance.
+
+Actual performance must be measured during implementation and QA.
+
+---
+
+# Business Logic Boundary
+
+Business logic must not reside inside presentational UI components.
+
+The architecture must separate:
+
+```text
+Scanner / Input
+      ↓
+Application Service
+      ↓
+Cart State
+      ↓
+Pricing / Discount / Tax
+      ↓
+Payment Service
+      ↓
+Checkout
+      ↓
+Receipt Generation
+      ↓
+Printing / Offline Queue
+```
+
+The redesign explicitly requires centralized cart state.
+
+Scanner events must be handled globally.
+
+Receipt generation must be asynchronous.
+
+Printing must never block the interface.
+
+---
+
+# Cart State
+
+Cart state must be centralized.
+
+The cart is a shared transactional state rather than independent state owned by individual product cards.
+
+Conceptually:
+
+```text
+Product Card
+     │
+     ├── Add Product
+     ↓
+Central Cart State
+     │
+     ├── Cart UI
+     ├── Summary
+     ├── Discount
+     ├── Customer
+     └── Payment
+```
+
+All dependent UI should update immediately when cart state changes.
+
+---
+
+# Data Requirements
+
+The POS depends on data including:
+
+* products
+* variants
+* prices
+* stock
+* categories
+* customers
+* cart items
+* discounts
+* tax
+* payment state
+* receipts
+* printer state
+* offline queue state
+
+The redesign states that the POS should reuse the existing checkout and backend functionality wherever possible.
+
+The source specifically identifies the existing backend as already supporting products, categories, sales, sale items, receipts, inventory, authentication, and offline queue.
+
+---
+
+# Current Implementation vs Redesign
+
+## Redesign / Target State
+
+The target POS provides:
+
+* fixed 68/32 workspace distribution
+* scanner-first operation
+* keyboard-first interaction
+* immediate search
+* category chips
+* product grid
+* live cart
+* quantity editing
+* discounts
+* optional customer assignment
+* cash/card/online/split payment
+* receipt success
+* refunds
+* offline queue
+* persistent printer status
+* robust error prevention
+* centralized cart state
+* asynchronous receipt generation
+* non-blocking printing
+
+## Current Implementation
+
+The existing system already contains POS-related business functionality, including checkout, receipts, printing, and offline queue functionality according to the project audit and redesign source.
+
+However, this document must not mark individual redesigned UI behaviors as implemented without repository verification.
+
+Where implementation status is not explicitly verified:
+
+```text
+TODO — Verify current implementation.
+```
+
+The redesign remains the target state.
+
+---
+
+# Architectural Preservation
+
+The redesign is primarily a presentation and experience reconstruction.
+
+The source explicitly states that the following should remain compatible:
+
+* Supabase schema
+* Authentication flow
+* Receipt generation
+* Barcode generation
+* Printing
+* Electron shell
+* Offline synchronization
+* API endpoints
+* Database relationships
+* Existing business logic
+
+Therefore the POS redesign must not independently introduce a new backend architecture.
+
+If implementation reveals a genuine architectural gap:
+
+```text
+Document requirement
+        ↓
+Identify dependency
+        ↓
+Mark TODO / proposed change
+        ↓
+Create explicit architectural decision
+```
+
+Do not silently modify Phase 03.
+
+---
+
+# Future Features
+
+The POS architecture should be extensible for:
+
+* Loyalty Points
+* Gift Cards
+* Promo Campaigns
+* Membership Discounts
+* Returns Without Receipt
+* Exchange Workflow
+* Customer Display Screen
+* Self Checkout
+* Digital Receipts
+* QR Payments
+* NFC Payments
+* Multi-terminal Synchronization
+
+These are future capabilities and must not be represented as current functionality.
+
+The architecture should accommodate them without requiring a complete POS redesign.
+
+---
+
+# Component Dependencies
+
+The POS should consume reusable components from Phase 08.
+
+Relevant component categories include:
+
+* Product Grid
+* Product Card
+* Cart Sidebar
+* Cart Item
+* Search
+* Category Chips
+* Tax / Discount / Summary
+* Payment
+* Receipt Viewer
+* Barcode Generator
+* Printer Status
+* Modal
+* Drawer
+* Toast
+* Loading State
+* Empty State
+* Error State
+
+The component system requires reusable UI rather than screen-specific visual implementations.
+
+---
+
+# Related Features
+
+The POS connects directly with:
+
+* Barcode Scanner
+* Inventory
+* Customers
+* Discounts
+* Payment
+* Checkout
+* Receipt Generation
+* Thermal Printing
+* Cash Drawer
+* Offline Queue
+* Inventory Synchronization
+* Authentication / Permissions
+
+These capabilities should be documented in Phase 09 rather than duplicated here.
+
+---
+
+# Acceptance Criteria
+
+The POS redesign is complete when:
+
+* A trained cashier can complete a standard sale with minimal mouse usage.
+* Barcode scanning adds products instantly.
+* Product search responds within the defined performance target.
+* Cart updates are immediate.
+* Checkout remains functional offline.
+* Payment flows remain resilient to interruptions.
+* Duplicate payments are prevented.
+* Printer status is always visible.
+* Refunds require appropriate authorization.
+* Refunds are auditable.
+* Receipt generation does not block the interface.
+* Printing does not freeze the POS.
+* Loading states preserve layout stability.
+* Empty-cart behavior clearly instructs the cashier.
+* Keyboard shortcuts support professional cashier workflows.
+* The interface remains calm and uncluttered during busy operations.
+* The POS follows the established Design System.
+* The POS remains inside the established Application Shell.
+* Business logic remains outside presentational components.
+
+The source's final acceptance criteria specifically emphasize minimal mouse usage, instant scanning, offline checkout, immediate cart updates, resilient payments, persistent printer status, auditable refunds, and a calm interface.
+
+---
+
+# TODO
+
+* [ ] Verify current POS route and renderer implementation.
+* [ ] Verify current Product Grid implementation.
+* [ ] Verify current barcode scanner integration.
+* [ ] Verify global scanner event handling.
+* [ ] Verify centralized cart state.
+* [ ] Verify current discount implementation.
+* [ ] Verify customer assignment workflow.
+* [ ] Verify cash payment and change calculation.
+* [ ] Verify card payment state handling.
+* [ ] Verify split payment support.
+* [ ] Verify checkout idempotency.
+* [ ] Verify receipt generation behavior.
+* [ ] Verify non-blocking print behavior.
+* [ ] Verify printer status integration.
+* [ ] Verify offline queue integration.
+* [ ] Verify automatic retry after reconnection.
+* [ ] Verify refund authorization and audit behavior.
+* [ ] Verify all specified keyboard shortcuts.
+* [ ] Measure search performance against `<100ms`.
+* [ ] Measure scanner response against `<100ms`.
+* [ ] Measure checkout against `<300ms`.
+* [ ] Measure receipt generation against `<500ms`.
+* [ ] Validate accessibility and focus management.
+* [ ] Validate supported desktop resolutions.
+* [ ] Validate duplicate-payment prevention.
+* [ ] Validate negative-stock prevention.
+* [ ] Validate network-race handling.
+* [ ] Validate POS loading and empty states.
+* [ ] Validate component reuse against Phase 08.
+* [ ] Document POS-specific operational capabilities in Phase 09.
+
+---
+
+# Related Documents
+
+## Architecture
+
+* `03 - Architecture/System Architecture.md`
+* `03 - Architecture/UI Architecture.md`
+* `03 - Architecture/Component Architecture.md`
+* `03 - Architecture/State Management.md`
+* `03 - Architecture/Data Flow.md`
+* `03 - Architecture/Business Logic Architecture.md`
+* `03 - Architecture/IPC Architecture.md`
+
+## Redesign Strategy
+
+* `04 - Redesign Strategy/04-01 Master Plan.md`
+* `04 - Redesign Strategy/04-08 Implementation Strategy.md`
+* `04 - Redesign Strategy/04-09 Release Strategy.md`
+
+## Design System
+
+* Phase 05 finalized documents
+
+## Application Shell
+
+* Phase 06 finalized documents
+* `06-17 Command Palette.md`
+* `06-18 Global Search.md`
+* `06-20 Startup & Initialization.md`
+* `06-21 Error Handling & Recovery.md`
+
+## Related Screens
+
+* `07-01 Dashboard.md`
+* `07-03 Receipts.md`
+* `07-04 Receipt Details.md`
+* `07-05 Products.md`
+* `07-06 Product Detail.md`
+* `07-15 Customers.md`
+
+## Future Features
+
+* Phase 08 — Components
+* Phase 09 — Features
+* Phase 11 — Testing
+* Phase 15 — Decisions / ADR
+
+---
+
+# Source Basis
+
+Primary source:
+
+**THE ELECTRON REDESIGN.docx — TinyTots OS 2.0**
+
+Primary source section:
+
+**Chapter 10 — Point of Sale (POS) System Specification**
+
+Relevant sections include:
+
+* 10.1 POS Philosophy
+* 10.2 Primary Users
+* 10.3 Core Design Principles
+* 10.4 Workflow
+* 10.5 Screen Layout
+* 10.6 Screen Distribution
+* 10.7 Product Grid
+* 10.8 Search
+* 10.9 Barcode Scanner
+* 10.10 Categories
+* 10.11 Product Card
+* 10.12 Cart
+* 10.13 Cart Item
+* 10.14 Quantity Editing
+* 10.15 Cart Summary
+* 10.16 Discount System
+* 10.17 Customer Assignment
+* 10.18 Payment Panel
+* 10.19 Cash Payment
+* 10.20 Card Payment
+* 10.21 Split Payment
+* 10.22 Checkout Button
+* 10.23 Receipt Success
+* 10.24 Refund Workflow
+* 10.25 Hold Sale
+* 10.26 Offline Mode
+* 10.27 Printer Status
+* 10.28 Keyboard Shortcuts
+* 10.29 Error Prevention
+* 10.30 Performance
+* 10.31 Loading States
+* 10.32 Empty Cart
+* 10.33 Accessibility
+* 10.34 POS Component Tree
+* 10.35 Future Features
+* 10.36 Engineering Rules
+* 10.37 Acceptance Criteria
+* 10.38 Final Principle
+
+These sections establish the POS as the transactional heart of TinyTots OS and define its required workflow, interaction model, performance targets, resilience behavior, and engineering constraints.
+
+Secondary source:
+
+**Verified TinyTots OS repository**
+
+Repository:
+
+`aixbilal/TINYTOTS-OS`
+
+Current implementation status must be verified against the repository before being labeled implemented.
+
+---
+
+# Revision History
+
+| Version | Date       | Description                                                                             |
+| ------- | ---------- | --------------------------------------------------------------------------------------- |
+| 1.0.0   | 2026-08-09 | Initial Phase 07 POS engineering specification derived from TinyTots OS 2.0 Chapter 10. |
