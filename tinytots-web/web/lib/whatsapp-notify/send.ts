@@ -65,7 +65,10 @@ export async function sendWhatsAppTemplate({
     });
 
     const data = await response.json();
-
+    console.log(
+      "WhatsApp Graph API response:",
+      JSON.stringify({ status: response.status, data })
+    );
     if (!response.ok) {
       console.error("WhatsApp send failed:", data);
       return {
@@ -73,7 +76,6 @@ export async function sendWhatsAppTemplate({
         error: data?.error?.message || "whatsapp_api_error",
       };
     }
-
     return { success: true };
   } catch (err) {
     console.error("WhatsApp send exception:", err);
