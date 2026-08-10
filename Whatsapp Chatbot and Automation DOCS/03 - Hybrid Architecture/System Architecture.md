@@ -37,39 +37,32 @@ Responsibilities
 The website remains the only commerce platform.
 
 ---
+## Meta Business Agent — DROPPED (see Architecture Decision.md update, 2026-08-10)
 
-## Meta Business Agent
+The AI conversational agent layer was not adopted. See
+"04 - Migration/Architecture Decision.md" for full reasoning (free tier can't call
+external APIs; Enterprise tier is invite-only).
 
-Responsibilities
+Conversational support is instead split across two plain WhatsApp numbers:
 
-- Natural conversations
-- FAQs
-- Product discovery
-- Product recommendations
-- Size guidance
-- Promotions
-- Order tracking
-- Store information
-- Redirect customers to website
-
-The Business Agent never creates orders.
+- 0333-5268060 — human-staffed WhatsApp Business App (FAQs, support, questions)
+- 0334-6417385 — Cloud API number, automated notifications only, no conversation
 
 ---
 
-## n8n
+## Notification Pipeline (replaces n8n — see ADR-003 update, 2026-08-10)
 
 Responsibilities
 
-- Workflow automation
-- Scheduled jobs
-- Event-driven automation
-- Notifications
-- Integration between services
+- Order status change detection
+- WhatsApp template message delivery
+- Button-reply handling (order confirm/cancel)
 
-n8n never performs conversations.
+Implementation
 
----
-
+- Supabase Database Webhooks (fires on `orders` table changes)
+- Next.js API routes (`app/api/v1/whatsapp-notify`, `app/api/v1/whatsapp-webhook`)
+- WhatsApp Cloud API (Graph API), called directly — no intermediary automation tool
 ## Next.js APIs
 
 Responsibilities
@@ -98,40 +91,35 @@ Stores
 - Realtime Events
 
 ---
-
 # High-Level Architecture
 
-```
 Customer
 
 ↓
 
-WhatsApp
+WhatsApp (0333 human support, OR 0334 automated notifications)
 
 ↓
 
-Meta Business Agent
+Next.js APIs (whatsapp-notify, whatsapp-webhook)
 
 ↓
 
-Secure Next.js APIs
+Supabase (orders table, Database Webhooks)
 
 ↓
 
-Supabase
-
-↑
+WhatsApp Cloud API (Graph API)
 
 ↓
 
-n8n Automation
+Customer
 
-↓
 
-WhatsApp Templates
-```
-
----
+Note: The 4 read-only meta-agent APIs (inventory, order-status, promotions,
+store-info) remain built and deployed but are currently unused, since the AI
+conversational layer they were built for was dropped. See Architecture Decision.md
+update, 2026-08-10.
 
 # Benefits
 

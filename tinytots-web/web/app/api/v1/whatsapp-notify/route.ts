@@ -4,6 +4,24 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { sendWhatsAppTemplate } from "@/lib/whatsapp-notify/send";
+
+// Simple in-memory rate limiter — resets on cold start, per-instance only.
+// Not bulletproof under serverless scale-out, but blocks casual abuse cheaply.
+const requestLog: number[] = [];
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 30; // generous — real order volume won't hit this
+
+function isRateLimited(): boolean {
+  const now = Date.now();
+  while (requestLog.length > 0 && requestLog[0] < now - RATE_LIMIT_WINDOW_MS) {
+    requestLog.shift();
+  }
+  if (requestLog.length >= RATE_LIMIT_MAX_REQUESTS) {
+    return true;
+  }
+  requestLog.push(now);
+  return false;
+}
 import { getMetaAgentSupabaseClient } from "@/lib/meta-agent/supabase";
 
 const supabase = getMetaAgentSupabaseClient();
@@ -28,8 +46,13 @@ function formatPhoneForWhatsApp(rawPhone: string): string | null {
 }
 
 export async function POST(req: NextRequest) {
-  // 1. Authenticate the caller
-  const authHeader = req.headers.get("authorization");
+    // 0. Rate limit check
+    if (isRateLimited()) {
+      return NextResponse.json({ success: false, error: "rate_limited" }, { status: 429 });
+    }
+  
+    // 1. Authenticate the caller
+    const authHeader = req.headers.get("authorization");
   const expectedSecret = process.env.WHATSAPP_NOTIFY_SECRET;
 
   if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
