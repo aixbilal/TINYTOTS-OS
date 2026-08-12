@@ -1,0 +1,1329 @@
+# TinyTots — Video Guidelines
+
+**Document:** Video Guidelines  
+**Location:** `16-ASSETS/04 — Video/07 — Video Guidelines.md`  
+**Status:** Approved Video Standard  
+**Applies To:** TinyTots website, mobile website, campaigns, editorial storytelling, social adaptations and future digital experiences.
+
+---
+
+# 1. Purpose
+
+This document defines the visual, technical and operational standards for the TinyTots video system.
+
+It governs:
+
+- Hero videos
+- Campaign videos
+- Product videos
+- Editorial videos
+- Background videos
+- Mobile video variants
+- Video optimization
+- Website implementation
+- Storage and repository handling
+- Future video production
+
+The objective is to maintain a consistent TinyTots motion language while preventing unnecessary video production, misleading product representation and excessive website performance cost.
+
+---
+
+# 2. Current TinyTots Position
+
+TinyTots currently operates as a children's clothing **retailer/shop**.
+
+TinyTots is not currently treated as a complete private-label clothing manufacturer.
+
+Therefore, video content may communicate:
+
+- Children's fashion
+- Retail experience
+- Childhood
+- Family warmth
+- Shopping
+- Packaging
+- Seasonal styling
+- Editorial storytelling
+
+Video content must not falsely imply that every garment shown is designed or manufactured by TinyTots.
+
+---
+
+# 3. Video Library Structure
+
+The approved video architecture is:
+
+04 — Video/
+├── 01 — Hero Videos/
+├── 02 — Campaign Videos/
+├── 03 — Product Videos/
+├── 04 — Editorial Videos/
+├── 05 — Background Videos/
+├── 06 — Mobile Variants/
+└── 07 — Video Guidelines.md
+
+Each category has a distinct purpose.
+
+Do not create videos merely to make every folder contain assets.
+
+---
+
+# 4. Current Approved Video Library
+
+## Desktop / Landscape Masters
+
+### HV01 — Homepage Lifestyle Hero
+
+**Category:** Hero Video  
+**Status:** Approved  
+**Orientation:** Landscape  
+**Aspect Ratio:** 16:9  
+**Current Generated Resolution:** 1280×720  
+**Duration:** approximately 10 seconds  
+**Frame Rate:** 24 fps
+
+Primary purpose:
+
+Homepage hero motion.
+
+Visual characteristics:
+
+- Premium children's retail
+- Natural childhood interaction
+- Cream and ivory environment
+- Natural wood
+- Restrained forest green
+- Restrained terracotta
+- Contemporary unbranded kidswear
+- Slow cinematic movement
+- Negative space for website typography
+
+HV01 establishes the principal TinyTots lifestyle-video direction.
+
+---
+
+### CV01 — Seasonal Retail Campaign
+
+**Category:** Campaign Video  
+**Status:** Approved  
+**Orientation:** Landscape  
+**Aspect Ratio:** 16:9  
+**Current Generated Resolution:** 1280×720  
+**Duration:** approximately 10 seconds  
+**Frame Rate:** 24 fps
+
+Primary purpose:
+
+Seasonal and general retail campaign communication.
+
+Visual characteristics:
+
+- More fashion-oriented than HV01
+- Stronger garment visibility
+- Natural child movement
+- Premium editorial environment
+- Multi-brand retailer positioning
+- No invented TinyTots garment branding
+
+CV01 must remain flexible enough to support general campaigns without becoming permanently tied to one sale or season unless a campaign-specific version is intentionally created.
+
+---
+
+### EV01 — Childhood & Story Film
+
+**Category:** Editorial Video  
+**Status:** Approved  
+**Orientation:** Landscape  
+**Aspect Ratio:** 16:9  
+**Current Generated Resolution:** 1280×720  
+**Duration:** approximately 10 seconds  
+**Frame Rate:** 24 fps
+
+Primary purpose:
+
+Our Story, editorial and emotional brand storytelling.
+
+The primary subject is childhood rather than fashion.
+
+Visual characteristics:
+
+- Wooden toys
+- Books
+- Natural interaction
+- Quiet childhood moments
+- Warmth
+- Family-oriented storytelling
+- Observational cinematography
+- Clothing as a supporting rather than dominant subject
+
+TinyTots branding does not need to appear prominently within EV01.
+
+The website surrounding the video provides sufficient brand context.
+
+---
+
+### BV01 — Brand Motion Loop
+
+**Category:** Background Video  
+**Status:** Approved Visual Direction  
+**Orientation:** Landscape  
+**Aspect Ratio:** 16:9  
+**Current Generated Resolution:** 1280×720  
+**Duration:** approximately 10 seconds  
+**Frame Rate:** 24 fps
+
+Primary purpose:
+
+Subtle moving background for selected website sections.
+
+Visual characteristics:
+
+- Warm cream
+- Forest green
+- Terracotta
+- Rounded geometry
+- TinyTots-inspired geometric language
+- Generous negative space
+- Restrained motion
+- No children
+- No products
+- No text
+
+The production version must be checked for seamless looping.
+
+If the generated master does not loop perfectly, correct the loop during final video editing/export rather than changing the approved visual direction unnecessarily.
+
+---
+
+# 5. Approved Mobile Library
+
+The mobile video system currently contains:
+
+### MV01 — Homepage Lifestyle Hero — Mobile
+
+Source concept:
+
+HV01
+
+**Status:** Approved  
+**Aspect Ratio:** 9:16  
+**Current Generated Resolution:** 720×1280  
+**Duration:** approximately 10 seconds  
+**Frame Rate:** 24 fps
+
+Primary purpose:
+
+Mobile homepage hero.
+
+---
+
+### MV02 — Seasonal Retail Campaign — Mobile
+
+Source concept:
+
+CV01
+
+**Status:** Approved  
+**Aspect Ratio:** 9:16  
+**Current Generated Resolution:** 720×1280  
+**Duration:** approximately 10 seconds  
+**Frame Rate:** 24 fps
+
+Primary purpose:
+
+Mobile campaign presentation and possible vertical campaign placements.
+
+Its visual interpretation may differ somewhat from CV01 provided that retailer positioning and the established TinyTots visual language remain intact.
+
+---
+
+### MV03 — Childhood & Story Film — Mobile
+
+Source concept:
+
+EV01
+
+**Status:** Approved  
+**Aspect Ratio:** 9:16  
+**Current Generated Resolution:** 720×1280  
+**Duration:** approximately 10 seconds  
+**Frame Rate:** 24 fps
+
+Primary purpose:
+
+Mobile editorial and story sections.
+
+Vertical compositions should prioritize:
+
+- Faces
+- Hands
+- Books
+- Toys
+- Child interaction
+- Emotional storytelling
+
+---
+
+### MV04 — Brand Motion Loop — Mobile
+
+Source concept:
+
+BV01
+
+**Status:** Approved Visual Direction  
+**Aspect Ratio:** 9:16  
+**Current Generated Resolution:** 720×1280  
+**Duration:** approximately 10 seconds  
+**Frame Rate:** 24 fps
+
+Primary purpose:
+
+Mobile abstract/background motion.
+
+The final production export must be tested for seamless looping.
+
+---
+
+# 6. Video Visual DNA
+
+All TinyTots lifestyle/editorial video should generally belong to the same visual world.
+
+Core characteristics include:
+
+- Warm ivory
+- Cream
+- Natural wood
+- Deep forest green
+- Restrained terracotta
+- Soft daylight
+- Calm environments
+- Contemporary children's fashion
+- Natural childhood behavior
+- Premium editorial composition
+- Controlled camera movement
+- Generous negative space
+
+Not every frame needs every brand color.
+
+The palette should feel naturally integrated rather than artificially imposed.
+
+---
+
+# 7. Motion Character
+
+TinyTots motion should generally feel:
+
+- Calm
+- Controlled
+- Premium
+- Human
+- Warm
+- Observational
+- Natural
+- Refined
+
+Preferred camera behavior includes:
+
+- Slow dolly movement
+- Gentle tracking
+- Restrained parallax
+- Static compositions with natural subject movement
+- Controlled close-ups
+- Natural depth of field
+
+Avoid:
+
+- Aggressive zooming
+- Excessive handheld shake
+- Rapid cuts
+- Flash transitions
+- Social-template effects
+- Constant camera movement
+- Artificial speed ramps
+- Excessive slow motion
+
+---
+
+# 8. Children in Video
+
+Children should behave like children.
+
+Preferred behavior includes:
+
+- Walking
+- Reading
+- Playing
+- Sharing
+- Exploring
+- Quiet laughter
+- Looking at another child
+- Natural interaction with objects
+- Small spontaneous gestures
+
+Avoid:
+
+- Adult runway behavior
+- Provocative or age-inappropriate styling
+- Highly choreographed model poses
+- Forced synchronized movement
+- Constant direct eye contact with camera
+- Artificial expressions
+- Unrealistic physical behavior
+
+Children must always be portrayed appropriately and respectfully.
+
+---
+
+# 9. Clothing Representation
+
+TinyTots currently operates as a retailer.
+
+Therefore, garments shown in generated videos should generally appear as realistic multi-brand retail merchandise.
+
+Do not automatically generate:
+
+- TinyTots garment labels
+- TinyTots embroidery
+- TinyTots shoe logos
+- TinyTots monograms on clothing
+- Fictional TinyTots designer collections
+
+TinyTots branding may appropriately appear on:
+
+- Shopping bags
+- Packaging
+- Gift cards
+- Retail signage
+- Website environments
+- Retail collateral
+
+---
+
+# 10. Product Accuracy
+
+AI-generated lifestyle videos must not be presented as exact representations of products available for purchase unless the depicted product has been verified against actual inventory.
+
+This distinction is critical.
+
+Lifestyle video:
+
+Represents mood, retail positioning and storytelling.
+
+Product video:
+
+Represents a specific sellable product.
+
+These are not interchangeable.
+
+---
+
+# 11. Product Videos
+
+`03 — Product Videos/` is intentionally reserved at the current stage.
+
+Future product videos should preferably be created using:
+
+- Real TinyTots inventory
+- Real product photography
+- Real product footage
+- Verified colors
+- Verified details
+- Verified garment construction
+
+Product video must accurately represent the item customers will receive.
+
+Do not use generative video to invent details of a real sellable product.
+
+---
+
+# 12. Hero Videos
+
+Hero video exists to support the homepage message.
+
+It should not overpower:
+
+- Headline
+- Supporting copy
+- CTA
+- Navigation
+- Product discovery
+
+The hero video is environmental storytelling, not the entire interface.
+
+HV01 is the current reference for this category.
+
+---
+
+# 13. Hero Negative Space
+
+Hero compositions should intentionally reserve visual space for live website content.
+
+Do not permanently render:
+
+- Headline
+- CTA
+- Price
+- Promotional badge
+- Navigation
+- Tagline
+
+inside the master video.
+
+The website should render these as actual interface elements.
+
+Benefits include:
+
+- Responsive layouts
+- Accessibility
+- Localization
+- Easier editing
+- Campaign flexibility
+- Better typography
+- Better SEO semantics
+
+---
+
+# 14. Campaign Videos
+
+Campaign videos may have more visual energy than hero or editorial videos.
+
+However, they should remain within the TinyTots visual system.
+
+Campaign video may emphasize:
+
+- Seasonal styling
+- Outfit combinations
+- New arrivals
+- Shopping moments
+- Fashion details
+- Movement
+
+Campaign video should not automatically imply that TinyTots manufactures the clothing shown.
+
+---
+
+# 15. Evergreen vs Campaign-Specific Assets
+
+Maintain a distinction between:
+
+## Evergreen
+
+Reusable across multiple periods.
+
+Examples:
+
+- HV01
+- EV01
+- BV01
+
+## Campaign Specific
+
+Connected to:
+
+- Eid
+- Summer
+- Winter
+- Back to School
+- Sale
+- New collection
+- Special event
+
+Do not unnecessarily add dates, discount percentages or seasonal text directly into master video files.
+
+Live interface/marketing typography should handle such messaging where practical.
+
+---
+
+# 16. Editorial Videos
+
+Editorial video exists primarily for storytelling.
+
+It may communicate:
+
+- Childhood
+- Family
+- Discovery
+- Play
+- Everyday moments
+- Trust
+- Warmth
+
+The clothing should remain aesthetically strong, but editorial video does not need to behave like a product advertisement.
+
+EV01 is the current reference.
+
+---
+
+# 17. Background Videos
+
+Background video must remain subordinate to website content.
+
+BV01 establishes this category.
+
+Background motion should:
+
+- Be subtle
+- Loop smoothly
+- Maintain negative space
+- Avoid rapid visual change
+- Avoid embedded typography
+- Avoid distracting contrast changes
+- Remain understandable without sound
+
+Abstract background video should never become more visually dominant than the content placed over it.
+
+---
+
+# 18. Seamless Looping
+
+Background loops require particular attention.
+
+A seamless loop should avoid obvious changes between the end and beginning.
+
+Check:
+
+- Object position
+- Rotation
+- Scale
+- Camera position
+- Lighting
+- Shadow direction
+- Background
+- Motion velocity
+
+If an otherwise approved generated asset has a small looping problem, fixing the loop in video post-production is preferable to repeatedly regenerating the entire visual concept.
+
+---
+
+# 19. Desktop Format
+
+Primary desktop landscape target:
+
+**16:9**
+
+Preferred production target:
+
+**1920×1080 or higher-quality equivalent before optimization**
+
+Current generated desktop assets are:
+
+**1280×720**
+
+They remain approved visual masters/concepts.
+
+Higher-resolution production versions should be obtained or prepared where practical before final public deployment.
+
+---
+
+# 20. Mobile Format
+
+Primary mobile target:
+
+**9:16**
+
+Preferred production target:
+
+**1080×1920**
+
+Current generated mobile assets are:
+
+**720×1280**
+
+They remain approved visual masters.
+
+Do not regenerate approved videos solely to increase pixel dimensions unless actual website testing demonstrates insufficient visual quality or a higher-quality generation/export path is available.
+
+---
+
+# 21. Mobile Composition
+
+Mobile video must be designed for vertical viewing.
+
+Prioritize:
+
+- Central subject placement
+- Faces
+- Hands
+- Product/fabric details
+- Child interaction
+- Vertical environmental depth
+- Safe areas for interface content
+
+Avoid putting essential information at extreme edges.
+
+Do not assume a landscape center crop will always produce a good mobile experience.
+
+---
+
+# 22. Desktop and Mobile Relationship
+
+Desktop and mobile variants belong to the same concept family.
+
+Example:
+
+HV01
+→ MV01
+
+CV01
+→ MV02
+
+EV01
+→ MV03
+
+BV01
+→ MV04
+
+They do not need to be frame-for-frame identical.
+
+They should preserve:
+
+- Purpose
+- Emotional direction
+- Visual DNA
+- Retail positioning
+- Brand palette
+- General storytelling concept
+
+Composition may change significantly to suit the different aspect ratio.
+
+---
+
+# 23. Frame Rate
+
+The current approved video system uses:
+
+**24 fps**
+
+This suits the restrained cinematic direction.
+
+Future assets do not need a higher frame rate unless a specific motion requirement justifies it.
+
+Consistency is generally preferable.
+
+---
+
+# 24. Duration
+
+Current videos are approximately:
+
+**10 seconds**
+
+This is appropriate for short web motion.
+
+Typical future ranges:
+
+Hero:
+approximately 8–15 seconds
+
+Background loop:
+approximately 6–15 seconds
+
+Campaign:
+approximately 8–30 seconds depending on placement
+
+Editorial:
+variable according to storytelling requirements
+
+Product:
+variable according to product demonstration requirements
+
+These are working ranges rather than absolute limits.
+
+---
+
+# 25. Audio
+
+Current website masters do not require audio.
+
+Autoplay website videos should be designed to work completely without sound.
+
+Do not make essential information dependent on:
+
+- Dialogue
+- Voiceover
+- Music
+- Sound effects
+
+Campaign/social versions may later receive audio separately where appropriate.
+
+---
+
+# 26. Autoplay
+
+When video is used as ambient website motion, implementation should generally support:
+
+- muted playback
+- autoplay where browser policy permits
+- looping where appropriate
+- inline playback
+- poster/fallback imagery
+
+Do not rely on autoplay as the only way a user can understand important information.
+
+---
+
+# 27. Reduced Motion
+
+Users who prefer reduced motion should not be forced to consume decorative animation.
+
+Where appropriate, the website should respond to:
+
+`prefers-reduced-motion`
+
+Possible behavior:
+
+- Show poster image
+- Pause background animation
+- Avoid autoplay
+- Replace motion with static composition
+
+Accessibility takes priority over decorative motion.
+
+---
+
+# 28. Poster Images
+
+Important website videos should have poster/fallback imagery.
+
+Possible naming:
+
+HV01-P — Homepage Lifestyle Hero Poster.webp
+
+CV01-P — Seasonal Retail Campaign Poster.webp
+
+EV01-P — Childhood & Story Poster.webp
+
+BV01-P — Brand Motion Poster.webp
+
+Posters may be derived from approved video frames or separately prepared where needed.
+
+Choose frames that remain visually useful without motion.
+
+---
+
+# 29. Loading Strategy
+
+Video must not unnecessarily delay meaningful page content.
+
+Prioritize:
+
+1. Page structure
+2. Typography
+3. Navigation
+4. Critical imagery/content
+5. Video enhancement
+
+Video is an enhancement, not a reason for the homepage to feel slow.
+
+---
+
+# 30. Compression
+
+Production video should be optimized before website deployment.
+
+The master generation/export should not automatically be used directly as the final web file.
+
+Maintain:
+
+MASTER
+↓
+PRODUCTION TRANSCODE
+↓
+WEB DELIVERY
+
+Compression must balance:
+
+- Visual quality
+- File size
+- Startup time
+- Mobile bandwidth
+- Device performance
+
+Exact bitrate should be determined during implementation/testing rather than permanently invented in this document.
+
+---
+
+# 31. Web Formats
+
+Where implementation supports it, prepare appropriate web-delivery formats.
+
+Possible formats include:
+
+- WebM
+- MP4
+
+Browser/device compatibility must determine final delivery strategy.
+
+Do not preserve a large editing/master codec merely because it has higher theoretical quality.
+
+---
+
+# 32. Master vs Production Export
+
+Maintain a strict distinction.
+
+## Master
+
+Highest-quality approved source.
+
+## Production Export
+
+Compressed/optimized website version.
+
+Example:
+
+HV01 Master
+↓
+HV01 Desktop WebM
+HV01 Desktop MP4
+HV01 Poster WebP
+
+MV01 Master
+↓
+MV01 Mobile WebM
+MV01 Mobile MP4
+MV01 Poster WebP
+
+Never treat a heavily compressed web export as the archival master.
+
+---
+
+# 33. GitHub Policy
+
+Large video master files should not be pushed into the normal TinyTots application Git repository.
+
+This includes, where practical:
+
+- MP4 masters
+- MOV masters
+- Large WebM masters
+- Raw footage
+- Editing project files
+- Large intermediate renders
+
+GitHub remains appropriate for:
+
+- Documentation
+- Video manifests
+- Implementation code
+- Small configuration files
+- References
+- Asset IDs
+- Usage rules
+
+---
+
+# 34. External Master Storage
+
+Large video masters should be stored outside the primary application repository.
+
+The documentation system should still record:
+
+- Asset ID
+- Asset name
+- Category
+- Status
+- Aspect ratio
+- Resolution
+- Duration
+- Usage
+- Master location
+- Production location
+- Mobile relationship
+- Notes
+
+This allows the documentation to remain the source of truth without making Git history a media archive.
+
+---
+
+# 35. Website Delivery
+
+The website should consume optimized production video rather than raw archival masters.
+
+Conceptually:
+
+MASTER STORAGE
+      ↓
+TRANSCODE / OPTIMIZE
+      ↓
+WEB MEDIA STORAGE / CDN
+      ↓
+TINYTOTS WEBSITE
+
+The exact hosting provider may be selected during implementation.
+
+Do not hard-code an unverified provider into the design specification.
+
+---
+
+# 36. File Naming
+
+Use stable asset IDs.
+
+Approved names:
+
+HV01 — Homepage Lifestyle Hero
+
+CV01 — Seasonal Retail Campaign
+
+EV01 — Childhood & Story Film
+
+BV01 — Brand Motion Loop
+
+MV01 — Homepage Lifestyle Hero — Mobile
+
+MV02 — Seasonal Retail Campaign — Mobile
+
+MV03 — Childhood & Story Film — Mobile
+
+MV04 — Brand Motion Loop — Mobile
+
+Do not casually rename approved IDs.
+
+---
+
+# 37. Suggested Production Naming
+
+Production-safe filenames may use simpler machine-friendly names.
+
+Examples:
+
+tinytots-hv01-homepage-hero.mp4
+
+tinytots-hv01-homepage-hero.webm
+
+tinytots-mv01-homepage-hero-mobile.mp4
+
+tinytots-ev01-childhood-story.webm
+
+Human-readable documentation names and production filenames may coexist.
+
+The asset ID should connect them.
+
+---
+
+# 38. AI-Generated Video
+
+Generative video may be used for:
+
+- Lifestyle storytelling
+- Editorial concepts
+- Abstract brand motion
+- Campaign concepts
+- Non-product-specific atmosphere
+
+Generative video should not be used to falsely represent exact merchandise characteristics.
+
+---
+
+# 39. AI Artifact QA
+
+Every generated video must be inspected before approval.
+
+Check for:
+
+- Malformed hands
+- Extra fingers
+- Facial distortion
+- Changing facial identity
+- Duplicated children
+- Clothing mutations
+- Impossible garment movement
+- Floating objects
+- Broken shadows
+- Unnatural walking
+- Object disappearance
+- Sudden environment changes
+- Random text
+- Fake logos
+- Watermarks/generator marks
+- Loop discontinuities
+
+Do not approve solely from the first frame.
+
+Review the complete video.
+
+---
+
+# 40. Generator Marks and Watermarks
+
+Generator-interface marks, watermarks or unwanted generated symbols are not part of the TinyTots identity.
+
+Final production video must use clean exports permitted by the relevant generation platform and its terms.
+
+Do not deliberately hide or remove required attribution in violation of platform terms.
+
+---
+
+# 41. Text Inside Video
+
+Default rule:
+
+**No permanent website UI text inside master video.**
+
+Avoid baking:
+
+- Headlines
+- Buttons
+- Navigation
+- Prices
+- Discount percentages
+- Product names
+- Seasonal dates
+
+into evergreen master video.
+
+Use live website content whenever practical.
+
+---
+
+# 42. Branding Frequency
+
+TinyTots does not need its logo in every video frame.
+
+Brand recognition can come from:
+
+- Website context
+- Palette
+- Art direction
+- Packaging
+- Typography
+- Geometric graphics
+- Overall consistency
+
+Repeated logo placement can make premium content feel less refined.
+
+---
+
+# 43. TinyTots Logo
+
+If the TinyTots logo appears in video, the existing verified geometric mark remains authoritative.
+
+Do not:
+
+- Invent alternate TinyTots logos
+- Distort the mark
+- Generate approximate versions as master branding
+- Replace the established mark with AI interpretations
+
+If exact logo fidelity is important, add the verified logo during post-production rather than relying on generative rendering.
+
+---
+
+# 44. Seasonal Video Strategy
+
+Do not generate a new campaign video for every minor promotion.
+
+Generate new seasonal video when it creates meaningful value.
+
+Examples may include:
+
+- Eid
+- Summer
+- Winter
+- Back to School
+- Major new arrivals campaign
+
+Smaller promotions can reuse existing footage with live website campaign messaging.
+
+---
+
+# 45. Future Real Photography/Video
+
+The current generated video system establishes art direction.
+
+When TinyTots later conducts real professional shoots, these assets can function as references for:
+
+- Lighting
+- Wardrobe styling
+- Composition
+- Camera movement
+- Set design
+- Palette
+- Child direction
+- Editing pace
+
+Real footage can gradually replace generated lifestyle video where commercially appropriate.
+
+---
+
+# 46. Future Private Label
+
+If TinyTots launches genuine private-label clothing, video rules may expand to include:
+
+- TinyTots garment labels
+- Product design stories
+- Manufacturing narratives
+- Collection films
+- Material storytelling
+- Product-specific campaigns
+
+Do not apply those rules before the business actually reaches that stage.
+
+---
+
+# 47. Performance Principle
+
+Video should earn its cost.
+
+Before placing a video on a page, ask:
+
+- Does motion materially improve this section?
+- Could a strong photograph communicate the same thing?
+- Does video harm page speed?
+- Does it distract from shopping?
+- Does it improve storytelling?
+- Is mobile bandwidth justified?
+
+Do not use video merely because the asset exists.
+
+---
+
+# 48. Usage Restraint
+
+A page should not automatically use HV01, CV01, EV01 and BV01 together.
+
+Recommended principle:
+
+Use the minimum amount of motion necessary.
+
+Example:
+
+Homepage:
+HV01
+
+Our Story:
+EV01
+
+Campaign landing page:
+CV01
+
+Selected transition/background:
+BV01
+
+This keeps motion purposeful.
+
+---
+
+# 49. Desktop/Mobile Selection
+
+The website should serve the composition appropriate to the viewport where implementation permits.
+
+Conceptually:
+
+Desktop
+→ HV01
+
+Mobile
+→ MV01
+
+Do not force a poorly cropped landscape hero onto a narrow phone screen when an approved vertical composition exists.
+
+---
+
+# 50. Video Accessibility
+
+Video must not create barriers.
+
+Where appropriate:
+
+- Provide reduced-motion behavior
+- Avoid flashing content
+- Maintain readable overlay contrast
+- Avoid essential information existing only in video
+- Ensure controls when user interaction requires them
+- Provide meaningful alternatives for content-bearing video where necessary
+
+Decorative background video may be treated differently from informational video.
+
+---
+
+# 51. Video QA Checklist
+
+Before approving a new TinyTots video, confirm:
+
+- [ ] Does the video have a defined purpose?
+- [ ] Is it in the correct Video folder?
+- [ ] Does it match TinyTots visual DNA?
+- [ ] Does it accurately represent TinyTots as a retailer?
+- [ ] Are garments free from invented TinyTots branding?
+- [ ] Are children represented naturally and appropriately?
+- [ ] Are faces stable?
+- [ ] Are hands anatomically plausible?
+- [ ] Is movement believable?
+- [ ] Are garments visually stable?
+- [ ] Are there random logos or text?
+- [ ] Is the environment coherent?
+- [ ] Is camera movement restrained?
+- [ ] Is negative space preserved where required?
+- [ ] Is permanent UI text absent?
+- [ ] Is the aspect ratio correct?
+- [ ] Is the resolution sufficient for intended use?
+- [ ] Is the duration appropriate?
+- [ ] Has the complete video been reviewed?
+- [ ] Has looping been tested where required?
+- [ ] Is a mobile version actually necessary?
+- [ ] Is the production file optimized?
+- [ ] Is a poster/fallback required?
+- [ ] Is reduced-motion behavior considered?
+- [ ] Is the master stored appropriately?
+- [ ] Is the large master excluded from normal Git history?
+- [ ] Does the asset create enough value to justify video?
+
+---
+
+# 52. Current Production Status
+
+Approved desktop concepts:
+
+- HV01 — Homepage Lifestyle Hero
+- CV01 — Seasonal Retail Campaign
+- EV01 — Childhood & Story Film
+- BV01 — Brand Motion Loop
+
+Approved mobile concepts:
+
+- MV01 — Homepage Lifestyle Hero — Mobile
+- MV02 — Seasonal Retail Campaign — Mobile
+- MV03 — Childhood & Story Film — Mobile
+- MV04 — Brand Motion Loop — Mobile
+
+Current product video status:
+
+**Reserved for real product footage.**
+
+---
+
+# 53. Governing Principle
+
+TinyTots video should make the retail experience feel alive without turning the website into a film reel.
+
+The hierarchy is:
+
+**Shopping experience → product discovery → childhood storytelling → motion enhancement.**
+
+Video supports the experience.
+
+It does not replace the experience.
+
+---
+
+# 54. Final Status
+
+`04 — Video/` now contains a complete initial video system:
+
+- Desktop hero direction
+- Campaign direction
+- Editorial direction
+- Abstract brand-motion direction
+- Mobile variants
+- Production rules
+- Retail-positioning rules
+- Performance rules
+- Accessibility rules
+- Storage rules
+- Future product-video framework
+
+**Status: APPROVED**
+
+**04 — Video: COMPLETE**
