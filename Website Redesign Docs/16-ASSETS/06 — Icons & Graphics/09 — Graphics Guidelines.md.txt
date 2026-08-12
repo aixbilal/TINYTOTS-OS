@@ -1,0 +1,230 @@
+# TinyTots — Graphics Guidelines
+
+**Document:** Graphics Guidelines  
+**Location:** `16-ASSETS/06 — Icons & Graphics/09 — Graphics Guidelines.md`  
+**Status:** Approved Graphics Standard  
+**Applies To:** Website, PWA, Electron POS, packaging, social content, campaigns, printed collateral, signage and future TinyTots digital products.
+
+---
+
+# 1. Purpose
+
+This document defines the visual and technical standards for the TinyTots graphics system.
+
+It governs:
+
+- UI icons
+- Navigation icons
+- Social icons
+- Brand graphics
+- Decorative graphics
+- Illustrations
+- SVG assets
+- Website favicon
+- PWA icon
+- Electron POS icon
+
+The objective is to maintain one recognizable TinyTots visual language across digital and physical applications.
+
+---
+
+# 2. Current Brand Position
+
+TinyTots currently operates as a premium children's clothing retailer/shop.
+
+TinyTots is not currently treated as a complete private-label clothing manufacturer.
+
+Therefore, TinyTots branding should primarily appear on:
+
+- Website
+- Store identity
+- Shopping bags
+- Packaging
+- Delivery packaging
+- Gift materials
+- Printed collateral
+- Digital interfaces
+- Social content
+- Signage
+
+TinyTots branding must not automatically be placed on every garment, shoe, accessory or product.
+
+When TinyTots later develops its own white-label/private-label products, dedicated product-branding rules may be introduced.
+
+---
+
+# 3. Identity Source of Truth
+
+The existing TinyTots geometric mark is the primary identity source of truth.
+
+Its established visual language consists primarily of:
+
+- Deep forest green
+- Warm terracotta
+- Rounded geometric construction
+- Strong negative space
+- Minimal forms
+
+The original logo must not be replaced by AI-generated reinterpretations.
+
+Generated graphics may derive visual language from the logo, but they must not silently establish a different TinyTots identity.
+
+---
+
+# 4. Brand Hierarchy
+
+The TinyTots graphic hierarchy is:
+
+## Primary
+
+TinyTots geometric identity.
+
+## Secondary
+
+Photography, children's fashion and retail presentation.
+
+## Tertiary
+
+Botanical, decorative and illustrative graphics.
+
+Botanical graphics are supporting elements.
+
+They are not the TinyTots logo and must not dominate every composition.
+
+---
+
+# 5. Core Graphic Character
+
+TinyTots graphics should feel:
+
+- Premium
+- Modern
+- Warm
+- Minimal
+- Friendly
+- Refined
+- Age appropriate
+- Calm
+- Recognizable
+- Functional
+
+Avoid:
+
+- Cartoon-heavy visual systems
+- Excessive ornamentation
+- Neon colors
+- Random gradients
+- Excessive 3D effects
+- Generic luxury motifs
+- Inconsistent icon styles
+- Multiple competing logos
+- Decorative elements inside functional UI icons
+
+---
+
+# 6. Core Color Direction
+
+The graphics system is built primarily around:
+
+## Forest Green
+
+Primary brand color.
+
+Used for:
+
+- Core identity
+- Icons
+- Graphic shapes
+- Brand accents
+- Packaging
+- Selected interface states
+
+## Terracotta
+
+Primary supporting accent.
+
+Used for:
+
+- Geometric accents
+- Pattern components
+- Highlights
+- Packaging
+- Selected decorative elements
+
+## Cream / Ivory
+
+Primary neutral environment.
+
+Used for:
+
+- Backgrounds
+- Packaging
+- Cards
+- Illustration environments
+- Graphic compositions
+
+## Supporting Neutrals
+
+May include:
+
+- Warm white
+- Beige
+- Sand
+- Oatmeal
+- Natural wood
+- Near-black
+
+Supporting colors must not overpower the forest-green/terracotta identity.
+
+---
+
+# 7. UI Icon System
+
+The approved UI icon family consists of:
+
+- UI01 — Search
+- UI02 — Account
+- UI03 — Wishlist
+- UI04 — Shopping Bag
+- UI05 — Filter
+- UI06 — Sort
+- UI07 — Close
+- UI08 — Arrow & Chevron System
+
+These icons are functional interface components.
+
+They must not be treated as decorative illustrations.
+
+---
+
+# 8. UI Icon Geometry
+
+Standard icon canvas:
+
+**24 × 24**
+
+Standard stroke:
+
+**1.5 px**
+
+Preferred properties:
+
+- `fill="none"`
+- `stroke="currentColor"`
+- Rounded line caps where appropriate
+- Rounded joins where appropriate
+- Simple geometry
+- Balanced optical weight
+
+Example implementation principle:
+
+```svg
+<svg
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  ...
+</svg>
