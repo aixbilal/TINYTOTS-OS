@@ -6,7 +6,19 @@
 @plugin "@tailwindcss/typography";
 
 @theme inline {
-  /* Colors from Stitch design system */
+  /* ============================================================
+     OLD — Stitch design system colors (SUPERSEDED 2026-08-13)
+     Commented out, not deleted, for old-vs-new visual comparison.
+     WARNING: --color-primary, --color-secondary, --color-tertiary,
+     --color-background, --color-surface*, --color-outline*, --color-error*
+     have NO other definition anywhere in this file. Every Tailwind
+     utility built from these names (bg-primary, bg-surface*, text-on-*,
+     border-outline*, bg-background, etc. — used across ~60-70 files in
+     app/ and components/) will resolve to nothing until those files are
+     migrated to the new tokens below. This is expected Phase B
+     foundation-work fallout per TINYTOTS-BUILD-BRIEF.md's roadmap, not
+     a mistake — flagging so it isn't a surprise when the site renders
+     unstyled in those areas until Phase C/D component migration.
   --color-primary: #9c422e;
   --color-on-primary: #ffffff;
   --color-primary-container: #f2846b;
@@ -51,6 +63,37 @@
   --color-outline-variant: #dcc0bb;
   --color-inverse-surface: #303030;
   --color-inverse-on-surface: #f3f0f0;
+  ============================================================
+     END OLD — Stitch design system colors
+     ============================================================ */
+
+  /* ============================================================
+     NEW — Approved warm-neutral color system (redesign, 2026-08-13)
+     Direction: Website Redesign Docs/02-DESIGN-SYSTEM/02.02 (Color System, approved-direction).
+     Values: proposed from Website Redesign Docs/16-ASSETS/02 — Generated
+     Images/00 — Master Visual References/03 — Color & Mood/, verified for
+     WCAG AA contrast, approved by user 2026-08-13. Semantic names below
+     are the doc's dot-notation (surface.canvas, text.primary, etc.)
+     translated to kebab-case for CSS custom property / Tailwind utility use.
+     ============================================================ */
+  --color-surface-canvas: #f6f1e8;      /* Warm Ivory — page background */
+  --color-surface-primary: #f6f1e8;     /* Warm Ivory */
+  --color-surface-secondary: #e7d8c0;   /* Soft Sand */
+  --color-surface-tertiary: #d2c7b4;    /* Warm Stone */
+  --color-surface-elevated: #ffffff;    /* lift above canvas, e.g. cards/popovers */
+  --color-surface-inverse: #2a2621;     /* Near Black — dark sections per doc §7 */
+
+  --color-text-primary: #4a4f44;        /* Deep Charcoal — 7.49:1 on Warm Ivory */
+  --color-text-secondary: #675949;      /* darkened taupe — 6.02:1 on Warm Ivory (comfortable AA, not barely) */
+  --color-text-tertiary: #bab2a6;       /* Muted Taupe — 3.60:1: large text/labels/UI only, NOT body copy */
+  --color-text-inverse: #f6f1e8;        /* Warm Ivory — text on inverse/dark surfaces */
+
+  --color-border-subtle: #e7d8c0;       /* Soft Sand */
+  --color-border-default: #d2c7b4;      /* Warm Stone */
+  --color-border-strong: #bab2a6;       /* Muted Taupe */
+
+  --color-brand-primary: #8f5030;       /* Accent — deep terracotta, 5.56:1 with white/ivory text on it */
+  --color-brand-accent: #8f5030;
 
   /* Spacing */
   --spacing-container-max: 1280px;
@@ -99,6 +142,65 @@
   --text-label-md--line-height: 1;
   --text-button: 16px;
   --text-button--line-height: 1;
+
+  /* ============================================================
+     NEW — Approved type scale additions (redesign, 2026-08-13)
+     Direction: Website Redesign Docs/02-DESIGN-SYSTEM/02.03 (Typography
+     System, approved-direction). Purely additive — does not touch or
+     replace the existing display/headline/body/label tokens above.
+     Fonts referenced below (Playfair Display, Geist, JetBrains Mono) are
+     NOT YET loaded via next/font in app/layout.tsx — wiring that is a
+     separate follow-up step. Until then these fall back to the generic
+     serif/sans-serif/monospace keywords.
+     heading-sm and heading-md are deliberately built as a swappable pair
+     (per request) — an "active" token (Playfair Display) and an "-alt"
+     token (Geist Medium) at the same size/line-height, so the two can be
+     visually compared once fonts are loaded by swapping which one
+     components reference, without touching the size/line-height values.
+     ============================================================ */
+  --font-heading-serif: var(--font-playfair), "Playfair Display", serif;
+  --font-heading-sans: var(--font-geist), "Geist", var(--font-inter), Inter, sans-serif;
+
+  --text-display-xl: 64px;
+  --text-display-xl--line-height: 1.05;
+  --font-display-xl: var(--font-heading-serif);
+
+  --text-heading-xl: 30px;
+  --text-heading-xl--line-height: 1.3;
+  --font-heading-xl: var(--font-heading-serif);
+
+  --text-heading-lg: 24px;
+  --text-heading-lg--line-height: 1.3;
+  --text-heading-lg--font-weight: 600;
+  --font-heading-lg: var(--font-heading-serif);
+
+  /* heading-md — SWAPPABLE: default = Playfair Display 600, alt = Geist Medium 500 */
+  --text-heading-md: 20px;
+  --text-heading-md--line-height: 1.4;
+  --text-heading-md--font-weight: 600;
+  --font-heading-md: var(--font-heading-serif);         /* ACTIVE default */
+  --font-heading-md-alt: var(--font-heading-sans);       /* swap-in candidate */
+  --text-heading-md-alt--font-weight: 500;
+
+  /* heading-sm — SWAPPABLE: default = Playfair Display 600, alt = Geist Medium 500 */
+  --text-heading-sm: 18px;
+  --text-heading-sm--line-height: 1.4;
+  --text-heading-sm--font-weight: 600;
+  --font-heading-sm: var(--font-heading-serif);         /* ACTIVE default */
+  --font-heading-sm-alt: var(--font-heading-sans);       /* swap-in candidate */
+  --text-heading-sm-alt--font-weight: 500;
+
+  --text-label-sm: 11px;
+  --text-label-sm--line-height: 1;
+
+  --text-caption: 11px;
+  --text-caption--line-height: 1.4;
+  --font-caption: var(--font-heading-sans);
+
+  --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
+  --text-mono: 13px;
+  --text-mono--line-height: 1.4;
+
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -228,7 +330,10 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    /* bg-background pointed at Stitch's --color-background, now commented out above —
+       repointed to the new canvas token so the build compiles. Minimal fix only:
+       text-foreground still resolves (shadcn scaffold, untouched) so left as-is. */
+    @apply bg-surface-canvas text-foreground;
   }
   html {
     @apply font-sans;

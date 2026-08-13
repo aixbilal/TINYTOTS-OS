@@ -60,3 +60,41 @@ This document serves as the absolute source of truth for engineering practices, 
 - **Rule:** Maintain a fully production-identical deployment environment or configuration that is primed for instant, automated, zero-downtime rollbacks.
 - **Objective:** Ensure a continuous availability baseline. If a new deployment fails smoke tests or encounters runtime crashes, immediately pivot traffic to the last known stable build.
 - **Implementation Constraint:** Implement blue-green deployments, canary releases, or robust container orchestration rollbacks. Database migrations must always be backward-compatible (non-breaking) to avoid data corruption during a rollback event.
+
+---
+
+## 4. Protected Subsystems (Do Not Touch)
+
+Source: `TINYTOTS-BUILD-BRIEF.md` §11.
+
+- **Rule:** Do not modify the following without an instruction that explicitly and specifically calls for it: authentication; product/inventory/pricing logic; cart/checkout/order logic; Supabase queries & Row-Level Security (RLS); API contracts; admin functionality (business logic, not visual styling); the WhatsApp notification pipeline (`lib/whatsapp-notify/`, `app/api/v1/whatsapp-*`); Meta-agent integration (`lib/meta-agent/`, `app/api/v1/meta-agent/*`); the Electron POS app (`tinytots-app/`, a separate top-level app, entirely out of scope); the signage feature; offline/PWA caching behavior.
+- **Objective:** Prevent visual/presentation-focused work (e.g. a redesign) from silently altering business logic, security boundaries, or protected features it was never meant to touch.
+- **Implementation Constraint:** If a task appears to require changing one of these areas, stop and report the conflict instead of making the change silently. Flag it to the user as a decision point.
+
+---
+
+## 5. Verification & Completion Reporting
+
+Source: `TINYTOTS-BUILD-BRIEF.md` §12.
+
+- **Rule:** Follow the operating loop **Read → Plan → Edit → Test → Review → Report** for implementation work.
+- **Objective:** Ensure changes are actually validated, not just asserted, and that completion is reported in a consistent, scannable format.
+- **Implementation Constraint:** After implementing, run whatever validation applies (type check, lint, build, route-level check, visual check, responsive check). Never claim a check passed without actually running it. This repo has no automated test suite, so "tests" means `npm run build` + `npm run lint` + TypeScript type-check — nothing more. Report completed work using:
+  ```
+  IMPLEMENTED:
+  FILES CHANGED:
+  DEPENDENCIES:
+  VALIDATION:
+  KNOWN ISSUES:
+  NEXT STEP:
+  ```
+
+---
+
+## 6. Design & Content Value Integrity
+
+Source: derived from `TINYTOTS-BUILD-BRIEF.md` §2 (source-of-truth ordering) and §6 (color/typography gap analysis).
+
+- **Rule:** Never fabricate a color, type-scale size, spacing value, or other design/content value and present it as approved, or attribute an invented value to a document that does not actually specify it.
+- **Objective:** Prevent silently-invented values from being mistaken for approved design decisions, which would be difficult to detect and costly to unwind later.
+- **Implementation Constraint:** If a design doc marks a direction as "approved" or "approved-direction" but leaves exact production values unresolved, do not pick one and move on. Instead: derive candidate values from real references (existing visual assets, brand reference images, working code), verify them where applicable (e.g. WCAG contrast for color), and present them explicitly as a proposal for sign-off — not as a final, silently-applied decision.
