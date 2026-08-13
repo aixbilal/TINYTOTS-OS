@@ -60,17 +60,17 @@ export default function ProductDetailInteractive({
 
       <div className="min-w-0">
       <div className="flex items-start justify-between gap-3">
-          <h1 className="font-display-md text-display-md text-on-surface break-words">
+          <h1 className="font-display-md text-display-md text-text-primary break-words">
             {productName}
           </h1>
-          <WishlistButton productId={productId} className="shrink-0 w-10 h-10 border border-outline-variant/30" />
+          <WishlistButton productId={productId} className="shrink-0 w-10 h-10 border border-border-default" />
         </div>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+        <p className="font-body-sm text-body-sm text-text-secondary mt-1">
           {brand} {category ? `· ${category}` : ""}
         </p>
         {description && (
           <div
-            className="font-body-md text-body-md text-on-surface-variant mt-4 prose prose-sm max-w-none break-words [overflow-wrap:anywhere]"
+            className="font-body-md text-body-md text-text-secondary mt-4 prose prose-sm max-w-none break-words [overflow-wrap:anywhere]"
             dangerouslySetInnerHTML={{
               __html: normalizeQuillHtml(description),
             }}

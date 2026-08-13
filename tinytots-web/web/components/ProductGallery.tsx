@@ -66,7 +66,7 @@ export default function ProductGallery({
 
   if (sorted.length === 0) {
     return (
-      <div className="aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 bg-surface-container-low flex items-center justify-center text-on-surface-variant">
+      <div className="aspect-square rounded-[16px] overflow-hidden border border-border-default bg-surface-secondary flex items-center justify-center text-text-secondary">
         No image
       </div>
     );
@@ -77,7 +77,7 @@ export default function ProductGallery({
   return (
     <div className="flex flex-col gap-3">
       <div
-        className="relative aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 bg-surface-container-low touch-pan-y select-none"
+        className="relative aspect-square rounded-[16px] overflow-hidden border border-border-default bg-surface-secondary touch-pan-y select-none"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         onTouchCancel={() => {

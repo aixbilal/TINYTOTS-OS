@@ -177,15 +177,15 @@ export default function AddToCart({
     <div>
       {selected && (
         <div className="mt-2 flex items-baseline gap-3">
-          <p className="font-headline-lg text-headline-lg text-primary">
+          <p className="font-headline-lg text-headline-lg text-brand-primary">
             Rs. {displayPrice(selected).toLocaleString()}
           </p>
           {(selected.web_discount_percent ?? 0) > 0 && selected.web_base_price && (
             <>
-              <p className="font-body-md text-body-md text-on-surface-variant line-through">
+              <p className="font-body-md text-body-md text-text-secondary line-through">
                 Rs. {selected.web_base_price.toLocaleString()}
               </p>
-              <span className="font-label-md text-label-md text-white bg-primary px-2 py-0.5 rounded-full">
+              <span className="font-label-md text-label-md text-white bg-brand-primary px-2 py-0.5 rounded-full">
                 -{selected.web_discount_percent}%
               </span>
             </>
@@ -195,7 +195,7 @@ export default function AddToCart({
 
       {hasColorAxis && (
         <div className="mt-6">
-          <p className="font-label-lg text-label-lg text-on-surface mb-2">
+          <p className="font-label-lg text-label-lg text-text-primary mb-2">
             Color{selectedColor ? `: ${selectedColor}` : ""}
           </p>
           {showColorSelector && (
@@ -214,8 +214,8 @@ export default function AddToCart({
                     disabled={!colorHasStock && !isSelected}
                     className={`px-4 py-2 rounded-lg border font-body-sm text-body-sm transition-colors ${
                       isSelected
-                        ? "border-primary bg-primary-container text-on-primary"
-                        : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
+                        ? "border-brand-primary bg-brand-primary text-white"
+                        : "border-border-default text-text-secondary hover:bg-surface-secondary"
                     } ${!colorHasStock ? "opacity-40" : ""}`}
                   >
                     {color}
@@ -228,7 +228,7 @@ export default function AddToCart({
       )}
 
       <div className={hasColorAxis ? "mt-4" : "mt-6"}>
-        <p className="font-label-lg text-label-lg text-on-surface mb-2">
+        <p className="font-label-lg text-label-lg text-text-primary mb-2">
           Size{showSizeSelector ? "" : selectedSize ? `: ${selectedSize}` : ""}
         </p>
         {showSizeSelector && (
@@ -258,8 +258,8 @@ export default function AddToCart({
                   }
                   className={`min-w-[3rem] px-4 py-2 rounded-lg border font-body-sm text-body-sm transition-colors ${
                     isSelected
-                      ? "border-primary bg-primary-container text-on-primary"
-                      : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
+                      ? "border-brand-primary bg-brand-primary text-white"
+                      : "border-border-default text-text-secondary hover:bg-surface-secondary"
                   } ${unavailable ? "opacity-30 line-through" : ""} ${
                     !exists ? "cursor-not-allowed" : ""
                   }`}
@@ -272,13 +272,13 @@ export default function AddToCart({
         )}
       </div>
 
-      <p className="mt-3 font-body-sm text-body-sm text-on-surface-variant">{stockLabel}</p>
+      <p className="mt-3 font-body-sm text-body-sm text-text-secondary">{stockLabel}</p>
 
       <button
         type="button"
         onClick={handleAddToCart}
         disabled={!selected || selected.stock === 0}
-        className="mt-6 w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        className="mt-6 w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
       >
         {added ? "Added ✓" : "Add to Cart"}
       </button>

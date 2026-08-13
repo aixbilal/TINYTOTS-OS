@@ -34,7 +34,7 @@ export default function WishlistButton({
     >
       <span
         className={`material-symbols-outlined text-[20px] ${
-          active ? "text-error" : "text-on-surface-variant"
+          active ? "text-red-700" : "text-text-secondary"
         }`}
         style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
       >
