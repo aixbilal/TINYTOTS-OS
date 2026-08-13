@@ -142,7 +142,7 @@
           />
           <link rel="stylesheet" href={MATERIAL_SYMBOLS_HREF} />
         </head>
-        <body className="bg-surface font-body-md text-on-surface antialiased min-h-screen">
+        <body className="bg-surface-canvas font-body-md text-text-primary antialiased min-h-screen">
           <SerwistProvider>
             <IconFontGuard />
             <SiteShell announcement={announcement}>{children}</SiteShell>

@@ -30,12 +30,12 @@ export default function UgcFeed() {
   if (posts.length === 0) return null;
 
   return (
-    <section className="w-full bg-surface-container-lowest border-t border-outline-variant/20 py-stack-lg">
+    <section className="w-full bg-surface-elevated border-t border-border-default py-stack-lg">
       <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
         <div className="text-center mb-stack-md">
-          <h2 className="font-headline-lg text-on-surface mb-1">Tag Us to Be Featured</h2>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Tag <span className="text-primary font-medium">@TinyTots</span> for a chance to be featured here.
+          <h2 className="font-headline-lg text-text-primary mb-1">Tag Us to Be Featured</h2>
+          <p className="font-body-sm text-body-sm text-text-secondary">
+            Tag <span className="text-brand-primary font-medium">@TinyTots</span> for a chance to be featured here.
           </p>
         </div>
         <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">

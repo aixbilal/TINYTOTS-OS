@@ -45,7 +45,7 @@ const FAQ_ITEMS: FaqItem[] = [
         , or email{" "}
         <a
           href="mailto:support@tinytotsofficial.com"
-          className="text-primary font-medium hover:underline"
+          className="text-brand-primary font-medium hover:underline"
         >
           support@tinytotsofficial.com
         </a>
@@ -90,7 +90,7 @@ export default function FooterFaq() {
       <div
         aria-hidden={!isOpen}
         onClick={() => setOpenIndex(null)}
-        className={`fixed inset-0 z-[40] bg-on-surface/25 transition-opacity ${
+        className={`fixed inset-0 z-[40] bg-surface-inverse/25 transition-opacity ${
           isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         style={{ transitionDuration: `${DURATION_MS}ms`, transitionTimingFunction: EASE }}
@@ -98,13 +98,13 @@ export default function FooterFaq() {
 
       {/* No top border / divider — section blends into page */}
       <section
-        className={`relative w-full bg-surface py-stack-md ${isOpen ? "z-[45]" : "z-0"}`}
+        className={`relative w-full bg-surface-canvas py-stack-md ${isOpen ? "z-[45]" : "z-0"}`}
         aria-labelledby="footer-faq-heading"
       >
         <div className="w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
           <h2
             id="footer-faq-heading"
-            className="font-headline-md text-headline-md text-on-surface text-center mb-stack-sm"
+            className="font-headline-md text-headline-md text-text-primary text-center mb-stack-sm"
           >
             Common Questions
           </h2>
@@ -123,7 +123,7 @@ export default function FooterFaq() {
                   }}
                 >
                   <div
-                    className="rounded-2xl bg-surface-container-lowest will-change-transform"
+                    className="rounded-2xl bg-surface-elevated will-change-transform"
                     style={{
                       // Shadow only — no border lines that “pop” during scale
                       boxShadow: open
@@ -143,7 +143,7 @@ export default function FooterFaq() {
                       aria-expanded={open}
                       aria-controls={`footer-faq-panel-${i}`}
                       id={`footer-faq-trigger-${i}`}
-                      className="w-full flex items-center justify-between gap-4 px-5 md:px-7 text-left text-on-surface"
+                      className="w-full flex items-center justify-between gap-4 px-5 md:px-7 text-left text-text-primary"
                       style={{
                         paddingTop: open ? "1.5rem" : "1.15rem",
                         paddingBottom: open ? "0.5rem" : "1.15rem",
@@ -160,7 +160,7 @@ export default function FooterFaq() {
                         {item.question}
                       </span>
                       <span
-                        className="material-symbols-outlined shrink-0 text-on-surface-variant"
+                        className="material-symbols-outlined shrink-0 text-text-secondary"
                         style={{
                           fontSize: open ? 26 : 22,
                           transform: open ? "rotate(180deg)" : "rotate(0deg)",
@@ -183,7 +183,7 @@ export default function FooterFaq() {
                     >
                       <div className="overflow-hidden min-h-0">
                         <div
-                          className="px-5 md:px-7 font-body-sm text-body-sm md:text-base text-on-surface-variant leading-relaxed"
+                          className="px-5 md:px-7 font-body-sm text-body-sm md:text-base text-text-secondary leading-relaxed"
                           style={{
                             paddingBottom: open ? "1.5rem" : 0,
                             opacity: open ? 1 : 0,

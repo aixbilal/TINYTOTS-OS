@@ -75,7 +75,7 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
   return (
     <div
       ref={containerRef}
-      className="fixed left-4 right-4 top-[72px] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[420px] bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-4 z-[100]"
+      className="fixed left-4 right-4 top-[72px] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[420px] bg-surface-elevated border border-border-default rounded-2xl shadow-xl p-4 z-[100]"
     >
       <input
         autoFocus
@@ -83,24 +83,24 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
         onChange={(e) => setQuery(e.target.value)}
         maxLength={100}
         placeholder="Search by name, brand, SKU, or category..."
-        className="w-full border border-outline-variant/50 rounded-lg px-4 py-2.5 bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary mb-3"
+        className="w-full border border-border-default rounded-lg px-4 py-2.5 bg-surface-elevated font-body-md text-body-md text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary mb-3"
       />
 
       <div className="max-h-80 overflow-y-auto flex flex-col gap-3">
         {!needle && (
-          <p className="font-body-sm text-body-sm text-on-surface-variant px-1 py-2">
+          <p className="font-body-sm text-body-sm text-text-secondary px-1 py-2">
             Start typing to search products.
           </p>
         )}
         {needle && Object.keys(grouped).length === 0 && (
-          <p className="font-body-sm text-body-sm text-on-surface-variant px-1 py-2">
+          <p className="font-body-sm text-body-sm text-text-secondary px-1 py-2">
             No products found for &ldquo;{query}&rdquo;.
           </p>
         )}
 
         {Object.entries(grouped).map(([category, products]) => (
           <div key={category}>
-            <p className="font-label-md text-label-md text-on-surface-variant uppercase px-1 mb-1">
+            <p className="font-label-md text-label-md text-text-secondary uppercase px-1 mb-1">
               {category}
             </p>
             <div className="flex flex-col gap-1">
@@ -109,10 +109,10 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
                   key={p.id}
                   href={`/products/${p.id}`}
                   onClick={onClose}
-                  className="flex justify-between px-3 py-2 rounded-lg hover:bg-surface-container-low font-body-sm text-body-sm text-on-surface"
+                  className="flex justify-between px-3 py-2 rounded-lg hover:bg-surface-secondary font-body-sm text-body-sm text-text-primary"
                 >
                   <span>{p.name}</span>
-                  <span className="text-on-surface-variant">{p.brand}</span>
+                  <span className="text-text-secondary">{p.brand}</span>
                 </Link>
               ))}
             </div>
@@ -140,7 +140,7 @@ function AnnouncementBar({ data }: { data: { enabled: boolean; text: string; lin
   );
 
   return (
-    <div className="bg-primary-container text-on-primary w-full">
+    <div className="bg-brand-primary text-white w-full">
       {data.link ? (
         <Link href={data.link} className="block hover:opacity-90 transition-opacity">
           {content}
@@ -191,17 +191,17 @@ function ShopMenu() {
     <div className="relative" onMouseEnter={show} onMouseLeave={scheduleHide}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 font-body-md text-body-md pb-1 transition-colors border-b-2 text-on-surface-variant hover:text-primary border-transparent"
+        className="flex items-center gap-1 font-body-md text-body-md pb-1 transition-colors border-b-2 text-text-secondary hover:text-brand-primary border-transparent"
       >
         <span className="material-symbols-outlined text-[20px]">storefront</span>
         Shop
         <span className="material-symbols-outlined text-[18px]">{open ? "expand_less" : "expand_more"}</span>
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-2 w-64 max-h-96 overflow-y-auto bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-2 z-[100]">
+        <div className="absolute top-full left-0 mt-2 w-64 max-h-96 overflow-y-auto bg-surface-elevated border border-border-default rounded-2xl shadow-xl p-2 z-[100]">
           <Link
             href="/products"
-            className="block px-3 py-2 rounded-lg font-body-md text-body-md text-primary bg-primary-container/20 hover:bg-primary-container/30 transition-colors"
+            className="block px-3 py-2 rounded-lg font-body-md text-body-md text-brand-primary bg-brand-primary/10 hover:bg-brand-primary/20 transition-colors"
           >
             Shop All
           </Link>
@@ -209,13 +209,13 @@ function ShopMenu() {
             <Link
               key={c.slug}
               href={`/collections/${c.slug}`}
-              className="block px-3 py-2 rounded-lg font-body-md text-body-md text-on-surface hover:bg-surface-container-low transition-colors"
+              className="block px-3 py-2 rounded-lg font-body-md text-body-md text-text-primary hover:bg-surface-secondary transition-colors"
             >
               {c.name}
             </Link>
           ))}
           {categories.length === 0 && (
-            <p className="px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">
+            <p className="px-3 py-2 font-body-sm text-body-sm text-text-secondary">
               {online ? "Loading…" : "Categories unavailable offline"}
             </p>
           )}
@@ -252,7 +252,7 @@ function MegaMenu() {
     <Link
       href={href}
       onClick={() => setOpen(false)}
-      className="block px-3 py-2 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors"
+      className="block px-3 py-2 rounded-lg font-body-sm text-body-sm text-text-secondary hover:bg-surface-secondary hover:text-brand-primary transition-colors"
     >
       {label}
     </Link>
@@ -263,7 +263,7 @@ function MegaMenu() {
       <button
         onClick={() => setOpen((o) => !o)}
         className={`flex items-center gap-1 font-body-md text-body-md pb-1 transition-colors border-b-2 ${
-          open ? "text-primary border-primary" : "text-on-surface-variant hover:text-primary border-transparent"
+          open ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
         }`}
       >
         Menu
@@ -271,11 +271,11 @@ function MegaMenu() {
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-2 w-[440px] max-w-[90vw] bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-6 z-[100] grid grid-cols-2 gap-6">
+        <div className="absolute top-full left-0 mt-2 w-[440px] max-w-[90vw] bg-surface-elevated border border-border-default rounded-2xl shadow-xl p-6 z-[100] grid grid-cols-2 gap-6">
           {/* Column 1: My TinyTots */}
           <div>
-            <p className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">person</span> My TinyTots
+            <p className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-brand-primary">person</span> My TinyTots
             </p>
             <div className="flex flex-col">
               <MenuLink href="/account" label="My Account" />
@@ -287,8 +287,8 @@ function MegaMenu() {
 
           {/* Column 2: Company / Info */}
           <div>
-            <p className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">info</span> More
+            <p className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-brand-primary">info</span> More
             </p>
             <div className="flex flex-col">
               <MenuLink href="/blog" label="Blog" />
@@ -334,31 +334,31 @@ function MobileMenu({ open, onClose, topOffset }: { open: boolean; onClose: () =
     <Link
       href={href}
       onClick={onClose}
-      className="flex items-center gap-3 px-3 py-3 rounded-lg font-body-md text-body-md text-on-surface hover:bg-surface-container-low transition-colors"
+      className="flex items-center gap-3 px-3 py-3 rounded-lg font-body-md text-body-md text-text-primary hover:bg-surface-secondary transition-colors"
     >
-      {icon && <span className="material-symbols-outlined text-[20px] text-on-surface-variant">{icon}</span>}
+      {icon && <span className="material-symbols-outlined text-[20px] text-text-secondary">{icon}</span>}
       {label}
     </Link>
   );
 
   return (
-    <div className="md:hidden fixed inset-x-0 bottom-0 bg-surface z-[90] overflow-y-auto" style={{ top: topOffset }}>
+    <div className="md:hidden fixed inset-x-0 bottom-0 bg-surface-canvas z-[90] overflow-y-auto" style={{ top: topOffset }}>
       <div className="px-margin-mobile py-6 flex flex-col gap-6">
         <div>
-          <p className="font-label-lg text-label-lg text-primary font-semibold uppercase tracking-wider mb-1 px-3">Shop</p>
+          <p className="font-label-lg text-label-lg text-brand-primary font-semibold uppercase tracking-wider mb-1 px-3">Shop</p>
           <MenuLink href="/" label="Home" icon="home" />
           <MenuLink href="/products" label="Shop All" icon="storefront" />
           {categories.map((c) => (
             <MenuLink key={c.slug} href={`/collections/${c.slug}`} label={c.name} />
           ))}
           {categories.length === 0 && (
-            <p className="px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">
+            <p className="px-3 py-2 font-body-sm text-body-sm text-text-secondary">
               {online ? "Loading categories…" : "Categories unavailable offline"}
             </p>
           )}
         </div>
         <div>
-          <p className="font-label-lg text-label-lg text-primary font-semibold uppercase tracking-wider mb-1 px-3">My TinyTots</p>
+          <p className="font-label-lg text-label-lg text-brand-primary font-semibold uppercase tracking-wider mb-1 px-3">My TinyTots</p>
           <MenuLink href="/login" label="Sign in" icon="login" />
           <MenuLink href="/signup" label="Sign up" icon="person_add" />
           <MenuLink href="/account" label="My Account" icon="person" />
@@ -368,7 +368,7 @@ function MobileMenu({ open, onClose, topOffset }: { open: boolean; onClose: () =
           <MenuLink href="/account/returns" label="Returns & Refunds" icon="assignment_return" />
         </div>
         <div>
-          <p className="font-label-lg text-label-lg text-primary font-semibold uppercase tracking-wider mb-1 px-3">More</p>
+          <p className="font-label-lg text-label-lg text-brand-primary font-semibold uppercase tracking-wider mb-1 px-3">More</p>
           <MenuLink href="/blog" label="Blog" icon="article" />
           <MenuLink href="/our-story" label="Our Story" icon="auto_stories" />
           <MenuLink href="/size-guide" label="Size Guide" icon="straighten" />
@@ -398,19 +398,19 @@ function AccountMenu() {
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <Link
           href="/login"
-          className="hidden md:inline-block font-body-sm text-body-sm text-on-surface-variant hover:text-primary px-3 py-2 rounded-full transition-colors"
+          className="hidden md:inline-block font-body-sm text-body-sm text-text-secondary hover:text-brand-primary px-3 py-2 rounded-full transition-colors"
         >
           Sign in
         </Link>
         <Link
           href="/signup"
-          className="hidden md:inline-block font-body-sm text-body-sm bg-primary-container text-on-primary px-4 py-2 rounded-full hover:bg-primary transition-colors whitespace-nowrap"
+          className="hidden md:inline-block font-body-sm text-body-sm bg-brand-primary text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
         >
           Sign up
         </Link>
         <Link
           href="/login"
-          className="md:hidden text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
+          className="md:hidden text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center"
           title="Account"
           aria-label="Account"
         >
@@ -424,24 +424,24 @@ function AccountMenu() {
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="text-primary hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center"
+        className="text-brand-primary hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center"
         title="Account"
       >
         <span className="material-symbols-outlined">account_circle</span>
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-48 bg-surface border border-outline-variant/30 rounded-xl shadow-lg py-2 z-50">
+        <div className="absolute right-0 mt-2 w-48 bg-surface-elevated border border-border-default rounded-xl shadow-lg py-2 z-50">
       <Link
             href="/account"
             onClick={() => setOpen(false)}
-            className="block px-4 py-2 font-body-sm text-body-sm text-on-surface hover:bg-surface-container-low"
+            className="block px-4 py-2 font-body-sm text-body-sm text-text-primary hover:bg-surface-secondary"
           >
             My Account
           </Link>
           <Link
             href="/account/wishlist"
             onClick={() => setOpen(false)}
-            className="block px-4 py-2 font-body-sm text-body-sm text-on-surface hover:bg-surface-container-low"
+            className="block px-4 py-2 font-body-sm text-body-sm text-text-primary hover:bg-surface-secondary"
           >
             My Wishlist
           </Link>
@@ -450,7 +450,7 @@ function AccountMenu() {
               setOpen(false);
               await signOut();
             }}
-            className="block w-full text-left px-4 py-2 font-body-sm text-body-sm text-error hover:bg-surface-container-low"
+            className="block w-full text-left px-4 py-2 font-body-sm text-body-sm text-red-700 hover:bg-surface-secondary"
           >
             Log out
           </button>
@@ -495,14 +495,14 @@ function NewsletterForm() {
   }
 
   if (status === "success") {
-    return <p className="font-body-sm text-body-sm text-secondary">Thanks for subscribing! 🎉</p>;
+    return <p className="font-body-sm text-body-sm text-text-secondary">Thanks for subscribing! 🎉</p>;
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 w-full max-w-[320px]">
-      <div className="flex flex-col rounded-xl border border-outline-variant/50 overflow-hidden bg-surface-container-lowest">
+      <div className="flex flex-col rounded-xl border border-border-default overflow-hidden bg-surface-elevated">
         <input
-          className="w-full min-w-0 bg-transparent border-none px-4 py-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/70 focus:ring-0 focus:outline-none"
+          className="w-full min-w-0 bg-transparent border-none px-4 py-3 font-body-sm text-body-sm text-text-primary placeholder:text-text-secondary/70 focus:ring-0 focus:outline-none"
           placeholder="Email Address"
           type="email"
           required
@@ -512,12 +512,12 @@ function NewsletterForm() {
         <button
           type="submit"
           disabled={status === "loading"}
-          className="w-full bg-primary-container text-on-primary px-6 py-3 font-button text-button hover:bg-primary transition-colors whitespace-nowrap disabled:opacity-60"
+          className="w-full bg-brand-primary text-white px-6 py-3 font-button text-button hover:opacity-90 transition-opacity whitespace-nowrap disabled:opacity-60"
         >
           {status === "loading" ? "Subscribing..." : "Subscribe"}
         </button>
       </div>
-      {status === "error" && <p className="font-label-md text-label-md text-error">{errorMsg}</p>}
+      {status === "error" && <p className="font-label-md text-label-md text-red-700">{errorMsg}</p>}
     </form>
   );
 }
@@ -596,25 +596,25 @@ export default function SiteShell({
             {/* FIXED NAVBAR WRAPPER (Spans 100% width, centered inside) */}
             <div ref={headerWrapRef} className="fixed top-0 left-0 right-0 z-50">
               <AnnouncementBar data={announcement} />
-              <header className="bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
+              <header className="bg-surface-canvas/80 backdrop-blur-md border-b border-border-default">
               <nav className="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto w-full">
                 <div className="flex items-center gap-6">
                   <button
                     onClick={() => setMobileMenuOpen((o) => !o)}
-                    className="md:hidden text-on-surface-variant hover:text-primary p-2 -ml-2 rounded-full flex items-center justify-center"
+                    className="md:hidden text-text-secondary hover:text-brand-primary p-2 -ml-2 rounded-full flex items-center justify-center"
                     aria-label="Menu"
                   >
                     <span className="material-symbols-outlined">{mobileMenuOpen ? "close" : "menu"}</span>
                   </button>
-                  <Link href="/" className="font-display-md text-display-md text-primary tracking-tight">TinyTots</Link>
+                  <Link href="/" className="font-display-md text-display-md text-brand-primary tracking-tight">TinyTots</Link>
                   <div className="hidden md:flex items-center gap-6">
                     <Link
                       href="/"
                       title="Home"
                       className={`flex items-center gap-1 font-body-md text-body-md pb-1 transition-colors border-b-2 ${
                         pathname === "/"
-                          ? "text-primary font-bold border-primary"
-                          : "text-on-surface-variant hover:text-primary border-transparent"
+                          ? "text-brand-primary font-bold border-brand-primary"
+                          : "text-text-secondary hover:text-brand-primary border-transparent"
                       }`}
                     >
                       <span className="material-symbols-outlined text-[20px]">home</span>
@@ -626,7 +626,7 @@ export default function SiteShell({
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
                   <div className="relative shrink-0">
-                    <button onClick={() => setSearchOpen((o) => !o)} className="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low p-2 rounded-full flex items-center justify-center" title="Search" aria-label="Search">
+                    <button onClick={() => setSearchOpen((o) => !o)} className="text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center" title="Search" aria-label="Search">
                       <span className="material-symbols-outlined">search</span>
                     </button>
                     {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
@@ -649,38 +649,38 @@ export default function SiteShell({
             <div className="mt-auto w-full">
               <UgcFeed />
               {shouldShowFooterFaq(pathname) && <FooterFaq />}
-              <footer className="bg-surface-container border-t border-outline-variant/30 w-full">
+              <footer className="bg-surface-secondary border-t border-border-default w-full">
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-8 px-margin-mobile md:px-margin-desktop py-10 md:py-12 max-w-container-max mx-auto">
                   <div className="col-span-2 md:col-span-3 lg:col-span-1 flex flex-col gap-3">
-                    <span className="font-headline-lg text-headline-lg text-primary tracking-tight">TinyTots</span>
-                    <a href="mailto:support@tinytotsofficial.com" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary hover:underline">
+                    <span className="font-headline-lg text-headline-lg text-brand-primary tracking-tight">TinyTots</span>
+                    <a href="mailto:support@tinytotsofficial.com" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary hover:underline">
                       support@tinytotsofficial.com
                     </a>
-                    <p className="font-label-md text-label-md text-on-surface-variant">© 2026 TinyTots Premium Kids. All rights reserved.</p>
+                    <p className="font-label-md text-label-md text-text-secondary">© 2026 TinyTots Premium Kids. All rights reserved.</p>
                   </div>
                   <div className="flex flex-col gap-2.5">
-                    <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-1">Explore</h4>
-                    <Link href="/products" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Shop All</Link>
-                    <Link href="/our-story" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">About Us</Link>
-                    <Link href="/blog" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Blog</Link>
+                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-1">Explore</h4>
+                    <Link href="/products" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Shop All</Link>
+                    <Link href="/our-story" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">About Us</Link>
+                    <Link href="/blog" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Blog</Link>
                   </div>
                   <div className="flex flex-col gap-2.5">
-                    <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-1">Support</h4>
-                    <Link href="/help" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Help Center</Link>
-                    <Link href="/contact" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Contact Us</Link>
-                    <Link href="/size-guide" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Size Guide</Link>
-                    <Link href="/track-order" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Track Order</Link>
-                    <Link href="/account/returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Returns & Refunds</Link>
-                    <Link href="/report-issue" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Report an Issue</Link>
+                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-1">Support</h4>
+                    <Link href="/help" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Help Center</Link>
+                    <Link href="/contact" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Contact Us</Link>
+                    <Link href="/size-guide" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Size Guide</Link>
+                    <Link href="/track-order" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Track Order</Link>
+                    <Link href="/account/returns" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Returns & Refunds</Link>
+                    <Link href="/report-issue" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Report an Issue</Link>
                   </div>
                   <div className="flex flex-col gap-2.5">
-                    <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-1">Legal</h4>
-                    <Link href="/shipping-returns" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Shipping &amp; Returns</Link>
-                    <Link href="/privacy-policy" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Privacy Policy</Link>
-                    <Link href="/terms" className="font-body-sm text-body-sm text-on-surface-variant hover:text-primary transition-colors">Terms &amp; Conditions</Link>
+                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-1">Legal</h4>
+                    <Link href="/shipping-returns" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Shipping &amp; Returns</Link>
+                    <Link href="/privacy-policy" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Privacy Policy</Link>
+                    <Link href="/terms" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Terms &amp; Conditions</Link>
                   </div>
-                  <div className="col-span-2 md:col-span-3 lg:col-span-1 flex flex-col gap-3 min-w-0 pt-2 lg:pt-0 border-t border-outline-variant/20 lg:border-0">
-                    <h4 className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider">Join Our Newsletter</h4>
+                  <div className="col-span-2 md:col-span-3 lg:col-span-1 flex flex-col gap-3 min-w-0 pt-2 lg:pt-0 border-t border-border-default lg:border-0">
+                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider">Join Our Newsletter</h4>
                     <NewsletterForm />
                   </div>
                 </div>
