@@ -1,6 +1,6 @@
   import type { Metadata } from "next";
   import { unstable_cache } from "next/cache";
-  import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+  import { Inter, Plus_Jakarta_Sans, Playfair_Display, Geist, JetBrains_Mono } from "next/font/google";
   import { SpeedInsights } from "@vercel/speed-insights/next";
   import "./globals.css";
   import SiteShell from "@/components/SiteShell";
@@ -22,6 +22,28 @@
     variable: "--font-plus-jakarta",
     subsets: ["latin"],
     weight: ["600", "700"],
+    display: "swap",
+  });
+
+  // Redesign type scale (TINYTOTS-BUILD-BRIEF.md sec6) — loaded alongside the
+  // existing fonts above, not replacing them. See globals.css "NEW — Approved
+  // type scale additions" for how these map to display/heading/mono tokens.
+  const playfairDisplay = Playfair_Display({
+    variable: "--font-playfair",
+    subsets: ["latin"],
+    weight: ["500", "600", "700"],
+    display: "swap",
+  });
+  const geist = Geist({
+    variable: "--font-geist",
+    subsets: ["latin"],
+    weight: ["400", "500", "600"],
+    display: "swap",
+  });
+  const jetbrainsMono = JetBrains_Mono({
+    variable: "--font-jetbrains-mono",
+    subsets: ["latin"],
+    weight: ["400", "500"],
     display: "swap",
   });
 
@@ -102,7 +124,14 @@
     return (
       <html
         lang="en"
-        className={cn("antialiased", inter.variable, plusJakarta.variable)}
+        className={cn(
+          "antialiased",
+          inter.variable,
+          plusJakarta.variable,
+          playfairDisplay.variable,
+          geist.variable,
+          jetbrainsMono.variable
+        )}
       >
         <head>
           <link rel="preconnect" href="https://fonts.googleapis.com" />

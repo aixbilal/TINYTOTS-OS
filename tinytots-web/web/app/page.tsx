@@ -334,7 +334,7 @@ export default async function Home() {
                 content.meadow_product_ids,
                 content.meadow_link ?? HOMEPAGE_DEFAULTS.meadow_link
               )}
-              className="md:col-span-2 relative rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[220px] md:min-h-0"
+              className="md:col-span-2 relative rounded-[16px] overflow-hidden border border-border-default group cursor-pointer min-h-[220px] md:min-h-0"
             >
               <Image
                 src={content.meadow_image_url ?? HOMEPAGE_DEFAULTS.meadow_image_url}
@@ -345,13 +345,13 @@ export default async function Home() {
               />
               <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300" />
               <div className="absolute bottom-6 left-6 right-6 z-10 flex flex-col items-start">
-                <span className="bg-surface-container-lowest/90 backdrop-blur text-on-surface font-label-md text-label-md px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
+                <span className="bg-surface-elevated/90 backdrop-blur text-text-primary font-label-md text-label-md px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
                   {content.meadow_badge_text ?? HOMEPAGE_DEFAULTS.meadow_badge_text}
                 </span>
                 <h3 className="font-headline-lg md:font-display-md text-headline-lg md:text-display-md text-white mb-4">
                   {content.meadow_heading ?? HOMEPAGE_DEFAULTS.meadow_heading}
                 </h3>
-                <span className="bg-white text-on-surface font-button text-button px-6 py-2 rounded-lg group-hover:bg-surface-container-low transition-colors inline-block">
+                <span className="bg-white text-text-primary font-button text-button px-6 py-2 rounded-lg group-hover:bg-surface-canvas transition-colors inline-block">
                   {content.meadow_button_text ?? HOMEPAGE_DEFAULTS.meadow_button_text}
                 </span>
               </div>
@@ -359,7 +359,7 @@ export default async function Home() {
             <div className="flex flex-col gap-bento-gap">
               <Link
                 href="/products?gender=boy"
-                className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[140px] md:min-h-[200px]"
+                className="relative flex-1 rounded-[16px] overflow-hidden border border-border-default group cursor-pointer min-h-[140px] md:min-h-[200px]"
               >
                 <Image
                   src={content.boys_image_url ?? HOMEPAGE_DEFAULTS.boys_image_url}
@@ -381,7 +381,7 @@ export default async function Home() {
               </Link>
               <Link
                 href="/products?gender=girl"
-                className="relative flex-1 rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[140px] md:min-h-[200px]"
+                className="relative flex-1 rounded-[16px] overflow-hidden border border-border-default group cursor-pointer min-h-[140px] md:min-h-[200px]"
               >
                 <Image
                   src={content.girls_image_url ?? HOMEPAGE_DEFAULTS.girls_image_url}

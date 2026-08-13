@@ -130,7 +130,7 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
           {active.button_text && active.button_link && (
             <Link
               href={active.button_link}
-              className="inline-flex items-center bg-primary-container text-on-primary font-button text-button h-12 md:h-[56px] px-6 md:px-8 rounded-lg hover:bg-primary transition-colors duration-300"
+              className="inline-flex items-center bg-brand-primary text-white font-button text-button h-12 md:h-[56px] px-6 md:px-8 rounded-lg hover:opacity-90 transition-opacity duration-300"
             >
               {active.button_text}
             </Link>
