@@ -152,11 +152,11 @@
      NOT YET loaded via next/font in app/layout.tsx — wiring that is a
      separate follow-up step. Until then these fall back to the generic
      serif/sans-serif/monospace keywords.
-     heading-sm and heading-md are deliberately built as a swappable pair
-     (per request) — an "active" token (Playfair Display) and an "-alt"
-     token (Geist Medium) at the same size/line-height, so the two can be
-     visually compared once fonts are loaded by swapping which one
-     components reference, without touching the size/line-height values.
+     heading-sm and heading-md were built as a swappable Playfair-vs-Geist-
+     Medium pair for visual comparison; Playfair Display was approved
+     2026-08-13 as the permanent default for both, so the "-alt" (Geist
+     Medium) tokens have been removed — no need to carry the comparison
+     scaffolding forward as dead code.
      ============================================================ */
   --font-heading-serif: var(--font-playfair), "Playfair Display", serif;
   --font-heading-sans: var(--font-geist), "Geist", var(--font-inter), Inter, sans-serif;
@@ -174,21 +174,15 @@
   --text-heading-lg--font-weight: 600;
   --font-heading-lg: var(--font-heading-serif);
 
-  /* heading-md — SWAPPABLE: default = Playfair Display 600, alt = Geist Medium 500 */
   --text-heading-md: 20px;
   --text-heading-md--line-height: 1.4;
   --text-heading-md--font-weight: 600;
-  --font-heading-md: var(--font-heading-serif);         /* ACTIVE default */
-  --font-heading-md-alt: var(--font-heading-sans);       /* swap-in candidate */
-  --text-heading-md-alt--font-weight: 500;
+  --font-heading-md: var(--font-heading-serif);
 
-  /* heading-sm — SWAPPABLE: default = Playfair Display 600, alt = Geist Medium 500 */
   --text-heading-sm: 18px;
   --text-heading-sm--line-height: 1.4;
   --text-heading-sm--font-weight: 600;
-  --font-heading-sm: var(--font-heading-serif);         /* ACTIVE default */
-  --font-heading-sm-alt: var(--font-heading-sans);       /* swap-in candidate */
-  --text-heading-sm-alt--font-weight: 500;
+  --font-heading-sm: var(--font-heading-serif);
 
   --text-label-sm: 11px;
   --text-label-sm--line-height: 1;
