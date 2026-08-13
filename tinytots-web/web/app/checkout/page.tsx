@@ -73,10 +73,10 @@ export default function CheckoutPage() {
     return (
       <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
         <OfflineNotice feature="Checkout" />
-        <p className="text-on-surface-variant font-body-md text-body-md">
+        <p className="text-text-secondary font-body-md text-body-md">
           Your cart is empty. Add something before checking out.
         </p>
-        <Link href="/products" className="inline-block mt-4 text-primary hover:underline font-body-sm text-body-sm">
+        <Link href="/products" className="inline-block mt-4 text-brand-primary hover:underline font-body-sm text-body-sm">
           Continue shopping
         </Link>
       </main>
@@ -177,23 +177,23 @@ export default function CheckoutPage() {
   }
 
   const inputClass = (hasError: boolean) =>
-    `w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none transition-colors ${
-      hasError ? "border-error focus:border-error" : "border-outline-variant focus:border-primary"
+    `w-full border rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md focus:outline-none transition-colors ${
+      hasError ? "border-red-700 focus:border-red-700" : "border-border-default focus:border-brand-primary"
     }`;
 
   const FieldError = ({ msg }: { msg?: string }) =>
-    msg ? <p className="font-label-md text-label-md text-error mt-1">{msg}</p> : null;
+    msg ? <p className="font-label-md text-label-md text-red-700 mt-1">{msg}</p> : null;
 
   return (
     <main className="max-w-5xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
       <div className="md:col-span-2">
         <OfflineNotice feature="Checkout" />
-        <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Checkout</h1>
+        <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Checkout</h1>
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-md">
         {!user && (
           <div>
-            <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Contact details</h2>
+            <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Contact details</h2>
             <div className="flex flex-col gap-3">
               <div>
                 <input
@@ -222,7 +222,7 @@ export default function CheckoutPage() {
           </div>
   )}
       <div>
-            <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Shipping address</h2>
+            <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Shipping address</h2>
 
             {user && savedAddresses.length > 0 && (
               <div className="flex flex-col gap-2 mb-3">
@@ -230,7 +230,7 @@ export default function CheckoutPage() {
                   <label
                     key={a.id}
                     className={`flex items-start gap-3 border rounded-lg px-4 py-3 cursor-pointer transition-colors ${
-                      selectedAddressId === a.id ? "border-primary bg-primary-container/10" : "border-outline-variant"
+                      selectedAddressId === a.id ? "border-brand-primary bg-brand-primary/10" : "border-border-default"
                     }`}
                   >
                     <input
@@ -241,16 +241,16 @@ export default function CheckoutPage() {
                       className="mt-1"
                     />
                     <div>
-                      <p className="font-body-sm text-body-sm text-on-surface font-semibold">
-                        {a.label} {a.is_default && <span className="text-xs text-primary font-normal">(default)</span>}
+                      <p className="font-body-sm text-body-sm text-text-primary font-semibold">
+                        {a.label} {a.is_default && <span className="text-xs text-brand-primary font-normal">(default)</span>}
                       </p>
-                      <p className="font-label-md text-label-md text-on-surface-variant">{a.address}, {a.city}</p>
+                      <p className="font-label-md text-label-md text-text-secondary">{a.address}, {a.city}</p>
                     </div>
                   </label>
                 ))}
                 <label
                   className={`flex items-center gap-3 border rounded-lg px-4 py-3 cursor-pointer transition-colors ${
-                    selectedAddressId === "new" ? "border-primary bg-primary-container/10" : "border-outline-variant"
+                    selectedAddressId === "new" ? "border-brand-primary bg-brand-primary/10" : "border-border-default"
                   }`}
                 >
                   <input
@@ -259,7 +259,7 @@ export default function CheckoutPage() {
                     checked={selectedAddressId === "new"}
                     onChange={() => handleAddressPick("new")}
                   />
-                  <span className="font-body-sm text-body-sm text-on-surface">Use a different address</span>
+                  <span className="font-body-sm text-body-sm text-text-primary">Use a different address</span>
                 </label>
               </div>
             )}
@@ -294,7 +294,7 @@ export default function CheckoutPage() {
 
           {user && ordersCount === 0 && (
             <div>
-              <h2 className="font-headline-md text-headline-md text-on-surface mb-3">
+              <h2 className="font-headline-md text-headline-md text-text-primary mb-3">
                 Referral code (optional)
               </h2>
               <input
@@ -305,14 +305,14 @@ export default function CheckoutPage() {
                 maxLength={20}
                 className={inputClass(false)}
               />
-              <p className="font-label-md text-label-md text-on-surface-variant mt-1">
+              <p className="font-label-md text-label-md text-text-secondary mt-1">
                 First-time customers only — your friend gets a reward once this order is placed.
               </p>
             </div>
           )}
 
           <div>
-            <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Payment method</h2>
+            <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Payment method</h2>
             <div className="flex flex-col gap-2">
               {[
           { value: "cod", label: "Cash on Delivery (available across Pakistan)", comingSoon: false },
@@ -324,8 +324,8 @@ export default function CheckoutPage() {
                   key={option.value}
                   className={`flex items-center justify-between gap-3 border rounded-lg px-4 py-3 transition-colors ${
                     option.comingSoon
-                      ? "opacity-50 cursor-not-allowed border-outline-variant"
-                      : `cursor-pointer ${paymentMethod === option.value ? "border-primary bg-primary-container/10" : "border-outline-variant"}`
+                      ? "opacity-50 cursor-not-allowed border-border-default"
+                      : `cursor-pointer ${paymentMethod === option.value ? "border-brand-primary bg-brand-primary/10" : "border-border-default"}`
                   }`}
                 >
                   <span className="flex items-center gap-3">
@@ -337,10 +337,10 @@ export default function CheckoutPage() {
                       disabled={option.comingSoon}
                       onChange={(e) => setPaymentMethod(e.target.value)}
                     />
-                    <span className="font-body-sm text-body-sm text-on-surface">{option.label}</span>
+                    <span className="font-body-sm text-body-sm text-text-primary">{option.label}</span>
                   </span>
                   {option.comingSoon && (
-                    <span className="font-label-md text-label-md text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded-full">
+                    <span className="font-label-md text-label-md text-text-secondary bg-surface-secondary px-2 py-0.5 rounded-full">
                       Coming Soon
                     </span>
                   )}
@@ -353,7 +353,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50"
+              className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {submitting ? "Placing order..." : "Place Order"}
             </button>
@@ -363,11 +363,11 @@ export default function CheckoutPage() {
       </div>
 
 {/* Sticky order summary */}
-<div className="md:sticky md:top-24 border border-outline-variant/30 rounded-xl p-6 bg-surface-container-lowest flex flex-col gap-3">
-        <h2 className="font-headline-md text-headline-md text-on-surface mb-1">Order Summary</h2>
+<div className="md:sticky md:top-24 border border-border-default rounded-xl p-6 bg-surface-elevated flex flex-col gap-3">
+        <h2 className="font-headline-md text-headline-md text-text-primary mb-1">Order Summary</h2>
 
         {items.map((item) => (
-          <div key={item.variantId} className="flex justify-between font-body-sm text-body-sm text-on-surface-variant">
+          <div key={item.variantId} className="flex justify-between font-body-sm text-body-sm text-text-secondary">
             <span>
               {item.productName} × {item.quantity}
             </span>
@@ -375,33 +375,33 @@ export default function CheckoutPage() {
           </div>
         ))}
 
-        <div className="flex flex-col gap-2 pt-2 border-t border-outline-variant/30">
-          <div className="flex justify-between font-body-md text-body-md text-on-surface-variant">
+        <div className="flex flex-col gap-2 pt-2 border-t border-border-default">
+          <div className="flex justify-between font-body-md text-body-md text-text-secondary">
             <span>Subtotal</span>
             <span>Rs. {subtotal.toLocaleString()}</span>
           </div>
 
           {appliedCoupon && (
-            <div className="flex justify-between font-body-md text-body-md text-primary">
+            <div className="flex justify-between font-body-md text-body-md text-brand-primary">
               <span>Discount ({appliedCoupon.code})</span>
               <span>− Rs. {appliedCoupon.discountAmount.toLocaleString()}</span>
             </div>
           )}
 
           {appliedVoucher && (
-            <div className="flex justify-between font-body-md text-body-md text-primary">
+            <div className="flex justify-between font-body-md text-body-md text-brand-primary">
               <span>Voucher</span>
               <span>− Rs. {appliedVoucher.amount.toLocaleString()}</span>
             </div>
           )}
 
-          <p className="font-label-md text-label-md text-on-surface-variant">
+          <p className="font-label-md text-label-md text-text-secondary">
             Delivery fee and any COD token amount will be confirmed after you place the order.
           </p>
 
-          <div className="flex justify-between font-headline-lg text-headline-lg text-on-surface pt-2 border-t border-outline-variant/30">
+          <div className="flex justify-between font-headline-lg text-headline-lg text-text-primary pt-2 border-t border-border-default">
             <span>Total</span>
-            <span className="text-primary">Rs. {total.toLocaleString()}</span>
+            <span className="text-brand-primary">Rs. {total.toLocaleString()}</span>
           </div>
         </div>
       </div>

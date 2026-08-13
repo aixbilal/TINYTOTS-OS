@@ -56,16 +56,16 @@ export default function CouponInput() {
 
   if (appliedCoupon) {
     return (
-      <div className="flex items-center justify-between border border-primary/40 rounded-xl px-4 py-3 bg-primary-container/10">
+      <div className="flex items-center justify-between border border-brand-primary/40 rounded-xl px-4 py-3 bg-brand-primary/10">
         <div>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Coupon applied</p>
-          <p className="font-headline-md text-headline-md text-primary">
+          <p className="font-body-sm text-body-sm text-text-secondary">Coupon applied</p>
+          <p className="font-headline-md text-headline-md text-brand-primary">
             {appliedCoupon.code}
           </p>
         </div>
         <button
           onClick={handleRemove}
-          className="text-error font-label-md text-label-md hover:underline"
+          className="text-red-700 font-label-md text-label-md hover:underline"
         >
           Remove
         </button>
@@ -87,24 +87,24 @@ export default function CouponInput() {
           }}
           onKeyDown={(e) => e.key === "Enter" && handleApply()}
           placeholder="Enter coupon code"
-          className={`min-w-0 flex-1 border rounded-lg px-3 py-2 bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none transition-colors ${
-            error ? "border-error focus:border-error" : "border-outline-variant focus:border-primary"
+          className={`min-w-0 flex-1 border rounded-lg px-3 py-2 bg-surface-elevated font-body-md text-body-md text-text-primary focus:outline-none transition-colors ${
+            error ? "border-red-700 focus:border-red-700" : "border-border-default focus:border-brand-primary"
           }`}
         />
         <button
           onClick={handleApply}
           disabled={!canSubmit}
-          className={`shrink-0 px-4 sm:px-5 py-2 rounded-lg font-button text-button transition-colors ${
+          className={`shrink-0 px-4 sm:px-5 py-2 rounded-lg font-button text-button ${
             canSubmit
-              ? "bg-primary-container text-on-primary hover:bg-primary cursor-pointer"
-              : "bg-surface-container-low text-on-surface-variant cursor-not-allowed"
+              ? "bg-brand-primary text-white hover:opacity-90 transition-opacity cursor-pointer"
+              : "bg-surface-secondary text-text-secondary transition-colors cursor-not-allowed"
           }`}
         >
           {loading ? "…" : "Apply"}
         </button>
       </div>
       {error && (
-        <p className="mt-2 font-label-md text-label-md text-error">{error}</p>
+        <p className="mt-2 font-label-md text-label-md text-red-700">{error}</p>
       )}
     </div>
   );

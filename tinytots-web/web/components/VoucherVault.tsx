@@ -56,8 +56,8 @@ export default function VoucherVault() {
   if (!user || loading || vouchers.length === 0) return null;
 
   return (
-    <div className="border-t border-outline-variant/30 pt-3">
-      <p className="font-body-sm text-body-sm text-on-surface-variant mb-2">
+    <div className="border-t border-border-default pt-3">
+      <p className="font-body-sm text-body-sm text-text-secondary mb-2">
         Your vouchers
       </p>
       <div className="flex flex-col gap-2">
@@ -73,19 +73,19 @@ export default function VoucherVault() {
               }
               className={`flex items-center justify-between border rounded-lg px-3 py-2 text-left transition-colors ${
                 isApplied
-                  ? "border-primary bg-primary-container/10"
-                  : "border-outline-variant hover:border-primary/50"
+                  ? "border-brand-primary bg-brand-primary/10"
+                  : "border-border-default hover:border-brand-primary/50"
               }`}
             >
               <div>
-                <p className="font-body-sm text-body-sm text-on-surface">
+                <p className="font-body-sm text-body-sm text-text-primary">
                   Rs. {v.amount.toLocaleString()} off
                 </p>
-                <p className="font-label-md text-label-md text-on-surface-variant">
+                <p className="font-label-md text-label-md text-text-secondary">
                   Expires {new Date(v.expires_at).toLocaleDateString()} · {v.source}
                 </p>
               </div>
-              <span className="font-label-md text-label-md text-primary">
+              <span className="font-label-md text-label-md text-brand-primary">
                 {isApplied ? "Applied ✓" : "Apply"}
               </span>
             </button>

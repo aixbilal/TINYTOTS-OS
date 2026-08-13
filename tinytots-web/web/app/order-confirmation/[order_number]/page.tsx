@@ -42,7 +42,7 @@ export default async function OrderConfirmationPage({
   if (!order) {
     return (
       <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-        <p className="text-on-surface-variant font-body-md text-body-md">
+        <p className="text-text-secondary font-body-md text-body-md">
           We couldn&apos;t find that order. Please check the order number.
         </p>
       </main>
@@ -56,11 +56,11 @@ export default async function OrderConfirmationPage({
     <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
       <div className="text-center mb-stack-md">
         <span className="material-symbols-outlined text-[56px] text-[#4C9A6A]">check_circle</span>
-        <h1 className="font-display-md text-display-md text-on-surface mt-2">
+        <h1 className="font-display-md text-display-md text-text-primary mt-2">
           Order placed successfully
         </h1>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-          Order number: <span className="font-semibold text-on-surface">{order.order_number}</span>
+        <p className="font-body-sm text-body-sm text-text-secondary mt-1">
+          Order number: <span className="font-semibold text-text-primary">{order.order_number}</span>
         </p>
       </div>
 
@@ -70,61 +70,61 @@ export default async function OrderConfirmationPage({
         </div>
       )}
 
-      <div className="border border-outline-variant/30 rounded-xl p-5 mb-stack-sm bg-surface-container-lowest">
-        <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Items</h2>
+      <div className="border border-border-default rounded-xl p-5 mb-stack-sm bg-surface-elevated">
+        <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Items</h2>
         <div className="flex flex-col gap-3">
           {order.order_items.map((item: any) => (
             <div key={item.id} className="flex justify-between font-body-sm text-body-sm">
               <div>
-                <p className="text-on-surface">{item.variants?.products?.name}</p>
-                <p className="text-on-surface-variant">
+                <p className="text-text-primary">{item.variants?.products?.name}</p>
+                <p className="text-text-secondary">
                   {item.variants?.size ?? "One Size"}
                   {item.variants?.color ? ` / ${item.variants.color}` : ""} × {item.quantity}
                 </p>
               </div>
-              <p className="text-on-surface">Rs. {item.line_total.toLocaleString()}</p>
+              <p className="text-text-primary">Rs. {item.line_total.toLocaleString()}</p>
             </div>
           ))}
         </div>
 
-        <div className="border-t border-outline-variant/30 mt-4 pt-4 flex flex-col gap-1 font-body-sm text-body-sm">
-          <div className="flex justify-between text-on-surface-variant">
+        <div className="border-t border-border-default mt-4 pt-4 flex flex-col gap-1 font-body-sm text-body-sm">
+          <div className="flex justify-between text-text-secondary">
             <span>Subtotal</span>
             <span>Rs. {order.subtotal.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between text-on-surface-variant">
+          <div className="flex justify-between text-text-secondary">
             <span>Delivery</span>
             <span>{order.delivery_fee > 0 ? `Rs. ${order.delivery_fee.toLocaleString()}` : "Free"}</span>
           </div>
           {order.discount_total > 0 && (
-            <div className="flex justify-between text-on-surface-variant">
+            <div className="flex justify-between text-text-secondary">
               <span>Discount</span>
               <span>−Rs. {order.discount_total.toLocaleString()}</span>
             </div>
           )}
-          <div className="flex justify-between font-semibold text-on-surface pt-1">
+          <div className="flex justify-between font-semibold text-text-primary pt-1">
             <span>Total</span>
             <span>Rs. {order.total.toLocaleString()}</span>
           </div>
         </div>
       </div>
 
-      <div className="border border-outline-variant/30 rounded-xl p-5 mb-stack-md font-body-sm text-body-sm bg-surface-container-lowest">
-        <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Shipping to</h2>
-        <p className="text-on-surface-variant">{order.guest_name}</p>
-        <p className="text-on-surface-variant">{order.guest_phone}</p>
-        <p className="text-on-surface-variant">{order.shipping_address}, {order.shipping_city}</p>
+      <div className="border border-border-default rounded-xl p-5 mb-stack-md font-body-sm text-body-sm bg-surface-elevated">
+        <h2 className="font-headline-md text-headline-md text-text-primary mb-2">Shipping to</h2>
+        <p className="text-text-secondary">{order.guest_name}</p>
+        <p className="text-text-secondary">{order.guest_phone}</p>
+        <p className="text-text-secondary">{order.shipping_address}, {order.shipping_city}</p>
       </div>
 
       <Link
         href={`/track-order?order_number=${order.order_number}`}
-        className="block text-center w-full py-3 rounded-xl border border-outline text-on-surface font-button text-button hover:bg-surface-container-low transition-colors mb-3"
+        className="block text-center w-full py-3 rounded-xl border border-border-default text-text-primary font-button text-button hover:bg-surface-secondary transition-colors mb-3"
       >
         Track this order
       </Link>
       <Link
         href="/"
-        className="block text-center w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors"
+        className="block text-center w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity"
       >
         Continue shopping
       </Link>
