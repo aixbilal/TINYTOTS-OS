@@ -56,7 +56,7 @@ export default function ProductCardStack({ products, autoPlay = true, autoPlayIn
         className="relative grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-x-10 gap-y-4 w-full max-w-2xl"
         style={{ perspective: "1400px" }}
       >
-        <div className="md:col-start-2 text-right font-mono text-sm text-on-surface-variant">
+        <div className="md:col-start-2 text-right font-mono text-sm text-text-secondary">
           {activeIndex + 1} / {products.length}
         </div>
 
@@ -71,7 +71,7 @@ export default function ProductCardStack({ products, autoPlay = true, autoPlayIn
               return (
                 <motion.div
                   key={product.id}
-                  className="absolute inset-0 w-full h-full overflow-hidden border-[6px] bg-surface-container border-surface shadow-2xl rounded-2xl"
+                  className="absolute inset-0 w-full h-full overflow-hidden border-[6px] bg-surface-secondary border-surface-elevated shadow-2xl rounded-2xl"
                   initial={{
                     x: offset * 15,
                     y: Math.abs(offset) * 6,
@@ -117,7 +117,7 @@ export default function ProductCardStack({ products, autoPlay = true, autoPlayIn
                       draggable={false}
                     />
                   ) : (
-                    <div className="w-full h-full bg-surface-container flex items-center justify-center text-on-surface-variant text-sm">
+                    <div className="w-full h-full bg-surface-secondary flex items-center justify-center text-text-secondary text-sm">
                       No image
                     </div>
                   )}
@@ -137,11 +137,11 @@ export default function ProductCardStack({ products, autoPlay = true, autoPlayIn
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <h3 className="font-headline-lg text-headline-lg text-on-surface">{activeItem.name}</h3>
-              <p className="font-body-md text-body-md text-on-surface-variant mt-2">Rs. {minPrice.toLocaleString()}</p>
+              <h3 className="font-headline-lg text-headline-lg text-text-primary">{activeItem.name}</h3>
+              <p className="font-body-md text-body-md text-text-secondary mt-2">Rs. {minPrice.toLocaleString()}</p>
               <Link
                 href={`/products/${activeItem.id}`}
-                className="inline-block mt-4 font-button text-button px-5 py-2 rounded-full bg-primary-container text-on-primary hover:bg-primary transition-colors"
+                className="inline-block mt-4 font-button text-button px-5 py-2 rounded-full bg-brand-primary text-white hover:opacity-90 transition-opacity"
               >
                 View Product
               </Link>
@@ -155,16 +155,16 @@ export default function ProductCardStack({ products, autoPlay = true, autoPlayIn
             <button
               onClick={goPrev}
               aria-label="Previous product"
-              className="flex items-center justify-center w-10 h-10 rounded-full border border-outline-variant/40 bg-surface hover:bg-surface-container-low transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-full border border-border-default bg-surface-elevated hover:bg-surface-secondary transition-colors"
             >
-              <span className="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_left</span>
+              <span className="material-symbols-outlined text-[18px] text-text-secondary">chevron_left</span>
             </button>
             <button
               onClick={goNext}
               aria-label="Next product"
-              className="flex items-center justify-center w-10 h-10 rounded-full border border-outline-variant/40 bg-surface hover:bg-surface-container-low transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-full border border-border-default bg-surface-elevated hover:bg-surface-secondary transition-colors"
             >
-              <span className="material-symbols-outlined text-[18px] text-on-surface-variant">chevron_right</span>
+              <span className="material-symbols-outlined text-[18px] text-text-secondary">chevron_right</span>
             </button>
           </div>
         )}

@@ -9,13 +9,13 @@ interface Testimonial {
 
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="shrink-0 w-[260px] rounded-xl border border-outline-variant/20 bg-surface-container-lowest p-4 flex flex-col gap-2 mx-2">
-      <div className="text-primary text-sm" aria-hidden="true">
+    <div className="shrink-0 w-[260px] rounded-xl border border-border-default bg-surface-elevated p-4 flex flex-col gap-2 mx-2">
+      <div className="text-brand-primary text-sm" aria-hidden="true">
         {"★".repeat(t.rating)}
         {"☆".repeat(5 - t.rating)}
       </div>
       <p
-        className="font-body-sm text-on-surface-variant italic overflow-hidden"
+        className="font-body-sm text-text-secondary italic overflow-hidden"
         style={{
           display: "-webkit-box",
           WebkitLineClamp: 3,
@@ -25,7 +25,7 @@ function TestimonialCard({ t }: { t: Testimonial }) {
       >
         &ldquo;{t.quote}&rdquo;
       </p>
-      <p className="font-label-md text-label-md text-on-surface font-semibold mt-auto">
+      <p className="font-label-md text-label-md text-text-primary font-semibold mt-auto">
         {t.customer_name}
       </p>
     </div>
@@ -46,7 +46,7 @@ export default function TestimonialsCarousel({
 
   return (
     <section className="mb-stack-lg">
-      <h2 className="font-headline-lg text-on-surface mb-stack-md text-center">
+      <h2 className="font-headline-lg text-text-primary mb-stack-md text-center">
         What Parents Are Saying
       </h2>
       <div

@@ -290,14 +290,14 @@ export default async function Home() {
 
       <div className="max-w-container-max mx-auto px-5 md:px-16 md:px-margin-desktop px-margin-mobile">
         {trustItems.length > 0 && (
-          <section className="w-full border-t border-b border-outline-variant/30 py-4 mb-stack-lg bg-surface-container-lowest">
+          <section className="w-full border-t border-b border-border-default py-4 mb-stack-lg bg-surface-elevated">
             <div className="flex flex-wrap md:flex-nowrap justify-center md:justify-between items-center gap-6 px-4">
               {trustItems.map((item, i) => (
                 <div key={`${item.label}-${i}`} className="contents">
-                  {i > 0 && <div className="hidden md:block w-px h-6 bg-outline-variant/30" />}
+                  {i > 0 && <div className="hidden md:block w-px h-6 bg-border-default" />}
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary">{item.icon}</span>
-                    <span className="font-label-md text-label-md text-on-surface-variant uppercase">
+                    <span className="material-symbols-outlined text-brand-primary">{item.icon}</span>
+                    <span className="font-label-md text-label-md text-text-secondary uppercase">
                       {item.label}
                     </span>
                   </div>
@@ -308,7 +308,7 @@ export default async function Home() {
         )}
 
         <section id="trending" className="mb-stack-lg">
-          <h2 className="font-display-md text-[32px] md:text-[48px] text-on-surface tracking-tight mb-stack-md">
+          <h2 className="font-display-md text-[32px] md:text-[48px] text-text-primary tracking-tight mb-stack-md">
             {trendingHeading}
           </h2>
           <ProductCarouselTabs
@@ -407,7 +407,7 @@ export default async function Home() {
 
         {stackProducts.length > 0 && (
           <section className="mb-stack-lg">
-            <h2 className="font-display-md text-[32px] md:text-[48px] text-on-surface tracking-tight mb-stack-md text-center">
+            <h2 className="font-display-md text-[32px] md:text-[48px] text-text-primary tracking-tight mb-stack-md text-center">
               {stackHeading}
             </h2>
             <ProductCardStack products={stackProducts as any} />
@@ -416,7 +416,7 @@ export default async function Home() {
 
         {uspItems.length > 0 && (
           <section className="mb-stack-lg">
-            <h2 className="font-headline-lg text-on-surface mb-stack-md text-center">
+            <h2 className="font-headline-lg text-text-primary mb-stack-md text-center">
               {content.usp_heading || HOMEPAGE_DEFAULTS.usp_heading}
             </h2>
             <UspMarquee items={uspItems} />

@@ -12,12 +12,12 @@ const CARD_GAP_PX = 16;
 function UspCard({ item }: { item: UspItem }) {
   return (
     <div
-      className="shrink-0 flex flex-col items-center text-center gap-2 p-5 rounded-xl bg-surface-container-lowest border border-outline-variant/20"
+      className="shrink-0 flex flex-col items-center text-center gap-2 p-5 rounded-xl bg-surface-elevated border border-border-default"
       style={{ width: CARD_WIDTH_PX }}
     >
-      <span className="material-symbols-outlined text-primary text-[32px]">{item.icon || "star"}</span>
-      <h3 className="font-headline-md text-headline-md text-on-surface">{item.title}</h3>
-      <p className="font-body-sm text-body-sm text-on-surface-variant">{item.description}</p>
+      <span className="material-symbols-outlined text-brand-primary text-[32px]">{item.icon || "star"}</span>
+      <h3 className="font-headline-md text-headline-md text-text-primary">{item.title}</h3>
+      <p className="font-body-sm text-body-sm text-text-secondary">{item.description}</p>
     </div>
   );
 }

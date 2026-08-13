@@ -86,7 +86,7 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
                 className="object-cover md:hidden"
               />
             ) : (
-              <div className="absolute inset-0 md:hidden bg-surface-container" />
+              <div className="absolute inset-0 md:hidden bg-surface-secondary" />
             )}
             {desktopUrl ? (
               <Image
@@ -101,7 +101,7 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
                 className="object-cover hidden md:block"
               />
             ) : (
-              <div className="absolute inset-0 hidden md:block bg-surface-container" />
+              <div className="absolute inset-0 hidden md:block bg-surface-secondary" />
             )}
           </div>
         );
