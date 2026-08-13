@@ -31,13 +31,13 @@ const STATUS_LABELS: Record<string, string> = {
   rejected: "Rejected", refunded: "Refunded", exchanged: "Exchanged", resolved: "Resolved",
 };
 const STATUS_PILL: Record<string, string> = {
-  open: "bg-surface-container-high text-on-surface-variant border-on-surface/5",
-  in_progress: "bg-primary-container/20 text-on-primary-container border-primary-container/30",
-  approved: "bg-secondary-container/20 text-on-secondary-container border-secondary-container/30",
-  rejected: "bg-error-container/40 text-on-error-container border-error-container",
-  refunded: "bg-tertiary-container/20 text-on-tertiary-container border-tertiary-container/30",
-  exchanged: "bg-tertiary-container/20 text-on-tertiary-container border-tertiary-container/30",
-  resolved: "bg-tertiary-container/20 text-on-tertiary-container border-tertiary-container/30",
+  open: "bg-surface-secondary text-text-secondary border-border-default",
+  in_progress: "bg-brand-primary/10 text-brand-primary border-brand-primary/30",
+  approved: "bg-green-700/10 text-green-700 border-green-700/30",
+  rejected: "bg-red-700/10 text-red-700 border-red-700/30",
+  refunded: "bg-green-700/10 text-green-700 border-green-700/30",
+  exchanged: "bg-green-700/10 text-green-700 border-green-700/30",
+  resolved: "bg-green-700/10 text-green-700 border-green-700/30",
 };
 const RETURNABLE_STATUSES = ["shipped", "delivered"];
 
@@ -265,12 +265,12 @@ export default function MyReturnsPage() {
   }
 
   const inputClass =
-    "w-full border rounded-lg px-4 py-3 bg-surface text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors";
+    "w-full border rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none transition-colors";
 
   if (authLoading || historyLoading) {
     return (
       <main className="max-w-container-max mx-auto py-stack-lg">
-        <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+        <p className="font-body-md text-body-md text-text-secondary">Loading...</p>
       </main>
     );
   }
@@ -283,26 +283,26 @@ export default function MyReturnsPage() {
       <section className="flex-grow flex flex-col gap-stack-md min-w-0">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="font-display-md text-display-md text-on-surface">Returns & Refunds</h1>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-2">
+            <h1 className="font-display-md text-display-md text-text-primary">Returns & Refunds</h1>
+            <p className="font-body-md text-body-md text-text-secondary mt-2">
               We want you to be completely happy with your TinyTots order. Let's get this sorted.
             </p>
           </div>
           {!showWizard && (
             <button
               onClick={startWizard}
-              className="bg-primary-container text-on-primary font-button text-button h-12 px-6 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm whitespace-nowrap"
+              className="bg-brand-primary text-white font-button text-button h-12 px-6 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm whitespace-nowrap"
             >
               <span className="material-symbols-outlined">assignment_return</span> Start a Return
             </button>
           )}
         </div>
 
-        {error && <p className="font-label-md text-label-md text-error">{error}</p>}
+        {error && <p className="font-label-md text-label-md text-red-700">{error}</p>}
 
         {/* Wizard */}
         {showWizard && (
-          <div className="border border-on-surface/5 rounded-2xl bg-surface-container-lowest p-6 md:p-8 flex flex-col gap-stack-md">
+          <div className="border border-border-subtle rounded-2xl bg-surface-elevated p-6 md:p-8 flex flex-col gap-stack-md">
             <div className="flex items-center justify-between">
               {/* Stepper */}
               <div className="flex items-center gap-3">
@@ -315,23 +315,23 @@ export default function MyReturnsPage() {
                       <div
                         className={`w-7 h-7 rounded-full flex items-center justify-center font-label-md text-label-md font-semibold shrink-0 ${
                           done
-                            ? "bg-primary text-on-primary"
+                            ? "bg-brand-primary text-white"
                             : active
-                            ? "bg-primary-container text-on-primary-container border-2 border-primary"
-                            : "bg-surface-container-high text-on-surface-variant"
+                            ? "bg-brand-primary/10 text-brand-primary border-2 border-brand-primary"
+                            : "bg-surface-secondary text-text-secondary"
                         }`}
                       >
                         {done ? <span className="material-symbols-outlined text-[16px]">check</span> : num}
                       </div>
-                      <span className={`font-label-md text-label-md hidden sm:inline ${active ? "text-primary font-semibold" : "text-on-surface-variant"}`}>
+                      <span className={`font-label-md text-label-md hidden sm:inline ${active ? "text-brand-primary font-semibold" : "text-text-secondary"}`}>
                         {label}
                       </span>
-                      {i < STEPS.length - 1 && <div className="w-8 sm:w-12 h-px bg-outline-variant/40" />}
+                      {i < STEPS.length - 1 && <div className="w-8 sm:w-12 h-px bg-border-default" />}
                     </div>
                   );
                 })}
               </div>
-              <button onClick={closeWizard} className="text-on-surface-variant hover:text-on-surface" aria-label="Close">
+              <button onClick={closeWizard} className="text-text-secondary hover:text-text-primary" aria-label="Close">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -340,7 +340,7 @@ export default function MyReturnsPage() {
             {step === 1 && (
               <form onSubmit={handleLookup} className="flex flex-col gap-4 max-w-md">
                 <div>
-                  <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
+                  <label className="font-body-sm text-body-sm text-text-secondary mb-2 block">
                     Enter your order number
                   </label>
                   <input
@@ -351,11 +351,11 @@ export default function MyReturnsPage() {
                     className={inputClass}
                   />
                 </div>
-                {lookupError && <p className="font-label-md text-label-md text-error">{lookupError}</p>}
+                {lookupError && <p className="font-label-md text-label-md text-red-700">{lookupError}</p>}
                 <button
                   type="submit"
                   disabled={lookingUp || !orderNumber.trim()}
-                  className="self-start bg-primary-container text-on-primary font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="self-start bg-brand-primary text-white font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {lookingUp ? "Looking up..." : "Find Order"}
                 </button>
@@ -365,21 +365,21 @@ export default function MyReturnsPage() {
             {/* Step 2: Select Items */}
             {step === 2 && order && (
               <div className="flex flex-col gap-stack-md">
-                <div className="border border-on-surface/5 rounded-xl px-5 py-4 flex justify-between items-center bg-surface-container-low">
+                <div className="border border-border-subtle rounded-xl px-5 py-4 flex justify-between items-center bg-surface-secondary">
                   <div>
-                    <p className="font-label-md text-label-md text-tertiary uppercase tracking-wider mb-1">Order Validated</p>
-                    <p className="font-headline-md text-headline-md text-on-surface">Order #{order.order_number}</p>
-                    <p className="font-label-md text-label-md text-on-surface-variant">
+                    <p className="font-label-md text-label-md text-green-700 uppercase tracking-wider mb-1">Order Validated</p>
+                    <p className="font-headline-md text-headline-md text-text-primary">Order #{order.order_number}</p>
+                    <p className="font-label-md text-label-md text-text-secondary">
                       Placed on {new Date(order.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <button onClick={() => setStep(1)} className="font-label-md text-label-md text-primary hover:underline">
+                  <button onClick={() => setStep(1)} className="font-label-md text-label-md text-brand-primary hover:underline">
                     Change Order
                   </button>
                 </div>
 
                 <div>
-                  <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Select items to return</h2>
+                  <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Select items to return</h2>
                   <div className="flex flex-col gap-3">
                     {orderItems.map((item) => {
                       const checked = selectedItemIds.has(item.id);
@@ -387,28 +387,28 @@ export default function MyReturnsPage() {
                         <div
                           key={item.id}
                           className={`border rounded-xl p-4 flex flex-col md:flex-row md:items-center gap-4 transition-colors ${
-                            checked ? "border-primary bg-primary-container/5" : "border-outline-variant/30"
+                            checked ? "border-brand-primary bg-brand-primary/5" : "border-border-default"
                           }`}
                         >
                           <label className="flex items-center gap-4 flex-grow cursor-pointer">
-                            <input type="checkbox" checked={checked} onChange={() => toggleItem(item.id)} className="w-5 h-5 accent-primary shrink-0" />
+                            <input type="checkbox" checked={checked} onChange={() => toggleItem(item.id)} className="w-5 h-5 accent-brand-primary shrink-0" />
                             {item.variant?.product?.image_url && (
-                              <img src={item.variant.product.image_url} alt="" className="w-16 h-16 object-cover rounded-lg border border-outline-variant/20 shrink-0" />
+                              <img src={item.variant.product.image_url} alt="" className="w-16 h-16 object-cover rounded-lg border border-border-default shrink-0" />
                             )}
                             <div className={`min-w-0 ${!checked ? "opacity-70" : ""}`}>
-                              <p className="font-body-md text-body-md text-on-surface font-medium">
+                              <p className="font-body-md text-body-md text-text-primary font-medium">
                                 {item.variant?.product?.name || "Item"}
                               </p>
-                              <p className="font-label-md text-label-md text-on-surface-variant">
+                              <p className="font-label-md text-label-md text-text-secondary">
                                 {[item.variant?.color, item.variant?.size].filter(Boolean).join(" • ")}
                               </p>
-                              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                              <p className="font-body-sm text-body-sm text-text-secondary mt-1">
                                 Rs. {item.variant?.price?.toLocaleString()}
                               </p>
                             </div>
                           </label>
                           <div className={`w-full md:w-56 shrink-0 ${!checked ? "opacity-50 pointer-events-none" : ""}`}>
-                            <label className="font-label-md text-label-md text-on-surface-variant mb-1 block">Reason for return</label>
+                            <label className="font-label-md text-label-md text-text-secondary mb-1 block">Reason for return</label>
                             <select
                               value={reasons[item.id] || ""}
                               onChange={(e) => setReason(item.id, e.target.value)}
@@ -427,11 +427,11 @@ export default function MyReturnsPage() {
                   </div>
                 </div>
 
-                {lookupError && <p className="font-label-md text-label-md text-error">{lookupError}</p>}
+                {lookupError && <p className="font-label-md text-label-md text-red-700">{lookupError}</p>}
 
                 <button
                   onClick={goToReview}
-                  className="self-start bg-primary-container text-on-primary font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
+                  className="self-start bg-brand-primary text-white font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
                 >
                   Continue to Review
                 </button>
@@ -442,7 +442,7 @@ export default function MyReturnsPage() {
             {step === 3 && order && (
               <div className="flex flex-col gap-stack-md">
                 <div>
-                  <h2 className="font-headline-md text-headline-md text-on-surface mb-3">
+                  <h2 className="font-headline-md text-headline-md text-text-primary mb-3">
                     How would you like your refund?
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -450,18 +450,18 @@ export default function MyReturnsPage() {
                       onClick={() => setRefundMethod("voucher")}
                       className={`text-left rounded-xl p-5 border-2 transition-all ${
                         refundMethod === "voucher"
-                          ? "border-primary-container bg-primary-container/5"
-                          : "border-outline-variant/30 hover:border-outline-variant"
+                          ? "border-brand-primary bg-brand-primary/5"
+                          : "border-border-default hover:border-brand-primary/50"
                       }`}
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="material-symbols-outlined text-primary">storefront</span>
-                        <span className="font-label-md text-label-md text-tertiary bg-tertiary-container/20 px-2 py-0.5 rounded-full">
+                        <span className="material-symbols-outlined text-brand-primary">storefront</span>
+                        <span className="font-label-md text-label-md text-green-700 bg-green-700/10 px-2 py-0.5 rounded-full">
                           Instant Processing
                         </span>
                       </div>
-                      <p className="font-headline-md text-headline-md text-on-surface mb-1">Store Credit Voucher</p>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant">
+                      <p className="font-headline-md text-headline-md text-text-primary mb-1">Store Credit Voucher</p>
+                      <p className="font-body-sm text-body-sm text-text-secondary">
                         Receive a digital voucher as soon as your return ships.
                       </p>
                     </button>
@@ -469,15 +469,15 @@ export default function MyReturnsPage() {
                       onClick={() => setRefundMethod("original_payment")}
                       className={`text-left rounded-xl p-5 border-2 transition-all ${
                         refundMethod === "original_payment"
-                          ? "border-primary-container bg-primary-container/5"
-                          : "border-outline-variant/30 hover:border-outline-variant"
+                          ? "border-brand-primary bg-brand-primary/5"
+                          : "border-border-default hover:border-brand-primary/50"
                       }`}
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="material-symbols-outlined text-primary">credit_card</span>
+                        <span className="material-symbols-outlined text-brand-primary">credit_card</span>
                       </div>
-                      <p className="font-headline-md text-headline-md text-on-surface mb-1">Original Payment Method</p>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant">
+                      <p className="font-headline-md text-headline-md text-text-primary mb-1">Original Payment Method</p>
+                      <p className="font-body-sm text-body-sm text-text-secondary">
                         Refunded to your original payment method. Takes 5–7 business days after inspection.
                       </p>
                     </button>
@@ -485,7 +485,7 @@ export default function MyReturnsPage() {
                 </div>
 
                 <div>
-                  <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
+                  <label className="font-body-sm text-body-sm text-text-secondary mb-2 block">
                     Anything else we should know? (optional)
                   </label>
                   <textarea
@@ -497,35 +497,35 @@ export default function MyReturnsPage() {
                 </div>
 
                 <div>
-                  <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">Photo (optional)</label>
+                  <label className="font-body-sm text-body-sm text-text-secondary mb-2 block">Photo (optional)</label>
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     onChange={handlePhotoChange}
-                    className="font-body-sm text-body-sm text-on-surface-variant"
+                    className="font-body-sm text-body-sm text-text-secondary"
                   />
                   {photoPreview && (
-                    <img src={photoPreview} alt="Preview" className="mt-2 w-24 h-24 object-cover rounded-lg border border-outline-variant/20" />
+                    <img src={photoPreview} alt="Preview" className="mt-2 w-24 h-24 object-cover rounded-lg border border-border-default" />
                   )}
                 </div>
 
-                <p className="font-label-md text-label-md text-on-surface-variant border-t border-outline-variant/20 pt-4">
+                <p className="font-label-md text-label-md text-text-secondary border-t border-border-default pt-4">
                   By submitting this request, you agree to our{" "}
-                  <a href="/shipping-returns" className="text-primary hover:underline">Return Policy</a>.
+                  <a href="/shipping-returns" className="text-brand-primary hover:underline">Return Policy</a>.
                 </p>
 
-                {submitError && <p className="font-label-md text-label-md text-error">{submitError}</p>}
+                {submitError && <p className="font-label-md text-label-md text-red-700">{submitError}</p>}
 
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="bg-primary-container text-on-primary font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                    className="bg-brand-primary text-white font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
                   >
                     {submitting ? "Submitting..." : "Submit Return Request"}
                     {!submitting && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}
                   </button>
-                  <button onClick={() => setStep(2)} className="font-button text-button text-on-surface-variant hover:underline">
+                  <button onClick={() => setStep(2)} className="font-button text-button text-text-secondary hover:underline">
                     Back
                   </button>
                 </div>
@@ -536,30 +536,30 @@ export default function MyReturnsPage() {
 
         {/* History */}
         {!showWizard && items.length === 0 && (
-          <div className="border border-dashed border-outline-variant/40 rounded-2xl p-10 flex flex-col items-center text-center gap-3 bg-surface-container-lowest">
-            <span className="material-symbols-outlined text-[40px] text-on-surface-variant">inventory_2</span>
-            <p className="font-body-md text-body-md text-on-surface-variant">No returns or reports yet.</p>
+          <div className="border border-dashed border-border-default rounded-2xl p-10 flex flex-col items-center text-center gap-3 bg-surface-elevated">
+            <span className="material-symbols-outlined text-[40px] text-text-secondary">inventory_2</span>
+            <p className="font-body-md text-body-md text-text-secondary">No returns or reports yet.</p>
           </div>
         )}
 
         {!showWizard && items.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-bento-gap">
             {items.map((c) => (
-              <div key={c.id} className="border border-on-surface/5 rounded-2xl p-6 bg-surface-container-lowest flex flex-col gap-3">
+              <div key={c.id} className="border border-border-subtle rounded-2xl p-6 bg-surface-elevated flex flex-col gap-3">
                 <div className="flex justify-between items-start gap-3">
-                  <span className={`px-3 py-1 rounded-full font-label-md text-label-md border ${STATUS_PILL[c.status] ?? "bg-surface-container-high text-on-surface-variant border-on-surface/5"}`}>
+                  <span className={`px-3 py-1 rounded-full font-label-md text-label-md border ${STATUS_PILL[c.status] ?? "bg-surface-secondary text-text-secondary border-border-default"}`}>
                     {STATUS_LABELS[c.status] || c.status}
                   </span>
-                  <span className="font-label-md text-label-md text-on-surface-variant whitespace-nowrap">
+                  <span className="font-label-md text-label-md text-text-secondary whitespace-nowrap">
                     {new Date(c.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="font-body-sm text-body-md text-on-surface">{c.message}</p>
+                <p className="font-body-sm text-body-md text-text-primary">{c.message}</p>
                 {c.order && (
-                  <p className="font-label-md text-label-md text-on-surface-variant font-mono">Order: {c.order.order_number}</p>
+                  <p className="font-label-md text-label-md text-text-secondary font-mono">Order: {c.order.order_number}</p>
                 )}
                 {c.photo_url && (
-                  <img src={c.photo_url} alt="Attached photo" className="w-20 h-20 object-cover rounded-xl border border-outline-variant/20" />
+                  <img src={c.photo_url} alt="Attached photo" className="w-20 h-20 object-cover rounded-xl border border-border-default" />
                 )}
               </div>
             ))}

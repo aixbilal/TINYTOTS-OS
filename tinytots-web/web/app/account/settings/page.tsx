@@ -84,12 +84,12 @@ export default function AccountSettingsPage() {
   }
 
   const inputClass =
-    "w-full border rounded-lg px-4 py-3 bg-surface text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors";
+    "w-full border rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none transition-colors";
 
   if (authLoading) {
     return (
       <main className="max-w-container-max mx-auto py-stack-lg">
-        <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+        <p className="font-body-md text-body-md text-text-secondary">Loading...</p>
       </main>
     );
   }
@@ -102,28 +102,28 @@ export default function AccountSettingsPage() {
 
       <section className="flex-grow flex flex-col gap-stack-md min-w-0 max-w-2xl">
         <div>
-          <h1 className="font-display-md text-display-md text-on-surface">Login & Security</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2">
+          <h1 className="font-display-md text-display-md text-text-primary">Login & Security</h1>
+          <p className="font-body-md text-body-md text-text-secondary mt-2">
             Manage how you sign in to your TinyTots account.
           </p>
         </div>
 
-        <div className="border border-on-surface/5 rounded-2xl p-6 bg-surface-container-lowest flex flex-col gap-1">
-          <p className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
+        <div className="border border-border-subtle rounded-2xl p-6 bg-surface-elevated flex flex-col gap-1">
+          <p className="font-label-md text-label-md text-text-secondary uppercase tracking-wider">
             Signed in as
           </p>
-          <p className="font-body-md text-body-md text-on-surface">{user.email ?? user.phone}</p>
+          <p className="font-body-md text-body-md text-text-primary">{user.email ?? user.phone}</p>
         </div>
 
         <form
           onSubmit={handlePasswordUpdate}
-          className="border border-on-surface/5 rounded-2xl p-6 bg-surface-container-lowest flex flex-col gap-4"
+          className="border border-border-subtle rounded-2xl p-6 bg-surface-elevated flex flex-col gap-4"
         >
-          <h2 className="font-headline-md text-headline-md text-on-surface">Change Password</h2>
-          <p className="font-body-sm text-body-sm text-on-surface-variant -mt-2">{PASSWORD_HINT}</p>
+          <h2 className="font-headline-md text-headline-md text-text-primary">Change Password</h2>
+          <p className="font-body-sm text-body-sm text-text-secondary -mt-2">{PASSWORD_HINT}</p>
 
           <div>
-            <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
+            <label className="font-body-sm text-body-sm text-text-secondary mb-2 block">
               Current password
             </label>
             <input
@@ -136,7 +136,7 @@ export default function AccountSettingsPage() {
           </div>
 
           <div>
-            <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
+            <label className="font-body-sm text-body-sm text-text-secondary mb-2 block">
               New password
             </label>
             <input
@@ -150,7 +150,7 @@ export default function AccountSettingsPage() {
           </div>
 
           <div>
-            <label className="font-body-sm text-body-sm text-on-surface-variant mb-2 block">
+            <label className="font-body-sm text-body-sm text-text-secondary mb-2 block">
               Confirm new password
             </label>
             <input
@@ -162,15 +162,15 @@ export default function AccountSettingsPage() {
             />
           </div>
 
-          {error && <p className="font-label-md text-label-md text-error">{error}</p>}
+          {error && <p className="font-label-md text-label-md text-red-700">{error}</p>}
           {success && (
-            <p className="font-label-md text-label-md text-tertiary">Password updated successfully.</p>
+            <p className="font-label-md text-label-md text-green-700">Password updated successfully.</p>
           )}
 
           <button
             type="submit"
             disabled={saving}
-            className="self-start bg-primary-container text-on-primary font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="self-start bg-brand-primary text-white font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {saving ? "Saving..." : "Update Password"}
           </button>

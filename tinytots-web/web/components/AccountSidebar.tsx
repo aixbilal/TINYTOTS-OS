@@ -24,14 +24,14 @@ function SidebarLinks({ name, pathname, signOut, onNavigate }: {
   return (
     <>
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-display-md text-headline-md">
+        <div className="w-12 h-12 rounded-full bg-brand-primary text-white flex items-center justify-center font-display-md text-headline-md">
           {initial}
         </div>
         <div>
-          <h3 className="font-headline-md text-headline-md text-on-surface">
+          <h3 className="font-headline-md text-headline-md text-text-primary">
             {name || "My Account"}
           </h3>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Member</p>
+          <p className="font-body-sm text-body-sm text-text-secondary">Member</p>
         </div>
       </div>
       <nav className="flex flex-col gap-2">
@@ -47,8 +47,8 @@ function SidebarLinks({ name, pathname, signOut, onNavigate }: {
               onClick={onNavigate}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-body-sm text-body-sm ${
                 active
-                  ? "bg-surface border border-on-surface/5 text-primary font-label-lg font-semibold shadow-sm"
-                  : "text-on-surface-variant hover:bg-surface-container-high"
+                  ? "bg-surface-elevated border border-border-subtle text-brand-primary font-label-lg font-semibold shadow-sm"
+                  : "text-text-secondary hover:bg-surface-secondary"
               }`}
             >
               <span
@@ -63,7 +63,7 @@ function SidebarLinks({ name, pathname, signOut, onNavigate }: {
         })}
         <button
           onClick={signOut}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors font-body-sm text-body-sm mt-4 text-left"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-text-secondary hover:bg-surface-secondary transition-colors font-body-sm text-body-sm mt-4 text-left"
         >
           <span className="material-symbols-outlined">logout</span>
           Logout
@@ -81,7 +81,7 @@ export default function AccountSidebar({ name }: { name?: string | null }) {
   return (
     <>
       {/* Desktop sidebar, unchanged */}
-      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-surface-container-low rounded-2xl p-6 h-fit sticky top-28 border border-on-surface/5">
+      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-surface-secondary rounded-2xl p-6 h-fit sticky top-28 border border-border-subtle">
         <SidebarLinks name={name} pathname={pathname} signOut={signOut} />
       </aside>
 
@@ -89,26 +89,26 @@ export default function AccountSidebar({ name }: { name?: string | null }) {
       <div className="md:hidden mb-4">
         <button
           onClick={() => setOpen(true)}
-          className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-surface-container-low border border-on-surface/5 font-body-sm text-body-sm text-on-surface"
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-surface-secondary border border-border-subtle font-body-sm text-body-sm text-text-primary"
         >
           <span className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[20px]">menu</span>
             Account Menu
           </span>
-          <span className="material-symbols-outlined text-[20px] text-on-surface-variant">chevron_right</span>
+          <span className="material-symbols-outlined text-[20px] text-text-secondary">chevron_right</span>
         </button>
       </div>
 
       {open && (
         <div className="md:hidden fixed inset-0 z-[110] flex">
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-          <div className="relative w-72 max-w-[85vw] h-full bg-surface-container-low p-6 overflow-y-auto">
+          <div className="relative w-72 max-w-[85vw] h-full bg-surface-secondary p-6 overflow-y-auto">
             <button
               onClick={() => setOpen(false)}
               aria-label="Close account menu"
-              className="absolute top-4 right-4 p-1 rounded-lg hover:bg-surface-container-high"
+              className="absolute top-4 right-4 p-1 rounded-lg hover:bg-surface-tertiary"
             >
-              <span className="material-symbols-outlined text-[22px] text-on-surface-variant">close</span>
+              <span className="material-symbols-outlined text-[22px] text-text-secondary">close</span>
             </button>
             <SidebarLinks name={name} pathname={pathname} signOut={signOut} onNavigate={() => setOpen(false)} />
           </div>

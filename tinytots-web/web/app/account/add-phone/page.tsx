@@ -71,15 +71,15 @@ export default function AddPhonePage() {
   if (checking) {
     return (
       <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
-        <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+        <p className="font-body-md text-body-md text-text-secondary">Loading...</p>
       </main>
     );
   }
 
   return (
     <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-on-surface mb-2">One last step</h1>
-      <p className="font-body-md text-body-md text-on-surface-variant mb-stack-md">
+      <h1 className="font-display-md text-display-md text-text-primary mb-2">One last step</h1>
+      <p className="font-body-md text-body-md text-text-secondary mb-stack-md">
         Add your phone number so we can process orders, referrals, and vouchers on your account.
       </p>
 
@@ -89,14 +89,14 @@ export default function AddPhonePage() {
           placeholder="Phone number (e.g. 03001234567)"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="w-full border border-outline-variant rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none focus:border-primary transition-colors"
+          className="w-full border border-border-default rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md focus:outline-none focus:border-brand-primary transition-colors"
         />
-        {error && <p className="font-label-md text-label-md text-error">{error}</p>}
+        {error && <p className="font-label-md text-label-md text-red-700">{error}</p>}
 
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
+          className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50 mt-2"
         >
           {submitting ? "Saving..." : "Continue"}
         </button>

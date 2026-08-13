@@ -63,7 +63,7 @@ export default function WishlistPage() {
   if (authLoading || loading) {
     return (
       <main className="max-w-container-max mx-auto py-stack-lg">
-        <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+        <p className="font-body-md text-body-md text-text-secondary">Loading...</p>
       </main>
     );
   }
@@ -102,8 +102,8 @@ export default function WishlistPage() {
         {/* Header & Actions */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-stack-lg gap-4">
           <div>
-            <h1 className="font-display-md text-display-md text-on-surface mb-2">My Wishlist</h1>
-            <p className="font-body-md text-body-md text-on-surface-variant">
+            <h1 className="font-display-md text-display-md text-text-primary mb-2">My Wishlist</h1>
+            <p className="font-body-md text-body-md text-text-secondary">
               {products.length} item{products.length === 1 ? "" : "s"} curated for your little one.
             </p>
           </div>
@@ -117,13 +117,13 @@ export default function WishlistPage() {
                     navigator.clipboard?.writeText(window.location.href);
                   }
                 }}
-                className="px-4 py-3 border border-outline rounded-lg font-button text-button text-on-surface hover:bg-surface-container-high transition-colors flex items-center gap-2"
+                className="px-4 py-3 border border-border-default rounded-lg font-button text-button text-text-primary hover:bg-surface-secondary transition-colors flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-lg">ios_share</span> Share Wishlist
               </button>
               <button
                 onClick={moveAllToBag}
-                className="px-6 py-3 bg-primary-container text-on-primary-container rounded-lg font-button text-button hover:opacity-90 transition-opacity"
+                className="px-6 py-3 bg-brand-primary text-white rounded-lg font-button text-button hover:opacity-90 transition-opacity"
               >
                 Move All to Bag
               </button>
@@ -132,9 +132,9 @@ export default function WishlistPage() {
         </div>
 
         {products.length === 0 ? (
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
+          <p className="font-body-sm text-body-sm text-text-secondary">
             Nothing saved yet.{" "}
-            <Link href="/products" className="text-primary hover:underline">
+            <Link href="/products" className="text-brand-primary hover:underline">
               Browse products
             </Link>
           </p>
@@ -149,12 +149,12 @@ export default function WishlistPage() {
               return (
                 <div
                   key={p.id}
-                  className="group relative flex flex-col bg-surface-container-lowest rounded-2xl border border-outline/10 overflow-hidden hover:border-outline/30 transition-colors"
+                  className="group relative flex flex-col bg-surface-elevated rounded-2xl border border-border-subtle overflow-hidden hover:border-border-default transition-colors"
                 >
                   <button
                     onClick={() => toggle(p.id)}
                     aria-label="Remove from wishlist"
-                    className="absolute top-3 right-3 z-10 p-2 bg-surface/80 backdrop-blur rounded-full text-error hover:text-on-surface-variant transition-colors flex items-center justify-center group/btn shadow-sm"
+                    className="absolute top-3 right-3 z-10 p-2 bg-surface-elevated/80 backdrop-blur rounded-full text-red-700 hover:text-text-secondary transition-colors flex items-center justify-center group/btn shadow-sm"
                   >
                     <span
                       className="material-symbols-outlined group-hover/btn:hidden text-lg"
@@ -168,14 +168,14 @@ export default function WishlistPage() {
                   </button>
 
                   {!inStock && (
-                    <div className="absolute top-4 left-4 z-10 bg-secondary-container/20 text-on-secondary-container px-3 py-1 rounded-full font-label-md text-label-md backdrop-blur-sm border border-secondary-container/30">
+                    <div className="absolute top-4 left-4 z-10 bg-surface-elevated/80 text-text-primary px-3 py-1 rounded-full font-label-md text-label-md backdrop-blur-sm border border-border-default">
                       Out of Stock
                     </div>
                   )}
 
                   <Link
                     href={`/products/${p.id}`}
-                    className={`aspect-[4/5] bg-surface-container-low relative overflow-hidden block ${!inStock ? "opacity-60" : ""}`}
+                    className={`aspect-[4/5] bg-surface-secondary relative overflow-hidden block ${!inStock ? "opacity-60" : ""}`}
                   >
                     {p.image_url ? (
                       <img
@@ -184,7 +184,7 @@ export default function WishlistPage() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-on-surface-variant font-body-sm text-body-sm">
+                      <div className="w-full h-full flex items-center justify-center text-text-secondary font-body-sm text-body-sm">
                         No image
                       </div>
                     )}
@@ -192,29 +192,29 @@ export default function WishlistPage() {
 
                   <div className="p-4 flex flex-col flex-grow">
                     <Link href={`/products/${p.id}`}>
-                      <h3 className={`font-headline-md text-headline-md text-on-surface mb-1 ${!inStock ? "opacity-70" : ""}`}>
+                      <h3 className={`font-headline-md text-headline-md text-text-primary mb-1 ${!inStock ? "opacity-70" : ""}`}>
                         {p.name}
                       </h3>
                     </Link>
-                    <p className={`font-body-sm text-body-sm text-on-surface-variant mb-4 ${!inStock ? "opacity-70" : ""}`}>
+                    <p className={`font-body-sm text-body-sm text-text-secondary mb-4 ${!inStock ? "opacity-70" : ""}`}>
                       {subtitle || p.brand}
                     </p>
                     <div className="mt-auto flex items-center justify-between">
-                      <span className={`font-body-lg text-body-lg text-on-surface font-semibold ${!inStock ? "opacity-70" : ""}`}>
+                      <span className={`font-body-lg text-body-lg text-text-primary font-semibold ${!inStock ? "opacity-70" : ""}`}>
                         {price ? `Rs. ${price.toLocaleString()}` : ""}
                       </span>
                       {inStock ? (
                         <button
                           aria-label="Add to Bag"
                           onClick={() => addToBag(p)}
-                          className="p-3 bg-primary-container text-on-primary-container rounded-lg hover:opacity-90 transition-opacity"
+                          className="p-3 bg-brand-primary text-white rounded-lg hover:opacity-90 transition-opacity"
                         >
                           <span className="material-symbols-outlined">shopping_bag</span>
                         </button>
                       ) : (
                         <button
                           aria-label="Notify me"
-                          className="p-3 bg-surface-container-highest text-on-surface-variant rounded-lg cursor-not-allowed"
+                          className="p-3 bg-surface-tertiary text-text-secondary rounded-lg cursor-not-allowed"
                         >
                           <span className="material-symbols-outlined">notifications</span>
                         </button>

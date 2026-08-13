@@ -145,12 +145,12 @@ export default function AddressesPage() {
   }
 
   const inputClass =
-    "w-full border rounded-lg px-4 py-3 bg-surface text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors";
+    "w-full border rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none transition-colors";
 
   if (authLoading || loading) {
     return (
       <main className="max-w-container-max mx-auto py-stack-lg">
-        <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+        <p className="font-body-md text-body-md text-text-secondary">Loading...</p>
       </main>
     );
   }
@@ -164,27 +164,27 @@ export default function AddressesPage() {
       <section className="flex-grow flex flex-col gap-stack-md min-w-0">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="font-display-md text-display-md text-on-surface">Address Book</h1>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-2">
+            <h1 className="font-display-md text-display-md text-text-primary">Address Book</h1>
+            <p className="font-body-md text-body-md text-text-secondary mt-2">
               Manage your shipping addresses for faster checkout.
             </p>
           </div>
           {!showForm && (
             <button
               onClick={() => setShowForm(true)}
-              className="bg-primary-container text-on-primary font-button text-button h-12 px-6 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm whitespace-nowrap"
+              className="bg-brand-primary text-white font-button text-button h-12 px-6 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm whitespace-nowrap"
             >
               <span className="material-symbols-outlined">add</span> Add New Address
             </button>
           )}
         </div>
 
-        {error && <p className="font-label-md text-label-md text-error">{error}</p>}
+        {error && <p className="font-label-md text-label-md text-red-700">{error}</p>}
 
         {showForm && (
           <form
             onSubmit={handleSave}
-            className="border border-outline-variant/30 rounded-2xl p-6 bg-surface-container-lowest flex flex-col gap-3"
+            className="border border-border-default rounded-2xl p-6 bg-surface-elevated flex flex-col gap-3"
           >
             <input
               type="text"
@@ -210,7 +210,7 @@ export default function AddressesPage() {
               maxLength={MAX_LEN.city}
               className={inputClass}
             />
-            <label className="flex items-center gap-2 font-body-sm text-body-sm text-on-surface-variant">
+            <label className="flex items-center gap-2 font-body-sm text-body-sm text-text-secondary">
               <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} />
               Set as default address
             </label>
@@ -218,14 +218,14 @@ export default function AddressesPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="bg-primary-container text-on-primary px-5 py-2.5 rounded-xl font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="bg-brand-primary text-white px-5 py-2.5 rounded-xl font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {saving ? "Saving..." : editingId ? "Update address" : "Save address"}
               </button>
               <button
                 type="button"
                 onClick={resetForm}
-                className="px-5 py-2.5 rounded-xl font-button text-button text-on-surface-variant hover:underline"
+                className="px-5 py-2.5 rounded-xl font-button text-button text-text-secondary hover:underline"
               >
                 Cancel
               </button>
@@ -234,7 +234,7 @@ export default function AddressesPage() {
         )}
 
         {addresses.length === 0 && !showForm ? (
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
+          <p className="font-body-sm text-body-sm text-text-secondary">
             No saved addresses yet. Add one so you don't have to retype it at checkout.
           </p>
         ) : (
@@ -242,11 +242,11 @@ export default function AddressesPage() {
             {addresses.map((a) => (
               <div
                 key={a.id}
-                className="border border-outline-variant/20 rounded-2xl p-6 bg-surface-container-lowest flex flex-col relative overflow-hidden group"
+                className="border border-border-default rounded-2xl p-6 bg-surface-elevated flex flex-col relative overflow-hidden group"
               >
                 {a.is_default && (
                   <div className="absolute top-0 right-0 p-4">
-                    <span className="bg-secondary/10 text-secondary font-label-md text-label-md px-3 py-1 rounded-full">
+                    <span className="bg-brand-primary/10 text-brand-primary font-label-md text-label-md px-3 py-1 rounded-full">
                       Default
                     </span>
                   </div>
@@ -255,38 +255,38 @@ export default function AddressesPage() {
                   <span
                     className={`material-symbols-outlined p-2 rounded-full ${
                       a.is_default
-                        ? "text-primary bg-primary-fixed/30"
-                        : "text-on-surface-variant bg-surface-container-high"
+                        ? "text-brand-primary bg-brand-primary/20"
+                        : "text-text-secondary bg-surface-secondary"
                     }`}
                   >
                     {a.is_default ? "local_shipping" : "house"}
                   </span>
-                  <h3 className="font-headline-md text-headline-md text-on-surface">{a.label}</h3>
+                  <h3 className="font-headline-md text-headline-md text-text-primary">{a.label}</h3>
                 </div>
-                <div className="font-body-md text-body-md text-on-surface-variant flex-grow">
+                <div className="font-body-md text-body-md text-text-secondary flex-grow">
                   <p>{a.address}</p>
                   <p>{a.city}</p>
                 </div>
-                <div className="mt-6 flex gap-3 border-t border-outline-variant/20 pt-4 flex-wrap items-center">
+                <div className="mt-6 flex gap-3 border-t border-border-default pt-4 flex-wrap items-center">
                   <button
                     onClick={() => startEdit(a)}
-                    className="font-button text-button text-secondary hover:text-primary transition-colors"
+                    className="font-button text-button text-text-secondary hover:text-brand-primary transition-colors"
                   >
                     Edit
                   </button>
-                  <span className="text-outline-variant">|</span>
+                  <span className="text-border-default">|</span>
                   <button
                     onClick={() => handleDelete(a.id)}
-                    className="font-button text-button text-error hover:opacity-80 transition-opacity"
+                    className="font-button text-button text-red-700 hover:opacity-80 transition-opacity"
                   >
                     Delete
                   </button>
                   {!a.is_default && (
                     <>
-                      <span className="text-outline-variant hidden md:inline">|</span>
+                      <span className="text-border-default hidden md:inline">|</span>
                       <button
                         onClick={() => handleSetDefault(a.id)}
-                        className="font-button text-button text-on-surface-variant hover:text-primary transition-colors text-sm w-full md:w-auto mt-2 md:mt-0 text-left"
+                        className="font-button text-button text-text-secondary hover:text-brand-primary transition-colors text-sm w-full md:w-auto mt-2 md:mt-0 text-left"
                       >
                         Set as Default
                       </button>
