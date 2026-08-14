@@ -33,7 +33,7 @@ function ProductCard({ product, layout }: { product: Product; layout: Layout }) 
 
   return (
     <Link href={`/products/${product.id}`} className={`group cursor-pointer ${widthClass}`}>
-      <div className="relative w-full aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 mb-4 bg-surface-container-lowest">
+      <div className="relative w-full aspect-square rounded-[16px] overflow-hidden border border-border-default mb-4 bg-surface-elevated">
         {totalStock > 0 && totalStock <= 5 && (
           <div className="absolute top-2 left-2 bg-[#D9822B] text-white font-label-md text-label-md px-2 py-1 rounded-full z-10">
             Few Left
@@ -62,14 +62,14 @@ function ProductCard({ product, layout }: { product: Product; layout: Layout }) 
             )}
           </>
         ) : (
-          <div className="w-full h-full bg-surface-container flex items-center justify-center text-on-surface-variant text-sm">
+          <div className="w-full h-full bg-surface-secondary flex items-center justify-center text-text-secondary text-sm">
             No image
           </div>
         )}
       </div>
       <div className="flex flex-col gap-1">
-        <h3 className="font-body-sm md:font-body-md text-body-sm md:text-body-md text-on-surface line-clamp-1">{product.name}</h3>
-        <p className="font-body-sm md:font-body-md text-body-sm md:text-body-md text-on-surface-variant">Rs. {minPrice.toLocaleString()}</p>
+        <h3 className="font-body-sm md:font-body-md text-body-sm md:text-body-md text-text-primary line-clamp-1">{product.name}</h3>
+        <p className="font-body-sm md:font-body-md text-body-sm md:text-body-md text-text-secondary">Rs. {minPrice.toLocaleString()}</p>
       </div>
     </Link>
   );
@@ -133,7 +133,7 @@ export default function ProductCarouselTabs({
   }, [layout, activeKey, activeCount, updateScrollState]);
 
   if (nonEmptyTabs.length === 0 || !active) {
-    return <p className="text-on-surface-variant">No products available right now.</p>;
+    return <p className="text-text-secondary">No products available right now.</p>;
   }
 
   function scrollByPage(direction: -1 | 1) {
@@ -158,19 +158,19 @@ export default function ProductCarouselTabs({
                 onClick={() => setActiveKey(tab.key)}
                 className={`shrink-0 font-button text-button px-5 py-2 rounded-full border transition-colors ${
                   active.key === tab.key
-                    ? "bg-primary-container text-on-primary border-primary-container"
-                    : "bg-surface-container-lowest text-on-surface-variant border-outline-variant/30 hover:bg-surface-container-low"
+                    ? "bg-brand-primary text-white border-brand-primary"
+                    : "bg-surface-elevated text-text-secondary border-border-default hover:bg-surface-secondary"
                 }`}
               >
                 {tab.label}
               </button>
             ))
           ) : (
-            <h2 className="font-headline-lg text-on-surface">{active.label}</h2>
+            <h2 className="font-headline-lg text-text-primary">{active.label}</h2>
           ))}
         <Link
           href="/products"
-          className="ml-auto shrink-0 font-body-sm text-body-sm text-primary hover:underline whitespace-nowrap"
+          className="ml-auto shrink-0 font-body-sm text-body-sm text-brand-primary hover:underline whitespace-nowrap"
         >
           View All
         </Link>
@@ -184,22 +184,22 @@ export default function ProductCarouselTabs({
               aria-label="Scroll related products left"
               onClick={() => scrollByPage(-1)}
               disabled={!canScrollLeft}
-              className={`hidden md:flex absolute left-0 top-[38%] -translate-y-1/2 z-10 w-10 h-10 items-center justify-center rounded-full border border-outline-variant/40 bg-surface-container-lowest shadow-sm transition-opacity ${
-                canScrollLeft ? "opacity-100 hover:bg-surface-container-low" : "opacity-0 pointer-events-none"
+              className={`hidden md:flex absolute left-0 top-[38%] -translate-y-1/2 z-10 w-10 h-10 items-center justify-center rounded-full border border-border-default bg-surface-elevated shadow-sm transition-opacity ${
+                canScrollLeft ? "opacity-100 hover:bg-surface-secondary" : "opacity-0 pointer-events-none"
               }`}
             >
-              <span className="material-symbols-outlined text-[22px] text-on-surface">chevron_left</span>
+              <span className="material-symbols-outlined text-[22px] text-text-primary">chevron_left</span>
             </button>
             <button
               type="button"
               aria-label="Scroll related products right"
               onClick={() => scrollByPage(1)}
               disabled={!canScrollRight}
-              className={`hidden md:flex absolute right-0 top-[38%] -translate-y-1/2 z-10 w-10 h-10 items-center justify-center rounded-full border border-outline-variant/40 bg-surface-container-lowest shadow-sm transition-opacity ${
-                canScrollRight ? "opacity-100 hover:bg-surface-container-low" : "opacity-0 pointer-events-none"
+              className={`hidden md:flex absolute right-0 top-[38%] -translate-y-1/2 z-10 w-10 h-10 items-center justify-center rounded-full border border-border-default bg-surface-elevated shadow-sm transition-opacity ${
+                canScrollRight ? "opacity-100 hover:bg-surface-secondary" : "opacity-0 pointer-events-none"
               }`}
             >
-              <span className="material-symbols-outlined text-[22px] text-on-surface">chevron_right</span>
+              <span className="material-symbols-outlined text-[22px] text-text-primary">chevron_right</span>
             </button>
           </>
         )}

@@ -81,7 +81,7 @@ function CategoriesDropdown() {
     <div className="relative inline-block" onMouseEnter={show} onMouseLeave={scheduleHide}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 font-button text-button px-4 py-2 rounded-full border border-outline-variant/40 bg-surface-container-lowest text-on-surface hover:bg-surface-container-low transition-colors"
+        className="flex items-center gap-2 font-button text-button px-4 py-2 rounded-full border border-border-default bg-surface-elevated text-text-primary hover:bg-surface-secondary transition-colors"
       >
         <span className="material-symbols-outlined text-[18px]">storefront</span>
         Categories
@@ -91,10 +91,10 @@ function CategoriesDropdown() {
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-2 w-64 max-h-96 overflow-y-auto bg-surface border border-outline-variant/30 rounded-2xl shadow-xl p-2 z-[80]">
+        <div className="absolute top-full right-0 mt-2 w-64 max-h-96 overflow-y-auto bg-surface-elevated border border-border-default rounded-2xl shadow-xl p-2 z-[80]">
           <Link
             href="/products"
-            className="block px-3 py-2 rounded-lg font-body-md text-body-md text-primary bg-primary-container/20 hover:bg-primary-container/30 transition-colors"
+            className="block px-3 py-2 rounded-lg font-body-md text-body-md text-brand-primary bg-brand-primary/20 hover:bg-brand-primary/30 transition-colors"
           >
             Shop All
           </Link>
@@ -102,18 +102,18 @@ function CategoriesDropdown() {
             <Link
               key={c.slug}
               href={`/collections/${c.slug}`}
-              className="block px-3 py-2 rounded-lg font-body-md text-body-md text-on-surface hover:bg-surface-container-low transition-colors"
+              className="block px-3 py-2 rounded-lg font-body-md text-body-md text-text-primary hover:bg-surface-secondary transition-colors"
             >
               {c.name}
             </Link>
           ))}
           {status === "loading" && categories.length === 0 && (
-            <p className="px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">
+            <p className="px-3 py-2 font-body-sm text-body-sm text-text-secondary">
               Loading categories...
             </p>
           )}
           {status === "unavailable" && categories.length === 0 && (
-            <p className="px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">
+            <p className="px-3 py-2 font-body-sm text-body-sm text-text-secondary">
               {online
                 ? "No categories available."
                 : "Categories unavailable offline. Use Shop All."}
@@ -200,22 +200,22 @@ function ProductsContent() {
   return (
     <main className="max-w-container-max mx-auto py-stack-lg">
       <div className="flex items-center justify-between mb-stack-md gap-3">
-        <h1 className="font-display-md text-display-md text-on-surface">{pageTitle}</h1>
+        <h1 className="font-display-md text-display-md text-text-primary">{pageTitle}</h1>
         <CategoriesDropdown />
       </div>
 
       {loading && products.length === 0 && (
-        <p className="font-body-md text-body-md text-on-surface-variant">Loading products...</p>
+        <p className="font-body-md text-body-md text-text-secondary">Loading products...</p>
       )}
 
       {softMessage && (
-        <p className="mb-4 font-body-sm text-body-sm text-on-surface-variant border border-outline-variant/40 bg-surface-container-low rounded-lg px-4 py-3">
+        <p className="mb-4 font-body-sm text-body-sm text-text-secondary border border-border-default bg-surface-secondary rounded-lg px-4 py-3">
           {softMessage}
         </p>
       )}
 
       {!loading && products.length === 0 && !softMessage && (
-        <p className="font-body-md text-body-md text-on-surface-variant">No products available yet.</p>
+        <p className="font-body-md text-body-md text-text-secondary">No products available yet.</p>
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-bento-gap">
@@ -228,9 +228,9 @@ function ProductsContent() {
             <Link
               key={p.id}
               href={`/products/${p.id}`}
-              className="group flex flex-col rounded-xl border border-outline-variant/30 bg-surface-container-lowest overflow-hidden hover:border-primary transition-colors"
+              className="group flex flex-col rounded-xl border border-border-default bg-surface-elevated overflow-hidden hover:border-brand-primary transition-colors"
             >
-              <div className="relative aspect-square bg-surface-container-low overflow-hidden">
+              <div className="relative aspect-square bg-surface-secondary overflow-hidden">
                 {p.image_url ? (
                   <>
                     <Image
@@ -256,36 +256,36 @@ function ProductsContent() {
                     )}
                   </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-on-surface-variant font-body-sm text-body-sm">
+                  <div className="w-full h-full flex items-center justify-center text-text-secondary font-body-sm text-body-sm">
                     No image
                   </div>
                 )}
                 <WishlistButton
                   productId={p.id}
-                  className="absolute top-2 right-2 bg-surface/90 backdrop-blur-sm w-8 h-8 shadow-sm"
+                  className="absolute top-2 right-2 bg-surface-elevated/90 backdrop-blur-sm w-8 h-8 shadow-sm"
                 />
               </div>
               <div className="p-4 flex flex-col gap-1">
-                <p className="font-body-md text-body-md text-on-surface">{p.name}</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">{p.brand}</p>
+                <p className="font-body-md text-body-md text-text-primary">{p.name}</p>
+                <p className="font-body-sm text-body-sm text-text-secondary">{p.brand}</p>
                 {hasDiscount && (
-                  <span className="self-start font-label-md text-label-md text-white bg-primary px-2 py-0.5 rounded-full">
+                  <span className="self-start font-label-md text-label-md text-white bg-brand-primary px-2 py-0.5 rounded-full">
                     -{variant.web_discount_percent}%
                   </span>
                 )}
                 <div className="flex justify-between items-center mt-1">
                   <div className="flex items-baseline gap-2">
-                    <p className="font-headline-md text-headline-md text-primary">
+                    <p className="font-headline-md text-headline-md text-brand-primary">
                       {price ? `Rs. ${price.toLocaleString()}` : ""}
                     </p>
                     {hasDiscount && (
-                      <p className="font-body-sm text-body-sm text-on-surface-variant line-through">
+                      <p className="font-body-sm text-body-sm text-text-secondary line-through">
                         Rs. {variant.web_base_price.toLocaleString()}
                       </p>
                     )}
                   </div>
                   {!inStock && (
-                    <span className="font-label-md text-label-md text-error">Out of stock</span>
+                    <span className="font-label-md text-label-md text-red-700">Out of stock</span>
                   )}
                 </div>
               </div>

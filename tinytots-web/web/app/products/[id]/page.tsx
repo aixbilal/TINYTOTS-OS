@@ -156,8 +156,8 @@ export default async function ProductDetailPage({
   if (!product) {
     return (
       <main className="max-w-3xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-        <p className="text-on-surface-variant">Product not found.</p>
-        <Link href="/products" className="text-primary hover:underline">
+        <p className="text-text-secondary">Product not found.</p>
+        <Link href="/products" className="text-brand-primary hover:underline">
           ← Back to shop
         </Link>
       </main>
@@ -218,12 +218,12 @@ export default async function ProductDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
-      <nav className="text-body-sm font-body-sm text-on-surface-variant mb-stack-sm flex items-center gap-2">
-        <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+      <nav className="text-body-sm font-body-sm text-text-secondary mb-stack-sm flex items-center gap-2">
+        <Link href="/" className="hover:text-brand-primary transition-colors">Home</Link>
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <Link href="/products" className="hover:text-primary transition-colors">Shop All</Link>
+        <Link href="/products" className="hover:text-brand-primary transition-colors">Shop All</Link>
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <span className="text-on-surface">{product.name}</span>
+        <span className="text-text-primary">{product.name}</span>
       </nav>
 
       <div className="grid md:grid-cols-[minmax(0,420px)_1fr] gap-gutter">
@@ -249,13 +249,13 @@ export default async function ProductDetailPage({
 
       {shopMoreCategories.length > 0 && (
         <section className="mt-stack-lg">
-          <h2 className="font-headline-lg text-on-surface mb-stack-md">Shop More</h2>
+          <h2 className="font-headline-lg text-text-primary mb-stack-md">Shop More</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
             {shopMoreCategories.map((cat) => (
               <Link
                 key={cat.slug}
                 href={`/collections/${cat.slug}`}
-                className="relative aspect-[4/5] md:aspect-square rounded-[16px] overflow-hidden border border-outline-variant/30 group cursor-pointer min-h-[140px]"
+                className="relative aspect-[4/5] md:aspect-square rounded-[16px] overflow-hidden border border-border-default group cursor-pointer min-h-[140px]"
               >
                 {cat.image_url ? (
                   <Image
@@ -266,7 +266,7 @@ export default async function ProductDetailPage({
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="absolute inset-0 bg-surface-container" />
+                  <div className="absolute inset-0 bg-surface-secondary" />
                 )}
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
                 <div className="absolute bottom-4 left-4 right-4 z-10">

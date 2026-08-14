@@ -215,31 +215,31 @@ export default function CollectionPageClient({
   const FiltersPanel = (
     <div className="flex flex-col gap-stack-md">
       <div className="flex items-center justify-between">
-        <h2 className="font-headline-md text-headline-md text-on-surface">Filters</h2>
+        <h2 className="font-headline-md text-headline-md text-text-primary">Filters</h2>
         {hasActiveFilters && (
-          <button onClick={clearAll} className="font-label-md text-label-md text-primary hover:underline">
+          <button onClick={clearAll} className="font-label-md text-label-md text-brand-primary hover:underline">
             Clear All
           </button>
         )}
       </div>
 
       {sizeOptions.length > 0 && (
-        <div className="border-b border-outline-variant/20 pb-stack-md">
+        <div className="border-b border-border-default pb-stack-md">
           <button
             type="button"
             onClick={() => toggleGroup("size")}
-            className="w-full flex items-center justify-between gap-2 font-label-lg text-label-lg text-on-surface font-semibold mb-2"
+            className="w-full flex items-center justify-between gap-2 font-label-lg text-label-lg text-text-primary font-semibold mb-2"
             aria-expanded={openGroups.size}
           >
             <span className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">straighten</span> Size
               {selectedSizes.size > 0 && (
-                <span className="font-label-md text-label-md text-primary font-normal">
+                <span className="font-label-md text-label-md text-brand-primary font-normal">
                   ({selectedSizes.size})
                 </span>
               )}
             </span>
-            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
+            <span className="material-symbols-outlined text-[20px] text-text-secondary">
               {openGroups.size ? "expand_less" : "expand_more"}
             </span>
           </button>
@@ -252,8 +252,8 @@ export default function CollectionPageClient({
                   onClick={() => toggleSize(opt.token)}
                   className={`px-3 py-1.5 rounded-full font-label-md text-label-md border transition-colors ${
                     selectedSizes.has(opt.token)
-                      ? "bg-primary-container text-on-primary-container border-primary-container"
-                      : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
+                      ? "bg-brand-primary text-white border-brand-primary"
+                      : "border-border-default text-text-secondary hover:bg-surface-secondary"
                   }`}
                 >
                   {opt.label}
@@ -265,22 +265,22 @@ export default function CollectionPageClient({
       )}
 
       {colorsByFreq.length > 0 && (
-        <div className="border-b border-outline-variant/20 pb-stack-md">
+        <div className="border-b border-border-default pb-stack-md">
           <button
             type="button"
             onClick={() => toggleGroup("color")}
-            className="w-full flex items-center justify-between gap-2 font-label-lg text-label-lg text-on-surface font-semibold mb-2"
+            className="w-full flex items-center justify-between gap-2 font-label-lg text-label-lg text-text-primary font-semibold mb-2"
             aria-expanded={openGroups.color}
           >
             <span className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">palette</span> Color
               {selectedColors.size > 0 && (
-                <span className="font-label-md text-label-md text-primary font-normal">
+                <span className="font-label-md text-label-md text-brand-primary font-normal">
                   ({selectedColors.size})
                 </span>
               )}
             </span>
-            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
+            <span className="material-symbols-outlined text-[20px] text-text-secondary">
               {openGroups.color ? "expand_less" : "expand_more"}
             </span>
           </button>
@@ -294,8 +294,8 @@ export default function CollectionPageClient({
                     onClick={() => toggleColor(c)}
                     className={`px-3 py-1.5 rounded-full font-label-md text-label-md border transition-colors ${
                       selectedColors.has(c)
-                        ? "bg-primary-container text-on-primary-container border-primary-container"
-                        : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
+                        ? "bg-brand-primary text-white border-brand-primary"
+                        : "border-border-default text-text-secondary hover:bg-surface-secondary"
                     }`}
                   >
                     {c}
@@ -306,7 +306,7 @@ export default function CollectionPageClient({
                 <button
                   type="button"
                   onClick={() => setShowAllColors((v) => !v)}
-                  className="mt-2 font-label-md text-label-md text-primary hover:underline"
+                  className="mt-2 font-label-md text-label-md text-brand-primary hover:underline"
                 >
                   {showAllColors
                     ? "Show fewer colors"
@@ -323,13 +323,13 @@ export default function CollectionPageClient({
           <button
             type="button"
             onClick={() => toggleGroup("price")}
-            className="w-full flex items-center justify-between gap-2 font-label-lg text-label-lg text-on-surface font-semibold mb-2"
+            className="w-full flex items-center justify-between gap-2 font-label-lg text-label-lg text-text-primary font-semibold mb-2"
             aria-expanded={openGroups.price}
           >
             <span className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">payments</span> Max Price
             </span>
-            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
+            <span className="material-symbols-outlined text-[20px] text-text-secondary">
               {openGroups.price ? "expand_less" : "expand_more"}
             </span>
           </button>
@@ -343,7 +343,7 @@ export default function CollectionPageClient({
                 onChange={(e) => setMaxPrice(Number(e.target.value))}
                 className="w-full accent-primary"
               />
-              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              <p className="font-body-sm text-body-sm text-text-secondary mt-1">
                 Up to Rs. {(maxPrice ?? priceRange.max).toLocaleString()}
               </p>
             </>
@@ -355,31 +355,31 @@ export default function CollectionPageClient({
 
   return (
     <main className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <div className="flex items-center gap-1 font-body-sm text-body-sm text-on-surface-variant mb-stack-sm">
-        <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+      <div className="flex items-center gap-1 font-body-sm text-body-sm text-text-secondary mb-stack-sm">
+        <Link href="/" className="hover:text-brand-primary transition-colors">Home</Link>
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <span className="text-on-surface">{category?.name || "Shop"}</span>
+        <span className="text-text-primary">{category?.name || "Shop"}</span>
       </div>
 
       <div className="flex justify-between items-end mb-stack-md flex-wrap gap-4">
         <div>
-          <h1 className="font-display-md text-display-md text-on-surface mb-1">
+          <h1 className="font-display-md text-display-md text-text-primary mb-1">
             {category?.name || "Shop All"}
           </h1>
-          {!loading && <p className="font-body-md text-body-md text-on-surface-variant">{filtered.length} items found</p>}
+          {!loading && <p className="font-body-md text-body-md text-text-secondary">{filtered.length} items found</p>}
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowFilters((v) => !v)}
-            className="md:hidden flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg font-button text-button text-on-surface"
+            className="md:hidden flex items-center gap-2 px-4 py-2 border border-border-default rounded-lg font-button text-button text-text-primary"
           >
             <span className="material-symbols-outlined text-[18px]">filter_list</span> Filter
           </button>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value)}
-            className="border border-outline-variant rounded-lg px-4 py-2 font-body-sm text-body-sm bg-surface-container-lowest text-on-surface"
+            className="border border-border-default rounded-lg px-4 py-2 font-body-sm text-body-sm bg-surface-elevated text-text-primary"
           >
             {SORTS.map((s) => (
               <option key={s.value} value={s.value}>
@@ -391,7 +391,7 @@ export default function CollectionPageClient({
       </div>
 
       {error && (
-        <p className="font-body-sm text-body-sm text-on-surface-variant border border-outline-variant/40 bg-surface-container-low rounded-lg px-4 py-3 mb-stack-md">
+        <p className="font-body-sm text-body-sm text-text-secondary border border-border-default bg-surface-secondary rounded-lg px-4 py-3 mb-stack-md">
           {error}
         </p>
       )}
@@ -403,15 +403,15 @@ export default function CollectionPageClient({
 
         <div className="flex-grow min-w-0">
           {loading ? (
-            <p className="font-body-md text-body-md text-on-surface-variant">Loading products...</p>
+            <p className="font-body-md text-body-md text-text-secondary">Loading products...</p>
           ) : filtered.length === 0 ? (
-            <div className="border border-dashed border-outline-variant/40 rounded-2xl p-12 flex flex-col items-center text-center gap-3">
-              <span className="material-symbols-outlined text-[40px] text-on-surface-variant">search_off</span>
-              <p className="font-body-md text-body-md text-on-surface-variant">
+            <div className="border border-dashed border-border-default rounded-2xl p-12 flex flex-col items-center text-center gap-3">
+              <span className="material-symbols-outlined text-[40px] text-text-secondary">search_off</span>
+              <p className="font-body-md text-body-md text-text-secondary">
                 No products match your filters right now.
               </p>
               {hasActiveFilters && (
-                <button onClick={clearAll} className="font-body-sm text-body-sm text-primary hover:underline">
+                <button onClick={clearAll} className="font-body-sm text-body-sm text-brand-primary hover:underline">
                   Clear filters
                 </button>
               )}
@@ -423,7 +423,7 @@ export default function CollectionPageClient({
                 const totalStock = p.variants.reduce((sum, v) => sum + v.stock, 0);
                 return (
                   <Link key={p.id} href={`/products/${p.id}`} className="group cursor-pointer">
-                    <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-outline-variant/30 mb-3 bg-surface-container-lowest">
+                    <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-border-default mb-3 bg-surface-elevated">
                       {p.image_url ? (
                         <>
                           <Image
@@ -447,17 +447,17 @@ export default function CollectionPageClient({
                           )}
                         </>
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-on-surface-variant text-sm">
+                        <div className="w-full h-full flex items-center justify-center text-text-secondary text-sm">
                           No image
                         </div>
                       )}
-                      <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-surface/90 backdrop-blur px-2 py-1 rounded-full font-label-md text-[11px] text-on-surface-variant">
-                        <span className="material-symbols-outlined text-[12px] text-tertiary">check_circle</span>
+                      <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-surface-elevated/90 backdrop-blur px-2 py-1 rounded-full font-label-md text-[11px] text-text-secondary">
+                        <span className="material-symbols-outlined text-[12px] text-green-700">check_circle</span>
                         {totalStock > 0 ? "In Stock" : "Out of Stock"}
                       </div>
                     </div>
-                    <h3 className="font-body-md text-body-md text-on-surface">{p.name}</h3>
-                    <p className="font-body-md text-body-md text-on-surface-variant">Rs. {minPrice.toLocaleString()}</p>
+                    <h3 className="font-body-md text-body-md text-text-primary">{p.name}</h3>
+                    <p className="font-body-md text-body-md text-text-secondary">Rs. {minPrice.toLocaleString()}</p>
                   </Link>
                 );
               })}
