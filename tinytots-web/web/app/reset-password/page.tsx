@@ -226,13 +226,13 @@ function ResetPasswordForm() {
   }
 
   const inputClass =
-    "w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors";
+    "w-full border rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none transition-colors";
 
   if (success) {
     return (
       <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
-        <h1 className="font-display-md text-display-md text-on-surface mb-4">Password updated</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant">
+        <h1 className="font-display-md text-display-md text-text-primary mb-4">Password updated</h1>
+        <p className="font-body-md text-body-md text-text-secondary">
           Your password has been changed. Redirecting you to login...
         </p>
       </main>
@@ -242,9 +242,9 @@ function ResetPasswordForm() {
   if (linkError) {
     return (
       <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
-        <h1 className="font-display-md text-display-md text-on-surface mb-4">Link expired</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant mb-6">{linkError}</p>
-        <Link href={forgotHref} className="text-primary hover:underline font-body-sm text-body-sm">
+        <h1 className="font-display-md text-display-md text-text-primary mb-4">Link expired</h1>
+        <p className="font-body-md text-body-md text-text-secondary mb-6">{linkError}</p>
+        <Link href={forgotHref} className="text-brand-primary hover:underline font-body-sm text-body-sm">
           Request a new reset link
         </Link>
       </main>
@@ -254,7 +254,7 @@ function ResetPasswordForm() {
   if (!ready) {
     return (
       <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
-        <p className="font-body-md text-body-md text-on-surface-variant">Verifying reset link...</p>
+        <p className="font-body-md text-body-md text-text-secondary">Verifying reset link...</p>
       </main>
     );
   }
@@ -262,8 +262,8 @@ function ResetPasswordForm() {
   if (mfaFactorId) {
     return (
       <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-        <h1 className="font-display-md text-display-md text-on-surface mb-2">Two-factor authentication</h1>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mb-stack-sm">
+        <h1 className="font-display-md text-display-md text-text-primary mb-2">Two-factor authentication</h1>
+        <p className="font-body-sm text-body-sm text-text-secondary mb-stack-sm">
           Enter the 6-digit code from your authenticator app to continue resetting your password.
         </p>
 
@@ -282,13 +282,13 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={mfaVerifying || mfaCode.trim().length < 6}
-            className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
+            className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50 mt-2"
           >
             {mfaVerifying ? "Verifying..." : "Verify and continue"}
           </button>
 
           {serverError && (
-            <p className="font-label-md text-label-md text-error mt-1">{serverError}</p>
+            <p className="font-label-md text-label-md text-red-700 mt-1">{serverError}</p>
           )}
         </form>
       </main>
@@ -297,8 +297,8 @@ function ResetPasswordForm() {
 
   return (
     <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Set a new password</h1>
-      <p className="font-body-sm text-body-sm text-on-surface-variant mb-stack-sm">{PASSWORD_HINT}</p>
+      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Set a new password</h1>
+      <p className="font-body-sm text-body-sm text-text-secondary mb-stack-sm">{PASSWORD_HINT}</p>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
         <input
@@ -321,12 +321,12 @@ function ResetPasswordForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
+          className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50 mt-2"
         >
           {submitting ? "Updating..." : "Update password"}
         </button>
 
-        {serverError && <p className="font-label-md text-label-md text-error mt-1">{serverError}</p>}
+        {serverError && <p className="font-label-md text-label-md text-red-700 mt-1">{serverError}</p>}
       </form>
     </main>
   );
@@ -337,7 +337,7 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
-          <p className="font-body-md text-body-md text-on-surface-variant">Verifying reset link...</p>
+          <p className="font-body-md text-body-md text-text-secondary">Verifying reset link...</p>
         </main>
       }
     >

@@ -78,11 +78,11 @@ export default function LoginPage() {
   }
 
   const inputClass =
-    "w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors";
+    "w-full border rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none transition-colors";
 
   return (
     <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Log in</h1>
+      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Log in</h1>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
         <input
@@ -101,7 +101,7 @@ export default function LoginPage() {
         />
 
         <div className="text-right -mt-2">
-          <Link href="/forgot-password" className="font-label-md text-label-md text-primary hover:underline">
+          <Link href="/forgot-password" className="font-label-md text-label-md text-brand-primary hover:underline">
             Forgot password?
           </Link>
         </div>
@@ -109,32 +109,32 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
+          className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50 mt-2"
         >
           {submitting ? "Logging in..." : "Log in"}
         </button>
 
         {serverError && (
-          <p className="font-label-md text-label-md text-error mt-1">{serverError}</p>
+          <p className="font-label-md text-label-md text-red-700 mt-1">{serverError}</p>
         )}
 
-        <p className="font-body-sm text-body-sm text-on-surface-variant text-center mt-2">
+        <p className="font-body-sm text-body-sm text-text-secondary text-center mt-2">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-primary hover:underline">Sign up</Link>
+          <Link href="/signup" className="text-brand-primary hover:underline">Sign up</Link>
         </p>
       </form>
 
       <div className="flex items-center gap-3 my-2">
-        <div className="flex-1 h-px bg-outline-variant" />
-        <span className="font-label-md text-label-md text-on-surface-variant">or</span>
-        <div className="flex-1 h-px bg-outline-variant" />
+        <div className="flex-1 h-px bg-border-default" />
+        <span className="font-label-md text-label-md text-text-secondary">or</span>
+        <div className="flex-1 h-px bg-border-default" />
       </div>
 
       <button
         type="button"
         onClick={handleGoogleLogin}
         disabled={googleLoading}
-        className="w-full py-3 rounded-xl border border-outline-variant flex items-center justify-center gap-3 font-button text-button text-on-surface hover:bg-surface-container-low transition-colors disabled:opacity-50"
+        className="w-full py-3 rounded-xl border border-border-default flex items-center justify-center gap-3 font-button text-button text-text-primary hover:bg-surface-secondary transition-colors disabled:opacity-50"
       >
         <svg width="18" height="18" viewBox="0 0 18 18">
           <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>

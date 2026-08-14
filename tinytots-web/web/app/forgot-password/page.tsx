@@ -71,14 +71,14 @@ function ForgotPasswordForm() {
   if (sent) {
     return (
       <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
-        <h1 className="font-display-md text-display-md text-on-surface mb-4">Check your email</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant">
+        <h1 className="font-display-md text-display-md text-text-primary mb-4">Check your email</h1>
+        <p className="font-body-md text-body-md text-text-secondary">
           If an account exists for that email, we&apos;ve sent a reset link. Check your inbox
           (and spam folder) and follow the link to choose a new password.
         </p>
         <Link
           href={loginHref}
-          className="inline-block mt-6 text-primary hover:underline font-body-sm text-body-sm"
+          className="inline-block mt-6 text-brand-primary hover:underline font-body-sm text-body-sm"
         >
           Back to login
         </Link>
@@ -88,8 +88,8 @@ function ForgotPasswordForm() {
 
   return (
     <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Reset your password</h1>
-      <p className="font-body-sm text-body-sm text-on-surface-variant mb-stack-sm">
+      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Reset your password</h1>
+      <p className="font-body-sm text-body-sm text-text-secondary mb-stack-sm">
         Enter your email and we&apos;ll send you a link to reset your password.
       </p>
 
@@ -100,21 +100,21 @@ function ForgotPasswordForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
-          className="w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors"
+          className="w-full border rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none transition-colors"
         />
 
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
+          className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50 mt-2"
         >
           {submitting ? "Sending..." : "Send reset link"}
         </button>
 
-        {formError && <p className="font-label-md text-label-md text-error mt-1">{formError}</p>}
+        {formError && <p className="font-label-md text-label-md text-red-700 mt-1">{formError}</p>}
 
-        <p className="font-body-sm text-body-sm text-on-surface-variant text-center mt-2">
-          <Link href={loginHref} className="text-primary hover:underline">
+        <p className="font-body-sm text-body-sm text-text-secondary text-center mt-2">
+          <Link href={loginHref} className="text-brand-primary hover:underline">
             Back to login
           </Link>
         </p>
@@ -128,7 +128,7 @@ export default function ForgotPasswordPage() {
     <Suspense
       fallback={
         <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-          <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+          <p className="font-body-md text-body-md text-text-secondary">Loading...</p>
         </main>
       }
     >

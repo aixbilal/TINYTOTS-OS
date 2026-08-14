@@ -43,7 +43,7 @@ export default function AuthCallbackPage() {
 
   return (
     <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
-      <p className="font-body-md text-body-md text-on-surface-variant">
+      <p className="font-body-md text-body-md text-text-secondary">
         {error ?? "Signing you in..."}
       </p>
     </main>

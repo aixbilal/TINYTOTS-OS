@@ -92,21 +92,21 @@ export default function SignupPage() {
   }
 
   const inputClass = (hasError: boolean) =>
-    `w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none transition-colors ${
-      hasError ? "border-error focus:border-error" : "border-outline-variant focus:border-primary"
+    `w-full border rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md focus:outline-none transition-colors ${
+      hasError ? "border-red-700 focus:border-red-700" : "border-border-default focus:border-brand-primary"
     }`;
 
   const FieldError = ({ msg }: { msg?: string }) =>
-    msg ? <p className="font-label-md text-label-md text-error mt-1">{msg}</p> : null;
+    msg ? <p className="font-label-md text-label-md text-red-700 mt-1">{msg}</p> : null;
 
   if (signupComplete) {
     return (
       <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
-        <h1 className="font-display-md text-display-md text-on-surface mb-4">Check your email</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant">
+        <h1 className="font-display-md text-display-md text-text-primary mb-4">Check your email</h1>
+        <p className="font-body-md text-body-md text-text-secondary">
           We&apos;ve sent a confirmation link to <strong>{email}</strong>. Click it to activate your account, then come back and log in.
         </p>
-        <Link href="/login" className="inline-block mt-6 text-primary hover:underline font-body-sm text-body-sm">
+        <Link href="/login" className="inline-block mt-6 text-brand-primary hover:underline font-body-sm text-body-sm">
           Go to login
         </Link>
       </main>
@@ -115,7 +115,7 @@ export default function SignupPage() {
 
   return (
     <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Create your account</h1>
+      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Create your account</h1>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
         <div>
@@ -169,28 +169,28 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
+          className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50 mt-2"
         >
           {submitting ? "Creating account..." : "Sign up"}
         </button>
         <FieldError msg={serverError ?? undefined} />
 
-        <p className="font-body-sm text-body-sm text-on-surface-variant text-center mt-2">
+        <p className="font-body-sm text-body-sm text-text-secondary text-center mt-2">
           Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline">Log in</Link>
+          <Link href="/login" className="text-brand-primary hover:underline">Log in</Link>
         </p>
       </form>
       <div className="flex items-center gap-3 my-2">
-          <div className="flex-1 h-px bg-outline-variant" />
-          <span className="font-label-md text-label-md text-on-surface-variant">or</span>
-          <div className="flex-1 h-px bg-outline-variant" />
+          <div className="flex-1 h-px bg-border-default" />
+          <span className="font-label-md text-label-md text-text-secondary">or</span>
+          <div className="flex-1 h-px bg-border-default" />
         </div>
 
         <button
           type="button"
           onClick={handleGoogleSignup}
           disabled={googleLoading}
-          className="w-full py-3 rounded-xl border border-outline-variant flex items-center justify-center gap-3 font-button text-button text-on-surface hover:bg-surface-container-low transition-colors disabled:opacity-50"
+          className="w-full py-3 rounded-xl border border-border-default flex items-center justify-center gap-3 font-button text-button text-text-primary hover:bg-surface-secondary transition-colors disabled:opacity-50"
         >
           <svg width="18" height="18" viewBox="0 0 18 18">
             <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
