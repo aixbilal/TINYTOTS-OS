@@ -72,12 +72,12 @@ export default function AdminOrderDetailPage() {
   }
 
   const inputClass =
-    "border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+    "border rounded-lg px-4 py-2 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none";
 
-    if (loading) return <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>;
+    if (loading) return <p className="font-body-md text-body-md text-text-secondary">Loading...</p>;
     if (!order) {
       return (
-        <p className="font-body-md text-body-md text-error">
+        <p className="font-body-md text-body-md text-red-700">
           {error || "Order not found."}
         </p>
       );
@@ -86,7 +86,7 @@ export default function AdminOrderDetailPage() {
   return (
     <div className="max-w-3xl">
       <div className="flex justify-between items-center mb-stack-md">
-        <h1 className="font-display-md text-display-md text-on-surface">{order.order_number}</h1>
+        <h1 className="font-display-md text-display-md text-text-primary">{order.order_number}</h1>
         <select value={order.status} onChange={(e) => updateStatus(e.target.value)} disabled={saving} className={`${inputClass} capitalize`}>
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s} className="capitalize">{s}</option>
@@ -96,31 +96,31 @@ export default function AdminOrderDetailPage() {
 
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div>
-          <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Customer</h2>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
+          <h2 className="font-headline-md text-headline-md text-text-primary mb-2">Customer</h2>
+          <p className="font-body-sm text-body-sm text-text-secondary">
             {order.customers?.full_name ?? order.guest_name} <br />
             {order.customers?.phone ?? order.guest_phone} <br />
             {order.customers?.email ?? "Guest checkout"}
           </p>
         </div>
         <div>
-          <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Shipping</h2>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
+          <h2 className="font-headline-md text-headline-md text-text-primary mb-2">Shipping</h2>
+          <p className="font-body-sm text-body-sm text-text-secondary">
             {order.shipping_address} <br /> {order.shipping_city}
           </p>
         </div>
       </div>
 
       {order.cod_tier && order.cod_tier !== "full_cod" && (
-        <div className="border border-outline-variant/30 rounded-lg p-4 mb-6 flex justify-between items-center">
-          <p className="font-body-md text-body-md text-on-surface">
+        <div className="border border-border-default rounded-lg p-4 mb-6 flex justify-between items-center">
+          <p className="font-body-md text-body-md text-text-primary">
             COD Token Required: <strong>Rs. {order.cod_token_amount}</strong>
           </p>
           <button
             onClick={toggleCodTokenPaid}
             disabled={saving}
             className={`px-4 py-2 rounded-lg font-button text-button ${
-              order.cod_token_paid ? "bg-surface-container-low text-on-surface-variant" : "bg-primary-container text-on-primary"
+              order.cod_token_paid ? "bg-surface-secondary text-text-secondary" : "bg-brand-primary text-white"
             }`}
           >
             {order.cod_token_paid ? "Mark as unpaid" : "Mark token as paid"}
@@ -128,35 +128,35 @@ export default function AdminOrderDetailPage() {
         </div>
       )}
 
-      <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Items</h2>
+      <h2 className="font-headline-md text-headline-md text-text-primary mb-2">Items</h2>
       <table className="w-full border-collapse mb-6">
         <thead>
-          <tr className="text-left border-b border-outline-variant/30">
-            <th className="py-2 font-label-md text-label-md text-on-surface-variant">Product</th>
-            <th className="py-2 font-label-md text-label-md text-on-surface-variant">Variant</th>
-            <th className="py-2 font-label-md text-label-md text-on-surface-variant">Qty</th>
-            <th className="py-2 font-label-md text-label-md text-on-surface-variant">Unit Price</th>
-            <th className="py-2 font-label-md text-label-md text-on-surface-variant">Total</th>
+          <tr className="text-left border-b border-border-default">
+            <th className="py-2 font-label-md text-label-md text-text-secondary">Product</th>
+            <th className="py-2 font-label-md text-label-md text-text-secondary">Variant</th>
+            <th className="py-2 font-label-md text-label-md text-text-secondary">Qty</th>
+            <th className="py-2 font-label-md text-label-md text-text-secondary">Unit Price</th>
+            <th className="py-2 font-label-md text-label-md text-text-secondary">Total</th>
           </tr>
         </thead>
         <tbody>
           {order.items.map((item) => (
-            <tr key={item.id} className="border-b border-outline-variant/10">
-              <td className="py-3 font-body-sm text-body-sm text-on-surface">{item.variants.products.name}</td>
-              <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{item.variants.color} / {item.variants.size}</td>
-              <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{item.quantity}</td>
-              <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">Rs. {item.unit_price}</td>
-              <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">Rs. {item.line_total}</td>
+            <tr key={item.id} className="border-b border-border-default">
+              <td className="py-3 font-body-sm text-body-sm text-text-primary">{item.variants.products.name}</td>
+              <td className="py-3 font-body-sm text-body-sm text-text-secondary">{item.variants.color} / {item.variants.size}</td>
+              <td className="py-3 font-body-sm text-body-sm text-text-secondary">{item.quantity}</td>
+              <td className="py-3 font-body-sm text-body-sm text-text-secondary">Rs. {item.unit_price}</td>
+              <td className="py-3 font-body-sm text-body-sm text-text-secondary">Rs. {item.line_total}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div className="flex flex-col items-end gap-1 font-body-sm text-body-sm text-on-surface-variant">
+      <div className="flex flex-col items-end gap-1 font-body-sm text-body-sm text-text-secondary">
         <p>Subtotal: Rs. {order.subtotal}</p>
         <p>Delivery: Rs. {order.delivery_fee}</p>
         {order.discount_total > 0 && <p>Discount: -Rs. {order.discount_total}</p>}
-        <p className="font-headline-md text-headline-md text-on-surface mt-1">Total: Rs. {order.total}</p>
+        <p className="font-headline-md text-headline-md text-text-primary mt-1">Total: Rs. {order.total}</p>
       </div>
     </div>
   );

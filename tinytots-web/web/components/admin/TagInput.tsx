@@ -15,12 +15,12 @@ export default function TagInput({
 
   return (
     <div>
-      <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">{label}</label>
-      <div className="flex flex-wrap gap-1.5 p-2 border border-outline-variant/50 rounded-lg min-h-[42px] bg-surface-container-lowest">
+      <label className="block font-label-md text-label-md text-text-secondary mb-1.5">{label}</label>
+      <div className="flex flex-wrap gap-1.5 p-2 border border-border-default rounded-lg min-h-[42px] bg-surface-elevated">
         {values.map((v) => (
-          <span key={v} className="inline-flex items-center gap-1 bg-surface-container-low text-on-surface font-body-sm text-body-sm px-2 py-1 rounded-full">
+          <span key={v} className="inline-flex items-center gap-1 bg-surface-secondary text-text-primary font-body-sm text-body-sm px-2 py-1 rounded-full">
             {v}
-            <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="text-on-surface-variant hover:text-error">
+            <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="text-text-secondary hover:text-red-700">
               ✕
             </button>
           </span>
@@ -34,7 +34,7 @@ export default function TagInput({
           className="flex-1 min-w-[80px] font-body-sm text-body-sm bg-transparent outline-none"
         />
       </div>
-      <p className="font-label-md text-label-md text-on-surface-variant/60 mt-1">Press Enter or comma to add</p>
+      <p className="font-label-md text-label-md text-text-secondary/60 mt-1">Press Enter or comma to add</p>
     </div>
   );
 }

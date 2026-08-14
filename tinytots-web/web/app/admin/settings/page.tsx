@@ -77,18 +77,18 @@ export default function SettingsPage() {
   }
 
   if (loading) {
-    return <div className="p-6 text-on-surface-variant">Loading settings...</div>;
+    return <div className="p-6 text-text-secondary">Loading settings...</div>;
   }
 
   return (
     <div className="p-6 max-w-2xl">
-      <h1 className="text-2xl font-semibold text-on-surface mb-1">Settings</h1>
-      <p className="text-on-surface-variant text-sm mb-6">
+      <h1 className="text-2xl font-semibold text-text-primary mb-1">Settings</h1>
+      <p className="text-text-secondary text-sm mb-6">
         Control voucher and reward amounts used across the storefront and admin panel.
       </p>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-error bg-error/10 px-4 py-3 text-error text-sm">
+        <div className="mb-4 rounded-lg border border-red-700/30 bg-red-700/10 px-4 py-3 text-red-700 text-sm">
           {error}
         </div>
       )}
@@ -102,13 +102,13 @@ export default function SettingsPage() {
           return (
             <div
               key={setting.key}
-              className="border border-outline-variant rounded-xl p-4 bg-surface-container-lowest"
+              className="border border-border-default rounded-xl p-4 bg-surface-elevated"
             >
-              <label className="block text-sm font-medium text-on-surface mb-1">
+              <label className="block text-sm font-medium text-text-primary mb-1">
                 {LABELS[setting.key] ?? setting.key}
               </label>
               {setting.description && (
-                <p className="text-xs text-on-surface-variant mb-3">{setting.description}</p>
+                <p className="text-xs text-text-secondary mb-3">{setting.description}</p>
               )}
 
               <div className="flex items-center gap-3">
@@ -119,12 +119,12 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setEditValues((prev) => ({ ...prev, [setting.key]: e.target.value }))
                   }
-                  className="w-40 border border-outline-variant rounded-lg px-3 py-2 bg-surface text-on-surface text-sm focus:outline-none focus:border-primary"
+                  className="w-40 border border-border-default rounded-lg px-3 py-2 bg-surface-elevated text-text-primary text-sm focus:outline-none focus:border-brand-primary"
                 />
                 <button
                   onClick={() => handleSave(setting.key)}
                   disabled={!isDirty || isSaving || !editValues[setting.key]}
-                  className="px-4 py-2 rounded-lg bg-primary-container text-on-primary text-sm font-medium hover:bg-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-lg bg-brand-primary text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isSaving ? "Saving..." : "Save"}
                 </button>
@@ -133,7 +133,7 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              <p className="text-xs text-on-surface-variant mt-2">
+              <p className="text-xs text-text-secondary mt-2">
                 Last updated: {new Date(setting.updated_at).toLocaleString()}
               </p>
             </div>

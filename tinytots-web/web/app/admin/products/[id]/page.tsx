@@ -26,7 +26,7 @@ function AddVariantForm({ productId, onAdded }: { productId: number; onAdded: (v
   const [stock, setStock] = useState("");
   const [saving, setSaving] = useState(false);
   const inputClass =
-    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+    "w-full border rounded-lg px-4 py-2 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none";
 
   async function handleAdd() {
     const parsedPrice = parseFloat(price);
@@ -54,12 +54,12 @@ function AddVariantForm({ productId, onAdded }: { productId: number; onAdded: (v
   }
 
   return (
-    <div className="grid grid-cols-5 gap-2 mt-3 pt-3 border-t border-outline-variant/10 items-center">
+    <div className="grid grid-cols-5 gap-2 mt-3 pt-3 border-t border-border-default items-center">
       <input value={color} onChange={(e) => setColor(e.target.value)} className={inputClass} placeholder="New color" />
       <input value={size} onChange={(e) => setSize(e.target.value)} className={inputClass} placeholder="New size" />
       <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className={inputClass} placeholder="Price" />
       <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} className={inputClass} placeholder="Stock" />
-      <button onClick={handleAdd} disabled={saving} className="font-label-md text-label-md text-primary hover:underline disabled:opacity-50">
+      <button onClick={handleAdd} disabled={saving} className="font-label-md text-label-md text-brand-primary hover:underline disabled:opacity-50">
         {saving ? "Adding..." : "+ Add variant"}
       </button>
     </div>
@@ -224,12 +224,12 @@ export default function EditProductPage() {
   }
 
   const inputClass =
-    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+    "w-full border rounded-lg px-4 py-2 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none";
 
-  if (loading) return <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>;
+  if (loading) return <p className="font-body-md text-body-md text-text-secondary">Loading...</p>;
   if (!product) {
     return (
-      <p className="font-body-md text-body-md text-error">
+      <p className="font-body-md text-body-md text-red-700">
         {error || "Product not found."}
       </p>
     );
@@ -238,7 +238,7 @@ export default function EditProductPage() {
   return (
     <div className="max-w-3xl">
       <div className="flex justify-between items-center mb-stack-md">
-        <h1 className="font-display-md text-display-md text-on-surface">Edit Product</h1>
+        <h1 className="font-display-md text-display-md text-text-primary">Edit Product</h1>
         <button
   onClick={async () => {
     const nextActive = !product.is_active;
@@ -263,14 +263,14 @@ export default function EditProductPage() {
       setError(json.error || "Failed to update product status.");
     }
   }}
-  className={`font-label-md text-label-md hover:underline ${product.is_active ? "text-error" : "text-primary"}`}
+  className={`font-label-md text-label-md hover:underline ${product.is_active ? "text-red-700" : "text-brand-primary"}`}
 >
   {product.is_active ? "Deactivate product" : "Reactivate product"}
 </button>
       </div>
 
       {justCreated && (
-        <p className="font-body-sm text-body-sm text-primary bg-primary-container/20 rounded-lg px-3 py-2 mb-4">
+        <p className="font-body-sm text-body-sm text-brand-primary bg-brand-primary/20 rounded-lg px-3 py-2 mb-4">
           Product created! Add photos below to finish setting it up.
         </p>
       )}
@@ -279,7 +279,7 @@ export default function EditProductPage() {
         <input value={product.name} onChange={(e) => updateField("name", e.target.value)} className={inputClass} placeholder="Name" />
         <input value={product.sku} onChange={(e) => updateField("sku", e.target.value)} className={inputClass} placeholder="SKU" />
         <div>
-  <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Description</label>
+  <label className="block font-label-md text-label-md text-text-secondary mb-1.5">Description</label>
   <RichTextEditor value={product.description ?? ""} onChange={(html) => updateField("description", html)} />
 </div>
         <div className="grid grid-cols-2 gap-4">
@@ -288,23 +288,23 @@ export default function EditProductPage() {
         </div>
 
         <div>
-          <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">
+          <label className="block font-label-md text-label-md text-text-secondary mb-1.5">
             Signage card badge
           </label>
           <SignageBadgePicker
             value={product.signage_badge}
             options={badgeItems}
             onChange={(badge) => updateField("signage_badge", badge)}
-            className="rounded-lg border border-outline-variant bg-surface-container-lowest p-3"
+            className="rounded-lg border border-border-default bg-surface-elevated p-3"
           />
-          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5">
+          <p className="font-body-sm text-body-sm text-text-secondary mt-1.5">
             Shown on the digital signage featured product cards when this product is selected. Pick from
             the library or enter custom text.
           </p>
         </div>
 
         <div>
-          <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Photos</label>
+          <label className="block font-label-md text-label-md text-text-secondary mb-1.5">Photos</label>
           <ImageUploader productId={product.id} images={images} onImagesChange={setImages} variants={product.variants} />
         </div>
 
@@ -320,21 +320,21 @@ export default function EditProductPage() {
         <button
           onClick={saveProduct}
           disabled={saving}
-          className="self-start px-5 py-2 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50"
+          className="self-start px-5 py-2 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save product details"}
         </button>
       </div>
 
-      <div className="border-t border-outline-variant/20 pt-4 mt-6">
-        <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Variants</h2>
+      <div className="border-t border-border-default pt-4 mt-6">
+        <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Variants</h2>
         {product.variants.map((v) => (
         <div key={v.id} className="grid grid-cols-6 gap-2 mb-2 items-center">
         <input value={v.color ?? ""} onChange={(e) => updateVariant(v.id, "color", e.target.value)} className={inputClass} placeholder="Color" />
         <input value={v.size ?? ""} onChange={(e) => updateVariant(v.id, "size", e.target.value)} className={inputClass} placeholder="Size" />
         <input type="number" value={v.price} onChange={(e) => updateVariant(v.id, "price", e.target.value)} className={inputClass} placeholder="Price" />
         <input type="number" value={v.stock} onChange={(e) => updateVariant(v.id, "stock", e.target.value)} className={inputClass} placeholder="Stock" />
-        <button onClick={() => saveVariant(v)} className="font-label-md text-label-md text-primary hover:underline">
+        <button onClick={() => saveVariant(v)} className="font-label-md text-label-md text-brand-primary hover:underline">
           Save
         </button>
         <button
@@ -348,11 +348,11 @@ export default function EditProductPage() {
               setError(json.error || "Failed to delete variant.");
             }
           }}
-          className="font-label-md text-label-md text-error hover:underline"
+          className="font-label-md text-label-md text-red-700 hover:underline"
         >
           Delete
         </button>
-        <label className="flex items-center gap-1.5 font-label-md text-label-md text-on-surface-variant col-span-6 mt-1">
+        <label className="flex items-center gap-1.5 font-label-md text-label-md text-text-secondary col-span-6 mt-1">
           <input
             type="checkbox"
             checked={v.web_price_locked}
@@ -368,7 +368,7 @@ export default function EditProductPage() {
         } />
       </div>
 
-      {error && <p className="font-label-md text-label-md text-error mt-4">{error}</p>}
+      {error && <p className="font-label-md text-label-md text-red-700 mt-4">{error}</p>}
     </div>
   );
 }

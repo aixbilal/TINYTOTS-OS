@@ -40,16 +40,16 @@ export default function AdminOrdersPage() {
   }, [statusFilter]);
 
   const statusColor: Record<string, string> = {
-    new: "text-primary",
-    processing: "text-primary",
-    shipped: "text-primary",
-    delivered: "text-primary",
-    cancelled: "text-error",
+    new: "text-brand-primary",
+    processing: "text-brand-primary",
+    shipped: "text-brand-primary",
+    delivered: "text-brand-primary",
+    cancelled: "text-red-700",
   };
 
   return (
     <div>
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Orders</h1>
+      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Orders</h1>
 
       <div className="flex gap-2 mb-4">
         {STATUS_TABS.map((tab) => (
@@ -57,7 +57,7 @@ export default function AdminOrdersPage() {
             key={tab}
             onClick={() => setStatusFilter(tab)}
             className={`px-4 py-1.5 rounded-full font-label-md text-label-md capitalize ${
-              statusFilter === tab ? "bg-primary-container text-on-primary" : "bg-surface-container-low text-on-surface-variant"
+              statusFilter === tab ? "bg-brand-primary text-white" : "bg-surface-secondary text-text-secondary"
             }`}
           >
             {tab}
@@ -66,49 +66,49 @@ export default function AdminOrdersPage() {
       </div>
 
       {error && (
-        <p className="font-body-md text-body-md text-error mb-4">{error}</p>
+        <p className="font-body-md text-body-md text-red-700 mb-4">{error}</p>
       )}
 
       {loading ? (
-        <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+        <p className="font-body-md text-body-md text-text-secondary">Loading...</p>
       ) : orders.length === 0 ? (
-        <p className="font-body-md text-body-md text-on-surface-variant">
+        <p className="font-body-md text-body-md text-text-secondary">
           {error ? "Could not load orders." : "No orders here."}
         </p>
       ) : (
         <table className="w-full border-collapse">
           <thead>
-            <tr className="text-left border-b border-outline-variant/30">
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Order #</th>
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Customer</th>
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">City</th>
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Payment</th>
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">COD Token</th>
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Total</th>
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Status</th>
+            <tr className="text-left border-b border-border-default">
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Order #</th>
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Customer</th>
+              <th className="py-2 font-label-md text-label-md text-text-secondary">City</th>
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Payment</th>
+              <th className="py-2 font-label-md text-label-md text-text-secondary">COD Token</th>
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Total</th>
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Status</th>
               <th className="py-2"></th>
             </tr>
           </thead>
           <tbody>
             {orders.map((o) => (
-              <tr key={o.id} className="border-b border-outline-variant/10">
-                <td className="py-3 font-body-sm text-body-sm text-on-surface">{o.order_number}</td>
-                <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{o.guest_name ?? "Account"} · {o.guest_phone ?? ""}</td>
-                <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{o.shipping_city}</td>
-                <td className="py-3 font-body-sm text-body-sm text-on-surface-variant capitalize">{o.payment_method}</td>
+              <tr key={o.id} className="border-b border-border-default">
+                <td className="py-3 font-body-sm text-body-sm text-text-primary">{o.order_number}</td>
+                <td className="py-3 font-body-sm text-body-sm text-text-secondary">{o.guest_name ?? "Account"} · {o.guest_phone ?? ""}</td>
+                <td className="py-3 font-body-sm text-body-sm text-text-secondary">{o.shipping_city}</td>
+                <td className="py-3 font-body-sm text-body-sm text-text-secondary capitalize">{o.payment_method}</td>
                 <td className="py-3 font-body-sm text-body-sm">
                   {o.cod_tier && o.cod_tier !== "full_cod" ? (
-                    <span className={o.cod_token_paid ? "text-primary" : "text-error"}>
+                    <span className={o.cod_token_paid ? "text-brand-primary" : "text-red-700"}>
                       Rs. {o.cod_token_amount} {o.cod_token_paid ? "✓ paid" : "unpaid"}
                     </span>
                   ) : (
                     "—"
                   )}
                 </td>
-                <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">Rs. {o.total.toLocaleString()}</td>
+                <td className="py-3 font-body-sm text-body-sm text-text-secondary">Rs. {o.total.toLocaleString()}</td>
                 <td className={`py-3 font-label-md text-label-md capitalize ${statusColor[o.status] ?? ""}`}>{o.status}</td>
                 <td className="py-3 text-right">
-                  <Link href={`/admin/orders/${o.id}`} className="font-label-md text-label-md text-primary hover:underline">
+                  <Link href={`/admin/orders/${o.id}`} className="font-label-md text-label-md text-brand-primary hover:underline">
                     View
                   </Link>
                 </td>

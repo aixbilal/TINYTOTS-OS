@@ -89,14 +89,14 @@ export default function DiscountsPage() {
   }
 
   const inputClass =
-    "border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+    "border rounded-lg px-4 py-2 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none";
 
   return (
     <div className="max-w-2xl">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Discounts</h1>
+      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Discounts</h1>
 
-      <form onSubmit={handleCreate} className="border border-outline-variant/30 rounded-lg p-4 flex flex-col gap-3 mb-6">
-        <h2 className="font-headline-md text-headline-md text-on-surface">New discount campaign</h2>
+      <form onSubmit={handleCreate} className="border border-border-default rounded-lg p-4 flex flex-col gap-3 mb-6">
+        <h2 className="font-headline-md text-headline-md text-text-primary">New discount campaign</h2>
 
         <input placeholder="Campaign name (e.g. Eid Sale)" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
         <input placeholder="Percentage off (e.g. 20)" type="number" value={value} onChange={(e) => setValue(e.target.value)} className={inputClass} />
@@ -125,7 +125,7 @@ export default function DiscountsPage() {
             {products.map((p) => {
               const checked = selectedProductIds.includes(p.id);
               return (
-                <label key={p.id} className="flex items-center gap-2 font-body-sm text-body-sm text-on-surface cursor-pointer">
+                <label key={p.id} className="flex items-center gap-2 font-body-sm text-body-sm text-text-primary cursor-pointer">
                   <input
                     type="checkbox"
                     checked={checked}
@@ -151,39 +151,39 @@ export default function DiscountsPage() {
           </select>
         )}
 
-        <button type="submit" disabled={submitting} className="self-start px-5 py-2 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary disabled:opacity-50">
+        <button type="submit" disabled={submitting} className="self-start px-5 py-2 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 disabled:opacity-50">
           {submitting ? "Applying..." : "Create & apply"}
         </button>
-        {error && <p className="font-label-md text-label-md text-error">{error}</p>}
+        {error && <p className="font-label-md text-label-md text-red-700">{error}</p>}
       </form>
 
       {loading ? (
-        <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+        <p className="font-body-md text-body-md text-text-secondary">Loading...</p>
       ) : (
         <table className="w-full border-collapse">
           <thead>
-            <tr className="text-left border-b border-outline-variant/30">
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Name</th>
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Value</th>
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Scope</th>
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Status</th>
+            <tr className="text-left border-b border-border-default">
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Name</th>
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Value</th>
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Scope</th>
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Status</th>
               <th className="py-2"></th>
             </tr>
           </thead>
           <tbody>
             {discounts.map((d) => (
-              <tr key={d.id} className="border-b border-outline-variant/10">
-                <td className="py-3 font-body-sm text-body-sm text-on-surface">{d.name}</td>
-                <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{d.value}%</td>
-                <td className="py-3 font-body-sm text-body-sm text-on-surface-variant capitalize">
+              <tr key={d.id} className="border-b border-border-default">
+                <td className="py-3 font-body-sm text-body-sm text-text-primary">{d.name}</td>
+                <td className="py-3 font-body-sm text-body-sm text-text-secondary">{d.value}%</td>
+                <td className="py-3 font-body-sm text-body-sm text-text-secondary capitalize">
                   {d.applies_to === "category" ? `Category: ${d.category}` : d.applies_to.replace("_", " ")}
                 </td>
-                <td className={`py-3 font-label-md text-label-md ${d.is_active ? "text-primary" : "text-on-surface-variant"}`}>
+                <td className={`py-3 font-label-md text-label-md ${d.is_active ? "text-brand-primary" : "text-text-secondary"}`}>
                   {d.is_active ? "Active" : "Ended"}
                 </td>
                 <td className="py-3 text-right">
                   {d.is_active && (
-                    <button onClick={() => handleEnd(d.id)} className="font-label-md text-label-md text-error hover:underline">
+                    <button onClick={() => handleEnd(d.id)} className="font-label-md text-label-md text-red-700 hover:underline">
                       End
                     </button>
                   )}

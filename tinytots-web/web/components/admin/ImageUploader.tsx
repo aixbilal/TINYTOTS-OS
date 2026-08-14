@@ -258,11 +258,11 @@ export default function ImageUploader({
             <div
               key={img.id}
               className="relative w-28 h-28 rounded-lg overflow-hidden border-2 group"
-              style={{ borderColor: img.is_primary ? "#9c422e" : "transparent" }}
+              style={{ borderColor: img.is_primary ? "#8f5030" : "transparent" }}
             >
               <img src={img.url} alt="" className="w-full h-full object-cover" />
               {img.is_primary && (
-                <span className="absolute top-1 left-1 bg-[#9c422e] text-white text-[10px] px-1.5 py-0.5 rounded">
+                <span className="absolute top-1 left-1 bg-brand-primary text-white text-[10px] px-1.5 py-0.5 rounded">
                   Primary
                 </span>
               )}
@@ -296,7 +296,7 @@ export default function ImageUploader({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="w-28 h-28 rounded-lg border-2 border-dashed border-outline-variant flex items-center justify-center text-sm text-on-surface-variant hover:border-primary hover:text-primary transition text-center px-2"
+          className="w-28 h-28 rounded-lg border-2 border-dashed border-border-default flex items-center justify-center text-sm text-text-secondary hover:border-brand-primary hover:text-brand-primary transition text-center px-2"
         >
           + Add photos
         </button>
@@ -318,7 +318,7 @@ export default function ImageUploader({
             <div className="flex items-center justify-between">
               <h3 className="font-medium">Crop image</h3>
               {queue.length > 0 && (
-                <span className="text-xs text-on-surface-variant">{queue.length} more queued</span>
+                <span className="text-xs text-text-secondary">{queue.length} more queued</span>
               )}
             </div>
             <ReactCrop crop={crop} onChange={(c) => setCrop(c)} onComplete={(c) => setCompletedCrop(c)} aspect={1}>
@@ -328,7 +328,7 @@ export default function ImageUploader({
 
             {variants.length > 0 && (
               <div>
-                <label className="block text-xs text-on-surface-variant mb-1">
+                <label className="block text-xs text-text-secondary mb-1">
                   Show this photo for specific variants (optional — leave blank to show for all)
                 </label>
                 <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
@@ -339,8 +339,8 @@ export default function ImageUploader({
                       onClick={() => toggleVariant(v.id)}
                       className={`text-xs px-2 py-1 rounded-full border ${
                         selectedVariantIds.includes(v.id)
-                          ? "bg-[#9c422e] text-white border-[#9c422e]"
-                          : "border-outline-variant text-on-surface-variant"
+                          ? "bg-brand-primary text-white border-brand-primary"
+                          : "border-border-default text-text-secondary"
                       }`}
                     >
                       {variantLabel(v)}
@@ -354,7 +354,7 @@ export default function ImageUploader({
               <button
                 type="button"
                 onClick={skipCurrent}
-                className="px-4 py-2 rounded-lg border border-outline-variant text-sm"
+                className="px-4 py-2 rounded-lg border border-border-default text-sm"
               >
                 {queue.length > 0 ? "Skip" : "Cancel"}
               </button>
@@ -363,7 +363,7 @@ export default function ImageUploader({
                   type="button"
                   disabled={uploading}
                   onClick={() => uploadCroppedImage(false)}
-                  className="px-4 py-2 rounded-lg border border-outline-variant text-sm disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg border border-border-default text-sm disabled:opacity-50"
                 >
                   {uploading ? "Uploading..." : "Add as gallery image"}
                 </button>
@@ -371,7 +371,7 @@ export default function ImageUploader({
                   type="button"
                   disabled={uploading}
                   onClick={() => uploadCroppedImage(true)}
-                  className="px-4 py-2 rounded-lg bg-[#9c422e] text-white text-sm disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg bg-brand-primary text-white text-sm disabled:opacity-50"
                 >
                   {uploading ? "Uploading..." : "Set as primary"}
                 </button>

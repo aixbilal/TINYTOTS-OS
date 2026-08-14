@@ -135,13 +135,13 @@ export default function AdminLoginPage() {
   }
 
   const inputClass =
-    "w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none transition-colors";
+    "w-full border rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none transition-colors";
 
   if (mfaFactorId) {
     return (
       <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-        <h1 className="font-display-md text-display-md text-on-surface mb-2">Two-factor authentication</h1>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mb-stack-sm">
+        <h1 className="font-display-md text-display-md text-text-primary mb-2">Two-factor authentication</h1>
+        <p className="font-body-sm text-body-sm text-text-secondary mb-stack-sm">
           Enter the 6-digit code from your authenticator app to continue.
         </p>
 
@@ -160,19 +160,19 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={mfaVerifying || mfaCode.trim().length < 6}
-            className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
+            className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50 mt-2"
           >
             {mfaVerifying ? "Verifying..." : "Verify and continue"}
           </button>
 
           {serverError && (
-            <p className="font-label-md text-label-md text-error mt-1">{serverError}</p>
+            <p className="font-label-md text-label-md text-red-700 mt-1">{serverError}</p>
           )}
 
           <button
             type="button"
             onClick={cancelMfa}
-            className="font-body-sm text-body-sm text-on-surface-variant hover:underline mt-1"
+            className="font-body-sm text-body-sm text-text-secondary hover:underline mt-1"
           >
             Back to login
           </button>
@@ -183,7 +183,7 @@ export default function AdminLoginPage() {
 
   return (
     <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Admin Login</h1>
+      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Admin Login</h1>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
         <input
@@ -206,7 +206,7 @@ export default function AdminLoginPage() {
         <div className="text-right -mt-2">
           <Link
             href="/forgot-password?next=admin"
-            className="font-label-md text-label-md text-primary hover:underline"
+            className="font-label-md text-label-md text-brand-primary hover:underline"
           >
             Forgot password?
           </Link>
@@ -215,13 +215,13 @@ export default function AdminLoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-2"
+          className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50 mt-2"
         >
           {submitting ? "Logging in..." : "Log in"}
         </button>
 
         {serverError && (
-          <p className="font-label-md text-label-md text-error mt-1">{serverError}</p>
+          <p className="font-label-md text-label-md text-red-700 mt-1">{serverError}</p>
         )}
       </form>
     </main>

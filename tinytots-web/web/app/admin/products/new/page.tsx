@@ -107,12 +107,12 @@ export default function NewProductPage() {
   }
 
   const inputClass =
-    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+    "w-full border rounded-lg px-4 py-2 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none";
 
   return (
     <div className="max-w-2xl">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Add Product</h1>
-      <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">
+      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Add Product</h1>
+      <p className="font-body-sm text-body-sm text-text-secondary mb-4">
         Fill in the details below, then add photos on the next screen once the product is created.
       </p>
 
@@ -125,7 +125,7 @@ export default function NewProductPage() {
         </div>
 
         <div>
-          <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Description</label>
+          <label className="block font-label-md text-label-md text-text-secondary mb-1.5">Description</label>
           <RichTextEditor value={description} onChange={setDescription} />
         </div>
 
@@ -145,8 +145,8 @@ export default function NewProductPage() {
 
         <input placeholder="Default stock per variant" type="number" value={initialStock} onChange={(e) => setInitialStock(e.target.value)} className={inputClass} />
 
-        <div className="border-t border-outline-variant/20 pt-4 mt-2">
-          <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Variants</h2>
+        <div className="border-t border-border-default pt-4 mt-2">
+          <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Variants</h2>
           <div className="grid grid-cols-2 gap-4 mb-3">
             <TagInput label="Colors" placeholder="Maroon, Black..." values={colors} onChange={setColors} />
             <TagInput label="Sizes" placeholder="S, M, L, XL..." values={sizes} onChange={setSizes} />
@@ -154,25 +154,25 @@ export default function NewProductPage() {
 
           {variantCombos.length > 0 && (
             <div>
-              <p className="font-body-sm text-body-sm text-primary bg-primary-container/20 rounded-lg px-3 py-2 mb-2">
+              <p className="font-body-sm text-body-sm text-brand-primary bg-brand-primary/20 rounded-lg px-3 py-2 mb-2">
                 This will generate <strong>{variantCombos.length}</strong> variants ({colors.length} colors × {sizes.length} sizes). Adjust stock per combo below if needed.
               </p>
-              <div className="border border-outline-variant/30 rounded-lg max-h-56 overflow-y-auto">
+              <div className="border border-border-default rounded-lg max-h-56 overflow-y-auto">
                 <table className="w-full font-body-sm text-body-sm">
-                  <thead className="bg-surface-container-low sticky top-0">
+                  <thead className="bg-surface-secondary sticky top-0">
                     <tr>
-                      <th className="text-left px-3 py-2 text-on-surface-variant">Color</th>
-                      <th className="text-left px-3 py-2 text-on-surface-variant">Size</th>
-                      <th className="text-left px-3 py-2 text-on-surface-variant">Stock</th>
+                      <th className="text-left px-3 py-2 text-text-secondary">Color</th>
+                      <th className="text-left px-3 py-2 text-text-secondary">Size</th>
+                      <th className="text-left px-3 py-2 text-text-secondary">Stock</th>
                     </tr>
                   </thead>
                   <tbody>
                     {variantCombos.map(({ key, color, size }) => (
-                      <tr key={key} className="border-t border-outline-variant/10">
+                      <tr key={key} className="border-t border-border-default">
                         <td className="px-3 py-1.5">{color}</td>
                         <td className="px-3 py-1.5">{size}</td>
                         <td className="px-3 py-1.5">
-                          <input type="number" value={stockFor(key)} onChange={(e) => setStockFor(key, e.target.value)} className="w-20 border border-outline-variant/50 rounded px-2 py-1" />
+                          <input type="number" value={stockFor(key)} onChange={(e) => setStockFor(key, e.target.value)} className="w-20 border border-border-default rounded px-2 py-1" />
                         </td>
                       </tr>
                     ))}
@@ -183,11 +183,11 @@ export default function NewProductPage() {
           )}
         </div>
 
-        <button type="submit" disabled={submitting} className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50 mt-4">
+        <button type="submit" disabled={submitting} className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50 mt-4">
           {submitting ? "Saving..." : "Create Product — Add Photos Next"}
         </button>
 
-        {error && <p className="font-label-md text-label-md text-error">{error}</p>}
+        {error && <p className="font-label-md text-label-md text-red-700">{error}</p>}
       </form>
     </div>
   );

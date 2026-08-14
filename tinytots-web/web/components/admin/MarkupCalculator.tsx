@@ -48,7 +48,7 @@ export default function MarkupCalculator({
   }, [webBasePrice, webDiscountPercent]);
 
   const inputClass =
-    "w-full border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+    "w-full border rounded-lg px-4 py-2 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none";
 
   const shopMargin = costPrice && shopFinalPrice ? Math.round((parseFloat(shopFinalPrice) - parseFloat(costPrice)) * 100) / 100 : null;
   const webMargin = costPrice && webFinalPrice ? Math.round((parseFloat(webFinalPrice) - parseFloat(costPrice)) * 100) / 100 : null;
@@ -56,34 +56,34 @@ export default function MarkupCalculator({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Cost Price (Rs) — from supplier</label>
+        <label className="block font-label-md text-label-md text-text-secondary mb-1.5">Cost Price (Rs) — from supplier</label>
         <input type="number" value={costPrice} onChange={(e) => onCostChange(e.target.value)} className={inputClass} />
       </div>
 
       {/* SHOP PRICING */}
-      <div className="border border-outline-variant/30 rounded-lg p-4 flex flex-col gap-3">
-        <h3 className="font-headline-md text-headline-md text-on-surface">In-Store (Electron / receipt)</h3>
+      <div className="border border-border-default rounded-lg p-4 flex flex-col gap-3">
+        <h3 className="font-headline-md text-headline-md text-text-primary">In-Store (Electron / receipt)</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Shop Selling Price (Rs)</label>
+            <label className="block font-label-md text-label-md text-text-secondary mb-1.5">Shop Selling Price (Rs)</label>
             <input type="number" value={shopBasePrice} onChange={(e) => onShopBaseChange(e.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Shop Discount %</label>
+            <label className="block font-label-md text-label-md text-text-secondary mb-1.5">Shop Discount %</label>
             <input type="number" min="0" max="100" value={shopDiscountPercent} onChange={(e) => onShopDiscountChange(e.target.value)} className={inputClass} placeholder="0" />
           </div>
         </div>
-        <p className="font-body-sm text-body-sm text-on-surface-variant">
-          Bill price in-store: <strong className="text-on-surface">Rs. {shopFinalPrice || "—"}</strong>
-          {shopMargin !== null && <> · Margin: <strong className={shopMargin >= 0 ? "text-primary" : "text-error"}>Rs. {shopMargin}</strong></>}
+        <p className="font-body-sm text-body-sm text-text-secondary">
+          Bill price in-store: <strong className="text-text-primary">Rs. {shopFinalPrice || "—"}</strong>
+          {shopMargin !== null && <> · Margin: <strong className={shopMargin >= 0 ? "text-brand-primary" : "text-red-700"}>Rs. {shopMargin}</strong></>}
         </p>
       </div>
 
       {/* WEB PRICING */}
-      <div className="border border-outline-variant/30 rounded-lg p-4 flex flex-col gap-3">
-        <h3 className="font-headline-md text-headline-md text-on-surface">On the Website (funds free delivery + packaging)</h3>
+      <div className="border border-border-default rounded-lg p-4 flex flex-col gap-3">
+        <h3 className="font-headline-md text-headline-md text-text-primary">On the Website (funds free delivery + packaging)</h3>
         <div className="flex items-center gap-3">
-          <label className="font-label-md text-label-md text-on-surface-variant whitespace-nowrap">Web Markup %</label>
+          <label className="font-label-md text-label-md text-text-secondary whitespace-nowrap">Web Markup %</label>
           <input
             type="number"
             value={webMarkupPercent}
@@ -94,7 +94,7 @@ export default function MarkupCalculator({
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Web Base Price (Rs)</label>
+            <label className="block font-label-md text-label-md text-text-secondary mb-1.5">Web Base Price (Rs)</label>
             <input
               type="number"
               value={webBasePrice}
@@ -103,18 +103,18 @@ export default function MarkupCalculator({
             />
           </div>
           <div>
-            <label className="block font-label-md text-label-md text-on-surface-variant mb-1.5">Web Discount %</label>
+            <label className="block font-label-md text-label-md text-text-secondary mb-1.5">Web Discount %</label>
             <input type="number" min="0" max="100" value={webDiscountPercent} onChange={(e) => onWebDiscountChange(e.target.value)} className={inputClass} placeholder="0" />
           </div>
         </div>
         {webBaseManual && (
-          <button type="button" onClick={() => setWebBaseManual(false)} className="self-start font-label-md text-label-md text-primary hover:underline">
+          <button type="button" onClick={() => setWebBaseManual(false)} className="self-start font-label-md text-label-md text-brand-primary hover:underline">
             Reset web base to auto (shop price + markup)
           </button>
         )}
-        <p className="font-body-sm text-body-sm text-on-surface-variant">
-          Price shown on website: <strong className="text-on-surface">Rs. {webFinalPrice || "—"}</strong>
-          {webMargin !== null && <> · Margin: <strong className={webMargin >= 0 ? "text-primary" : "text-error"}>Rs. {webMargin}</strong></>}
+        <p className="font-body-sm text-body-sm text-text-secondary">
+          Price shown on website: <strong className="text-text-primary">Rs. {webFinalPrice || "—"}</strong>
+          {webMargin !== null && <> · Margin: <strong className={webMargin >= 0 ? "text-brand-primary" : "text-red-700"}>Rs. {webMargin}</strong></>}
         </p>
       </div>
     </div>

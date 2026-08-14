@@ -89,18 +89,18 @@ export default function TeamPage() {
   }
 
   const inputClass =
-    "border rounded-lg px-4 py-2 bg-surface-container-lowest text-on-surface font-body-md text-body-md border-outline-variant focus:border-primary focus:outline-none";
+    "border rounded-lg px-4 py-2 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none";
 
   if (admin && admin.role !== "admin") {
-    return <p className="font-body-md text-body-md text-error">Only Admins can manage the team.</p>;
+    return <p className="font-body-md text-body-md text-red-700">Only Admins can manage the team.</p>;
   }
 
   return (
     <div className="max-w-2xl">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Team</h1>
+      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Team</h1>
 
-      <form onSubmit={handleAdd} className="border border-outline-variant/30 rounded-lg p-4 flex flex-col gap-3 mb-6">
-        <h2 className="font-headline-md text-headline-md text-on-surface">Add team member</h2>
+      <form onSubmit={handleAdd} className="border border-border-default rounded-lg p-4 flex flex-col gap-3 mb-6">
+        <h2 className="font-headline-md text-headline-md text-text-primary">Add team member</h2>
         <div className="grid grid-cols-2 gap-3">
           <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
           <input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
@@ -110,34 +110,34 @@ export default function TeamPage() {
             <option key={r} value={r} className="capitalize">{r.replace("_", " ")}</option>
           ))}
         </select>
-        <button type="submit" disabled={submitting} className="self-start px-5 py-2 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary disabled:opacity-50">
+        <button type="submit" disabled={submitting} className="self-start px-5 py-2 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 disabled:opacity-50">
           {submitting ? "Creating..." : "Add member"}
         </button>
-        {error && <p className="font-label-md text-label-md text-error">{error}</p>}
+        {error && <p className="font-label-md text-label-md text-red-700">{error}</p>}
         {lastTempPassword && (
-          <p className="font-body-sm text-body-sm text-primary bg-primary-container/20 rounded-lg px-3 py-2">
+          <p className="font-body-sm text-body-sm text-brand-primary bg-brand-primary/20 rounded-lg px-3 py-2">
             Account created. Temporary password (share securely — shown once): <strong>{lastTempPassword}</strong>
           </p>
         )}
       </form>
 
       {loading ? (
-        <p className="font-body-md text-body-md text-on-surface-variant">Loading...</p>
+        <p className="font-body-md text-body-md text-text-secondary">Loading...</p>
       ) : (
         <table className="w-full border-collapse">
           <thead>
-            <tr className="text-left border-b border-outline-variant/30">
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Name</th>
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Email</th>
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Role</th>
-              <th className="py-2 font-label-md text-label-md text-on-surface-variant">Active</th>
+            <tr className="text-left border-b border-border-default">
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Name</th>
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Email</th>
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Role</th>
+              <th className="py-2 font-label-md text-label-md text-text-secondary">Active</th>
             </tr>
           </thead>
           <tbody>
             {team.map((m) => (
-              <tr key={m.id} className="border-b border-outline-variant/10">
-                <td className="py-3 font-body-sm text-body-sm text-on-surface">{m.name}</td>
-                <td className="py-3 font-body-sm text-body-sm text-on-surface-variant">{m.email}</td>
+              <tr key={m.id} className="border-b border-border-default">
+                <td className="py-3 font-body-sm text-body-sm text-text-primary">{m.name}</td>
+                <td className="py-3 font-body-sm text-body-sm text-text-secondary">{m.email}</td>
                 <td className="py-3">
                   <select value={m.role} onChange={(e) => changeRole(m, e.target.value)} className={`${inputClass} py-1 capitalize`}>
                     {ROLES.map((r) => (
@@ -146,10 +146,10 @@ export default function TeamPage() {
                   </select>
                 </td>
                 <td className="py-3 flex gap-3">
-                  <button onClick={() => toggleActive(m)} className={`font-label-md text-label-md hover:underline ${m.is_active ? "text-error" : "text-primary"}`}>
+                  <button onClick={() => toggleActive(m)} className={`font-label-md text-label-md hover:underline ${m.is_active ? "text-red-700" : "text-brand-primary"}`}>
                     {m.is_active ? "Deactivate" : "Reactivate"}
                   </button>
-                  <button onClick={() => handleRemove(m)} className="font-label-md text-label-md text-error hover:underline">
+                  <button onClick={() => handleRemove(m)} className="font-label-md text-label-md text-red-700 hover:underline">
                     Remove
                   </button>
                 </td>

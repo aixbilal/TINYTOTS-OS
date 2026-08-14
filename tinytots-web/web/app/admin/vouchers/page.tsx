@@ -131,7 +131,7 @@ export default function AdminVouchersPage() {
                   <td className="px-4 py-3">
                     <button
                       onClick={() => toggleUsed(v.id, !v.is_used)}
-                      className="text-xs font-medium text-primary hover:underline"
+                      className="text-xs font-medium text-brand-primary hover:underline"
                     >
                       Mark {v.is_used ? "unused" : "used"}
                     </button>
