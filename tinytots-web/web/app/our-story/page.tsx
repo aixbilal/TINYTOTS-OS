@@ -38,7 +38,7 @@ export default async function Page() {
   return (
     <main className="max-w-container-max mx-auto md:px-margin-desktop px-margin-mobile">
       {/* Hero — full-vibrancy photo + bottom-left dark scrim for headline contrast */}
-      <section className="relative w-full h-[320px] md:h-[560px] rounded-[16px] overflow-hidden mb-stack-lg border border-outline-variant/30">
+      <section className="relative w-full h-[320px] md:h-[560px] rounded-[16px] overflow-hidden mb-stack-lg border border-border-default">
         <div
           className="absolute inset-0 bg-cover bg-center w-full h-full z-0"
           style={{ backgroundImage: `url('${c.hero_image_url}')` }}
@@ -59,14 +59,14 @@ export default async function Page() {
       {/* Founders manifesto */}
       <section className="py-stack-lg grid grid-cols-1 md:grid-cols-12 gap-gutter items-center">
         <div className="md:col-span-5 md:col-start-1">
-          <blockquote className="font-headline-md text-headline-md text-primary italic pr-2 md:pr-8 border-l-4 border-primary/60 pl-6">
+          <blockquote className="font-headline-md text-headline-md text-brand-primary italic pr-2 md:pr-8 border-l-4 border-brand-primary/60 pl-6">
             &ldquo;{c.quote_text}&rdquo;
           </blockquote>
-          <p className="mt-6 font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">
+          <p className="mt-6 font-label-md text-label-md text-text-secondary uppercase tracking-widest">
             {c.quote_attribution}
           </p>
         </div>
-        <div className="md:col-span-6 md:col-start-7 text-on-surface-variant">
+        <div className="md:col-span-6 md:col-start-7 text-text-secondary">
           <p className="font-body-lg text-body-md md:text-body-lg mb-6">{c.body_paragraph_1}</p>
           <p className="font-body-md text-body-md mb-6">{c.body_paragraph_2}</p>
           <p className="font-body-md text-body-md">{c.body_paragraph_3}</p>
@@ -74,11 +74,11 @@ export default async function Page() {
       </section>
 
       {/* Core pillars */}
-      <section className="py-stack-lg -mx-margin-mobile md:mx-0 px-margin-mobile md:px-0 bg-surface-container-low rounded-[16px]">
+      <section className="py-stack-lg -mx-margin-mobile md:mx-0 px-margin-mobile md:px-0 bg-surface-secondary rounded-[16px]">
         <div className="px-6 md:px-12 py-stack-lg">
           <div className="text-center mb-12">
-            <h2 className="font-headline-sm text-headline-sm text-on-surface mb-3">Our Core Pillars</h2>
-            <p className="font-body-lg text-body-md md:text-body-lg text-on-surface-variant max-w-2xl mx-auto">
+            <h2 className="font-headline-sm text-headline-sm text-text-primary mb-3">Our Core Pillars</h2>
+            <p className="font-body-lg text-body-md md:text-body-lg text-text-secondary max-w-2xl mx-auto">
               The unyielding standards we measure every garment against.
             </p>
           </div>
@@ -86,13 +86,13 @@ export default async function Page() {
             {pillars.map((p: { icon: string; title: string; body: string }, i: number) => (
               <div
                 key={i}
-                className="bg-surface rounded-[16px] p-6 md:p-8 border border-outline-variant/30 shadow-[0px_4px_20px_rgba(79,98,99,0.04)] hover:shadow-[0px_8px_30px_rgba(79,98,99,0.08)] transition-all duration-300 hover:-translate-y-1 flex flex-col items-start"
+                className="bg-surface-elevated rounded-[16px] p-6 md:p-8 border border-border-default shadow-[0px_4px_20px_rgba(79,98,99,0.04)] hover:shadow-[0px_8px_30px_rgba(79,98,99,0.08)] transition-all duration-300 hover:-translate-y-1 flex flex-col items-start"
               >
-                <div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-secondary">{p.icon}</span>
+                <div className="w-12 h-12 rounded-full bg-brand-primary/10 flex items-center justify-center mb-6">
+                  <span className="material-symbols-outlined text-brand-primary">{p.icon}</span>
                 </div>
-                <h3 className="font-title-lg text-title-lg text-on-surface mb-3">{p.title}</h3>
-                <p className="font-body-md text-body-md text-on-surface-variant">{p.body}</p>
+                <h3 className="font-title-lg text-title-lg text-text-primary mb-3">{p.title}</h3>
+                <p className="font-body-md text-body-md text-text-secondary">{p.body}</p>
               </div>
             ))}
           </div>
@@ -100,17 +100,17 @@ export default async function Page() {
       </section>
 
       {/* Closing CTA */}
-      <section className="relative my-stack-lg py-16 md:py-32 rounded-[16px] overflow-hidden border border-outline-variant/30 flex items-center justify-center text-center">
+      <section className="relative my-stack-lg py-16 md:py-32 rounded-[16px] overflow-hidden border border-border-default flex items-center justify-center text-center">
         <div
           className="absolute inset-0 bg-cover bg-center w-full h-full z-0"
           style={{ backgroundImage: `url('${c.cta_image_url}')` }}
         />
-        <div className="absolute inset-0 bg-on-background/40 z-10" />
+        <div className="absolute inset-0 bg-surface-inverse/40 z-10" />
         <div className="relative z-20 px-6">
-          <h2 className="font-headline-md text-headline-md text-surface mb-8">{c.cta_heading}</h2>
+          <h2 className="font-headline-md text-headline-md text-text-inverse mb-8">{c.cta_heading}</h2>
           <Link
             href={c.cta_button_link}
-            className="inline-flex items-center justify-center px-8 py-4 bg-primary-container text-on-primary rounded-full font-label-md text-label-md uppercase tracking-wider hover:bg-primary transition-colors shadow-lg hover:shadow-xl hover:-translate-y-0.5 duration-200"
+            className="inline-flex items-center justify-center px-8 py-4 bg-brand-primary text-white rounded-full font-label-md text-label-md uppercase tracking-wider hover:opacity-90 transition-opacity shadow-lg hover:shadow-xl hover:-translate-y-0.5 duration-200"
           >
             {c.cta_button_text}
           </Link>

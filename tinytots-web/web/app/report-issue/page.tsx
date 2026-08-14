@@ -183,22 +183,22 @@ export default function ReportIssuePage() {
   }
 
   const inputClass = (hasError: boolean) =>
-    `w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none transition-colors ${
-      hasError ? "border-error focus:border-error" : "border-outline-variant focus:border-primary"
+    `w-full border rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md focus:outline-none transition-colors ${
+      hasError ? "border-red-700 focus:border-red-700" : "border-border-default focus:border-brand-primary"
     }`;
 
   const FieldError = ({ msg }: { msg?: string }) =>
-    msg ? <p className="font-label-md text-label-md text-error mt-1">{msg}</p> : null;
+    msg ? <p className="font-label-md text-label-md text-red-700 mt-1">{msg}</p> : null;
 
   if (submitted) {
     return (
       <main className="max-w-xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
-        <h1 className="font-display-md text-display-md text-on-surface mb-4">Thank you</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant">
+        <h1 className="font-display-md text-display-md text-text-primary mb-4">Thank you</h1>
+        <p className="font-body-md text-body-md text-text-secondary">
           We've received your report and our team will get back to you soon.
           {user && " You can track its status in "}
           {user && (
-            <a href="/account/returns" className="text-primary hover:underline">
+            <a href="/account/returns" className="text-brand-primary hover:underline">
               My Returns & Reports
             </a>
           )}
@@ -210,8 +210,8 @@ export default function ReportIssuePage() {
 
   return (
     <main className="max-w-xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-on-surface mb-2">Report an Issue</h1>
-      <p className="font-body-md text-body-md text-on-surface-variant mb-stack-md">
+      <h1 className="font-display-md text-display-md text-text-primary mb-2">Report an Issue</h1>
+      <p className="font-body-md text-body-md text-text-secondary mb-stack-md">
         Let us know about a problem with your order, a product, or anything else.
       </p>
 
@@ -244,7 +244,7 @@ export default function ReportIssuePage() {
         )}
 
         <div>
-          <label className="font-headline-md text-headline-md text-on-surface mb-2 block">
+          <label className="font-headline-md text-headline-md text-text-primary mb-2 block">
             What's this about?
           </label>
           <select
@@ -260,7 +260,7 @@ export default function ReportIssuePage() {
         </div>
 
         <div>
-          <label className="font-headline-md text-headline-md text-on-surface mb-2 block">
+          <label className="font-headline-md text-headline-md text-text-primary mb-2 block">
             Order number {type === "return" ? "" : "(optional)"}
           </label>
           <input
@@ -274,21 +274,21 @@ export default function ReportIssuePage() {
 
         {type === "return" && orderItems.length > 0 && (
           <div>
-            <label className="font-headline-md text-headline-md text-on-surface mb-2 block">
+            <label className="font-headline-md text-headline-md text-text-primary mb-2 block">
               Which item(s)?
             </label>
             <div className="flex flex-col gap-2">
               {orderItems.map((item) => (
                 <label
                   key={item.id}
-                  className="flex items-center gap-3 border border-outline-variant rounded-lg px-4 py-3 cursor-pointer"
+                  className="flex items-center gap-3 border border-border-default rounded-lg px-4 py-3 cursor-pointer"
                 >
                   <input
                     type="checkbox"
                     checked={selectedItemIds.has(item.id)}
                     onChange={() => toggleItem(item.id)}
                   />
-                  <span className="font-body-sm text-body-sm text-on-surface">
+                  <span className="font-body-sm text-body-sm text-text-primary">
                     {item.variant?.product?.name || "Item"}
                     {item.variant?.color && ` — ${item.variant.color}`}
                     {item.variant?.size && ` / ${item.variant.size}`}
@@ -301,7 +301,7 @@ export default function ReportIssuePage() {
         )}
 
         <div>
-          <label className="font-headline-md text-headline-md text-on-surface mb-2 block">
+          <label className="font-headline-md text-headline-md text-text-primary mb-2 block">
             Describe your issue
           </label>
           <textarea
@@ -316,14 +316,14 @@ export default function ReportIssuePage() {
         </div>
 
         <div>
-          <label className="font-headline-md text-headline-md text-on-surface mb-2 block">
+          <label className="font-headline-md text-headline-md text-text-primary mb-2 block">
             Photo (optional)
           </label>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
             onChange={handlePhotoChange}
-            className="font-body-sm text-body-sm text-on-surface-variant"
+            className="font-body-sm text-body-sm text-text-secondary"
           />
           {photoPreview && (
             <img src={photoPreview} alt="Preview" className="mt-2 w-24 h-24 object-cover rounded-lg" />
@@ -334,7 +334,7 @@ export default function ReportIssuePage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50"
+            className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {submitting ? "Submitting..." : "Submit Report"}
           </button>

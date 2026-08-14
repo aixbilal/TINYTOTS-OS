@@ -76,7 +76,7 @@ export default async function ShippingReturnsPage() {
   return (
     <main className="max-w-container-max mx-auto w-full py-stack-lg flex flex-col md:flex-row gap-gutter px-margin-mobile md:px-0">
       <aside className="hidden md:block w-56 shrink-0 sticky top-28 h-fit">
-        <p className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-3">
+        <p className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-3">
           Contents
         </p>
         <nav className="flex flex-col gap-1">
@@ -84,7 +84,7 @@ export default async function ShippingReturnsPage() {
             <a
               key={s.id}
               href={`#${s.id}`}
-              className="px-3 py-2 rounded-lg font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors"
+              className="px-3 py-2 rounded-lg font-body-sm text-body-sm text-text-secondary hover:bg-surface-secondary hover:text-brand-primary transition-colors"
             >
               {s.title}
             </a>
@@ -94,23 +94,23 @@ export default async function ShippingReturnsPage() {
 
       <div className="flex-grow min-w-0">
         <div className="text-center max-w-2xl mx-auto mb-stack-lg">
-          <h1 className="font-display-md text-display-md text-on-surface mb-3">{content.hero_title}</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant">{content.hero_subtitle}</p>
+          <h1 className="font-display-md text-display-md text-text-primary mb-3">{content.hero_title}</h1>
+          <p className="font-body-md text-body-md text-text-secondary">{content.hero_subtitle}</p>
         </div>
 
         <section id="delivery-timelines" className="mb-stack-lg">
-          <h2 className="font-headline-lg text-on-surface mb-stack-sm">{content.timelines_heading}</h2>
+          <h2 className="font-headline-lg text-text-primary mb-stack-sm">{content.timelines_heading}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
             {content.timelines.map((t) => (
               <div
                 key={t.label}
-                className="border border-outline-variant/20 rounded-2xl p-6 bg-surface-container-lowest flex flex-col items-center text-center gap-2"
+                className="border border-border-default rounded-2xl p-6 bg-surface-elevated flex flex-col items-center text-center gap-2"
               >
-                <span className="material-symbols-outlined text-primary bg-primary-container/20 p-3 rounded-full text-[24px]">
+                <span className="material-symbols-outlined text-brand-primary bg-brand-primary/10 p-3 rounded-full text-[24px]">
                   {t.icon}
                 </span>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">{t.label}</p>
-                <p className="font-headline-md text-headline-md text-on-surface">{t.value}</p>
+                <p className="font-body-sm text-body-sm text-text-secondary">{t.label}</p>
+                <p className="font-headline-md text-headline-md text-text-primary">{t.value}</p>
               </div>
             ))}
           </div>
@@ -118,20 +118,20 @@ export default async function ShippingReturnsPage() {
 
         {showCodSection && (
           <section id="cash-on-delivery" className="mb-stack-lg">
-            <h2 className="font-headline-lg text-on-surface mb-2">{content.cod_heading}</h2>
-            <p className="font-body-md text-body-md text-on-surface-variant mb-stack-sm max-w-2xl">
+            <h2 className="font-headline-lg text-text-primary mb-2">{content.cod_heading}</h2>
+            <p className="font-body-md text-body-md text-text-secondary mb-stack-sm max-w-2xl">
               {content.cod_intro}
             </p>
             <div className="flex flex-col gap-3 max-w-2xl">
               {content.cod_tiers.map((tier) => (
                 <div
                   key={tier.range}
-                  className="border border-outline-variant/20 rounded-xl px-5 py-4 bg-surface-container-lowest flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4"
+                  className="border border-border-default rounded-xl px-5 py-4 bg-surface-elevated flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4"
                 >
-                  <span className="font-body-md text-body-md text-on-surface font-semibold shrink-0 sm:w-48">
+                  <span className="font-body-md text-body-md text-text-primary font-semibold shrink-0 sm:w-48">
                     {tier.range}
                   </span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant">{tier.detail}</span>
+                  <span className="font-body-sm text-body-sm text-text-secondary">{tier.detail}</span>
                 </div>
               ))}
             </div>
@@ -139,37 +139,37 @@ export default async function ShippingReturnsPage() {
         )}
 
         <section id="returns-process" className="mb-stack-lg">
-          <h2 className="font-headline-lg text-on-surface mb-stack-sm">{content.steps_heading}</h2>
+          <h2 className="font-headline-lg text-text-primary mb-stack-sm">{content.steps_heading}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
             {content.steps.map((step, i) => (
               <div
                 key={step.title}
-                className="border border-outline-variant/20 rounded-2xl p-6 bg-surface-container-lowest flex flex-col gap-3"
+                className="border border-border-default rounded-2xl p-6 bg-surface-elevated flex flex-col gap-3"
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-lg text-label-lg font-semibold shrink-0">
+                  <span className="w-8 h-8 rounded-full bg-brand-primary text-white flex items-center justify-center font-label-lg text-label-lg font-semibold shrink-0">
                     {i + 1}
                   </span>
-                  <span className="material-symbols-outlined text-primary text-[22px]">{step.icon}</span>
+                  <span className="material-symbols-outlined text-brand-primary text-[22px]">{step.icon}</span>
                 </div>
-                <h3 className="font-headline-md text-headline-md text-on-surface">{step.title}</h3>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">{step.body}</p>
+                <h3 className="font-headline-md text-headline-md text-text-primary">{step.title}</h3>
+                <p className="font-body-sm text-body-sm text-text-secondary">{step.body}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="border border-outline-variant/20 rounded-2xl p-8 bg-surface-container-lowest flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+        <section className="border border-border-default rounded-2xl p-8 bg-surface-elevated flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
           <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-primary text-[32px]">support_agent</span>
+            <span className="material-symbols-outlined text-brand-primary text-[32px]">support_agent</span>
             <div>
-              <p className="font-headline-md text-headline-md text-on-surface">{content.contact_heading}</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">{content.contact_body}</p>
+              <p className="font-headline-md text-headline-md text-text-primary">{content.contact_heading}</p>
+              <p className="font-body-sm text-body-sm text-text-secondary">{content.contact_body}</p>
             </div>
           </div>
           <Link
             href={content.contact_button_link || "/help"}
-            className="bg-primary-container text-on-primary font-button text-button h-12 px-6 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 whitespace-nowrap"
+            className="bg-brand-primary text-white font-button text-button h-12 px-6 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 whitespace-nowrap"
           >
             {content.contact_button_text}{" "}
             <span className="material-symbols-outlined text-[18px]">arrow_forward</span>

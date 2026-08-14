@@ -16,7 +16,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const inputClass =
-  "w-full border border-outline-variant/50 rounded-xl px-4 py-3 bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
+  "w-full border border-border-default rounded-xl px-4 py-3 bg-surface-elevated font-body-md text-body-md text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary";
 
 function TrackOrderForm() {
   const searchParams = useSearchParams();
@@ -71,7 +71,7 @@ function TrackOrderForm() {
 
   return (
     <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-on-surface mb-stack-md">Track Your Order</h1>
+      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Track Your Order</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3 mb-stack-md">
         <input
@@ -93,25 +93,25 @@ function TrackOrderForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50"
+          className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {loading ? "Searching..." : "Track Order"}
         </button>
       </form>
 
       {error && (
-        <p className="font-body-sm text-body-sm text-error border border-error/30 bg-error-container/20 rounded-lg px-4 py-3 mb-stack-md">
+        <p className="font-body-sm text-body-sm text-red-700 border border-red-700/30 bg-red-700/10 rounded-lg px-4 py-3 mb-stack-md">
           {error}
         </p>
       )}
 
       {order && (
         <div className="flex flex-col gap-stack-sm">
-          <div className="border border-outline-variant/30 rounded-xl p-5 bg-surface-container-lowest">
-            <p className="font-body-sm text-body-sm text-on-surface-variant mb-1">
+          <div className="border border-border-default rounded-xl p-5 bg-surface-elevated">
+            <p className="font-body-sm text-body-sm text-text-secondary mb-1">
               Order {order.order_number}
             </p>
-            <p className="font-headline-md text-headline-md text-on-surface mb-4">
+            <p className="font-headline-md text-headline-md text-text-primary mb-4">
               {STATUS_LABELS[order.status] ?? order.status}
             </p>
 
@@ -123,11 +123,11 @@ function TrackOrderForm() {
                   return (
                     <div key={step} className="flex items-center flex-1">
                       <div
-                        className={`w-3 h-3 rounded-full ${reached ? "bg-primary" : "bg-outline-variant"}`}
+                        className={`w-3 h-3 rounded-full ${reached ? "bg-brand-primary" : "bg-border-default"}`}
                       />
                       {idx < STATUS_STEPS.length - 1 && (
                         <div
-                          className={`flex-1 h-0.5 ${idx < currentIdx ? "bg-primary" : "bg-outline-variant"}`}
+                          className={`flex-1 h-0.5 ${idx < currentIdx ? "bg-brand-primary" : "bg-border-default"}`}
                         />
                       )}
                     </div>
@@ -135,27 +135,27 @@ function TrackOrderForm() {
                 })}
               </div>
             ) : (
-              <p className="font-body-sm text-body-sm text-error">This order was cancelled.</p>
+              <p className="font-body-sm text-body-sm text-red-700">This order was cancelled.</p>
             )}
           </div>
 
-          <div className="border border-outline-variant/30 rounded-xl p-5 bg-surface-container-lowest">
-            <h2 className="font-headline-md text-headline-md text-on-surface mb-3">Items</h2>
+          <div className="border border-border-default rounded-xl p-5 bg-surface-elevated">
+            <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Items</h2>
             <div className="flex flex-col gap-3">
               {order.order_items.map((item: any) => (
                 <div key={item.id} className="flex justify-between font-body-sm text-body-sm">
                   <div>
-                    <p className="text-on-surface">{item.variants?.products?.name}</p>
-                    <p className="text-on-surface-variant">
+                    <p className="text-text-primary">{item.variants?.products?.name}</p>
+                    <p className="text-text-secondary">
                       {item.variants?.size ?? "One Size"}
                       {item.variants?.color ? ` / ${item.variants.color}` : ""} × {item.quantity}
                     </p>
                   </div>
-                  <p className="text-on-surface">Rs. {item.line_total.toLocaleString()}</p>
+                  <p className="text-text-primary">Rs. {item.line_total.toLocaleString()}</p>
                 </div>
               ))}
             </div>
-            <div className="border-t border-outline-variant/30 mt-4 pt-4 flex justify-between font-semibold text-on-surface">
+            <div className="border-t border-border-default mt-4 pt-4 flex justify-between font-semibold text-text-primary">
               <span>Total</span>
               <span>Rs. {order.total.toLocaleString()}</span>
             </div>
@@ -167,14 +167,14 @@ function TrackOrderForm() {
             </div>
           )}
 
-          <div className="border border-outline-variant/30 rounded-xl p-5 bg-surface-container-lowest font-body-sm text-body-sm">
-            <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Shipping to</h2>
-            <p className="text-on-surface-variant">{order.shipping_address}, {order.shipping_city}</p>
+          <div className="border border-border-default rounded-xl p-5 bg-surface-elevated font-body-sm text-body-sm">
+            <h2 className="font-headline-md text-headline-md text-text-primary mb-2">Shipping to</h2>
+            <p className="text-text-secondary">{order.shipping_address}, {order.shipping_city}</p>
           </div>
         </div>
       )}
 
-      <Link href="/" className="inline-block mt-stack-md text-primary hover:underline font-body-sm text-body-sm">
+      <Link href="/" className="inline-block mt-stack-md text-brand-primary hover:underline font-body-sm text-body-sm">
         Continue shopping
       </Link>
     </main>

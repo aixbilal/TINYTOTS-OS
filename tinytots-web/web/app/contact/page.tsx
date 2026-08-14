@@ -77,19 +77,19 @@ export default function ContactPage() {
   }
 
   const inputClass = (hasError: boolean) =>
-    `w-full border rounded-lg px-4 py-3 bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none transition-colors ${
-      hasError ? "border-error focus:border-error" : "border-outline-variant focus:border-primary"
+    `w-full border rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md focus:outline-none transition-colors ${
+      hasError ? "border-red-700 focus:border-red-700" : "border-border-default focus:border-brand-primary"
     }`;
 
   const FieldError = ({ msg }: { msg?: string }) =>
-    msg ? <p className="font-label-md text-label-md text-error mt-1">{msg}</p> : null;
+    msg ? <p className="font-label-md text-label-md text-red-700 mt-1">{msg}</p> : null;
 
   if (submitted) {
     return (
       <main className="max-w-xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg text-center">
-        <span className="material-symbols-outlined text-primary text-[48px] mb-4 inline-block">mark_email_read</span>
-        <h1 className="font-display-md text-display-md text-on-surface mb-4">Message sent</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant">
+        <span className="material-symbols-outlined text-brand-primary text-[48px] mb-4 inline-block">mark_email_read</span>
+        <h1 className="font-display-md text-display-md text-text-primary mb-4">Message sent</h1>
+        <p className="font-body-md text-body-md text-text-secondary">
           Thanks for reaching out — our team will get back to you soon.
         </p>
       </main>
@@ -99,30 +99,30 @@ export default function ContactPage() {
   return (
     <main className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg grid grid-cols-1 md:grid-cols-2 gap-gutter">
       <div>
-        <h1 className="font-display-md text-display-md text-on-surface mb-2">Contact Us</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant mb-stack-md">
+        <h1 className="font-display-md text-display-md text-text-primary mb-2">Contact Us</h1>
+        <p className="font-body-md text-body-md text-text-secondary mb-stack-md">
           Questions about an order, a product, or anything else — we're happy to help.
         </p>
 
         <div className="flex flex-col gap-4">
           <div className="flex items-start gap-3">
-            <span className="material-symbols-outlined text-primary bg-primary-container/20 p-2 rounded-full">call</span>
+            <span className="material-symbols-outlined text-brand-primary bg-brand-primary/10 p-2 rounded-full">call</span>
             <div>
-              <p className="font-body-md text-body-md text-on-surface font-medium">Call or WhatsApp</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">Mon–Sat, 10am–7pm</p>
+              <p className="font-body-md text-body-md text-text-primary font-medium">Call or WhatsApp</p>
+              <p className="font-body-sm text-body-sm text-text-secondary">Mon–Sat, 10am–7pm</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <span className="material-symbols-outlined text-primary bg-primary-container/20 p-2 rounded-full">mail</span>
+            <span className="material-symbols-outlined text-brand-primary bg-brand-primary/10 p-2 rounded-full">mail</span>
             <div>
-              <p className="font-body-md text-body-md text-on-surface font-medium">Email</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">We reply within 24 hours</p>
+              <p className="font-body-md text-body-md text-text-primary font-medium">Email</p>
+              <p className="font-body-sm text-body-sm text-text-secondary">We reply within 24 hours</p>
             </div>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 bg-surface-elevated border border-border-default rounded-2xl p-6">
         {!user && (
           <>
             <div>
@@ -163,7 +163,7 @@ export default function ContactPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-4 rounded-xl bg-primary-container text-on-primary font-button text-button hover:bg-primary transition-colors disabled:opacity-50"
+          className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {submitting ? "Sending..." : "Send Message"}
         </button>

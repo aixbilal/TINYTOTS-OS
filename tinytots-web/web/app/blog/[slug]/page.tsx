@@ -102,14 +102,14 @@ export default async function BlogPostPage({
         {/* Navigation Link */}
         <Link
           href="/blog"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline mb-6"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-primary hover:underline mb-6"
         >
           ← Back to Blog
         </Link>
 
         {/* 1. Featured Image ABOVE Title */}
         {post.featured_image_url && (
-          <div className="mb-6 rounded-2xl overflow-hidden border border-outline-variant/20 shadow-sm">
+          <div className="mb-6 rounded-2xl overflow-hidden border border-border-default shadow-sm">
             <img
               src={post.featured_image_url}
               alt={post.title}
@@ -120,11 +120,11 @@ export default async function BlogPostPage({
 
         {/* 2. Header: Title & Metadata */}
         <header className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight leading-tight mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-text-primary tracking-tight leading-tight mb-2">
             {post.title}
           </h1>
 
-          <p className="text-xs sm:text-sm text-primary uppercase tracking-wider font-semibold">
+          <p className="text-xs sm:text-sm text-brand-primary uppercase tracking-wider font-semibold">
             By {post.author || "TinyTots Editorial"} ·{" "}
             {post.published_at ? formatBlogDate(post.published_at) : ""}
           </p>
@@ -132,7 +132,7 @@ export default async function BlogPostPage({
 
         {/* 3. Text Content (Controlled Size) */}
         <div
-          className="w-full text-on-surface text-base leading-relaxed space-y-4 pt-2
+          className="w-full text-text-primary text-base leading-relaxed space-y-4 pt-2
 break-words [&_*]:max-w-full [&_*]:box-border
             [&_p]:mb-4 [&_p]:leading-relaxed
             [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-2
@@ -140,8 +140,8 @@ break-words [&_*]:max-w-full [&_*]:box-border
             [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2
             [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2
             [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
-            [&_strong]:font-semibold [&_strong]:text-on-surface
-[&_a]:text-primary [&_a]:underline [&_a]:break-all
+            [&_strong]:font-semibold [&_strong]:text-text-primary
+[&_a]:text-brand-primary [&_a]:underline [&_a]:break-all
             [&_img]:rounded-xl [&_img]:my-6 [&_img]:h-auto"
           dangerouslySetInnerHTML={{ __html: sanitizePostHtml(post.content) }}
         />

@@ -43,10 +43,10 @@ export default async function BlogPage() {
     <div className="w-full min-h-screen py-10 px-4 sm:px-6 max-w-4xl mx-auto">
       {/* Page Header */}
       <div className="mb-10 text-center sm:text-left">
-        <h1 className="text-3xl sm:text-5xl font-bold text-on-surface tracking-tight mb-3">
+        <h1 className="text-3xl sm:text-5xl font-bold text-text-primary tracking-tight mb-3">
           TinyTots Journal
         </h1>
-        <p className="text-on-surface-variant text-base sm:text-lg">
+        <p className="text-text-secondary text-base sm:text-lg">
           Stories, style guides, and care tips for your little ones.
         </p>
       </div>
@@ -57,10 +57,10 @@ export default async function BlogPage() {
           <Link
             key={post.id}
             href={`/blog/${post.slug}`}
-            className="group flex flex-col sm:flex-row items-stretch gap-5 rounded-3xl bg-surface border border-outline-variant/30 hover:border-primary/40 hover:shadow-md transition-all p-5"
+            className="group flex flex-col sm:flex-row items-stretch gap-5 rounded-3xl bg-surface-elevated border border-border-default hover:border-brand-primary/40 hover:shadow-md transition-all p-5"
           >
             {/* Image Box */}
-            <div className="h-40 sm:h-36 w-full sm:w-48 rounded-2xl overflow-hidden border border-outline-variant/20 bg-surface-container-low shrink-0 flex items-center justify-center">
+            <div className="h-40 sm:h-36 w-full sm:w-48 rounded-2xl overflow-hidden border border-border-default bg-surface-secondary shrink-0 flex items-center justify-center">
               {post.featured_image_url ? (
                 <img
                   src={post.featured_image_url}
@@ -68,7 +68,7 @@ export default async function BlogPage() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               ) : (
-                <span className="text-xs font-semibold text-on-surface-variant/40 uppercase tracking-widest">
+                <span className="text-xs font-semibold text-text-secondary/40 uppercase tracking-widest">
                   TinyTots
                 </span>
               )}
@@ -77,25 +77,25 @@ export default async function BlogPage() {
             {/* Content & Metadata Window */}
             <div className="flex flex-col justify-between w-full min-w-0 py-0.5">
               <div>
-                <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">
+                <p className="text-xs font-bold text-brand-primary uppercase tracking-wider mb-1">
                   By {post.author || "TinyTots Editorial"}
                 </p>
 
-                <h2 className="font-bold text-on-surface text-lg sm:text-xl leading-snug group-hover:text-primary transition-colors mb-2">
+                <h2 className="font-bold text-text-primary text-lg sm:text-xl leading-snug group-hover:text-brand-primary transition-colors mb-2">
                   {post.title}
                 </h2>
 
-                <p className="text-xs sm:text-sm text-on-surface-variant line-clamp-2 leading-relaxed">
+                <p className="text-xs sm:text-sm text-text-secondary line-clamp-2 leading-relaxed">
                   {getPlainTextExcerpt(post.content)}
                 </p>
               </div>
 
               {/* Bottom Footer Line */}
-              <div className="flex items-center justify-between text-xs font-medium text-on-surface-variant mt-3 pt-2.5 border-t border-outline-variant/15">
+              <div className="flex items-center justify-between text-xs font-medium text-text-secondary mt-3 pt-2.5 border-t border-border-default">
               <span>
                   {post.published_at ? formatBlogDate(post.published_at) : ""}
                 </span>
-                <span className="text-primary group-hover:underline font-semibold">
+                <span className="text-brand-primary group-hover:underline font-semibold">
                   Read Article →
                 </span>
               </div>

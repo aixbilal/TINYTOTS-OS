@@ -18,44 +18,44 @@ const AGE_SIZES = [
   export default function SizeGuidePage() {
     return (
       <main className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg">
-        <h1 className="font-display-md text-display-md text-on-surface mb-2">Size Guide</h1>
-        <p className="font-body-md text-body-md text-on-surface-variant mb-stack-lg max-w-2xl">
+        <h1 className="font-display-md text-display-md text-text-primary mb-2">Size Guide</h1>
+        <p className="font-body-md text-body-md text-text-secondary mb-stack-lg max-w-2xl">
           A general guide for clothing and footwear. Babies grow at different rates, so use height and
           weight as your primary reference — if your little one is between sizes, we recommend sizing up.
         </p>
 
-        <p className="font-body-sm text-body-sm text-on-surface-variant italic mb-stack-lg max-w-2xl">
+        <p className="font-body-sm text-body-sm text-text-secondary italic mb-stack-lg max-w-2xl">
           Note: sizes on our product pages are shown as labels only. Use the tables below as a general
           reference alongside each product's description.
         </p>
   
         <section className="mb-stack-lg">
-          <h2 className="font-headline-lg text-on-surface mb-stack-sm">Clothing</h2>
-          <div className="overflow-x-auto border border-outline-variant/20 rounded-2xl">
+          <h2 className="font-headline-lg text-text-primary mb-stack-sm">Clothing</h2>
+          <div className="overflow-x-auto border border-border-default rounded-2xl">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-surface-container-low">
-                  <th className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider px-4 py-3">
+                <tr className="bg-surface-secondary">
+                  <th className="font-label-md text-label-md text-text-secondary uppercase tracking-wider px-4 py-3">
                     Size Label
                   </th>
-                  <th className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider px-4 py-3">
+                  <th className="font-label-md text-label-md text-text-secondary uppercase tracking-wider px-4 py-3">
                     Age
                   </th>
-                  <th className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider px-4 py-3">
+                  <th className="font-label-md text-label-md text-text-secondary uppercase tracking-wider px-4 py-3">
                     Height
                   </th>
-                  <th className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider px-4 py-3">
+                  <th className="font-label-md text-label-md text-text-secondary uppercase tracking-wider px-4 py-3">
                     Weight
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {AGE_SIZES.map((row, i) => (
-                  <tr key={row.label} className={i % 2 === 0 ? "bg-surface-container-lowest" : "bg-surface"}>
-                    <td className="font-body-md text-body-md text-on-surface font-medium px-4 py-3">{row.label}</td>
-                    <td className="font-body-sm text-body-sm text-on-surface-variant px-4 py-3">{row.age}</td>
-                    <td className="font-body-sm text-body-sm text-on-surface-variant px-4 py-3">{row.height}</td>
-                    <td className="font-body-sm text-body-sm text-on-surface-variant px-4 py-3">{row.weight}</td>
+                  <tr key={row.label} className={i % 2 === 0 ? "bg-surface-elevated" : "bg-surface-primary"}>
+                    <td className="font-body-md text-body-md text-text-primary font-medium px-4 py-3">{row.label}</td>
+                    <td className="font-body-sm text-body-sm text-text-secondary px-4 py-3">{row.age}</td>
+                    <td className="font-body-sm text-body-sm text-text-secondary px-4 py-3">{row.height}</td>
+                    <td className="font-body-sm text-body-sm text-text-secondary px-4 py-3">{row.weight}</td>
                   </tr>
                 ))}
               </tbody>
@@ -64,28 +64,28 @@ const AGE_SIZES = [
         </section>
   
         <section className="mb-stack-lg">
-          <h2 className="font-headline-lg text-on-surface mb-stack-sm">Footwear</h2>
-          <div className="overflow-x-auto border border-outline-variant/20 rounded-2xl">
+          <h2 className="font-headline-lg text-text-primary mb-stack-sm">Footwear</h2>
+          <div className="overflow-x-auto border border-border-default rounded-2xl">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-surface-container-low">
-                  <th className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider px-4 py-3">
+                <tr className="bg-surface-secondary">
+                  <th className="font-label-md text-label-md text-text-secondary uppercase tracking-wider px-4 py-3">
                     Age
                   </th>
-                  <th className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider px-4 py-3">
+                  <th className="font-label-md text-label-md text-text-secondary uppercase tracking-wider px-4 py-3">
                     EU Size
                   </th>
-                  <th className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider px-4 py-3">
+                  <th className="font-label-md text-label-md text-text-secondary uppercase tracking-wider px-4 py-3">
                     Foot Length
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {SHOE_SIZES.map((row, i) => (
-                  <tr key={row.age} className={i % 2 === 0 ? "bg-surface-container-lowest" : "bg-surface"}>
-                    <td className="font-body-md text-body-md text-on-surface font-medium px-4 py-3">{row.age}</td>
-                    <td className="font-body-sm text-body-sm text-on-surface-variant px-4 py-3">{row.eu}</td>
-                    <td className="font-body-sm text-body-sm text-on-surface-variant px-4 py-3">{row.foot}</td>
+                  <tr key={row.age} className={i % 2 === 0 ? "bg-surface-elevated" : "bg-surface-primary"}>
+                    <td className="font-body-md text-body-md text-text-primary font-medium px-4 py-3">{row.age}</td>
+                    <td className="font-body-sm text-body-sm text-text-secondary px-4 py-3">{row.eu}</td>
+                    <td className="font-body-sm text-body-sm text-text-secondary px-4 py-3">{row.foot}</td>
                   </tr>
                 ))}
               </tbody>
@@ -93,15 +93,15 @@ const AGE_SIZES = [
           </div>
         </section>
   
-        <section className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 max-w-2xl">
-          <h2 className="font-headline-md text-headline-md text-on-surface mb-3">How to measure</h2>
-          <ul className="flex flex-col gap-2 font-body-sm text-body-sm text-on-surface-variant list-disc pl-5">
+        <section className="bg-surface-elevated border border-border-default rounded-2xl p-6 max-w-2xl">
+          <h2 className="font-headline-md text-headline-md text-text-primary mb-3">How to measure</h2>
+          <ul className="flex flex-col gap-2 font-body-sm text-body-sm text-text-secondary list-disc pl-5">
             <li>
-              <span className="text-on-surface font-medium">Height:</span> Lay your child flat and measure
+              <span className="text-text-primary font-medium">Height:</span> Lay your child flat and measure
               from the top of the head to the heel.
             </li>
             <li>
-              <span className="text-on-surface font-medium">Foot length:</span> Trace their foot on paper
+              <span className="text-text-primary font-medium">Foot length:</span> Trace their foot on paper
               while standing, then measure the longest point, heel to toe.
             </li>
             <li>
