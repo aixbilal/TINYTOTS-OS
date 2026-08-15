@@ -1104,33 +1104,6 @@ export default function AdminHomepagePage() {
           </div>
         </SectionCard>
 
-        {/* 9. Perspective card stack — independent from section 4 */}
-        <SectionCard
-          title="9. Trending Now — perspective carousel"
-          hint="Homepage: stacked rotating cards below Soft Pastels/Boys/Girls. Own heading + product list (stack_*), not shared with the grid above."
-        >
-          <div className="flex flex-col gap-3">
-            <TextField
-              label="Big heading (homepage)"
-              value={content.stack_heading || ""}
-              onChange={(v) => updateField("stack_heading", v)}
-              placeholder="Trending Now"
-            />
-            <SectionSelector
-              label="Wire products to this carousel"
-              mode="products"
-              selectionType={content.stack_selection_type || "products"}
-              category={content.stack_category}
-              productIds={content.stack_product_ids}
-              categories={categories}
-              products={products}
-              onChangeType={(t) => updateField("stack_selection_type", t)}
-              onChangeCategory={(slug) => updateField("stack_category", slug)}
-              onToggleProduct={(id) => toggleProduct("stack_product_ids", id)}
-            />
-          </div>
-        </SectionCard>
-
         {/* 10. USP */}
         <SectionCard
           title="10. Why Choose TinyTots"

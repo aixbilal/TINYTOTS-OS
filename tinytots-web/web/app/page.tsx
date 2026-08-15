@@ -19,12 +19,6 @@ export const revalidate = 60;
 export const preferredRegion = ["sin1", "bom1", "hnd1"];
 
 // Heavy client islands — code-split so framer-motion / supabase realtime stay off the critical path.
-// Aspect-square stack (~max-w-2xl) — reserve layout so dynamic chunk load doesn't CLS.
-const ProductCardStack = dynamic(() => import("@/components/ProductCardStack"), {
-  loading: () => (
-    <div className="w-full max-w-2xl mx-auto aspect-square md:aspect-[2/1]" aria-hidden />
-  ),
-});
 const TestimonialsCarousel = dynamic(() => import("@/components/TestimonialsCarousel"));
 
 const HOME_TITLE = "TinyTots | Premium Kids Clothing";
@@ -120,7 +114,6 @@ const HOMEPAGE_DEFAULTS = {
   hero_button_text: "Shop New Arrivals",
   hero_button_link: "#trending",
   trending_heading: "Trending Now",
-  stack_heading: "Trending Now",
   trust_items: DEFAULT_TRUST_ITEMS,
   usp_heading: "Why Choose TinyTots",
   meadow_image_url:
@@ -265,17 +258,13 @@ const getHomepageSections = unstable_cache(
   async (
     trendingSelectionType: string | null | undefined,
     trendingCategory: string | null | undefined,
-    trendingProductIds: number[] | null | undefined,
-    stackSelectionType: string | null | undefined,
-    stackCategory: string | null | undefined,
-    stackProductIds: number[] | null | undefined
+    trendingProductIds: number[] | null | undefined
   ) => {
-    const [trendingProducts, stackProducts, testimonials] = await Promise.all([
+    const [trendingProducts, testimonials] = await Promise.all([
       getProductsForSection(trendingSelectionType, trendingCategory, trendingProductIds),
-      getProductsForSection(stackSelectionType, stackCategory, stackProductIds),
       getHomepageTestimonials(),
     ]);
-    return { trendingProducts, stackProducts, testimonials };
+    return { trendingProducts, testimonials };
   },
   ["homepage-sections"],
   { revalidate: 60 }
@@ -283,13 +272,10 @@ const getHomepageSections = unstable_cache(
 
 export default async function Home() {
   const content = await getHomepageContent();
-  const { trendingProducts, stackProducts, testimonials } = await getHomepageSections(
+  const { trendingProducts, testimonials } = await getHomepageSections(
     content.trending_selection_type,
     content.trending_category,
-    content.trending_product_ids,
-    content.stack_selection_type,
-    content.stack_category,
-    content.stack_product_ids
+    content.trending_product_ids
   );
 
   const heroSlides = resolveHeroSlides(content);
@@ -298,7 +284,6 @@ export default async function Home() {
   const uspItems =
     content.usp_items && content.usp_items.length > 0 ? content.usp_items : HOMEPAGE_DEFAULTS.usp_items;
   const trendingHeading = content.trending_heading || HOMEPAGE_DEFAULTS.trending_heading;
-  const stackHeading = content.stack_heading || HOMEPAGE_DEFAULTS.stack_heading;
 
   return (
     <>
@@ -550,15 +535,6 @@ export default async function Home() {
             </div>
           </div>
         </section>
-
-        {stackProducts.length > 0 && (
-          <section className="mb-stack-lg">
-            <h2 className="font-display-md text-[32px] md:text-[48px] text-text-primary tracking-tight mb-stack-md text-center">
-              {stackHeading}
-            </h2>
-            <ProductCardStack products={stackProducts as any} />
-          </section>
-        )}
 
         {uspItems.length > 0 && (
           <section className="mb-stack-lg text-center">
