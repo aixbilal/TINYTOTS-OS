@@ -12,6 +12,7 @@ const SELECTION_TYPE_FIELDS = [
   "meadow_selection_type",
   "boys_selection_type",
   "girls_selection_type",
+  "new_arrivals_selection_type",
 ];
 const CATEGORY_FIELDS = [
   "trending_category",
@@ -21,6 +22,7 @@ const CATEGORY_FIELDS = [
   "meadow_category",
   "boys_category",
   "girls_category",
+  "new_arrivals_category",
 ];
 const PRODUCT_ID_FIELDS = [
   "trending_product_ids",
@@ -30,6 +32,7 @@ const PRODUCT_ID_FIELDS = [
   "meadow_product_ids",
   "boys_product_ids",
   "girls_product_ids",
+  "new_arrivals_product_ids",
 ];
 
 export async function GET(req: NextRequest) {
@@ -82,6 +85,33 @@ export async function PATCH(req: NextRequest) {
       "girls_heading",
       "girls_button_text",
       "girls_link",
+      "new_arrivals_image_url",
+      "new_arrivals_heading",
+      "new_arrivals_button_text",
+      "new_arrivals_link",
+      "editorial_eyebrow",
+      "editorial_headline",
+      "editorial_body",
+      "editorial_image_url",
+      "editorial_cta_text",
+      "editorial_cta_link",
+      "lifestyle_1_eyebrow",
+      "lifestyle_1_headline",
+      "lifestyle_1_body",
+      "lifestyle_1_image_url",
+      "lifestyle_1_cta_text",
+      "lifestyle_1_cta_link",
+      "lifestyle_2_eyebrow",
+      "lifestyle_2_headline",
+      "lifestyle_2_body",
+      "lifestyle_2_image_url",
+      "lifestyle_2_cta_text",
+      "lifestyle_2_cta_link",
+      "closing_cta_image_url",
+      "closing_cta_headline",
+      "closing_cta_subtext",
+      "closing_cta_button_text",
+      "closing_cta_button_link",
     ];
 
     const updates: Record<string, any> = { updated_at: new Date().toISOString() };

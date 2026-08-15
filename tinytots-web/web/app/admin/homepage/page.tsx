@@ -58,6 +58,36 @@ interface HomepageContent {
   girls_selection_type: "products" | "category";
   girls_category: string | null;
   girls_product_ids: number[] | null;
+  new_arrivals_image_url: string;
+  new_arrivals_heading: string;
+  new_arrivals_button_text: string;
+  new_arrivals_link: string;
+  new_arrivals_selection_type: "products" | "category";
+  new_arrivals_category: string | null;
+  new_arrivals_product_ids: number[] | null;
+  editorial_eyebrow: string;
+  editorial_headline: string;
+  editorial_body: string;
+  editorial_image_url: string;
+  editorial_cta_text: string;
+  editorial_cta_link: string;
+  lifestyle_1_eyebrow: string;
+  lifestyle_1_headline: string;
+  lifestyle_1_body: string;
+  lifestyle_1_image_url: string;
+  lifestyle_1_cta_text: string;
+  lifestyle_1_cta_link: string;
+  lifestyle_2_eyebrow: string;
+  lifestyle_2_headline: string;
+  lifestyle_2_body: string;
+  lifestyle_2_image_url: string;
+  lifestyle_2_cta_text: string;
+  lifestyle_2_cta_link: string;
+  closing_cta_image_url: string;
+  closing_cta_headline: string;
+  closing_cta_subtext: string;
+  closing_cta_button_text: string;
+  closing_cta_button_link: string;
 }
 
 interface ProductLite {
@@ -97,7 +127,8 @@ type ProductIdField =
   | "stack_product_ids"
   | "meadow_product_ids"
   | "boys_product_ids"
-  | "girls_product_ids";
+  | "girls_product_ids"
+  | "new_arrivals_product_ids";
 
 /** Keep editor state aligned with homepage_content columns the storefront reads. */
 function normalizeHomepageContent(c: Partial<HomepageContent> & Record<string, unknown>): HomepageContent {
@@ -171,6 +202,38 @@ function normalizeHomepageContent(c: Partial<HomepageContent> & Record<string, u
     girls_selection_type: c.girls_selection_type === "products" ? "products" : "category",
     girls_category: (c.girls_category as string | null) ?? null,
     girls_product_ids: Array.isArray(c.girls_product_ids) ? c.girls_product_ids.map(Number) : [],
+    new_arrivals_image_url: String(c.new_arrivals_image_url || ""),
+    new_arrivals_heading: String(c.new_arrivals_heading || "New Arrivals"),
+    new_arrivals_button_text: String(c.new_arrivals_button_text || "Shop Now"),
+    new_arrivals_link: String(c.new_arrivals_link || "/products?sort=newest"),
+    new_arrivals_selection_type: c.new_arrivals_selection_type === "products" ? "products" : "category",
+    new_arrivals_category: (c.new_arrivals_category as string | null) ?? null,
+    new_arrivals_product_ids: Array.isArray(c.new_arrivals_product_ids)
+      ? c.new_arrivals_product_ids.map(Number)
+      : [],
+    editorial_eyebrow: String(c.editorial_eyebrow || "Made With Heart"),
+    editorial_headline: String(c.editorial_headline || "Designed with love. Made for childhood."),
+    editorial_body: String(c.editorial_body || ""),
+    editorial_image_url: String(c.editorial_image_url || ""),
+    editorial_cta_text: String(c.editorial_cta_text || "Our Story"),
+    editorial_cta_link: String(c.editorial_cta_link || "/our-story"),
+    lifestyle_1_eyebrow: String(c.lifestyle_1_eyebrow || "Rooted In Quality"),
+    lifestyle_1_headline: String(c.lifestyle_1_headline || "Beautiful pieces for real life."),
+    lifestyle_1_body: String(c.lifestyle_1_body || ""),
+    lifestyle_1_image_url: String(c.lifestyle_1_image_url || ""),
+    lifestyle_1_cta_text: String(c.lifestyle_1_cta_text || "Learn More"),
+    lifestyle_1_cta_link: String(c.lifestyle_1_cta_link || "/our-story"),
+    lifestyle_2_eyebrow: String(c.lifestyle_2_eyebrow || "Made For Together"),
+    lifestyle_2_headline: String(c.lifestyle_2_headline || "For the moments that matter."),
+    lifestyle_2_body: String(c.lifestyle_2_body || ""),
+    lifestyle_2_image_url: String(c.lifestyle_2_image_url || ""),
+    lifestyle_2_cta_text: String(c.lifestyle_2_cta_text || "Explore More"),
+    lifestyle_2_cta_link: String(c.lifestyle_2_cta_link || "/products"),
+    closing_cta_image_url: String(c.closing_cta_image_url || ""),
+    closing_cta_headline: String(c.closing_cta_headline || "Made to be memories. Beautiful always."),
+    closing_cta_subtext: String(c.closing_cta_subtext || "Styles today. Memories forever."),
+    closing_cta_button_text: String(c.closing_cta_button_text || "Shop the Collection"),
+    closing_cta_button_link: String(c.closing_cta_button_link || "/products"),
   };
 }
 
@@ -690,21 +753,22 @@ export default function AdminHomepagePage() {
           </p>
         </SectionCard>
 
-        {/* 6. Soft Pastels Edit */}
-        <SectionCard title="6. Soft Pastels Edit banner" hint="Large left tile in the bento grid.">
+        {/* 6. Spring Moments seasonal campaign */}
+        <SectionCard title="6. Spring Moments campaign banner" hint="Full-width seasonal banner, reuses the meadow_* fields (badge text shown as the eyebrow, e.g. 'Hello Spring').">
           <div className="flex flex-col gap-3 mb-4">
-            <TextField
-              label="Image URL"
+            <AspectImageUploader
+              label="Banner image"
               value={content.meadow_image_url || ""}
               onChange={(v) => updateField("meadow_image_url", v)}
+              aspect={1.87}
+              aspectLabel="~1.87:1"
+              previewClassName="aspect-[1.87/1]"
+              outputWidth={1920}
+              outputHeight={1027}
+              variant="desktop"
             />
-            {content.meadow_image_url && (
-              <div className="w-28 h-20 relative rounded-md overflow-hidden border border-gray-200">
-                <Image src={content.meadow_image_url} alt="" fill className="object-cover" unoptimized />
-              </div>
-            )}
             <TextField
-              label="Badge text"
+              label="Eyebrow (e.g. Hello Spring)"
               value={content.meadow_badge_text || ""}
               onChange={(v) => updateField("meadow_badge_text", v)}
             />
@@ -740,7 +804,7 @@ export default function AdminHomepagePage() {
         </SectionCard>
 
         {/* 7. Boys */}
-        <SectionCard title="7. Boys tile" hint="Top-right tile in the bento grid.">
+        <SectionCard title="7. Boys collection card" hint="First of three collection cards (Girls / Boys / New Arrivals).">
           <div className="flex flex-col gap-3 mb-4">
             <AspectImageUploader
               label="Tile image"
@@ -785,7 +849,7 @@ export default function AdminHomepagePage() {
         </SectionCard>
 
         {/* 8. Girls */}
-        <SectionCard title="8. Girls tile" hint="Bottom-right tile in the bento grid.">
+        <SectionCard title="8. Girls collection card" hint="Second of three collection cards (Girls / Boys / New Arrivals).">
           <div className="flex flex-col gap-3 mb-4">
             <AspectImageUploader
               label="Tile image"
@@ -827,6 +891,215 @@ export default function AdminHomepagePage() {
             onChangeCategory={(slug) => updateField("girls_category", slug)}
             onToggleProduct={(id) => toggleProduct("girls_product_ids", id)}
           />
+        </SectionCard>
+
+        {/* 8b. New Arrivals collection card */}
+        <SectionCard title="8b. New Arrivals card" hint="Third collection card, next to Girls/Boys.">
+          <div className="flex flex-col gap-3 mb-4">
+            <AspectImageUploader
+              label="Card image"
+              value={content.new_arrivals_image_url || ""}
+              onChange={(v) => updateField("new_arrivals_image_url", v)}
+              aspect={TILE_ASPECT}
+              aspectLabel="3:2"
+              previewClassName="aspect-[3/2]"
+              outputWidth={1536}
+              outputHeight={1024}
+              variant="desktop"
+            />
+            <TextField
+              label="Heading"
+              value={content.new_arrivals_heading || ""}
+              onChange={(v) => updateField("new_arrivals_heading", v)}
+            />
+            <TextField
+              label="Button text"
+              value={content.new_arrivals_button_text || ""}
+              onChange={(v) => updateField("new_arrivals_button_text", v)}
+            />
+            <TextField
+              label="Fallback link"
+              value={content.new_arrivals_link || ""}
+              onChange={(v) => updateField("new_arrivals_link", v)}
+              placeholder="/products?sort=newest"
+            />
+          </div>
+          <SectionSelector
+            label="Card link target"
+            mode="link"
+            selectionType={content.new_arrivals_selection_type || "category"}
+            category={content.new_arrivals_category}
+            productIds={content.new_arrivals_product_ids}
+            categories={categories}
+            products={products}
+            onChangeType={(t) => updateField("new_arrivals_selection_type", t)}
+            onChangeCategory={(slug) => updateField("new_arrivals_category", slug)}
+            onToggleProduct={(id) => toggleProduct("new_arrivals_product_ids", id)}
+          />
+        </SectionCard>
+
+        {/* 8c. Editorial story */}
+        <SectionCard title="8c. Editorial story" hint={'"Designed with love. Made for childhood." section.'}>
+          <div className="flex flex-col gap-3">
+            <AspectImageUploader
+              label="Editorial image"
+              value={content.editorial_image_url || ""}
+              onChange={(v) => updateField("editorial_image_url", v)}
+              aspect={TILE_ASPECT}
+              aspectLabel="3:2"
+              previewClassName="aspect-[3/2]"
+              outputWidth={1536}
+              outputHeight={1024}
+              variant="desktop"
+            />
+            <TextField
+              label="Eyebrow"
+              value={content.editorial_eyebrow || ""}
+              onChange={(v) => updateField("editorial_eyebrow", v)}
+            />
+            <TextField
+              label="Headline"
+              value={content.editorial_headline || ""}
+              onChange={(v) => updateField("editorial_headline", v)}
+            />
+            <TextField
+              label="Body"
+              value={content.editorial_body || ""}
+              onChange={(v) => updateField("editorial_body", v)}
+            />
+            <TextField
+              label="CTA text"
+              value={content.editorial_cta_text || ""}
+              onChange={(v) => updateField("editorial_cta_text", v)}
+            />
+            <TextField
+              label="CTA link"
+              value={content.editorial_cta_link || ""}
+              onChange={(v) => updateField("editorial_cta_link", v)}
+              placeholder="/our-story"
+            />
+          </div>
+        </SectionCard>
+
+        {/* 8d. Lifestyle module 1 */}
+        <SectionCard title="8d. Lifestyle module 1" hint={'"Beautiful pieces for real life" supporting module.'}>
+          <div className="flex flex-col gap-3">
+            <AspectImageUploader
+              label="Module image"
+              value={content.lifestyle_1_image_url || ""}
+              onChange={(v) => updateField("lifestyle_1_image_url", v)}
+              aspect={TILE_ASPECT}
+              aspectLabel="3:2"
+              previewClassName="aspect-[3/2]"
+              outputWidth={1536}
+              outputHeight={1024}
+              variant="desktop"
+            />
+            <TextField
+              label="Eyebrow"
+              value={content.lifestyle_1_eyebrow || ""}
+              onChange={(v) => updateField("lifestyle_1_eyebrow", v)}
+            />
+            <TextField
+              label="Headline"
+              value={content.lifestyle_1_headline || ""}
+              onChange={(v) => updateField("lifestyle_1_headline", v)}
+            />
+            <TextField
+              label="Body"
+              value={content.lifestyle_1_body || ""}
+              onChange={(v) => updateField("lifestyle_1_body", v)}
+            />
+            <TextField
+              label="CTA text"
+              value={content.lifestyle_1_cta_text || ""}
+              onChange={(v) => updateField("lifestyle_1_cta_text", v)}
+            />
+            <TextField
+              label="CTA link"
+              value={content.lifestyle_1_cta_link || ""}
+              onChange={(v) => updateField("lifestyle_1_cta_link", v)}
+            />
+          </div>
+        </SectionCard>
+
+        {/* 8e. Lifestyle module 2 */}
+        <SectionCard title="8e. Lifestyle module 2" hint={'"For the moments that matter" supporting module.'}>
+          <div className="flex flex-col gap-3">
+            <AspectImageUploader
+              label="Module image"
+              value={content.lifestyle_2_image_url || ""}
+              onChange={(v) => updateField("lifestyle_2_image_url", v)}
+              aspect={TILE_ASPECT}
+              aspectLabel="3:2"
+              previewClassName="aspect-[3/2]"
+              outputWidth={1536}
+              outputHeight={1024}
+              variant="desktop"
+            />
+            <TextField
+              label="Eyebrow"
+              value={content.lifestyle_2_eyebrow || ""}
+              onChange={(v) => updateField("lifestyle_2_eyebrow", v)}
+            />
+            <TextField
+              label="Headline"
+              value={content.lifestyle_2_headline || ""}
+              onChange={(v) => updateField("lifestyle_2_headline", v)}
+            />
+            <TextField
+              label="Body"
+              value={content.lifestyle_2_body || ""}
+              onChange={(v) => updateField("lifestyle_2_body", v)}
+            />
+            <TextField
+              label="CTA text"
+              value={content.lifestyle_2_cta_text || ""}
+              onChange={(v) => updateField("lifestyle_2_cta_text", v)}
+            />
+            <TextField
+              label="CTA link"
+              value={content.lifestyle_2_cta_link || ""}
+              onChange={(v) => updateField("lifestyle_2_cta_link", v)}
+            />
+          </div>
+        </SectionCard>
+
+        {/* 8f. Closing CTA */}
+        <SectionCard title="8f. Closing CTA" hint={'"Made to be memories. Beautiful always." final banner before footer.'}>
+          <div className="flex flex-col gap-3">
+            <AspectImageUploader
+              label="Closing banner image"
+              value={content.closing_cta_image_url || ""}
+              onChange={(v) => updateField("closing_cta_image_url", v)}
+              aspect={TILE_ASPECT}
+              aspectLabel="3:2"
+              previewClassName="aspect-[3/2]"
+              outputWidth={1920}
+              outputHeight={1280}
+              variant="desktop"
+            />
+            <TextField
+              label="Headline"
+              value={content.closing_cta_headline || ""}
+              onChange={(v) => updateField("closing_cta_headline", v)}
+            />
+            <TextField
+              label="Subtext"
+              value={content.closing_cta_subtext || ""}
+              onChange={(v) => updateField("closing_cta_subtext", v)}
+            />
+            <TextField
+              label="Button text"
+              value={content.closing_cta_button_text || ""}
+              onChange={(v) => updateField("closing_cta_button_text", v)}
+            />
+            <TextField
+              label="Button link"
+              value={content.closing_cta_button_link || ""}
+              onChange={(v) => updateField("closing_cta_button_link", v)}
+            />
+          </div>
         </SectionCard>
 
         {/* 9. Perspective card stack — independent from section 4 */}
