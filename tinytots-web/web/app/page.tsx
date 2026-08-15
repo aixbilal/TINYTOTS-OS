@@ -140,6 +140,17 @@ const HOMEPAGE_DEFAULTS = {
   girls_heading: "Girls",
   girls_button_text: "Shop Now",
   girls_link: "/products",
+  new_arrivals_image_url: "/images/homepage/new-arrivals-tile.webp",
+  new_arrivals_heading: "New Arrivals",
+  new_arrivals_button_text: "Shop New In",
+  new_arrivals_link: "/products?sort=newest",
+  editorial_eyebrow: "Made With Heart",
+  editorial_headline: "Designed with love. Made for childhood.",
+  editorial_body:
+    "Every piece is crafted from premium natural fabrics with gentle details and timeless silhouettes - made to be worn, loved, and passed down.",
+  editorial_image_url: "/images/homepage/editorial-story-01.webp",
+  editorial_cta_text: "Our Story",
+  editorial_cta_link: "/our-story",
   usp_items: [
     { icon: "eco", title: "Ethically Sourced", description: "Every piece is made with responsibly sourced, child-safe materials." },
     { icon: "verified", title: "Certified Safe", description: "Fabrics tested and certified for sensitive skin." },
@@ -325,85 +336,149 @@ export default async function Home() {
 
         <TestimonialsCarousel testimonials={testimonials as any} />
 
-        <section className="mb-stack-lg">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap h-auto md:h-[500px]">
+        {/* Editorial story: "Designed with love. Made for childhood." */}
+        <section className="mb-stack-lg grid grid-cols-1 md:grid-cols-2 gap-bento-gap items-stretch">
+          <div className="relative rounded-none overflow-hidden min-h-[280px] md:min-h-[400px]">
+            <Image
+              src={content.editorial_image_url || HOMEPAGE_DEFAULTS.editorial_image_url}
+              alt=""
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+            />
+          </div>
+          <div className="flex flex-col justify-center bg-surface-elevated px-6 py-10 md:px-12">
+            <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3">
+              {content.editorial_eyebrow || HOMEPAGE_DEFAULTS.editorial_eyebrow}
+            </span>
+            <h2 className="font-display-md text-[28px] md:text-[36px] text-text-primary tracking-tight mb-4 max-w-md">
+              {content.editorial_headline || HOMEPAGE_DEFAULTS.editorial_headline}
+            </h2>
+            <p className="font-body-md text-body-md text-text-secondary mb-6 max-w-sm leading-relaxed">
+              {content.editorial_body || HOMEPAGE_DEFAULTS.editorial_body}
+            </p>
             <Link
-              href={sectionLink(
-                content.meadow_selection_type,
-                content.meadow_category,
-                content.meadow_product_ids,
-                content.meadow_link ?? HOMEPAGE_DEFAULTS.meadow_link
-              )}
-              className="md:col-span-2 relative rounded-[16px] overflow-hidden border border-border-default group cursor-pointer min-h-[220px] md:min-h-0"
+              href={content.editorial_cta_link || HOMEPAGE_DEFAULTS.editorial_cta_link}
+              className="inline-flex items-center justify-center bg-brand-primary text-white font-button text-button h-11 px-6 w-fit hover:opacity-90 transition-opacity duration-300"
+            >
+              {content.editorial_cta_text || HOMEPAGE_DEFAULTS.editorial_cta_text}
+            </Link>
+          </div>
+        </section>
+
+        {/* Girls / Boys / New Arrivals — three equal collection cards */}
+        <section className="mb-stack-lg">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
+            <Link
+              href="/products?gender=girl"
+              className="relative aspect-[3/2] overflow-hidden group cursor-pointer"
             >
               <Image
-                src={content.meadow_image_url ?? HOMEPAGE_DEFAULTS.meadow_image_url}
+                src={content.girls_image_url ?? HOMEPAGE_DEFAULTS.girls_image_url}
                 alt=""
                 fill
-                sizes="(max-width: 768px) 100vw, 66vw"
+                sizes="(max-width: 768px) 100vw, 33vw"
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300" />
-              <div className="absolute bottom-6 left-6 right-6 z-10 flex flex-col items-start">
-                <span className="bg-surface-elevated/90 backdrop-blur text-text-primary font-label-md text-label-md px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
-                  {content.meadow_badge_text ?? HOMEPAGE_DEFAULTS.meadow_badge_text}
-                </span>
-                <h3 className="font-headline-lg md:font-display-md text-headline-lg md:text-display-md text-white mb-4">
-                  {content.meadow_heading ?? HOMEPAGE_DEFAULTS.meadow_heading}
+              <div className="absolute inset-0 bg-black/15 group-hover:bg-black/25 transition-colors duration-300" />
+              <div className="absolute bottom-5 left-5 z-10">
+                <h3 className="font-headline-md text-headline-md text-white mb-1">
+                  {content.girls_heading || HOMEPAGE_DEFAULTS.girls_heading}
                 </h3>
-                <span className="bg-white text-text-primary font-button text-button px-6 py-2 rounded-lg group-hover:bg-surface-canvas transition-colors inline-block">
-                  {content.meadow_button_text ?? HOMEPAGE_DEFAULTS.meadow_button_text}
+                <p className="text-white/85 font-body-sm text-body-sm mb-3">Soft, pretty &amp; made to twirl</p>
+                <span className="inline-flex items-center bg-white text-text-primary font-button text-button px-4 py-2">
+                  {content.girls_button_text || HOMEPAGE_DEFAULTS.girls_button_text}
                 </span>
               </div>
             </Link>
-            <div className="flex flex-col gap-bento-gap">
-              <Link
-                href="/products?gender=boy"
-                className="relative flex-1 rounded-[16px] overflow-hidden border border-border-default group cursor-pointer min-h-[140px] md:min-h-[200px]"
-              >
-                <Image
-                  src={content.boys_image_url ?? HOMEPAGE_DEFAULTS.boys_image_url}
-                  alt=""
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300" />
-                <div className="absolute bottom-4 left-4 z-10">
-                  <h3 className="font-headline-md text-headline-md text-white mb-2">
-                    {content.boys_heading || HOMEPAGE_DEFAULTS.boys_heading}
-                  </h3>
-                  <span className="text-white flex items-center font-body-sm text-body-sm group-hover:underline">
-                    {content.boys_button_text || HOMEPAGE_DEFAULTS.boys_button_text}{" "}
-                    <span className="material-symbols-outlined text-[16px] ml-1">arrow_forward</span>
-                  </span>
-                </div>
-              </Link>
-              <Link
-                href="/products?gender=girl"
-                className="relative flex-1 rounded-[16px] overflow-hidden border border-border-default group cursor-pointer min-h-[140px] md:min-h-[200px]"
-              >
-                <Image
-                  src={content.girls_image_url ?? HOMEPAGE_DEFAULTS.girls_image_url}
-                  alt=""
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300" />
-                <div className="absolute bottom-4 left-4 z-10">
-                  <h3 className="font-headline-md text-headline-md text-white mb-2">
-                    {content.girls_heading || HOMEPAGE_DEFAULTS.girls_heading}
-                  </h3>
-                  <span className="text-white flex items-center font-body-sm text-body-sm group-hover:underline">
-                    {content.girls_button_text || HOMEPAGE_DEFAULTS.girls_button_text}{" "}
-                    <span className="material-symbols-outlined text-[16px] ml-1">arrow_forward</span>
-                  </span>
-                </div>
-              </Link>
-            </div>
+            <Link
+              href="/products?gender=boy"
+              className="relative aspect-[3/2] overflow-hidden group cursor-pointer"
+            >
+              <Image
+                src={content.boys_image_url ?? HOMEPAGE_DEFAULTS.boys_image_url}
+                alt=""
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/15 group-hover:bg-black/25 transition-colors duration-300" />
+              <div className="absolute bottom-5 left-5 z-10">
+                <h3 className="font-headline-md text-headline-md text-white mb-1">
+                  {content.boys_heading || HOMEPAGE_DEFAULTS.boys_heading}
+                </h3>
+                <p className="text-white/85 font-body-sm text-body-sm mb-3">Cool, comfortable &amp; adventure ready</p>
+                <span className="inline-flex items-center bg-white text-text-primary font-button text-button px-4 py-2">
+                  {content.boys_button_text || HOMEPAGE_DEFAULTS.boys_button_text}
+                </span>
+              </div>
+            </Link>
+            <Link
+              href={sectionLink(
+                content.new_arrivals_selection_type,
+                content.new_arrivals_category,
+                content.new_arrivals_product_ids,
+                content.new_arrivals_link ?? HOMEPAGE_DEFAULTS.new_arrivals_link
+              )}
+              className="relative aspect-[3/2] overflow-hidden group cursor-pointer"
+            >
+              <Image
+                src={content.new_arrivals_image_url ?? HOMEPAGE_DEFAULTS.new_arrivals_image_url}
+                alt=""
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/15 group-hover:bg-black/25 transition-colors duration-300" />
+              <div className="absolute bottom-5 left-5 z-10">
+                <h3 className="font-headline-md text-headline-md text-white mb-1">
+                  {content.new_arrivals_heading || HOMEPAGE_DEFAULTS.new_arrivals_heading}
+                </h3>
+                <p className="text-white/85 font-body-sm text-body-sm mb-3">The latest pieces to love</p>
+                <span className="inline-flex items-center bg-white text-text-primary font-button text-button px-4 py-2">
+                  {content.new_arrivals_button_text || HOMEPAGE_DEFAULTS.new_arrivals_button_text}
+                </span>
+              </div>
+            </Link>
           </div>
         </section>
+
+        {/* Spring Moments — full-width seasonal campaign banner */}
+        <Link
+          href={sectionLink(
+            content.meadow_selection_type,
+            content.meadow_category,
+            content.meadow_product_ids,
+            content.meadow_link ?? HOMEPAGE_DEFAULTS.meadow_link
+          )}
+          className="relative flex mb-stack-lg min-h-[300px] md:min-h-[360px] overflow-hidden group cursor-pointer bg-surface-elevated"
+        >
+          <Image
+            src={content.meadow_image_url ?? HOMEPAGE_DEFAULTS.meadow_image_url}
+            alt=""
+            fill
+            sizes="100vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(to right, rgba(250,247,242,0.95) 0%, rgba(250,247,242,0.55) 45%, rgba(250,247,242,0) 70%)",
+            }}
+          />
+          <div className="relative z-10 flex flex-col justify-center px-6 md:px-14 max-w-md">
+            <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3">
+              {content.meadow_badge_text ?? HOMEPAGE_DEFAULTS.meadow_badge_text}
+            </span>
+            <h3 className="font-display-md text-[28px] md:text-[36px] text-text-primary tracking-tight mb-4">
+              {content.meadow_heading ?? HOMEPAGE_DEFAULTS.meadow_heading}
+            </h3>
+            <span className="inline-flex items-center justify-center bg-brand-primary text-white font-button text-button h-11 px-6 w-fit hover:opacity-90 transition-opacity duration-300">
+              {content.meadow_button_text ?? HOMEPAGE_DEFAULTS.meadow_button_text}
+            </span>
+          </div>
+        </Link>
+
 
         {stackProducts.length > 0 && (
           <section className="mb-stack-lg">
