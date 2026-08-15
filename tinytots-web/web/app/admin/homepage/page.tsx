@@ -86,8 +86,9 @@ const DEFAULT_TRUST: TrustItem[] = [
   { icon: "replay", label: "Easy 7-Day Returns" },
 ];
 
-const DESKTOP_ASPECT = 16 / 9;
-const MOBILE_ASPECT = 5 / 4;
+const DESKTOP_ASPECT = 3 / 2;
+const MOBILE_ASPECT = 4 / 5;
+const TILE_ASPECT = 3 / 2;
 
 type ProductIdField =
   | "trending_product_ids"
@@ -481,7 +482,7 @@ export default function AdminHomepagePage() {
         {/* 2. Hero */}
         <SectionCard
           title="2. Hero banner"
-          hint="Full-bleed rotating slides. Auto-advances about every 12 seconds. Upload desktop (16:9) and mobile (5:4) crops per slide."
+          hint="Full-bleed rotating slides. Auto-advances about every 12 seconds. Upload desktop (3:2) and mobile (4:5) crops per slide."
         >
           <div className="flex flex-col gap-4">
             {(content.hero_slides || []).map((slide, i) => (
@@ -542,10 +543,10 @@ export default function AdminHomepagePage() {
                       updateField("hero_slides", next);
                     }}
                     aspect={DESKTOP_ASPECT}
-                    aspectLabel="16:9"
-                    previewClassName="aspect-video"
-                    outputWidth={1920}
-                    outputHeight={1080}
+                    aspectLabel="3:2"
+                    previewClassName="aspect-[3/2]"
+                    outputWidth={1536}
+                    outputHeight={1024}
                     variant="desktop"
                   />
                   <AspectImageUploader
@@ -557,10 +558,10 @@ export default function AdminHomepagePage() {
                       updateField("hero_slides", next);
                     }}
                     aspect={MOBILE_ASPECT}
-                    aspectLabel="5:4"
-                    previewClassName="aspect-[5/4]"
-                    outputWidth={1000}
-                    outputHeight={800}
+                    aspectLabel="4:5"
+                    previewClassName="aspect-[4/5]"
+                    outputWidth={1122}
+                    outputHeight={1402}
                     variant="mobile"
                   />
                 </div>
@@ -737,16 +738,17 @@ export default function AdminHomepagePage() {
         {/* 7. Boys */}
         <SectionCard title="7. Boys tile" hint="Top-right tile in the bento grid.">
           <div className="flex flex-col gap-3 mb-4">
-            <TextField
-              label="Image URL"
+            <AspectImageUploader
+              label="Tile image"
               value={content.boys_image_url || ""}
               onChange={(v) => updateField("boys_image_url", v)}
+              aspect={TILE_ASPECT}
+              aspectLabel="3:2"
+              previewClassName="aspect-[3/2]"
+              outputWidth={1536}
+              outputHeight={1024}
+              variant="desktop"
             />
-            {content.boys_image_url && (
-              <div className="w-28 h-20 relative rounded-md overflow-hidden border border-gray-200">
-                <Image src={content.boys_image_url} alt="" fill className="object-cover" unoptimized />
-              </div>
-            )}
             <TextField
               label="Heading"
               value={content.boys_heading || ""}
@@ -781,16 +783,17 @@ export default function AdminHomepagePage() {
         {/* 8. Girls */}
         <SectionCard title="8. Girls tile" hint="Bottom-right tile in the bento grid.">
           <div className="flex flex-col gap-3 mb-4">
-            <TextField
-              label="Image URL"
+            <AspectImageUploader
+              label="Tile image"
               value={content.girls_image_url || ""}
               onChange={(v) => updateField("girls_image_url", v)}
+              aspect={TILE_ASPECT}
+              aspectLabel="3:2"
+              previewClassName="aspect-[3/2]"
+              outputWidth={1536}
+              outputHeight={1024}
+              variant="desktop"
             />
-            {content.girls_image_url && (
-              <div className="w-28 h-20 relative rounded-md overflow-hidden border border-gray-200">
-                <Image src={content.girls_image_url} alt="" fill className="object-cover" unoptimized />
-              </div>
-            )}
             <TextField
               label="Heading"
               value={content.girls_heading || ""}
