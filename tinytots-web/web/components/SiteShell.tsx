@@ -650,38 +650,51 @@ export default function SiteShell({
               <UgcFeed />
               {shouldShowFooterFaq(pathname) && <FooterFaq />}
               <footer className="bg-surface-secondary border-t border-border-default w-full">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-8 px-margin-mobile md:px-margin-desktop py-10 md:py-12 max-w-container-max mx-auto">
-                  <div className="col-span-2 md:col-span-3 lg:col-span-1 flex flex-col gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-x-6 gap-y-8 px-margin-mobile md:px-margin-desktop pt-10 md:pt-12 max-w-container-max mx-auto">
+                  <div className="col-span-2 md:col-span-1 flex flex-col gap-3">
                     <span className="font-headline-lg text-headline-lg text-brand-primary tracking-tight">TinyTots</span>
-                    <a href="mailto:support@tinytotsofficial.com" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary hover:underline">
-                      support@tinytotsofficial.com
-                    </a>
-                    <p className="font-label-md text-label-md text-text-secondary">© 2026 TinyTots Premium Kids. All rights reserved.</p>
+                    <p className="font-label-md text-label-md text-text-secondary uppercase tracking-wider -mt-2">
+                      Timeless for tiny hearts
+                    </p>
                   </div>
                   <div className="flex flex-col gap-2.5">
-                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-1">Explore</h4>
-                    <Link href="/products" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Shop All</Link>
-                    <Link href="/our-story" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">About Us</Link>
-                    <Link href="/blog" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Blog</Link>
+                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-1">Shop</h4>
+                    <Link href="/products?sort=newest" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">New In</Link>
+                    <Link href="/products?gender=girl" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Girls</Link>
+                    <Link href="/products?gender=boy" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Boys</Link>
+                    <Link href="/collections" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Collections</Link>
                   </div>
                   <div className="flex flex-col gap-2.5">
-                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-1">Support</h4>
-                    <Link href="/help" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Help Center</Link>
-                    <Link href="/contact" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Contact Us</Link>
+                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-1">Help</h4>
                     <Link href="/size-guide" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Size Guide</Link>
-                    <Link href="/track-order" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Track Order</Link>
-                    <Link href="/account/returns" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Returns & Refunds</Link>
+                    <Link href="/shipping-returns" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Shipping &amp; Delivery</Link>
+                    <Link href="/account/returns" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Returns &amp; Exchanges</Link>
+                    <Link href="/help" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">FAQ</Link>
+                  </div>
+                  <div className="flex flex-col gap-2.5">
+                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-1">About</h4>
+                    <Link href="/our-story" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Our Story</Link>
+                    <Link href="/blog" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Journal</Link>
+                    <Link href="/contact" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Contact Us</Link>
                     <Link href="/report-issue" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Report an Issue</Link>
                   </div>
-                  <div className="flex flex-col gap-2.5">
-                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-1">Legal</h4>
-                    <Link href="/shipping-returns" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Shipping &amp; Returns</Link>
-                    <Link href="/privacy-policy" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Privacy Policy</Link>
-                    <Link href="/terms" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Terms &amp; Conditions</Link>
-                  </div>
-                  <div className="col-span-2 md:col-span-3 lg:col-span-1 flex flex-col gap-3 min-w-0 pt-2 lg:pt-0 border-t border-border-default lg:border-0">
-                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider">Join Our Newsletter</h4>
+                  <div className="col-span-2 md:col-span-1 flex flex-col gap-3 min-w-0 pt-2 md:pt-0 border-t border-border-default md:border-0">
+                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider">Join Our Family</h4>
+                    <p className="font-body-sm text-body-sm text-text-secondary -mt-2">
+                      Sign up for new arrivals, special offers &amp; little inspirations.
+                    </p>
                     <NewsletterForm />
+                  </div>
+                </div>
+                <div className="border-t border-border-default mt-8">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-margin-mobile md:px-margin-desktop py-5 max-w-container-max mx-auto">
+                    <p className="font-label-md text-label-md text-text-secondary">
+                      © {new Date().getFullYear()} TinyTots. All rights reserved.
+                    </p>
+                    <div className="flex items-center gap-5">
+                      <Link href="/terms" className="font-label-md text-label-md text-text-secondary hover:text-brand-primary transition-colors">Terms &amp; Conditions</Link>
+                      <Link href="/privacy-policy" className="font-label-md text-label-md text-text-secondary hover:text-brand-primary transition-colors">Privacy Policy</Link>
+                    </div>
                   </div>
                 </div>
               </footer>
