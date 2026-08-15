@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 interface Testimonial {
   id: number;
   customer_name: string;
@@ -7,73 +9,64 @@ interface Testimonial {
   quote: string;
 }
 
+const PAGE_SIZE = 3;
+
 function TestimonialCard({ t }: { t: Testimonial }) {
   return (
-    <div className="shrink-0 w-[260px] rounded-xl border border-border-default bg-surface-elevated p-4 flex flex-col gap-2 mx-2">
-      <div className="text-brand-primary text-sm" aria-hidden="true">
-        {"★".repeat(t.rating)}
-        {"☆".repeat(5 - t.rating)}
-      </div>
-      <p
-        className="font-body-sm text-text-secondary italic overflow-hidden"
-        style={{
-          display: "-webkit-box",
-          WebkitLineClamp: 3,
-          WebkitBoxOrient: "vertical",
-          lineHeight: 1.5,
-        }}
-      >
-        &ldquo;{t.quote}&rdquo;
+    <div className="flex flex-col gap-3 bg-surface-elevated p-6">
+      <span className="font-display-md text-[32px] leading-none text-brand-primary" aria-hidden="true">
+        &ldquo;
+      </span>
+      <p className="font-body-md text-body-md text-text-secondary italic leading-relaxed -mt-4">
+        {t.quote}
       </p>
-      <p className="font-label-md text-label-md text-text-primary font-semibold mt-auto">
-        {t.customer_name}
-      </p>
+      <p className="font-label-md text-label-md text-text-primary mt-1">&mdash; {t.customer_name}</p>
     </div>
   );
 }
 
 /**
- * Presentational marquee — data is server-fetched on the homepage so the
- * section is in the first HTML (no CLS from client fetch) and we avoid
- * shipping @supabase/supabase-js + realtime on /.
+ * Static, paginated (not infinite-scrolling) testimonial grid, per the
+ * approved final spec: three cards per page with dot pagination. Data is
+ * server-fetched on the homepage so this is in the first HTML.
  */
 export default function TestimonialsCarousel({
   testimonials = [],
 }: {
   testimonials?: Testimonial[];
 }) {
+  const [page, setPage] = useState(0);
   if (!testimonials.length) return null;
 
+  const pageCount = Math.max(1, Math.ceil(testimonials.length / PAGE_SIZE));
+  const current = testimonials.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
   return (
-    <section className="mb-stack-lg">
-      <h2 className="font-headline-lg text-text-primary mb-stack-md text-center">
-        What Parents Are Saying
+    <section className="mb-stack-lg text-center">
+      <h2 className="font-display-md text-[24px] md:text-[28px] text-text-primary tracking-tight mb-stack-md">
+        Kind words from our TinyTots families
       </h2>
-      <div
-      className="relative w-screen max-w-[100vw] left-1/2 -translate-x-1/2 overflow-hidden py-2 group"
-      style={{
-        maskImage:
-          "linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%)",
-        WebkitMaskImage:
-          "linear-gradient(to right, transparent 0%, black 48px, black calc(100% - 48px), transparent 100%)",
-      }}
-    >
-        <div
-          className="flex w-max group-hover:[animation-play-state:paused]"
-          style={{ animation: "marquee-loop 30s linear infinite" }}
-        >
-          <div className="flex shrink-0">
-            {testimonials.map((t) => (
-              <TestimonialCard key={`a-${t.id}`} t={t} />
-            ))}
-          </div>
-          <div className="flex shrink-0" aria-hidden="true">
-            {testimonials.map((t) => (
-              <TestimonialCard key={`b-${t.id}`} t={t} />
-            ))}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-bento-gap text-left">
+        {current.map((t) => (
+          <TestimonialCard key={t.id} t={t} />
+        ))}
       </div>
+      {pageCount > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          {Array.from({ length: pageCount }).map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={`Go to testimonials page ${i + 1}`}
+              aria-current={i === page ? true : undefined}
+              onClick={() => setPage(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                i === page ? "w-6 bg-brand-primary" : "w-2 bg-border-default hover:bg-text-secondary"
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

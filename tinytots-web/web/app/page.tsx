@@ -6,7 +6,6 @@ import { cache } from "react";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import Link from "next/link";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
-import UspMarquee from "@/components/UspMarquee";
 import HomepageHero from "@/components/HomepageHero";
 import HeroLcpPreload from "@/components/HeroLcpPreload";
 import { resolveHeroSlides } from "@/lib/hero-slides";
@@ -151,6 +150,18 @@ const HOMEPAGE_DEFAULTS = {
   editorial_image_url: "/images/homepage/editorial-story-01.webp",
   editorial_cta_text: "Our Story",
   editorial_cta_link: "/our-story",
+  lifestyle_1_eyebrow: "Rooted In Quality",
+  lifestyle_1_headline: "Beautiful pieces for real life.",
+  lifestyle_1_body: "We believe in slow fashion, lasting quality, and the little details that make a big difference.",
+  lifestyle_1_image_url: "/images/homepage/lifestyle-support.webp",
+  lifestyle_1_cta_text: "Learn More",
+  lifestyle_1_cta_link: "/our-story",
+  lifestyle_2_eyebrow: "Made For Together",
+  lifestyle_2_headline: "For the moments that matter.",
+  lifestyle_2_body: "From everyday adventures to memory-making days - we're here for it all.",
+  lifestyle_2_image_url: "/images/homepage/brand-story-support.webp",
+  lifestyle_2_cta_text: "Explore More",
+  lifestyle_2_cta_link: "/products",
   usp_items: [
     { icon: "eco", title: "Ethically Sourced", description: "Every piece is made with responsibly sourced, child-safe materials." },
     { icon: "verified", title: "Certified Safe", description: "Fabrics tested and certified for sensitive skin." },
@@ -334,8 +345,6 @@ export default async function Home() {
           />
         </section>
 
-        <TestimonialsCarousel testimonials={testimonials as any} />
-
         {/* Editorial story: "Designed with love. Made for childhood." */}
         <section className="mb-stack-lg grid grid-cols-1 md:grid-cols-2 gap-bento-gap items-stretch">
           <div className="relative rounded-none overflow-hidden min-h-[280px] md:min-h-[400px]">
@@ -480,6 +489,68 @@ export default async function Home() {
         </Link>
 
 
+        {/* Two supporting lifestyle/brand editorial modules */}
+        <section className="mb-stack-lg grid grid-cols-1 md:grid-cols-2 gap-bento-gap">
+          <div className="flex flex-col sm:flex-row gap-5 items-start">
+            <div className="relative w-full sm:w-[38%] aspect-[4/5] shrink-0 overflow-hidden">
+              <Image
+                src={content.lifestyle_1_image_url || HOMEPAGE_DEFAULTS.lifestyle_1_image_url}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 100vw, 20vw"
+                className="object-cover"
+              />
+            </div>
+            <div className="flex flex-col justify-center pt-1">
+              <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-2">
+                {content.lifestyle_1_eyebrow || HOMEPAGE_DEFAULTS.lifestyle_1_eyebrow}
+              </span>
+              <h3 className="font-display-md text-[22px] md:text-[26px] text-text-primary tracking-tight mb-3">
+                {content.lifestyle_1_headline || HOMEPAGE_DEFAULTS.lifestyle_1_headline}
+              </h3>
+              <p className="font-body-sm text-body-sm text-text-secondary mb-4 leading-relaxed">
+                {content.lifestyle_1_body || HOMEPAGE_DEFAULTS.lifestyle_1_body}
+              </p>
+              <Link
+                href={content.lifestyle_1_cta_link || HOMEPAGE_DEFAULTS.lifestyle_1_cta_link}
+                className="inline-flex items-center font-button text-button text-text-primary hover:underline underline-offset-4 w-fit"
+              >
+                {content.lifestyle_1_cta_text || HOMEPAGE_DEFAULTS.lifestyle_1_cta_text}
+                <span className="material-symbols-outlined text-[16px] ml-1">arrow_forward</span>
+              </Link>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-5 items-start">
+            <div className="relative w-full sm:w-[38%] aspect-[4/5] shrink-0 overflow-hidden">
+              <Image
+                src={content.lifestyle_2_image_url || HOMEPAGE_DEFAULTS.lifestyle_2_image_url}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 100vw, 20vw"
+                className="object-cover"
+              />
+            </div>
+            <div className="flex flex-col justify-center pt-1">
+              <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-2">
+                {content.lifestyle_2_eyebrow || HOMEPAGE_DEFAULTS.lifestyle_2_eyebrow}
+              </span>
+              <h3 className="font-display-md text-[22px] md:text-[26px] text-text-primary tracking-tight mb-3">
+                {content.lifestyle_2_headline || HOMEPAGE_DEFAULTS.lifestyle_2_headline}
+              </h3>
+              <p className="font-body-sm text-body-sm text-text-secondary mb-4 leading-relaxed">
+                {content.lifestyle_2_body || HOMEPAGE_DEFAULTS.lifestyle_2_body}
+              </p>
+              <Link
+                href={content.lifestyle_2_cta_link || HOMEPAGE_DEFAULTS.lifestyle_2_cta_link}
+                className="inline-flex items-center font-button text-button text-text-primary hover:underline underline-offset-4 w-fit"
+              >
+                {content.lifestyle_2_cta_text || HOMEPAGE_DEFAULTS.lifestyle_2_cta_text}
+                <span className="material-symbols-outlined text-[16px] ml-1">arrow_forward</span>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {stackProducts.length > 0 && (
           <section className="mb-stack-lg">
             <h2 className="font-display-md text-[32px] md:text-[48px] text-text-primary tracking-tight mb-stack-md text-center">
@@ -490,13 +561,25 @@ export default async function Home() {
         )}
 
         {uspItems.length > 0 && (
-          <section className="mb-stack-lg">
-            <h2 className="font-headline-lg text-text-primary mb-stack-md text-center">
+          <section className="mb-stack-lg text-center">
+            <h2 className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-stack-md">
               {content.usp_heading || HOMEPAGE_DEFAULTS.usp_heading}
             </h2>
-            <UspMarquee items={uspItems} />
+            <div className="flex flex-wrap justify-center gap-x-12 gap-y-8">
+              {uspItems.map((item: { icon: string; title: string; description: string }, i: number) => (
+                <div key={i} className="flex flex-col items-center gap-2 w-[150px]">
+                  <span className="material-symbols-outlined text-brand-primary text-[28px]">
+                    {item.icon || "star"}
+                  </span>
+                  <h3 className="font-headline-md text-headline-md text-text-primary">{item.title}</h3>
+                  <p className="font-body-sm text-body-sm text-text-secondary">{item.description}</p>
+                </div>
+              ))}
+            </div>
           </section>
         )}
+
+        <TestimonialsCarousel testimonials={testimonials as any} />
       </div>
     </>
   );
