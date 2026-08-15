@@ -78,6 +78,8 @@ const EMPTY_HERO_SLIDE: HeroSlide = {
   subtitle: "",
   button_text: "",
   button_link: "",
+  button_text_secondary: "",
+  button_link_secondary: "",
 };
 
 const DEFAULT_TRUST: TrustItem[] = [
@@ -572,6 +574,8 @@ export default function AdminHomepagePage() {
                     ["subtitle", "Subtitle"],
                     ["button_text", "Button text"],
                     ["button_link", "Button link"],
+                    ["button_text_secondary", "Secondary button text (optional)"],
+                    ["button_link_secondary", "Secondary button link (optional)"],
                   ] as const
                 ).map(([key, label]) => (
                   <TextField

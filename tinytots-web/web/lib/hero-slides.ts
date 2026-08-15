@@ -5,6 +5,8 @@ export type HeroSlide = {
   subtitle: string;
   button_text: string;
   button_link: string;
+  button_text_secondary: string;
+  button_link_secondary: string;
 };
 
 function cleanText(value: unknown): string {
@@ -22,6 +24,8 @@ function mapSlide(s: Record<string, unknown>): HeroSlide {
     subtitle: cleanText(s.subtitle),
     button_text: cleanText(s.button_text),
     button_link: cleanText(s.button_link),
+    button_text_secondary: cleanText(s.button_text_secondary),
+    button_link_secondary: cleanText(s.button_link_secondary),
   };
 }
 
@@ -57,6 +61,8 @@ export function resolveHeroSlides(content: {
       subtitle: String(content.hero_subtext ?? "").trim(),
       button_text: String(content.hero_button_text ?? "").trim(),
       button_link: String(content.hero_button_link ?? "").trim(),
+      button_text_secondary: "",
+      button_link_secondary: "",
     },
   ].filter((s) => s.image_url || s.image_url_mobile || s.headline);
 }

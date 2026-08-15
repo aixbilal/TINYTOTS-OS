@@ -127,14 +127,26 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
               {active.subtitle}
             </p>
           )}
-          {active.button_text && active.button_link && (
-            <Link
-              href={active.button_link}
-              className="inline-flex items-center bg-brand-primary text-white font-button text-button h-12 md:h-[56px] px-6 md:px-8 rounded-lg hover:opacity-90 transition-opacity duration-300"
-            >
-              {active.button_text}
-            </Link>
-          )}
+          {(active.button_text && active.button_link) || (active.button_text_secondary && active.button_link_secondary) ? (
+            <div className="flex items-center gap-4 md:gap-6 flex-wrap">
+              {active.button_text && active.button_link && (
+                <Link
+                  href={active.button_link}
+                  className="inline-flex items-center bg-brand-primary text-white font-button text-button h-12 md:h-[56px] px-6 md:px-8 rounded-lg hover:opacity-90 transition-opacity duration-300"
+                >
+                  {active.button_text}
+                </Link>
+              )}
+              {active.button_text_secondary && active.button_link_secondary && (
+                <Link
+                  href={active.button_link_secondary}
+                  className="inline-flex items-center text-white font-button text-button underline decoration-white/70 underline-offset-4 hover:decoration-white transition-colors duration-300"
+                >
+                  {active.button_text_secondary}
+                </Link>
+              )}
+            </div>
+          ) : null}
         </div>
       </div>
 
