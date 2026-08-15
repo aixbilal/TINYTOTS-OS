@@ -102,6 +102,7 @@ interface CategoryLite {
 }
 
 const EMPTY_HERO_SLIDE: HeroSlide = {
+  eyebrow: "",
   image_url: "",
   image_url_mobile: "",
   headline: "",
@@ -633,6 +634,7 @@ export default function AdminHomepagePage() {
 
                 {(
                   [
+                    ["eyebrow", "Eyebrow (optional, small text above headline)"],
                     ["headline", "Headline"],
                     ["subtitle", "Subtitle"],
                     ["button_text", "Button text"],

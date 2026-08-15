@@ -47,7 +47,7 @@ export default function HeroLcpPreload({
       width: 1920,
       height: 933,
       quality: 75,
-      sizes: "100vw",
+      sizes: "58vw",
     });
     links.push(
       <link

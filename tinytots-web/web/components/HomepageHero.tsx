@@ -38,9 +38,10 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
 
   return (
     <section
-      // Explicit aspect-ratio reserves LCP box before images decode (fixes CLS).
-      // Matches prior 340px@~390w mobile and 700px@~1440w desktop proportions.
-      className="relative w-screen max-w-[100vw] left-1/2 -translate-x-1/2 aspect-[39/34] md:aspect-[72/35] mb-stack-lg overflow-hidden"
+      // Two-pane editorial hero: text panel + image panel, matching the
+      // approved final homepage spec (left copy block over plain surface,
+      // right full-bleed photography). Mobile stacks image above text.
+      className="relative w-full flex flex-col md:flex-row md:h-[560px] lg:h-[620px] mb-stack-lg overflow-hidden bg-surface-canvas"
       onTouchStart={() => {
         touchPauseRef.current = true;
         setPaused(true);
@@ -58,114 +59,111 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
       aria-roledescription="carousel"
       aria-label="Homepage hero"
     >
-      {valid.map((slide, i) => {
-        const desktopUrl = slide.image_url || slide.image_url_mobile;
-        const mobileUrl = slide.image_url_mobile || slide.image_url;
-        const isActive = i === index;
-        const isLcpSlide = i === 0;
-        return (
-          <div
-            key={`${desktopUrl}-${mobileUrl}-${i}`}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-              isActive ? "opacity-100 z-[1]" : "opacity-0 z-0 pointer-events-none"
-            }`}
-            aria-hidden={!isActive}
-          >
-            {mobileUrl ? (
-              <Image
-                src={mobileUrl}
-                alt=""
-                fill
-                // LCP preload is media-scoped in HeroLcpPreload — avoid unconditional
-                // priority here (it would force mobile bytes on desktop too).
-                priority={false}
-                fetchPriority={isLcpSlide ? "high" : "auto"}
-                loading={isLcpSlide ? "eager" : "lazy"}
-                sizes="100vw"
-                quality={75}
-                className="object-cover md:hidden"
-              />
-            ) : (
-              <div className="absolute inset-0 md:hidden bg-surface-secondary" />
+      {/* Text panel */}
+      <div className="order-2 md:order-1 relative z-[2] w-full md:w-[42%] flex flex-col justify-center px-6 py-10 md:px-12 lg:px-16 md:py-0">
+        {active.eyebrow && (
+          <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3">
+            {active.eyebrow}
+          </span>
+        )}
+        {active.headline && (
+          <h1 className="font-display-md text-[32px] md:text-[40px] lg:text-[48px] text-text-primary leading-[1.15] tracking-tight mb-4 max-w-[16ch]">
+            {active.headline}
+          </h1>
+        )}
+        {active.subtitle && (
+          <p className="font-body-lg text-body-md md:text-body-lg text-text-secondary mb-6 max-w-md leading-snug">
+            {active.subtitle}
+          </p>
+        )}
+        {(active.button_text && active.button_link) || (active.button_text_secondary && active.button_link_secondary) ? (
+          <div className="flex items-center gap-3 flex-wrap">
+            {active.button_text && active.button_link && (
+              <Link
+                href={active.button_link}
+                className="inline-flex items-center justify-center bg-brand-primary text-white font-button text-button h-12 px-6 md:px-7 hover:opacity-90 transition-opacity duration-300"
+              >
+                {active.button_text}
+              </Link>
             )}
-            {desktopUrl ? (
-              <Image
-                src={desktopUrl}
-                alt=""
-                fill
-                priority={false}
-                fetchPriority={isLcpSlide ? "high" : "auto"}
-                loading={isLcpSlide ? "eager" : "lazy"}
-                sizes="100vw"
-                quality={75}
-                className="object-cover hidden md:block"
-              />
-            ) : (
-              <div className="absolute inset-0 hidden md:block bg-surface-secondary" />
+            {active.button_text_secondary && active.button_link_secondary && (
+              <Link
+                href={active.button_link_secondary}
+                className="inline-flex items-center justify-center border border-border-default text-text-primary font-button text-button h-12 px-6 md:px-7 hover:bg-surface-elevated transition-colors duration-300"
+              >
+                {active.button_text_secondary}
+              </Link>
             )}
           </div>
-        );
-      })}
+        ) : null}
 
-      <div
-        className="absolute inset-0 z-[2] pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(to top right, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 42%, rgba(0,0,0,0) 70%)",
-        }}
-      />
-
-      <div className="absolute inset-0 z-[3] flex items-end justify-start p-6 md:p-10 lg:p-14 pb-14 md:pb-16">
-        <div className="max-w-xl md:max-w-2xl text-left">
-          {active.headline && (
-            <h1 className="font-display-md text-[28px] md:text-[48px] lg:text-[56px] max-w-[18ch] md:max-w-xl text-white leading-[1.15] tracking-tight mb-3 md:mb-4">
-              {active.headline}
-            </h1>
-          )}
-          {active.subtitle && (
-            <p className="font-body-lg text-body-md md:text-body-lg text-white/90 mb-5 md:mb-7 max-w-lg leading-snug">
-              {active.subtitle}
-            </p>
-          )}
-          {(active.button_text && active.button_link) || (active.button_text_secondary && active.button_link_secondary) ? (
-            <div className="flex items-center gap-4 md:gap-6 flex-wrap">
-              {active.button_text && active.button_link && (
-                <Link
-                  href={active.button_link}
-                  className="inline-flex items-center bg-brand-primary text-white font-button text-button h-12 md:h-[56px] px-6 md:px-8 rounded-lg hover:opacity-90 transition-opacity duration-300"
-                >
-                  {active.button_text}
-                </Link>
-              )}
-              {active.button_text_secondary && active.button_link_secondary && (
-                <Link
-                  href={active.button_link_secondary}
-                  className="inline-flex items-center text-white font-button text-button underline decoration-white/70 underline-offset-4 hover:decoration-white transition-colors duration-300"
-                >
-                  {active.button_text_secondary}
-                </Link>
-              )}
-            </div>
-          ) : null}
-        </div>
+        {count > 1 && (
+          <div className="flex items-center gap-2 mt-8">
+            {valid.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                aria-label={`Go to slide ${i + 1}`}
+                aria-current={i === index ? true : undefined}
+                onClick={() => goTo(i)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  i === index ? "w-6 bg-brand-primary" : "w-2 bg-border-default hover:bg-text-secondary"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {count > 1 && (
-        <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-[4] flex items-center gap-2">
-          {valid.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              aria-label={`Go to slide ${i + 1}`}
-              aria-current={i === index ? true : undefined}
-              onClick={() => goTo(i)}
-              className={`h-2.5 rounded-full transition-all duration-300 ${
-                i === index ? "w-7 bg-white" : "w-2.5 bg-white/50 hover:bg-white/80"
+      {/* Image panel */}
+      <div className="order-1 md:order-2 relative w-full aspect-[4/5] sm:aspect-[16/10] md:aspect-auto md:w-[58%] md:h-full">
+        {valid.map((slide, i) => {
+          const desktopUrl = slide.image_url || slide.image_url_mobile;
+          const mobileUrl = slide.image_url_mobile || slide.image_url;
+          const isActive = i === index;
+          const isLcpSlide = i === 0;
+          return (
+            <div
+              key={`${desktopUrl}-${mobileUrl}-${i}`}
+              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                isActive ? "opacity-100 z-[1]" : "opacity-0 z-0 pointer-events-none"
               }`}
-            />
-          ))}
-        </div>
-      )}
+              aria-hidden={!isActive}
+            >
+              {mobileUrl ? (
+                <Image
+                  src={mobileUrl}
+                  alt=""
+                  fill
+                  priority={false}
+                  fetchPriority={isLcpSlide ? "high" : "auto"}
+                  loading={isLcpSlide ? "eager" : "lazy"}
+                  sizes="100vw"
+                  quality={75}
+                  className="object-cover md:hidden"
+                />
+              ) : (
+                <div className="absolute inset-0 md:hidden bg-surface-secondary" />
+              )}
+              {desktopUrl ? (
+                <Image
+                  src={desktopUrl}
+                  alt=""
+                  fill
+                  priority={false}
+                  fetchPriority={isLcpSlide ? "high" : "auto"}
+                  loading={isLcpSlide ? "eager" : "lazy"}
+                  sizes="(max-width: 768px) 100vw, 58vw"
+                  quality={75}
+                  className="object-cover hidden md:block"
+                />
+              ) : (
+                <div className="absolute inset-0 hidden md:block bg-surface-secondary" />
+              )}
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }

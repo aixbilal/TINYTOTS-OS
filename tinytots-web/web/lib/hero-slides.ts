@@ -1,4 +1,5 @@
 export type HeroSlide = {
+  eyebrow: string;
   image_url: string;
   image_url_mobile: string;
   headline: string;
@@ -18,6 +19,7 @@ function cleanText(value: unknown): string {
 
 function mapSlide(s: Record<string, unknown>): HeroSlide {
   return {
+    eyebrow: cleanText(s.eyebrow),
     image_url: cleanText(s.image_url),
     image_url_mobile: cleanText(s.image_url_mobile),
     headline: cleanText(s.headline),
@@ -55,6 +57,7 @@ export function resolveHeroSlides(content: {
 
   return [
     {
+      eyebrow: "",
       image_url: String(content.hero_image_url ?? "").trim(),
       image_url_mobile: String(content.hero_image_url_mobile ?? "").trim(),
       headline: String(content.hero_headline ?? "").trim(),
