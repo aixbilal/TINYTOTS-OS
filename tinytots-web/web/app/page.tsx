@@ -155,6 +155,11 @@ const HOMEPAGE_DEFAULTS = {
   lifestyle_2_image_url: "/images/homepage/brand-story-support.webp",
   lifestyle_2_cta_text: "Explore More",
   lifestyle_2_cta_link: "/products",
+  closing_cta_image_url: "/images/homepage/cta-closing-visual.webp",
+  closing_cta_headline: "Made to be memories. Beautiful always.",
+  closing_cta_subtext: "Styles today. Memories forever.",
+  closing_cta_button_text: "Shop the Collection",
+  closing_cta_button_link: "/products",
   usp_items: [
     { icon: "eco", title: "Ethically Sourced", description: "Every piece is made with responsibly sourced, child-safe materials." },
     { icon: "verified", title: "Certified Safe", description: "Fabrics tested and certified for sensitive skin." },
@@ -445,31 +450,47 @@ export default async function Home() {
             content.meadow_product_ids,
             content.meadow_link ?? HOMEPAGE_DEFAULTS.meadow_link
           )}
-          className="relative flex mb-stack-lg min-h-[300px] md:min-h-[360px] overflow-hidden group cursor-pointer bg-surface-elevated"
+          className="relative flex flex-col md:flex-row mb-stack-lg overflow-hidden group cursor-pointer bg-surface-elevated"
         >
-          <Image
-            src={content.meadow_image_url ?? HOMEPAGE_DEFAULTS.meadow_image_url}
-            alt=""
-            fill
-            sizes="100vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background: "linear-gradient(to right, rgba(250,247,242,0.95) 0%, rgba(250,247,242,0.55) 45%, rgba(250,247,242,0) 70%)",
-            }}
-          />
-          <div className="relative z-10 flex flex-col justify-center px-6 md:px-14 max-w-md">
+          {/* Mobile: plain text panel above the image, no overlay needed for legibility */}
+          <div className="md:hidden flex flex-col justify-center px-6 py-8">
             <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3">
               {content.meadow_badge_text ?? HOMEPAGE_DEFAULTS.meadow_badge_text}
             </span>
-            <h3 className="font-display-md text-[28px] md:text-[36px] text-text-primary tracking-tight mb-4">
+            <h3 className="font-display-md text-[26px] text-text-primary tracking-tight mb-4">
               {content.meadow_heading ?? HOMEPAGE_DEFAULTS.meadow_heading}
             </h3>
             <span className="inline-flex items-center justify-center bg-brand-primary text-white font-button text-button h-11 px-6 w-fit hover:opacity-90 transition-opacity duration-300">
               {content.meadow_button_text ?? HOMEPAGE_DEFAULTS.meadow_button_text}
             </span>
+          </div>
+          <div className="relative w-full aspect-[4/3] md:aspect-auto md:min-h-[360px]">
+            <Image
+              src={content.meadow_image_url ?? HOMEPAGE_DEFAULTS.meadow_image_url}
+              alt=""
+              fill
+              sizes="100vw"
+              className="object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            {/* Desktop: gradient + overlaid text panel, enough pixel-width at desktop
+                breakpoints for the fade to clear the text before it hits busy photo. */}
+            <div
+              className="hidden md:block absolute inset-0"
+              style={{
+                background: "linear-gradient(to right, rgba(250,247,242,0.95) 0%, rgba(250,247,242,0.55) 45%, rgba(250,247,242,0) 70%)",
+              }}
+            />
+            <div className="hidden md:flex relative z-10 flex-col justify-center h-full px-14 max-w-md">
+              <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3">
+                {content.meadow_badge_text ?? HOMEPAGE_DEFAULTS.meadow_badge_text}
+              </span>
+              <h3 className="font-display-md text-[36px] text-text-primary tracking-tight mb-4">
+                {content.meadow_heading ?? HOMEPAGE_DEFAULTS.meadow_heading}
+              </h3>
+              <span className="inline-flex items-center justify-center bg-brand-primary text-white font-button text-button h-11 px-6 w-fit hover:opacity-90 transition-opacity duration-300">
+                {content.meadow_button_text ?? HOMEPAGE_DEFAULTS.meadow_button_text}
+              </span>
+            </div>
           </div>
         </Link>
 
@@ -557,6 +578,44 @@ export default async function Home() {
 
         <TestimonialsCarousel testimonials={testimonials as any} />
       </div>
+
+      {/* Large emotional closing CTA — full-bleed, sits outside the padded container */}
+      <section className="relative w-full min-h-[360px] md:min-h-[440px] overflow-hidden mb-stack-lg flex items-center">
+        <Image
+          src={content.closing_cta_image_url || HOMEPAGE_DEFAULTS.closing_cta_image_url}
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(to top right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0) 70%)",
+          }}
+        />
+        <div className="relative z-10 px-6 md:px-16 max-w-lg">
+          <h2 className="font-display-md text-[32px] md:text-[44px] text-white leading-[1.15] tracking-tight mb-3">
+            {(content.closing_cta_headline || HOMEPAGE_DEFAULTS.closing_cta_headline)
+              .split(".")
+              .filter(Boolean)
+              .map((line: string, i: number) => (
+                <span key={i} className={i === 1 ? "italic font-normal block" : "block"}>
+                  {line.trim()}.
+                </span>
+              ))}
+          </h2>
+          <p className="font-body-md text-body-md text-white/90 mb-6">
+            {content.closing_cta_subtext || HOMEPAGE_DEFAULTS.closing_cta_subtext}
+          </p>
+          <Link
+            href={content.closing_cta_button_link || HOMEPAGE_DEFAULTS.closing_cta_button_link}
+            className="inline-flex items-center justify-center bg-white text-text-primary font-button text-button h-12 px-7 hover:bg-surface-canvas transition-colors duration-300 w-fit"
+          >
+            {content.closing_cta_button_text || HOMEPAGE_DEFAULTS.closing_cta_button_text}
+          </Link>
+        </div>
+      </section>
     </>
   );
 }
