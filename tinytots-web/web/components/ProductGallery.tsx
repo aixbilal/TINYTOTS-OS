@@ -137,7 +137,7 @@ export default function ProductGallery({
               type="button"
               onClick={() => setActiveIndex(i)}
               className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition-colors"
-              style={{ borderColor: img.id === displayImage.id ? "#9c422e" : "transparent" }}
+              style={{ borderColor: img.id === displayImage.id ? "#8f5030" : "transparent" }}
             >
               <Image src={img.url} alt="" fill sizes="64px" className="object-cover" />
             </button>
