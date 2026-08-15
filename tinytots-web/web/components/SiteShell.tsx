@@ -152,159 +152,6 @@ function AnnouncementBar({ data }: { data: { enabled: boolean; text: string; lin
   );
 }
 
-function ShopMenu() {
-  const online = useOnline();
-  const [open, setOpen] = useState(false);
-  const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const cached = readSessionJson<{ name: string; slug: string }[]>(CACHE_KEYS.categories) ?? [];
-    if (cached.length > 0 && categories.length === 0) setCategories(cached);
-    if (!online) return;
-    if (categories.length > 0) return;
-
-    fetch("/api/categories")
-      .then((res) => res.json())
-      .then((json) => {
-        const list = json.categories || [];
-        setCategories(list);
-        writeSessionJson(CACHE_KEYS.categories, list);
-      })
-      .catch(() => {
-        const fallback = readSessionJson<{ name: string; slug: string }[]>(CACHE_KEYS.categories);
-        if (fallback?.length) setCategories(fallback);
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, online]);
-
-  function show() {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setOpen(true);
-  }
-  function scheduleHide() {
-    closeTimer.current = setTimeout(() => setOpen(false), 150);
-  }
-
-  return (
-    <div className="relative" onMouseEnter={show} onMouseLeave={scheduleHide}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 font-body-md text-body-md pb-1 transition-colors border-b-2 text-text-secondary hover:text-brand-primary border-transparent"
-      >
-        <span className="material-symbols-outlined text-[20px]">storefront</span>
-        Shop
-        <span className="material-symbols-outlined text-[18px]">{open ? "expand_less" : "expand_more"}</span>
-      </button>
-      {open && (
-        <div className="absolute top-full left-0 mt-2 w-64 max-h-96 overflow-y-auto bg-surface-elevated border border-border-default rounded-2xl shadow-xl p-2 z-[100]">
-          <Link
-            href="/products"
-            className="block px-3 py-2 rounded-lg font-body-md text-body-md text-brand-primary bg-brand-primary/10 hover:bg-brand-primary/20 transition-colors"
-          >
-            Shop All
-          </Link>
-          {categories.map((c) => (
-            <Link
-              key={c.slug}
-              href={`/collections/${c.slug}`}
-              className="block px-3 py-2 rounded-lg font-body-md text-body-md text-text-primary hover:bg-surface-secondary transition-colors"
-            >
-              {c.name}
-            </Link>
-          ))}
-          {categories.length === 0 && (
-            <p className="px-3 py-2 font-body-sm text-body-sm text-text-secondary">
-              {online ? "Loading…" : "Categories unavailable offline"}
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MegaMenu() {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  function show() {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setOpen(true);
-  }
-  function scheduleHide() {
-    closeTimer.current = setTimeout(() => setOpen(false), 150);
-  }
-
-  const MenuLink = ({ href, label }: { href: string; label: string }) => (
-    <Link
-      href={href}
-      onClick={() => setOpen(false)}
-      className="block px-3 py-2 rounded-lg font-body-sm text-body-sm text-text-secondary hover:bg-surface-secondary hover:text-brand-primary transition-colors"
-    >
-      {label}
-    </Link>
-  );
-
-  return (
-    <div ref={containerRef} className="relative" onMouseEnter={show} onMouseLeave={scheduleHide}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-1 font-body-md text-body-md pb-1 transition-colors border-b-2 ${
-          open ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
-        }`}
-      >
-        Menu
-        <span className="material-symbols-outlined text-[20px]">{open ? "expand_less" : "expand_more"}</span>
-      </button>
-
-      {open && (
-        <div className="absolute top-full left-0 mt-2 w-[440px] max-w-[90vw] bg-surface-elevated border border-border-default rounded-2xl shadow-xl p-6 z-[100] grid grid-cols-2 gap-6">
-          {/* Column 1: My TinyTots */}
-          <div>
-            <p className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-brand-primary">person</span> My TinyTots
-            </p>
-            <div className="flex flex-col">
-              <MenuLink href="/account" label="My Account" />
-              <MenuLink href="/account/wishlist" label="Wishlist" />
-              <MenuLink href="/track-order" label="Track Order" />
-              <MenuLink href="/account/returns" label="Returns & Refunds" />
-            </div>
-          </div>
-
-          {/* Column 2: Company / Info */}
-          <div>
-            <p className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-brand-primary">info</span> More
-            </p>
-            <div className="flex flex-col">
-              <MenuLink href="/blog" label="Blog" />
-              <MenuLink href="/our-story" label="Our Story" />
-              <MenuLink href="/size-guide" label="Size Guide" />
-              <MenuLink href="/help" label="Help Center" />
-              <MenuLink href="/contact" label="Contact Us" />
-              <MenuLink href="/shipping-returns" label="Shipping & Returns" />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function MobileMenu({ open, onClose, topOffset }: { open: boolean; onClose: () => void; topOffset: number }) {
   const online = useOnline();
   const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
@@ -597,8 +444,8 @@ export default function SiteShell({
             <div ref={headerWrapRef} className="fixed top-0 left-0 right-0 z-50">
               <AnnouncementBar data={announcement} />
               <header className="bg-surface-canvas/80 backdrop-blur-md border-b border-border-default">
-              <nav className="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto w-full">
-                <div className="flex items-center gap-6">
+              <nav className="grid grid-cols-[1fr_auto_1fr] items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto w-full">
+                <div className="flex items-center gap-6 justify-start">
                   <button
                     onClick={() => setMobileMenuOpen((o) => !o)}
                     className="md:hidden text-text-secondary hover:text-brand-primary p-2 -ml-2 rounded-full flex items-center justify-center"
@@ -606,34 +453,69 @@ export default function SiteShell({
                   >
                     <span className="material-symbols-outlined">{mobileMenuOpen ? "close" : "menu"}</span>
                   </button>
-                  <Link href="/" className="font-display-md text-display-md text-brand-primary tracking-tight">TinyTots</Link>
                   <div className="hidden md:flex items-center gap-6">
                     <Link
-                      href="/"
-                      title="Home"
-                      className={`flex items-center gap-1 font-body-md text-body-md pb-1 transition-colors border-b-2 ${
-                        pathname === "/"
-                          ? "text-brand-primary font-bold border-brand-primary"
-                          : "text-text-secondary hover:text-brand-primary border-transparent"
+                      href="/products?sort=newest"
+                      className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${
+                        pathname === "/products" ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[20px]">home</span>
-                      Home
+                      New In
                     </Link>
-                    <ShopMenu />
-                    <MegaMenu />
+                    <Link
+                      href="/products?gender=girl"
+                      className="font-body-md text-body-md pb-1 transition-colors border-b-2 text-text-secondary hover:text-brand-primary border-transparent"
+                    >
+                      Girls
+                    </Link>
+                    <Link
+                      href="/products?gender=boy"
+                      className="font-body-md text-body-md pb-1 transition-colors border-b-2 text-text-secondary hover:text-brand-primary border-transparent"
+                    >
+                      Boys
+                    </Link>
+                    <Link
+                      href="/collections"
+                      className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${
+                        pathname === "/collections" ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
+                      }`}
+                    >
+                      Collections
+                    </Link>
+                    <Link
+                      href="/sale"
+                      className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${
+                        pathname === "/sale" ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
+                      }`}
+                    >
+                      Sale
+                    </Link>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
+                <Link href="/" className="flex flex-col items-center justify-self-center leading-none">
+                  <span className="font-display-md text-display-md text-brand-primary tracking-tight">TinyTots</span>
+                  <span className="hidden md:block font-label-md text-label-md text-text-secondary uppercase tracking-wider mt-0.5">
+                    Timeless for tiny hearts
+                  </span>
+                </Link>
+                <div className="flex items-center gap-1 sm:gap-2 md:gap-4 justify-end shrink-0">
                   <div className="relative shrink-0">
                     <button onClick={() => setSearchOpen((o) => !o)} className="text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center" title="Search" aria-label="Search">
                       <span className="material-symbols-outlined">search</span>
                     </button>
                     {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
                   </div>
-                  {/* Cart before account so it isn’t clipped off-screen by Sign up on narrow phones */}
-                  <HeaderCart />
                   <AccountMenu />
+                  <Link
+                    href="/account/wishlist"
+                    className="text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center"
+                    title="Wishlist"
+                    aria-label="Wishlist"
+                  >
+                    <span className="material-symbols-outlined">favorite</span>
+                  </Link>
+                  {/* Cart last so it isn't clipped off-screen on narrow phones */}
+                  <HeaderCart />
                 </div>
               </nav>
             </header>
