@@ -28,13 +28,13 @@ export default async function PrivacyPolicyPage() {
       sections={sections}
     >
       <div
-        className="w-full break-words text-on-surface-variant font-body-md text-body-md
-          [&_h2]:font-headline-lg [&_h2]:text-on-surface [&_h2]:mb-3 [&_h2]:mt-2
+        className="w-full break-words text-text-secondary font-body-md text-body-md
+          [&_h2]:font-headline-lg [&_h2]:text-text-primary [&_h2]:mb-3 [&_h2]:mt-2
           [&_p]:mb-4 [&_p]:leading-relaxed
           [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2
           [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
-          [&_strong]:font-semibold [&_strong]:text-on-surface
-          [&_a]:text-primary [&_a]:underline"
+          [&_strong]:font-semibold [&_strong]:text-text-primary
+          [&_a]:text-brand-primary [&_a]:underline"
         dangerouslySetInnerHTML={{ __html: safeHtml }}
       />
     </LegalPageLayout>

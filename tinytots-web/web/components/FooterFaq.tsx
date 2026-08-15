@@ -23,7 +23,7 @@ const FAQ_ITEMS: FaqItem[] = [
     answer: (
       <>
         7 days from delivery, items unworn with tags attached. See our{" "}
-        <Link href="/shipping-returns" className="text-primary font-medium hover:underline">
+        <Link href="/shipping-returns" className="text-brand-primary font-medium hover:underline">
           Shipping &amp; Returns
         </Link>{" "}
         page for full details.
@@ -39,7 +39,7 @@ const FAQ_ITEMS: FaqItem[] = [
     question: "How can I get more help?",
     answer: (
       <>
-        <Link href="/help" className="text-primary font-medium hover:underline">
+        <Link href="/help" className="text-brand-primary font-medium hover:underline">
           Visit our Help Center →
         </Link>
         , or email{" "}

@@ -37,7 +37,7 @@ export default function LegalPageLayout({
   return (
     <main className="max-w-container-max mx-auto w-full py-stack-lg flex flex-col md:flex-row gap-gutter">
       <aside className="hidden md:block w-56 shrink-0 sticky top-28 h-fit">
-        <p className="font-label-lg text-label-lg text-on-surface font-semibold uppercase tracking-wider mb-3">
+        <p className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-3">
           Contents
         </p>
         <nav className="flex flex-col gap-1">
@@ -47,8 +47,8 @@ export default function LegalPageLayout({
               href={`#${s.id}`}
               className={`px-3 py-2 rounded-lg font-body-sm text-body-sm transition-colors ${
                 activeId === s.id
-                  ? "bg-primary-container/20 text-primary font-medium"
-                  : "text-on-surface-variant hover:bg-surface-container-low"
+                  ? "bg-brand-primary/20 text-brand-primary font-medium"
+                  : "text-text-secondary hover:bg-surface-secondary"
               }`}
             >
               {s.title}
@@ -58,8 +58,8 @@ export default function LegalPageLayout({
       </aside>
 
       <div className="flex-grow min-w-0 max-w-3xl">
-        <h1 className="font-display-md text-display-md text-on-surface mb-2">{title}</h1>
-        <p className="font-label-md text-label-md text-on-surface-variant mb-stack-lg">
+        <h1 className="font-display-md text-display-md text-text-primary mb-2">{title}</h1>
+        <p className="font-label-md text-label-md text-text-secondary mb-stack-lg">
           Last updated: {lastUpdated}
         </p>
         <div className="flex flex-col gap-stack-lg">{children}</div>
