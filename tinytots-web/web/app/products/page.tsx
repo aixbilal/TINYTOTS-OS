@@ -12,6 +12,7 @@ import {
   readSessionJson,
 } from "@/lib/client-cache";
 import { useOnline } from "@/hooks/useOnline";
+import { compareSizes, groupSizesIntoBuckets } from "@/lib/size-sort";
 
 type Category = { name: string; slug: string };
 type Variant = {
@@ -53,10 +54,9 @@ const DEFAULT_SHOP_CONTENT: ShopContent = {
   hero_image_url_mobile: "",
 };
 
-const PAGE_SIZE_ROWS = 5; // ~5-6 rows per load, per Dev Bilal's brief
+const PAGE_SIZE_ROWS = 5; // 5 rows per page, per Dev Bilal's brief
 const CARDS_PER_ROW_DESKTOP = 4;
-const INITIAL_VISIBLE = PAGE_SIZE_ROWS * CARDS_PER_ROW_DESKTOP;
-const LOAD_MORE_STEP = CARDS_PER_ROW_DESKTOP * 2;
+const PAGE_SIZE = PAGE_SIZE_ROWS * CARDS_PER_ROW_DESKTOP;
 const NEW_WINDOW_DAYS = 14;
 
 type SortKey = "newest" | "price_asc" | "price_desc" | "name";
@@ -237,8 +237,8 @@ function ProductsContent() {
   const [colorFilters, setColorFilters] = useState<Set<string>>(new Set());
   const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
   const [sort, setSort] = useState<SortKey>("newest");
-  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const gridTopRef = useRef<HTMLDivElement>(null);
 
   // Seed gender filter from the query string (e.g. /products?gender=girl from nav links)
   useEffect(() => {
@@ -314,8 +314,46 @@ function ProductsContent() {
   const availableSizes = useMemo(() => {
     const s = new Set<string>();
     products.forEach((p) => p.variants?.forEach((v) => v.size && s.add(v.size)));
-    return Array.from(s);
+    return Array.from(s).sort(compareSizes);
   }, [products]);
+
+  // Group the real sorted sizes into up to 5 numbered range buckets, so the
+  // filter is "pick a range" (button 1 to button 3) rather than a long flat
+  // list of every distinct size label repeated as its own button.
+  const sizeBuckets = useMemo(() => groupSizesIntoBuckets(availableSizes, 5), [availableSizes]);
+  const [ageRangeStart, setAgeRangeStart] = useState<number | null>(null);
+  const [ageRangeEnd, setAgeRangeEnd] = useState<number | null>(null);
+
+  function clickAgeButton(index: number) {
+    if (ageRangeStart === null) {
+      setAgeRangeStart(index);
+      setAgeRangeEnd(index);
+      return;
+    }
+    if (ageRangeStart !== null && ageRangeEnd !== null && ageRangeStart === ageRangeEnd && index === ageRangeStart) {
+      // Clicking the same single-selected bucket again clears the filter.
+      setAgeRangeStart(null);
+      setAgeRangeEnd(null);
+      return;
+    }
+    // Extend the range to include the newly clicked bucket, whichever side it's on.
+    setAgeRangeStart(Math.min(ageRangeStart, index));
+    setAgeRangeEnd(Math.max(ageRangeEnd ?? ageRangeStart, index));
+  }
+
+  // Sync the bucket range selection into the real sizeFilters set that
+  // actually drives filtering, so no separate/duplicate filter logic exists.
+  useEffect(() => {
+    if (ageRangeStart === null || ageRangeEnd === null || sizeBuckets.length === 0) {
+      return;
+    }
+    const selectedSizes = new Set<string>();
+    for (let i = ageRangeStart; i <= ageRangeEnd; i++) {
+      sizeBuckets[i]?.sizes.forEach((sz) => selectedSizes.add(sz));
+    }
+    setSizeFilters(selectedSizes);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ageRangeStart, ageRangeEnd, sizeBuckets]);
 
   const availableColors = useMemo(() => {
     const m = new Map<string, string>();
@@ -374,26 +412,10 @@ function ProductsContent() {
     return list;
   }, [products, categoryFilter, genderFilters, sizeFilters, colorFilters, effectivePriceRange, sort]);
 
-  // Reset visible count whenever the filtered set changes shape.
+  // Reset to page 1 whenever the filtered set changes shape.
   useEffect(() => {
-    setVisibleCount(INITIAL_VISIBLE);
+    setCurrentPage(1);
   }, [categoryFilter, genderFilters, sizeFilters, colorFilters, effectivePriceRange, sort]);
-
-  // Load more as the sentinel scrolls into view.
-  useEffect(() => {
-    const el = loadMoreRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setVisibleCount((v) => Math.min(v + LOAD_MORE_STEP, filtered.length));
-        }
-      },
-      { rootMargin: "600px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [filtered.length]);
 
   function toggleSetValue(set: Set<string>, value: string, setter: (s: Set<string>) => void) {
     const next = new Set(set);
@@ -408,10 +430,18 @@ function ProductsContent() {
     setSizeFilters(new Set());
     setColorFilters(new Set());
     setPriceRange(null);
+    setAgeRangeStart(null);
+    setAgeRangeEnd(null);
   }
 
-  const visible = filtered.slice(0, visibleCount);
-  const hasMore = visibleCount < filtered.length;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  function goToPage(page: number) {
+    const clamped = Math.max(1, Math.min(totalPages, page));
+    setCurrentPage(clamped);
+    gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <>
@@ -499,23 +529,37 @@ function ProductsContent() {
               </div>
             </FilterSection>
 
-            {availableSizes.length > 0 && (
-              <FilterSection title="Size">
-                <div className="grid grid-cols-3 gap-2">
-                  {availableSizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => toggleSetValue(sizeFilters, size, setSizeFilters)}
-                      className={`border rounded-lg py-1.5 font-body-sm text-body-sm transition-colors ${
-                        sizeFilters.has(size)
-                          ? "border-brand-primary bg-brand-primary text-white"
-                          : "border-border-default text-text-secondary hover:border-brand-primary"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+            {sizeBuckets.length > 0 && (
+              <FilterSection title="Age / Size">
+                <div className="flex gap-2 mb-2">
+                  {sizeBuckets.map((bucket, i) => {
+                    const isInRange =
+                      ageRangeStart !== null && ageRangeEnd !== null && i >= ageRangeStart && i <= ageRangeEnd;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => clickAgeButton(i)}
+                        title={bucket.label}
+                        aria-pressed={isInRange}
+                        className={`w-9 h-9 rounded-full border font-body-sm text-body-sm transition-colors shrink-0 ${
+                          isInRange
+                            ? "border-brand-primary bg-brand-primary text-white"
+                            : "border-border-default text-text-secondary hover:border-brand-primary"
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    );
+                  })}
                 </div>
+                <p className="font-label-md text-label-md text-text-secondary">
+                  {ageRangeStart !== null && ageRangeEnd !== null
+                    ? `${sizeBuckets[ageRangeStart]?.sizes[0]} – ${
+                        sizeBuckets[ageRangeEnd]?.sizes[sizeBuckets[ageRangeEnd].sizes.length - 1]
+                      }`
+                    : "Select a range"}
+                </p>
               </FilterSection>
             )}
 
@@ -567,19 +611,54 @@ function ProductsContent() {
               <p className="font-body-md text-body-md text-text-secondary">No products match these filters.</p>
             )}
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+            <div ref={gridTopRef} className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
               {visible.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>
 
-            {hasMore && (
-              <div ref={loadMoreRef} className="flex justify-center mt-10">
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-10">
                 <button
-                  onClick={() => setVisibleCount((v) => Math.min(v + LOAD_MORE_STEP, filtered.length))}
-                  className="font-button text-button border border-brand-primary text-brand-primary px-6 py-2.5 rounded-full hover:bg-brand-primary hover:text-white transition-colors"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  aria-label="Previous page"
+                  className="w-9 h-9 flex items-center justify-center rounded-full border border-border-default text-text-primary disabled:opacity-30 hover:border-brand-primary transition-colors"
                 >
-                  Load More
+                  <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(
+                    (p) =>
+                      p === 1 ||
+                      p === totalPages ||
+                      Math.abs(p - currentPage) <= 1
+                  )
+                  .map((p, i, arr) => (
+                    <span key={p} className="flex items-center gap-2">
+                      {i > 0 && arr[i - 1] !== p - 1 && (
+                        <span className="text-text-secondary px-1">…</span>
+                      )}
+                      <button
+                        onClick={() => goToPage(p)}
+                        aria-current={p === currentPage ? "page" : undefined}
+                        className={`w-9 h-9 flex items-center justify-center rounded-full font-body-sm text-body-sm transition-colors ${
+                          p === currentPage
+                            ? "bg-brand-primary text-white"
+                            : "text-text-primary hover:bg-surface-secondary"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    </span>
+                  ))}
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  aria-label="Next page"
+                  className="w-9 h-9 flex items-center justify-center rounded-full border border-border-default text-text-primary disabled:opacity-30 hover:border-brand-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
                 </button>
               </div>
             )}

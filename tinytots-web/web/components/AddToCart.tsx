@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/lib/cart-context";
+import { compareSizes } from "@/lib/size-sort";
 
 type Variant = {
   id: number;
@@ -23,22 +24,6 @@ function normColor(color: string | null | undefined): string | null {
 function normSize(size: string | null | undefined): string {
   const t = (size || "").trim();
   return t.length > 0 ? t : "One Size";
-}
-
-function sizeSortKey(size: string): [number, number, string] {
-  const range = size.match(/^(\d+)\s*-\s*(\d+)$/);
-  if (range) return [0, Number(range[1]), size];
-  if (/^\d+$/.test(size)) return [0, Number(size), size];
-  const letterOrder = ["XS", "S", "M", "L", "XL", "XXL"];
-  const li = letterOrder.indexOf(size.toUpperCase());
-  if (li >= 0) return [1, li, size];
-  return [2, 0, size];
-}
-
-function compareSizes(a: string, b: string) {
-  const ka = sizeSortKey(a);
-  const kb = sizeSortKey(b);
-  return ka[0] - kb[0] || ka[1] - kb[1] || ka[2].localeCompare(kb[2]);
 }
 
 function findVariant(
