@@ -156,24 +156,24 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
             </div>
           ) : null}
         </div>
-
-        {count > 1 && (
-          <div className="flex items-center gap-2 mt-8">
-            {valid.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                aria-label={`Go to slide ${i + 1}`}
-                aria-current={i === index ? true : undefined}
-                onClick={() => goTo(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === index ? "w-6 bg-brand-primary" : "w-2 bg-border-default hover:bg-text-secondary"
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
+
+      {count > 1 && (
+        <div className="absolute bottom-6 left-6 sm:left-10 md:left-16 z-[4] flex items-center gap-2">
+          {valid.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={`Go to slide ${i + 1}`}
+              aria-current={i === index ? true : undefined}
+              onClick={() => goTo(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                i === index ? "w-6 bg-brand-primary" : "w-2 bg-white/70 hover:bg-white"
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

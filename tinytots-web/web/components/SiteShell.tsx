@@ -16,6 +16,7 @@ import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
 import { CACHE_KEYS, readSessionJson, writeSessionJson } from "@/lib/client-cache";
 import { useOnline } from "@/hooks/useOnline";
 import { useCart } from "@/lib/cart-context";
+import { GooeySearch, type GooeySearchItem } from "@/components/ui/gooey-search";
 
 // Below-fold chrome — keep off the homepage critical JS path.
 const UgcFeed = dynamic(() => import("@/components/UgcFeed"), { ssr: false });
@@ -28,10 +29,8 @@ export type AnnouncementData = {
   style?: string;
 };
 
-function SearchOverlay({ onClose }: { onClose: () => void }) {
-  const [query, setQuery] = useState("");
+function HeaderGooeySearch() {
   const [allProducts, setAllProducts] = useState<any[] | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,79 +47,18 @@ function SearchOverlay({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onClose]);
+  function search(query: string): GooeySearchItem[] {
+    const needle = query.trim().toLowerCase();
+    if (!needle || !allProducts) return [];
+    return allProducts
+      .filter((p) => [p.name, p.brand, p.sku, p.category].filter(Boolean).join(" ").toLowerCase().includes(needle))
+      .map((p) => ({
+        label: p.brand ? `${p.name} — ${p.brand}` : p.name,
+        href: `/products/${p.id}`,
+      }));
+  }
 
-  const needle = query.trim().toLowerCase();
-  const filtered = needle
-    ? (allProducts || []).filter((p: any) => {
-        const haystack = [p.name, p.brand, p.sku, p.category].filter(Boolean).join(" ").toLowerCase();
-        return haystack.includes(needle);
-      })
-    : [];
-
-  const grouped = filtered.reduce((acc: Record<string, any[]>, p: any) => {
-    const key = p.category || "Other";
-    (acc[key] = acc[key] || []).push(p);
-    return acc;
-  }, {});
-
-  return (
-    <div
-      ref={containerRef}
-      className="fixed left-4 right-4 top-[72px] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[420px] bg-surface-elevated border border-border-default rounded-2xl shadow-xl p-4 z-[100]"
-    >
-      <input
-        autoFocus
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        maxLength={100}
-        placeholder="Search by name, brand, SKU, or category..."
-        className="w-full border border-border-default rounded-lg px-4 py-2.5 bg-surface-elevated font-body-md text-body-md text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary mb-3"
-      />
-
-      <div className="max-h-80 overflow-y-auto flex flex-col gap-3">
-        {!needle && (
-          <p className="font-body-sm text-body-sm text-text-secondary px-1 py-2">
-            Start typing to search products.
-          </p>
-        )}
-        {needle && Object.keys(grouped).length === 0 && (
-          <p className="font-body-sm text-body-sm text-text-secondary px-1 py-2">
-            No products found for &ldquo;{query}&rdquo;.
-          </p>
-        )}
-
-        {Object.entries(grouped).map(([category, products]) => (
-          <div key={category}>
-            <p className="font-label-md text-label-md text-text-secondary uppercase px-1 mb-1">
-              {category}
-            </p>
-            <div className="flex flex-col gap-1">
-              {products.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/products/${p.id}`}
-                  onClick={onClose}
-                  className="flex justify-between px-3 py-2 rounded-lg hover:bg-surface-secondary font-body-sm text-body-sm text-text-primary"
-                >
-                  <span>{p.name}</span>
-                  <span className="text-text-secondary">{p.brand}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <GooeySearch onSearch={search} placeholder="Search products..." buttonLabel="Search" />;
 }
 
 function AnnouncementBar({ data }: { data: { enabled: boolean; text: string; link: string; style?: string } | null }) {
@@ -410,7 +348,6 @@ export default function SiteShell({
   /** Server-fetched announcement — avoids CLS from client fetch expanding the fixed header. */
   announcement?: AnnouncementData | null;
 }>) {
-  const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const headerWrapRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(80);
@@ -418,8 +355,8 @@ export default function SiteShell({
   const lastScrollYRef = useRef(0);
 
   useEffect(() => {
-    if (mobileMenuOpen || searchOpen) setHeaderHidden(false);
-  }, [mobileMenuOpen, searchOpen]);
+    if (mobileMenuOpen) setHeaderHidden(false);
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     lastScrollYRef.current = window.scrollY;
@@ -538,10 +475,7 @@ export default function SiteShell({
                 </Link>
                 <div className="flex items-center gap-1 sm:gap-2 md:gap-4 justify-end shrink-0">
                   <div className="relative shrink-0">
-                    <button onClick={() => setSearchOpen((o) => !o)} className="text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center" title="Search" aria-label="Search">
-                      <span className="material-symbols-outlined">search</span>
-                    </button>
-                    {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
+                    <HeaderGooeySearch />
                   </div>
                   <AccountMenu />
                   <Link

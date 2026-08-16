@@ -45,7 +45,7 @@ function ProductCard({ product, layout }: { product: Product; layout: Layout }) 
 
   return (
     <Link href={`/products/${product.id}`} className={`group cursor-pointer ${widthClass}`}>
-      <div className="relative w-full aspect-square overflow-hidden border border-border-default mb-4 bg-surface-elevated">
+      <div className="relative w-full aspect-[3/4] overflow-hidden border border-border-default mb-4 bg-surface-elevated">
         {totalStock > 0 && totalStock <= 5 && (
           <div className="absolute top-2 left-2 bg-[#D9822B] text-white font-label-md text-label-md px-2 py-1 rounded-full z-10">
             Few Left
@@ -217,22 +217,22 @@ export default function ProductCarouselTabs({
               aria-label="Scroll related products left"
               onClick={() => scrollByPage(-1)}
               disabled={!canScrollLeft}
-              className={`hidden md:flex absolute left-0 top-[38%] -translate-y-1/2 z-10 w-10 h-10 items-center justify-center rounded-full border border-border-default bg-surface-elevated shadow-sm transition-opacity ${
-                canScrollLeft ? "opacity-100 hover:bg-surface-secondary" : "opacity-0 pointer-events-none"
+              className={`hidden md:flex absolute left-2 top-[38%] -translate-y-1/2 z-10 w-11 h-7 items-center justify-center rounded-full bg-brand-primary shadow-md transition-opacity ${
+                canScrollLeft ? "opacity-100 hover:opacity-90" : "opacity-0 pointer-events-none"
               }`}
             >
-              <span className="material-symbols-outlined text-[22px] text-text-primary">chevron_left</span>
+              <span className="material-symbols-outlined text-[16px] text-white rotate-180">play_arrow</span>
             </button>
             <button
               type="button"
               aria-label="Scroll related products right"
               onClick={() => scrollByPage(1)}
               disabled={!canScrollRight}
-              className={`hidden md:flex absolute right-0 top-[38%] -translate-y-1/2 z-10 w-10 h-10 items-center justify-center rounded-full border border-border-default bg-surface-elevated shadow-sm transition-opacity ${
-                canScrollRight ? "opacity-100 hover:bg-surface-secondary" : "opacity-0 pointer-events-none"
+              className={`hidden md:flex absolute right-2 top-[38%] -translate-y-1/2 z-10 w-11 h-7 items-center justify-center rounded-full bg-brand-primary shadow-md transition-opacity ${
+                canScrollRight ? "opacity-100 hover:opacity-90" : "opacity-0 pointer-events-none"
               }`}
             >
-              <span className="material-symbols-outlined text-[22px] text-text-primary">chevron_right</span>
+              <span className="material-symbols-outlined text-[16px] text-white">play_arrow</span>
             </button>
           </>
         )}

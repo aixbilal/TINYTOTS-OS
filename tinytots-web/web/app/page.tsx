@@ -520,35 +520,33 @@ export default async function Home() {
         </Link>
 
 
-        {/* Two supporting lifestyle/brand editorial modules. Each image
-            fades into the panel's flat background color at the seam via a
-            CSS mask (no hard cut between photo and text side) - the panel
-            itself stays a solid flat color. */}
+        {/* Two supporting lifestyle/brand editorial modules - full image
+            banner per module, text overlaid directly on top via a gradient
+            scrim (same pattern as Spring Moments), not two separate
+            image+text boxes side by side. */}
         <section className="mb-stack-lg grid grid-cols-1 md:grid-cols-2 gap-bento-gap">
-          <div className="flex flex-col sm:flex-row gap-0 items-stretch bg-surface-canvas">
+          <div className="relative aspect-[4/5] sm:aspect-[3/4] overflow-hidden">
+            <Image
+              src={content.lifestyle_1_image_url || HOMEPAGE_DEFAULTS.lifestyle_1_image_url}
+              alt=""
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+            />
             <div
-              className="relative w-full sm:w-[42%] aspect-[4/5] shrink-0 overflow-hidden"
+              className="absolute inset-0"
               style={{
-                maskImage: "linear-gradient(to right, black 60%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to right, black 60%, transparent 100%)",
+                background: "linear-gradient(to top, rgba(246,241,232,0.95) 0%, rgba(246,241,232,0.55) 35%, rgba(246,241,232,0) 60%)",
               }}
-            >
-              <Image
-                src={content.lifestyle_1_image_url || HOMEPAGE_DEFAULTS.lifestyle_1_image_url}
-                alt=""
-                fill
-                sizes="(max-width: 640px) 100vw, 20vw"
-                className="object-cover"
-              />
-            </div>
-            <div className="flex flex-col justify-center pt-1 px-6 py-8 sm:pl-0 sm:pr-8 -ml-8 sm:-ml-12 relative z-10">
+            />
+            <div className="absolute inset-0 flex flex-col justify-end px-6 py-8">
               <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-2">
                 {content.lifestyle_1_eyebrow || HOMEPAGE_DEFAULTS.lifestyle_1_eyebrow}
               </span>
               <h3 className="font-display-md text-[22px] md:text-[26px] text-text-primary tracking-tight mb-3">
                 {content.lifestyle_1_headline || HOMEPAGE_DEFAULTS.lifestyle_1_headline}
               </h3>
-              <p className="font-body-sm text-body-sm text-text-secondary mb-4 leading-relaxed">
+              <p className="font-body-sm text-body-sm text-text-secondary mb-4 leading-relaxed max-w-sm">
                 {content.lifestyle_1_body || HOMEPAGE_DEFAULTS.lifestyle_1_body}
               </p>
               <Link
@@ -560,30 +558,28 @@ export default async function Home() {
               </Link>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-0 items-stretch bg-surface-canvas">
+          <div className="relative aspect-[4/5] sm:aspect-[3/4] overflow-hidden">
+            <Image
+              src={content.lifestyle_2_image_url || HOMEPAGE_DEFAULTS.lifestyle_2_image_url}
+              alt=""
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+            />
             <div
-              className="relative w-full sm:w-[42%] aspect-[4/5] shrink-0 overflow-hidden"
+              className="absolute inset-0"
               style={{
-                maskImage: "linear-gradient(to right, black 60%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(to right, black 60%, transparent 100%)",
+                background: "linear-gradient(to top, rgba(246,241,232,0.95) 0%, rgba(246,241,232,0.55) 35%, rgba(246,241,232,0) 60%)",
               }}
-            >
-              <Image
-                src={content.lifestyle_2_image_url || HOMEPAGE_DEFAULTS.lifestyle_2_image_url}
-                alt=""
-                fill
-                sizes="(max-width: 640px) 100vw, 20vw"
-                className="object-cover"
-              />
-            </div>
-            <div className="flex flex-col justify-center pt-1 px-6 py-8 sm:pl-0 sm:pr-8 -ml-8 sm:-ml-12 relative z-10">
+            />
+            <div className="absolute inset-0 flex flex-col justify-end px-6 py-8">
               <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-2">
                 {content.lifestyle_2_eyebrow || HOMEPAGE_DEFAULTS.lifestyle_2_eyebrow}
               </span>
               <h3 className="font-display-md text-[22px] md:text-[26px] text-text-primary tracking-tight mb-3">
                 {content.lifestyle_2_headline || HOMEPAGE_DEFAULTS.lifestyle_2_headline}
               </h3>
-              <p className="font-body-sm text-body-sm text-text-secondary mb-4 leading-relaxed">
+              <p className="font-body-sm text-body-sm text-text-secondary mb-4 leading-relaxed max-w-sm">
                 {content.lifestyle_2_body || HOMEPAGE_DEFAULTS.lifestyle_2_body}
               </p>
               <Link
