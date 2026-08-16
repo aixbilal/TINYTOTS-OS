@@ -30,9 +30,11 @@ export async function GET(request: Request) {
       description,
       brand,
       category,
+      gender,
       image_url,
+      created_at,
       product_images ( storage_path, is_primary, sort_order ),
-      variants ( id, color, size, price, web_price, stock ) 
+      variants ( id, color, color_hex, size, price, web_price, web_base_price, web_discount_percent, stock )
     `
     )
     .eq("is_active", true);

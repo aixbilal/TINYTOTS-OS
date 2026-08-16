@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -10,149 +10,267 @@ import {
   isBrowserOffline,
   fetchWithSessionCache,
   readSessionJson,
-  writeSessionJson,
 } from "@/lib/client-cache";
 import { useOnline } from "@/hooks/useOnline";
 
 type Category = { name: string; slug: string };
+type Variant = {
+  id: number;
+  color: string | null;
+  color_hex: string | null;
+  size: string | null;
+  price: number;
+  web_price: number | null;
+  web_base_price: number | null;
+  web_discount_percent: number | null;
+  stock: number;
+};
+type Product = {
+  id: number;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  gender: string | null;
+  image_url: string | null;
+  secondary_image_url: string | null;
+  created_at: string;
+  variants: Variant[];
+};
 
-function CategoriesDropdown() {
-  const online = useOnline();
-  const [open, setOpen] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [status, setStatus] = useState<"idle" | "loading" | "ready" | "unavailable">(
-    "idle"
+type ShopContent = {
+  hero_eyebrow: string;
+  hero_headline: string;
+  hero_subtext: string;
+  hero_image_url: string;
+  hero_image_url_mobile: string;
+};
+
+const DEFAULT_SHOP_CONTENT: ShopContent = {
+  hero_eyebrow: "Shop All",
+  hero_headline: "Timeless styles for little hearts.",
+  hero_subtext: "Discover thoughtfully made pieces for every moment, every season, every little adventure.",
+  hero_image_url: "/images/homepage/editorial-story-01.webp",
+  hero_image_url_mobile: "",
+};
+
+const PAGE_SIZE_ROWS = 5; // ~5-6 rows per load, per Dev Bilal's brief
+const CARDS_PER_ROW_DESKTOP = 4;
+const INITIAL_VISIBLE = PAGE_SIZE_ROWS * CARDS_PER_ROW_DESKTOP;
+const LOAD_MORE_STEP = CARDS_PER_ROW_DESKTOP * 2;
+const NEW_WINDOW_DAYS = 14;
+
+type SortKey = "newest" | "price_asc" | "price_desc" | "name";
+
+function isNew(createdAt: string): boolean {
+  const created = new Date(createdAt).getTime();
+  if (Number.isNaN(created)) return false;
+  return Date.now() - created <= NEW_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+}
+
+function ShopHero({ content }: { content: ShopContent }) {
+  return (
+    <section className="relative w-screen left-1/2 -translate-x-1/2 aspect-[4/5] sm:aspect-[21/9] mb-stack-lg overflow-hidden bg-surface-canvas">
+      {content.hero_image_url_mobile ? (
+        <Image
+          src={content.hero_image_url_mobile}
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover sm:hidden"
+          priority
+        />
+      ) : (
+        <div className="absolute inset-0 sm:hidden bg-surface-secondary" />
+      )}
+      {content.hero_image_url ? (
+        <Image
+          src={content.hero_image_url}
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover hidden sm:block"
+          priority
+        />
+      ) : (
+        <div className="absolute inset-0 hidden sm:block bg-surface-secondary" />
+      )}
+      <div
+        className="absolute inset-0 z-[1] pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(to right, rgba(250,247,242,0.92) 0%, rgba(250,247,242,0.5) 40%, rgba(250,247,242,0) 65%)",
+        }}
+      />
+      <div className="absolute inset-0 z-[2] flex flex-col justify-center px-6 sm:px-10 md:px-16">
+        <div className="max-w-md">
+          <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3 block">
+            {content.hero_eyebrow}
+          </span>
+          <h1 className="font-display-md text-[30px] sm:text-[36px] md:text-[44px] text-text-primary leading-[1.15] tracking-tight mb-4">
+            {content.hero_headline}
+          </h1>
+          <p className="font-body-md text-body-md text-text-secondary max-w-sm">{content.hero_subtext}</p>
+        </div>
+      </div>
+    </section>
   );
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+}
 
-  useEffect(() => {
-    if (!open) return;
-
-    const cached = readSessionJson<Category[]>(CACHE_KEYS.categories) ?? [];
-    if (cached.length > 0 && categories.length === 0) {
-      setCategories(cached);
-      setStatus("ready");
-    }
-
-    if (categories.length > 0 || cached.length > 0) {
-      // Refresh in background when online; keep cached list visible.
-      if (!online) {
-        setStatus("ready");
-        return;
-      }
-    }
-
-    if (!online) {
-      setStatus(cached.length > 0 || categories.length > 0 ? "ready" : "unavailable");
-      return;
-    }
-
-    if (categories.length > 0) return;
-
-    setStatus("loading");
-    let cancelled = false;
-    fetchWithSessionCache<Category[]>(
-      CACHE_KEYS.categories,
-      "/api/categories",
-      online,
-      (json) => json.categories || []
-    ).then(({ data }) => {
-      if (cancelled) return;
-      const list = data || [];
-      setCategories(list);
-      setStatus(list.length > 0 ? "ready" : "unavailable");
-    });
-
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, online]);
-
-  function show() {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setOpen(true);
-  }
-  function scheduleHide() {
-    closeTimer.current = setTimeout(() => setOpen(false), 150);
-  }
+function ProductCard({ product }: { product: Product }) {
+  const inStock = product.variants?.some((v) => v.stock > 0);
+  const variant = product.variants?.[0];
+  const price = variant?.web_price ?? variant?.price;
+  const hasDiscount = (variant?.web_discount_percent ?? 0) > 0 && variant?.web_base_price;
+  const swatches = Array.from(
+    new Map(
+      (product.variants || [])
+        .filter((v) => v.color_hex && /^#[0-9A-Fa-f]{6}$/.test(v.color_hex))
+        .map((v) => [v.color_hex as string, v.color || v.color_hex])
+    ).entries()
+  );
 
   return (
-    <div className="relative inline-block" onMouseEnter={show} onMouseLeave={scheduleHide}>
+    <Link href={`/products/${product.id}`} className="group flex flex-col cursor-pointer">
+      <div className="relative aspect-square overflow-hidden border border-border-default bg-surface-elevated mb-3">
+        {isNew(product.created_at) && (
+          <span className="absolute top-2 left-2 z-10 bg-brand-primary text-white font-label-md text-label-md px-2 py-1 rounded-full uppercase tracking-wide">
+            New
+          </span>
+        )}
+        <WishlistButton
+          productId={product.id}
+          className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur-sm w-8 h-8 shadow-sm rounded-full"
+        />
+        {product.image_url ? (
+          <>
+            <Image
+              src={product.image_url}
+              alt={product.name}
+              fill
+              sizes="(max-width: 768px) 50vw, 25vw"
+              className={`object-cover transition-opacity duration-300 ${
+                product.secondary_image_url ? "group-hover:opacity-0" : "group-hover:scale-105 transition-transform duration-500"
+              }`}
+            />
+            {product.secondary_image_url && (
+              <Image
+                src={product.secondary_image_url}
+                alt=""
+                aria-hidden="true"
+                fill
+                sizes="(max-width: 768px) 50vw, 25vw"
+                className="object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              />
+            )}
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-text-secondary font-body-sm text-body-sm">
+            No image
+          </div>
+        )}
+        {!inStock && (
+          <span className="absolute bottom-2 left-2 z-10 bg-text-primary/85 text-white font-label-md text-label-md px-2 py-1 rounded-full">
+            Out of stock
+          </span>
+        )}
+      </div>
+      <p className="font-body-md text-body-md text-text-primary">{product.name}</p>
+      <div className="flex items-baseline gap-2 mt-0.5">
+        <p className="font-headline-md text-headline-md text-text-primary">
+          {price ? `Rs. ${price.toLocaleString()}` : ""}
+        </p>
+        {hasDiscount && variant?.web_base_price && (
+          <p className="font-body-sm text-body-sm text-text-secondary line-through">
+            Rs. {variant.web_base_price.toLocaleString()}
+          </p>
+        )}
+      </div>
+      {swatches.length > 0 && (
+        <div className="flex items-center gap-1.5 mt-2">
+          {swatches.map(([hex, name]) => (
+            <span
+              key={hex}
+              title={name || hex}
+              className="w-3.5 h-3.5 rounded-full border border-border-default shrink-0"
+              style={{ backgroundColor: hex }}
+            />
+          ))}
+        </div>
+      )}
+    </Link>
+  );
+}
+
+function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="border-b border-border-default py-4">
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 font-button text-button px-4 py-2 rounded-full border border-border-default bg-surface-elevated text-text-primary hover:bg-surface-secondary transition-colors"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center justify-between w-full font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-3"
       >
-        <span className="material-symbols-outlined text-[18px]">storefront</span>
-        Categories
-        <span className="material-symbols-outlined text-[18px]">
+        {title}
+        <span className="material-symbols-outlined text-[18px] text-text-secondary">
           {open ? "expand_less" : "expand_more"}
         </span>
       </button>
-
-      {open && (
-        <div className="absolute top-full right-0 mt-2 w-64 max-h-96 overflow-y-auto bg-surface-elevated border border-border-default rounded-2xl shadow-xl p-2 z-[80]">
-          <Link
-            href="/products"
-            className="block px-3 py-2 rounded-lg font-body-md text-body-md text-brand-primary bg-brand-primary/20 hover:bg-brand-primary/30 transition-colors"
-          >
-            Shop All
-          </Link>
-          {categories.map((c) => (
-            <Link
-              key={c.slug}
-              href={`/collections/${c.slug}`}
-              className="block px-3 py-2 rounded-lg font-body-md text-body-md text-text-primary hover:bg-surface-secondary transition-colors"
-            >
-              {c.name}
-            </Link>
-          ))}
-          {status === "loading" && categories.length === 0 && (
-            <p className="px-3 py-2 font-body-sm text-body-sm text-text-secondary">
-              Loading categories...
-            </p>
-          )}
-          {status === "unavailable" && categories.length === 0 && (
-            <p className="px-3 py-2 font-body-sm text-body-sm text-text-secondary">
-              {online
-                ? "No categories available."
-                : "Categories unavailable offline. Use Shop All."}
-            </p>
-          )}
-        </div>
-      )}
+      {open && children}
     </div>
   );
 }
 
 function ProductsContent() {
   const online = useOnline();
-  const [products, setProducts] = useState<any[]>([]);
+  const [shopContent, setShopContent] = useState<ShopContent>(DEFAULT_SHOP_CONTENT);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [softMessage, setSoftMessage] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const ids = searchParams.get("ids");
-  const gender = (searchParams.get("gender") || "").trim().toLowerCase();
-  const genderFilter =
-    gender === "boy" || gender === "girl" || gender === "unisex" ? gender : null;
-  const pageTitle =
-    genderFilter === "boy"
-      ? "Boys"
-      : genderFilter === "girl"
-        ? "Girls"
-        : genderFilter === "unisex"
-          ? "Unisex"
-          : "Shop All";
+  const genderParam = (searchParams.get("gender") || "").trim().toLowerCase();
+
+  // Filter state
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [genderFilters, setGenderFilters] = useState<Set<string>>(new Set());
+  const [sizeFilters, setSizeFilters] = useState<Set<string>>(new Set());
+  const [colorFilters, setColorFilters] = useState<Set<string>>(new Set());
+  const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
+  const [sort, setSort] = useState<SortKey>("newest");
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Seed gender filter from the query string (e.g. /products?gender=girl from nav links)
+  useEffect(() => {
+    if (genderParam === "boy" || genderParam === "girl" || genderParam === "unisex") {
+      setGenderFilters(new Set([genderParam]));
+    }
+  }, [genderParam]);
+
+  useEffect(() => {
+    fetch("/api/shop-content")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.data) setShopContent({ ...DEFAULT_SHOP_CONTENT, ...json.data });
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchWithSessionCache<Category[]>(CACHE_KEYS.categories, "/api/categories", online, (json) => json.categories || []).then(
+      ({ data }) => setCategories(data || [])
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams();
     if (ids) params.set("ids", ids);
-    if (genderFilter) params.set("gender", genderFilter);
     const qs = params.toString();
     const cacheKey = CACHE_KEYS.productsByQuery(qs);
     const url = qs ? `/api/products?${qs}` : "/api/products";
 
-    const cached = readSessionJson<any[]>(cacheKey) ?? [];
+    const cached = readSessionJson<Product[]>(cacheKey) ?? [];
     if (cached.length > 0) {
       setProducts(cached);
       setLoading(false);
@@ -161,11 +279,11 @@ function ProductsContent() {
 
     if (isBrowserOffline() || !online) {
       setLoading(false);
-      if (cached.length === 0) {
-        setSoftMessage("Product list unavailable offline. Reconnect to browse the full catalog.");
-      } else {
-        setSoftMessage("Showing last viewed products — reconnect for live stock.");
-      }
+      setSoftMessage(
+        cached.length === 0
+          ? "Product list unavailable offline. Reconnect to browse the full catalog."
+          : "Showing last viewed products — reconnect for live stock."
+      );
       return;
     }
 
@@ -173,16 +291,12 @@ function ProductsContent() {
     setSoftMessage(null);
 
     let cancelled = false;
-    fetchWithSessionCache<any[]>(cacheKey, url, online, (json) => json.data || []).then(
+    fetchWithSessionCache<Product[]>(cacheKey, url, online, (json) => json.data || []).then(
       ({ data, fromCache, hadError }) => {
         if (cancelled) return;
         setProducts(data || []);
         if (hadError) {
-          setSoftMessage(
-            !online
-              ? "Product list unavailable offline. Reconnect to browse."
-              : "Couldn't load products right now. Please try again shortly."
-          );
+          setSoftMessage(!online ? "Product list unavailable offline. Reconnect to browse." : "Couldn't load products right now.");
         } else if (fromCache) {
           setSoftMessage("Showing last viewed products — reconnect for live stock.");
         } else {
@@ -191,109 +305,288 @@ function ProductsContent() {
         setLoading(false);
       }
     );
-
     return () => {
       cancelled = true;
     };
-  }, [ids, genderFilter, online]);
+  }, [ids, online]);
+
+  // Derive filter option sets from the real fetched catalog - never invented.
+  const availableSizes = useMemo(() => {
+    const s = new Set<string>();
+    products.forEach((p) => p.variants?.forEach((v) => v.size && s.add(v.size)));
+    return Array.from(s);
+  }, [products]);
+
+  const availableColors = useMemo(() => {
+    const m = new Map<string, string>();
+    products.forEach((p) =>
+      p.variants?.forEach((v) => {
+        if (v.color_hex && /^#[0-9A-Fa-f]{6}$/.test(v.color_hex)) {
+          m.set(v.color_hex, v.color || v.color_hex);
+        }
+      })
+    );
+    return Array.from(m.entries());
+  }, [products]);
+
+  const priceBounds = useMemo((): [number, number] => {
+    let min = Infinity;
+    let max = 0;
+    products.forEach((p) =>
+      p.variants?.forEach((v) => {
+        const price = v.web_price ?? v.price;
+        if (price < min) min = price;
+        if (price > max) max = price;
+      })
+    );
+    if (!Number.isFinite(min)) min = 0;
+    return [Math.floor(min), Math.ceil(max)];
+  }, [products]);
+
+  const effectivePriceRange = priceRange ?? priceBounds;
+
+  const filtered = useMemo(() => {
+    let list = products.filter((p) => {
+      if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
+      if (genderFilters.size > 0 && !(p.gender && genderFilters.has(p.gender))) return false;
+      if (sizeFilters.size > 0 && !p.variants?.some((v) => v.size && sizeFilters.has(v.size))) return false;
+      if (colorFilters.size > 0 && !p.variants?.some((v) => v.color_hex && colorFilters.has(v.color_hex))) return false;
+      const price = p.variants?.[0]?.web_price ?? p.variants?.[0]?.price ?? 0;
+      if (price < effectivePriceRange[0] || price > effectivePriceRange[1]) return false;
+      return true;
+    });
+
+    list = [...list].sort((a, b) => {
+      const priceA = a.variants?.[0]?.web_price ?? a.variants?.[0]?.price ?? 0;
+      const priceB = b.variants?.[0]?.web_price ?? b.variants?.[0]?.price ?? 0;
+      switch (sort) {
+        case "price_asc":
+          return priceA - priceB;
+        case "price_desc":
+          return priceB - priceA;
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "newest":
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+    return list;
+  }, [products, categoryFilter, genderFilters, sizeFilters, colorFilters, effectivePriceRange, sort]);
+
+  // Reset visible count whenever the filtered set changes shape.
+  useEffect(() => {
+    setVisibleCount(INITIAL_VISIBLE);
+  }, [categoryFilter, genderFilters, sizeFilters, colorFilters, effectivePriceRange, sort]);
+
+  // Load more as the sentinel scrolls into view.
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((v) => Math.min(v + LOAD_MORE_STEP, filtered.length));
+        }
+      },
+      { rootMargin: "600px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [filtered.length]);
+
+  function toggleSetValue(set: Set<string>, value: string, setter: (s: Set<string>) => void) {
+    const next = new Set(set);
+    if (next.has(value)) next.delete(value);
+    else next.add(value);
+    setter(next);
+  }
+
+  function clearAllFilters() {
+    setCategoryFilter("all");
+    setGenderFilters(new Set());
+    setSizeFilters(new Set());
+    setColorFilters(new Set());
+    setPriceRange(null);
+  }
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
 
   return (
-    <main className="max-w-container-max mx-auto py-stack-lg">
-      <div className="flex items-center justify-between mb-stack-md gap-3">
-        <h1 className="font-display-md text-display-md text-text-primary">{pageTitle}</h1>
-        <CategoriesDropdown />
-      </div>
+    <>
+      <ShopHero content={shopContent} />
 
-      {loading && products.length === 0 && (
-        <p className="font-body-md text-body-md text-text-secondary">Loading products...</p>
-      )}
+      <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+        <nav className="font-body-sm text-body-sm text-text-secondary mb-stack-md flex items-center gap-2">
+          <Link href="/" className="hover:text-brand-primary transition-colors">
+            Home
+          </Link>
+          <span>&gt;</span>
+          <span className="text-text-primary">Shop All</span>
+        </nav>
 
-      {softMessage && (
-        <p className="mb-4 font-body-sm text-body-sm text-text-secondary border border-border-default bg-surface-secondary rounded-lg px-4 py-3">
-          {softMessage}
-        </p>
-      )}
+        <div className="flex items-center justify-between mb-stack-md gap-3">
+          <div />
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 font-body-sm text-body-sm text-text-secondary">
+              Sort by:
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as SortKey)}
+                className="border border-border-default rounded-full px-3 py-1.5 font-body-sm text-body-sm text-text-primary bg-surface-elevated"
+              >
+                <option value="newest">Newest</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="name">Name</option>
+              </select>
+            </label>
+          </div>
+        </div>
 
-      {!loading && products.length === 0 && !softMessage && (
-        <p className="font-body-md text-body-md text-text-secondary">No products available yet.</p>
-      )}
+        {softMessage && (
+          <p className="mb-4 font-body-sm text-body-sm text-text-secondary border border-border-default bg-surface-secondary rounded-lg px-4 py-3">
+            {softMessage}
+          </p>
+        )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-bento-gap">
-        {products.map((p) => {
-          const inStock = p.variants?.some((v: any) => v.stock > 0);
-          const variant = p.variants?.[0];
-          const price = variant?.web_price ?? variant?.price;
-          const hasDiscount = variant?.web_discount_percent > 0 && variant?.web_base_price;
-          return (
-            <Link
-              key={p.id}
-              href={`/products/${p.id}`}
-              className="group flex flex-col rounded-xl border border-border-default bg-surface-elevated overflow-hidden hover:border-brand-primary transition-colors"
-            >
-              <div className="relative aspect-square bg-surface-secondary overflow-hidden">
-                {p.image_url ? (
-                  <>
-                    <Image
-                      src={p.image_url}
-                      alt={p.name}
-                      fill
-                      sizes="(max-width: 768px) 50vw, 25vw"
-                      className={`object-cover transition-opacity ${
-                        p.secondary_image_url
-                          ? "group-hover:opacity-0"
-                          : "group-hover:scale-105 transition-transform"
-                      }`}
+        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-8">
+          {/* Filters sidebar */}
+          <aside>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider">
+                Filters
+              </h2>
+              <button onClick={clearAllFilters} className="font-body-sm text-body-sm text-brand-primary hover:underline">
+                Clear all
+              </button>
+            </div>
+
+            <FilterSection title="Category">
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => setCategoryFilter("all")}
+                  className={`text-left font-body-sm text-body-sm ${categoryFilter === "all" ? "text-brand-primary font-semibold" : "text-text-secondary hover:text-text-primary"}`}
+                >
+                  All Categories
+                </button>
+                {categories.map((c) => (
+                  <button
+                    key={c.slug}
+                    onClick={() => setCategoryFilter(c.name)}
+                    className={`text-left font-body-sm text-body-sm ${categoryFilter === c.name ? "text-brand-primary font-semibold" : "text-text-secondary hover:text-text-primary"}`}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </FilterSection>
+
+            <FilterSection title="Gender">
+              <div className="flex flex-col gap-2">
+                {["girl", "boy", "unisex"].map((g) => (
+                  <label key={g} className="flex items-center gap-2 font-body-sm text-body-sm text-text-secondary capitalize cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={genderFilters.has(g)}
+                      onChange={() => toggleSetValue(genderFilters, g, setGenderFilters)}
+                      className="accent-brand-primary"
                     />
-                    {p.secondary_image_url && (
-                      <Image
-                        src={p.secondary_image_url}
-                        alt=""
-                        aria-hidden="true"
-                        fill
-                        sizes="(max-width: 768px) 50vw, 25vw"
-                        className="object-cover opacity-0 group-hover:opacity-100 transition-opacity"
-                      />
-                    )}
-                  </>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-text-secondary font-body-sm text-body-sm">
-                    No image
-                  </div>
-                )}
-                <WishlistButton
-                  productId={p.id}
-                  className="absolute top-2 right-2 bg-surface-elevated/90 backdrop-blur-sm w-8 h-8 shadow-sm"
-                />
+                    {g === "unisex" ? "Unisex" : `${g}s`}
+                  </label>
+                ))}
               </div>
-              <div className="p-4 flex flex-col gap-1">
-                <p className="font-body-md text-body-md text-text-primary">{p.name}</p>
-                <p className="font-body-sm text-body-sm text-text-secondary">{p.brand}</p>
-                {hasDiscount && (
-                  <span className="self-start font-label-md text-label-md text-white bg-brand-primary px-2 py-0.5 rounded-full">
-                    -{variant.web_discount_percent}%
-                  </span>
-                )}
-                <div className="flex justify-between items-center mt-1">
-                  <div className="flex items-baseline gap-2">
-                    <p className="font-headline-md text-headline-md text-brand-primary">
-                      {price ? `Rs. ${price.toLocaleString()}` : ""}
-                    </p>
-                    {hasDiscount && (
-                      <p className="font-body-sm text-body-sm text-text-secondary line-through">
-                        Rs. {variant.web_base_price.toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                  {!inStock && (
-                    <span className="font-label-md text-label-md text-red-700">Out of stock</span>
-                  )}
+            </FilterSection>
+
+            {availableSizes.length > 0 && (
+              <FilterSection title="Size">
+                <div className="grid grid-cols-3 gap-2">
+                  {availableSizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => toggleSetValue(sizeFilters, size, setSizeFilters)}
+                      className={`border rounded-lg py-1.5 font-body-sm text-body-sm transition-colors ${
+                        sizeFilters.has(size)
+                          ? "border-brand-primary bg-brand-primary text-white"
+                          : "border-border-default text-text-secondary hover:border-brand-primary"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
                 </div>
+              </FilterSection>
+            )}
+
+            {availableColors.length > 0 && (
+              <FilterSection title="Color">
+                <div className="flex flex-wrap gap-2">
+                  {availableColors.map(([hex, name]) => (
+                    <button
+                      key={hex}
+                      title={name}
+                      onClick={() => toggleSetValue(colorFilters, hex, setColorFilters)}
+                      className={`w-7 h-7 rounded-full border-2 transition-all ${
+                        colorFilters.has(hex) ? "border-brand-primary scale-110" : "border-border-default"
+                      }`}
+                      style={{ backgroundColor: hex }}
+                    />
+                  ))}
+                </div>
+              </FilterSection>
+            )}
+
+            {priceBounds[1] > 0 && (
+              <FilterSection title="Price">
+                <div className="px-1">
+                  <input
+                    type="range"
+                    min={priceBounds[0]}
+                    max={priceBounds[1]}
+                    value={effectivePriceRange[1]}
+                    onChange={(e) => setPriceRange([priceBounds[0], Number(e.target.value)])}
+                    className="w-full accent-brand-primary"
+                  />
+                  <div className="flex justify-between font-body-sm text-body-sm text-text-secondary mt-1">
+                    <span>Rs. {priceBounds[0].toLocaleString()}</span>
+                    <span>Rs. {effectivePriceRange[1].toLocaleString()}</span>
+                  </div>
+                </div>
+              </FilterSection>
+            )}
+          </aside>
+
+          {/* Product grid */}
+          <div>
+            {loading && products.length === 0 && (
+              <p className="font-body-md text-body-md text-text-secondary">Loading products...</p>
+            )}
+
+            {!loading && filtered.length === 0 && (
+              <p className="font-body-md text-body-md text-text-secondary">No products match these filters.</p>
+            )}
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+              {visible.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+
+            {hasMore && (
+              <div ref={loadMoreRef} className="flex justify-center mt-10">
+                <button
+                  onClick={() => setVisibleCount((v) => Math.min(v + LOAD_MORE_STEP, filtered.length))}
+                  className="font-button text-button border border-brand-primary text-brand-primary px-6 py-2.5 rounded-full hover:bg-brand-primary hover:text-white transition-colors"
+                >
+                  Load More
+                </button>
               </div>
-            </Link>
-          );
-        })}
-      </div>
-    </main>
+            )}
+          </div>
+        </div>
+      </main>
+    </>
   );
 }
 
