@@ -41,7 +41,7 @@ export default function HomepageHero({ slides }: { slides: HeroSlide[] }) {
       // Single full-bleed photo, 16:9 on desktop, text overlaid directly on
       // top (not a separate text panel) - matches the approved reference:
       // one continuous image, text sits on its naturally-light left side.
-      className="relative w-full aspect-[4/5] sm:aspect-[16/9] mb-stack-lg overflow-hidden bg-surface-canvas"
+      className="relative w-screen left-1/2 -translate-x-1/2 aspect-[4/5] sm:aspect-[16/9] mb-stack-lg overflow-hidden bg-surface-canvas"
       onTouchStart={() => {
         touchPauseRef.current = true;
         setPaused(true);
