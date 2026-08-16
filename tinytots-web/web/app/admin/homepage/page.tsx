@@ -119,7 +119,7 @@ const DEFAULT_TRUST: TrustItem[] = [
   { icon: "replay", label: "Easy 7-Day Returns" },
 ];
 
-const DESKTOP_ASPECT = 3 / 2;
+const DESKTOP_ASPECT = 16 / 9;
 const MOBILE_ASPECT = 4 / 5;
 const TILE_ASPECT = 3 / 2;
 
@@ -548,7 +548,7 @@ export default function AdminHomepagePage() {
         {/* 2. Hero */}
         <SectionCard
           title="2. Hero banner"
-          hint="Full-bleed rotating slides. Auto-advances about every 12 seconds. Upload desktop (3:2) and mobile (4:5) crops per slide."
+          hint="Full-bleed rotating slides. Auto-advances about every 12 seconds. Upload desktop (16:9) and mobile (4:5) crops per slide."
         >
           <div className="flex flex-col gap-4">
             {(content.hero_slides || []).map((slide, i) => (
@@ -609,10 +609,10 @@ export default function AdminHomepagePage() {
                       updateField("hero_slides", next);
                     }}
                     aspect={DESKTOP_ASPECT}
-                    aspectLabel="3:2"
-                    previewClassName="aspect-[3/2]"
-                    outputWidth={1536}
-                    outputHeight={1024}
+                    aspectLabel="16:9"
+                    previewClassName="aspect-[16/9]"
+                    outputWidth={1920}
+                    outputHeight={1080}
                     variant="desktop"
                   />
                   <AspectImageUploader

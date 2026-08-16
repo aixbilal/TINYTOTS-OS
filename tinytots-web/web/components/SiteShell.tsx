@@ -493,7 +493,7 @@ export default function SiteShell({
                   </div>
                 </div>
                 <Link href="/" className="flex flex-col items-center justify-self-center leading-none">
-                  <span className="font-display-md text-display-md text-brand-primary tracking-tight">TinyTots</span>
+                  <span className="font-display-md text-display-md text-text-primary tracking-[0.08em] uppercase">TinyTots</span>
                   <span className="hidden md:block font-label-md text-label-md text-text-secondary uppercase tracking-wider mt-0.5">
                     Timeless for tiny hearts
                   </span>

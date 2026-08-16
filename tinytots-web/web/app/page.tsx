@@ -115,7 +115,7 @@ const HOMEPAGE_DEFAULTS = {
   hero_subtext: "Ethically crafted, modern essentials for every stage of your child's early journey.",
   hero_button_text: "Shop New Arrivals",
   hero_button_link: "#trending",
-  trending_heading: "Trending Now",
+  trending_heading: "Loved by little ones",
   trust_items: DEFAULT_TRUST_ITEMS,
   usp_heading: "Why Choose TinyTots",
   meadow_image_url:
@@ -322,6 +322,9 @@ export default async function Home() {
         )}
 
         <section id="trending" className="mb-stack-lg">
+          <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-2 block">
+            Trending Now
+          </span>
           <h2 className="font-display-md text-[32px] md:text-[48px] text-text-primary tracking-tight mb-stack-md">
             {trendingHeading}
           </h2>
