@@ -82,6 +82,7 @@ export default function WishlistPage() {
         color: variant.color ?? null,
         price: variant.web_price ?? variant.price,
         maxStock: variant.stock,
+        imageUrl: p.image_url ?? undefined,
       },
       1
     );

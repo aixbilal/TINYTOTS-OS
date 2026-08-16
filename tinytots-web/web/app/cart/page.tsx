@@ -1,17 +1,25 @@
 "use client";
 
+import Image from "next/image";
 import { useCart } from "@/lib/cart-context";
 import CouponInput from "@/components/CouponInput";
 import OfflineNotice from "@/components/OfflineNotice";
 import VoucherVault from "@/components/VoucherVault";
 import Link from "next/link";
 
+// Matches the $75 figure already used in trust-strip copy elsewhere on the
+// site (e.g. homepage). Note: cart totals are in Rs (PKR) while this
+// threshold is a bare "75" reused from existing $-labeled site copy - a
+// pre-existing currency-label inconsistency across the site, not something
+// introduced here. Flagging rather than silently picking a new number.
+const FREE_SHIPPING_THRESHOLD = 75;
+
 export default function CartPage() {
   const { items, updateQuantity, removeItem, subtotal, appliedCoupon, appliedVoucher, total } = useCart();
 
   if (items.length === 0) {
     return (
-      <main className="max-w-2xl mx-auto py-stack-lg text-center">
+      <main className="max-w-2xl mx-auto py-stack-lg text-center px-margin-mobile">
         <OfflineNotice feature="Cart and checkout" />
         <span className="material-symbols-outlined text-[48px] text-text-secondary">
           shopping_bag
@@ -32,110 +40,191 @@ export default function CartPage() {
     );
   }
 
+  const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+  const amountToFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+  const progressPercent = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
+
   return (
-    <main className="max-w-5xl mx-auto py-stack-lg grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
-      <div className="md:col-span-2 min-w-0">
-        <OfflineNotice feature="Cart and checkout" />
-        <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Your Cart</h1>
+    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <OfflineNotice feature="Cart and checkout" />
+      <h1 className="font-display-md text-display-md text-text-primary">
+        Your Cart ({itemCount})
+      </h1>
 
-        <div className="flex flex-col gap-stack-sm">
-          {items.map((item) => (
+      {amountToFreeShipping > 0 ? (
+        <div className="mt-4 mb-8 max-w-xl">
+          <p className="font-body-sm text-body-sm text-text-secondary mb-2">
+            You&apos;re {FREE_SHIPPING_THRESHOLD - subtotal > 0 ? amountToFreeShipping.toLocaleString() : 0} away from free shipping!
+          </p>
+          <div className="h-1.5 rounded-full bg-surface-secondary overflow-hidden">
             <div
-              key={item.variantId}
-              className="flex flex-col gap-3 border border-border-default rounded-xl p-4 bg-surface-elevated min-w-0"
-            >
-              <div className="min-w-0">
-                <p className="font-headline-md text-headline-md text-text-primary break-words">
-                  {item.productName}
-                </p>
-                <p className="font-body-sm text-body-sm text-text-secondary mt-1">
-                  {item.size ?? "One Size"}
-                  {item.color ? ` / ${item.color}` : ""}
-                </p>
-                <p className="font-body-sm text-body-sm text-text-secondary">
-                  Rs. {item.price.toLocaleString()} each
-                </p>
-              </div>
+              className="h-full bg-brand-primary transition-all duration-500"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        </div>
+      ) : (
+        <p className="mt-4 mb-8 font-body-sm text-body-sm text-brand-primary max-w-xl">
+          You&apos;ve unlocked free shipping!
+        </p>
+      )}
 
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center border border-border-default rounded-lg">
-                  <button
-                    onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                    className="px-3 py-1 text-text-primary hover:bg-surface-secondary"
-                    aria-label="Decrease quantity"
-                  >
-                    −
-                  </button>
-                  <span className="px-3 text-text-primary font-body-md text-body-md tabular-nums">
-                    {item.quantity}
-                  </span>
-                  <button
-                    onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                    disabled={item.quantity >= item.maxStock}
-                    className="px-3 py-1 text-text-primary hover:bg-surface-secondary disabled:opacity-30"
-                    aria-label="Increase quantity"
-                  >
-                    +
-                  </button>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
+        <div className="md:col-span-2 min-w-0">
+          <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto] gap-4 font-label-md text-label-md uppercase tracking-wide text-text-secondary pb-3 border-b border-border-default">
+            <span>Product</span>
+            <span className="w-24 text-right">Price</span>
+            <span className="w-28 text-center">Quantity</span>
+            <span className="w-24 text-right">Total</span>
+          </div>
+
+          <div className="flex flex-col divide-y divide-border-default">
+            {items.map((item) => (
+              <div key={item.variantId} className="flex gap-4 py-4">
+                <div className="relative w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-surface-secondary">
+                  {item.imageUrl ? (
+                    <Image src={item.imageUrl} alt="" fill sizes="80px" className="object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-text-secondary">
+                      <span className="material-symbols-outlined text-[24px]">image</span>
+                    </div>
+                  )}
                 </div>
 
-                <p className="font-body-md text-body-md font-semibold text-text-primary tabular-nums">
-                  Rs. {(item.price * item.quantity).toLocaleString()}
-                </p>
+                <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:gap-4 items-center">
+                  <div className="min-w-0">
+                    <p className="font-headline-md text-headline-md text-text-primary break-words">
+                      {item.productName}
+                    </p>
+                    {item.color && (
+                      <p className="font-body-sm text-body-sm text-text-secondary mt-1">Color: {item.color}</p>
+                    )}
+                    {item.size && (
+                      <p className="font-body-sm text-body-sm text-text-secondary">Size: {item.size}</p>
+                    )}
+                  </div>
 
-                <button
-                  onClick={() => removeItem(item.variantId)}
-                  className="text-red-700 font-label-md text-label-md hover:underline shrink-0"
-                >
-                  Remove
-                </button>
+                  <p className="md:w-24 md:text-right font-body-md text-body-md text-text-primary">
+                    Rs. {item.price.toLocaleString()}
+                  </p>
+
+                  <div className="flex items-center gap-2 md:w-28 md:justify-center">
+                    <div className="flex items-center border border-border-default rounded-lg">
+                      <button
+                        onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                        className="w-8 h-8 flex items-center justify-center text-text-primary hover:bg-surface-secondary"
+                        aria-label="Decrease quantity"
+                      >
+                        −
+                      </button>
+                      <span className="w-8 text-center text-text-primary font-body-md text-body-md tabular-nums">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                        disabled={item.quantity >= item.maxStock}
+                        className="w-8 h-8 flex items-center justify-center text-text-primary hover:bg-surface-secondary disabled:opacity-30"
+                        aria-label="Increase quantity"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => removeItem(item.variantId)}
+                      aria-label="Remove item"
+                      className="w-7 h-7 rounded-full border border-border-default flex items-center justify-center text-text-secondary hover:text-red-700 hover:border-red-700 transition-colors shrink-0"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">close</span>
+                    </button>
+                  </div>
+
+                  <p className="md:w-24 md:text-right font-body-md text-body-md font-semibold text-text-primary tabular-nums">
+                    Rs. {(item.price * item.quantity).toLocaleString()}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="md:sticky md:top-24 border border-border-default rounded-xl p-4 sm:p-6 bg-surface-elevated flex flex-col gap-4 min-w-0">
-        <h2 className="font-headline-md text-headline-md text-text-primary">Order Summary</h2>
-
-        <div className="min-w-0">
-          <CouponInput />
-        </div>
-
-        <VoucherVault />
-
-        <div className="flex flex-col gap-2 pt-3 border-t border-border-default">
-          <div className="flex justify-between gap-3 font-body-md text-body-md text-text-secondary">
-            <span>Subtotal</span>
-            <span className="tabular-nums shrink-0">Rs. {subtotal.toLocaleString()}</span>
+            ))}
           </div>
 
-          {appliedCoupon && (
-            <div className="flex justify-between gap-3 font-body-md text-body-md text-brand-primary">
-              <span className="min-w-0 truncate">Discount ({appliedCoupon.code})</span>
-              <span className="tabular-nums shrink-0">− Rs. {appliedCoupon.discountAmount.toLocaleString()}</span>
+          <div className="mt-6 flex flex-col gap-4">
+            <div className="min-w-0">
+              <CouponInput />
             </div>
-          )}
-
-          {appliedVoucher && (
-            <div className="flex justify-between gap-3 font-body-md text-body-md text-brand-primary">
-              <span>Voucher</span>
-              <span className="tabular-nums shrink-0">− Rs. {appliedVoucher.amount.toLocaleString()}</span>
-            </div>
-          )}
-
-          <div className="flex justify-between gap-3 font-headline-lg text-headline-lg text-text-primary pt-2 border-t border-border-default">
-            <span>Total</span>
-            <span className="text-brand-primary tabular-nums shrink-0">Rs. {total.toLocaleString()}</span>
+            <VoucherVault />
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-2 font-button text-button border border-border-default text-text-primary px-5 py-2.5 rounded-full hover:border-brand-primary transition-colors w-fit"
+            >
+              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              Continue Shopping
+            </Link>
           </div>
         </div>
 
-        <Link
-          href="/checkout"
-          className="mt-2 block text-center w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity"
+        <div
+          className="md:sticky md:top-24 rounded-xl p-4 sm:p-6 flex flex-col gap-4 min-w-0"
+          style={{
+            background: "linear-gradient(160deg, rgba(97,104,69,0.08) 0%, rgba(97,104,69,0.02) 100%)",
+            border: "1px solid rgba(97,104,69,0.15)",
+          }}
         >
-          Proceed to Checkout
-        </Link>
+          <h2 className="font-label-lg text-label-lg uppercase tracking-wide text-text-primary">Order Summary</h2>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between gap-3 font-body-md text-body-md text-text-secondary">
+              <span>Subtotal ({itemCount} items)</span>
+              <span className="tabular-nums shrink-0">Rs. {subtotal.toLocaleString()}</span>
+            </div>
+
+            {appliedCoupon && (
+              <div className="flex justify-between gap-3 font-body-md text-body-md text-brand-primary">
+                <span className="min-w-0 truncate">Discount ({appliedCoupon.code})</span>
+                <span className="tabular-nums shrink-0">− Rs. {appliedCoupon.discountAmount.toLocaleString()}</span>
+              </div>
+            )}
+
+            {appliedVoucher && (
+              <div className="flex justify-between gap-3 font-body-md text-body-md text-brand-primary">
+                <span>Voucher</span>
+                <span className="tabular-nums shrink-0">− Rs. {appliedVoucher.amount.toLocaleString()}</span>
+              </div>
+            )}
+
+            <div className="flex justify-between gap-3 font-body-md text-body-md text-text-secondary">
+              <span>Shipping</span>
+              <span className="shrink-0">Calculated at checkout</span>
+            </div>
+
+            <div className="flex justify-between gap-3 font-headline-lg text-headline-lg text-text-primary pt-2 border-t border-brand-primary/15">
+              <span>Estimated Total</span>
+              <span className="text-brand-primary tabular-nums shrink-0">Rs. {total.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <Link
+            href="/checkout"
+            className="flex items-center justify-center gap-2 w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity"
+          >
+            <span className="material-symbols-outlined text-[18px]">lock</span>
+            Proceed to Checkout
+          </Link>
+
+          <div className="rounded-lg bg-surface-elevated p-4 flex flex-col gap-1.5">
+            <p className="font-label-md text-label-md text-text-primary mb-1">Why families love TinyTots</p>
+            <p className="font-body-sm text-body-sm text-text-secondary flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[16px] text-brand-primary">check</span>
+              Free shipping on orders over $75
+            </p>
+            <p className="font-body-sm text-body-sm text-text-secondary flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[16px] text-brand-primary">check</span>
+              Easy 60-day returns
+            </p>
+            <p className="font-body-sm text-body-sm text-text-secondary flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[16px] text-brand-primary">check</span>
+              Secure &amp; trusted payments
+            </p>
+          </div>
+        </div>
       </div>
     </main>
   );

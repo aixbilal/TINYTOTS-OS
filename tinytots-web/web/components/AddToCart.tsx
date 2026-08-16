@@ -49,6 +49,7 @@ export default function AddToCart({
   variants,
   selectedVariantId,
   onVariantChange,
+  imageUrl,
 }: {
   productId: number;
   productName: string;
@@ -58,6 +59,7 @@ export default function AddToCart({
   // own selection, same as before.
   selectedVariantId?: number | null;
   onVariantChange?: (variantId: number) => void;
+  imageUrl?: string;
 }) {
   const { addItem } = useCart();
   const firstAvailable = pickBestVariant(variants);
@@ -144,6 +146,7 @@ export default function AddToCart({
         color: selected.color,
         price: displayPrice(selected),
         maxStock: selected.stock,
+        imageUrl,
       },
       quantity
     );
@@ -180,6 +183,7 @@ export default function AddToCart({
         color: selected.color,
         price: displayPrice(selected),
         maxStock: selected.stock,
+        imageUrl,
       },
       quantity
     );

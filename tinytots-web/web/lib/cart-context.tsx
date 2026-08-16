@@ -11,6 +11,7 @@ export type CartItem = {
   price: number;
   quantity: number;
   maxStock: number;
+  imageUrl?: string;
 };
 
 export type AppliedCoupon = {

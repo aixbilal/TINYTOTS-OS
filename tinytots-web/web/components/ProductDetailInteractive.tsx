@@ -88,6 +88,7 @@ export default function ProductDetailInteractive({
           variants={variants}
           selectedVariantId={selectedVariantId}
           onVariantChange={setSelectedVariantId}
+          imageUrl={images.find((img) => img.is_primary)?.url || images[0]?.url}
         />
 
         <div className="mt-8 border-t border-border-default">

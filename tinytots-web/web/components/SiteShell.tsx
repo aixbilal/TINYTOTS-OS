@@ -398,6 +398,14 @@ export default function SiteShell({
                     <span className="material-symbols-outlined">{mobileMenuOpen ? "close" : "menu"}</span>
                   </button>
                   <div className="hidden md:flex items-center gap-6">
+                    {(pathname === "/cart" || pathname === "/checkout") && (
+                      <Link
+                        href="/"
+                        className="font-body-md text-body-md pb-1 transition-colors border-b-2 text-text-secondary hover:text-brand-primary border-transparent"
+                      >
+                        Home
+                      </Link>
+                    )}
                     <Link
                       href="/products?sort=newest"
                       className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${
