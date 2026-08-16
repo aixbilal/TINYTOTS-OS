@@ -10,7 +10,7 @@ import { adminFetch } from "@/lib/admin-fetch";
 import SignageBadgePicker from "@/components/admin/SignageBadgePicker";
 import { type SignageProductBadge } from "@/lib/signage-campaign";
 
-type Variant = { id: number; color: string | null; size: string | null; price: number; stock: number; reorder_level: number; web_price_locked: boolean; web_round_to: number };
+type Variant = { id: number; color: string | null; color_hex: string | null; size: string | null; price: number; stock: number; reorder_level: number; web_price_locked: boolean; web_round_to: number };
 type Product = {
   id: number; name: string; sku: string; description: string | null; brand: string | null;
   category: string | null; image_url: string | null; gender: string | null; age_bracket: string | null;
@@ -140,7 +140,7 @@ export default function EditProductPage() {
               if (v.id !== vid) return v;
               if (field === "web_price_locked") return { ...v, web_price_locked: value as boolean };
               if (field === "web_round_to") return { ...v, web_round_to: value as number };
-              if (field === "color" || field === "size") return { ...v, [field]: value as string };
+              if (field === "color" || field === "size" || field === "color_hex") return { ...v, [field]: value as string };
               return { ...v, [field]: Number(value) };
             }),
           }
@@ -206,6 +206,7 @@ export default function EditProductPage() {
         stock: v.stock,
         reorder_level: v.reorder_level,
         color: v.color,
+        color_hex: v.color_hex,
         size: v.size,
         web_price_locked: v.web_price_locked,
         web_round_to: v.web_round_to,
@@ -329,8 +330,24 @@ export default function EditProductPage() {
       <div className="border-t border-border-default pt-4 mt-6">
         <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Variants</h2>
         {product.variants.map((v) => (
-        <div key={v.id} className="grid grid-cols-6 gap-2 mb-2 items-center">
+        <div key={v.id} className="grid grid-cols-7 gap-2 mb-2 items-center">
         <input value={v.color ?? ""} onChange={(e) => updateVariant(v.id, "color", e.target.value)} className={inputClass} placeholder="Color" />
+        <div className="flex items-center gap-1.5">
+          <input
+            type="color"
+            value={/^#[0-9A-Fa-f]{6}$/.test(v.color_hex ?? "") ? (v.color_hex as string) : "#CCCCCC"}
+            onChange={(e) => updateVariant(v.id, "color_hex", e.target.value.toUpperCase())}
+            className="w-8 h-8 shrink-0 rounded border border-border-default cursor-pointer bg-transparent p-0"
+            title={v.color_hex ? `Swatch: ${v.color_hex}` : "No swatch color yet"}
+          />
+          <input
+            value={v.color_hex ?? ""}
+            onChange={(e) => updateVariant(v.id, "color_hex", e.target.value.toUpperCase())}
+            className={inputClass}
+            placeholder="#C9A876"
+            maxLength={7}
+          />
+        </div>
         <input value={v.size ?? ""} onChange={(e) => updateVariant(v.id, "size", e.target.value)} className={inputClass} placeholder="Size" />
         <input type="number" value={v.price} onChange={(e) => updateVariant(v.id, "price", e.target.value)} className={inputClass} placeholder="Price" />
         <input type="number" value={v.stock} onChange={(e) => updateVariant(v.id, "stock", e.target.value)} className={inputClass} placeholder="Stock" />
@@ -352,7 +369,7 @@ export default function EditProductPage() {
         >
           Delete
         </button>
-        <label className="flex items-center gap-1.5 font-label-md text-label-md text-text-secondary col-span-6 mt-1">
+        <label className="flex items-center gap-1.5 font-label-md text-label-md text-text-secondary col-span-7 mt-1">
           <input
             type="checkbox"
             checked={v.web_price_locked}

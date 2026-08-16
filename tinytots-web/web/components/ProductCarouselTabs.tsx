@@ -7,9 +7,10 @@ import Link from "next/link";
 interface Product {
   id: number;
   name: string;
+  brand?: string | null;
   image_url: string | null;
   secondary_image_url?: string | null;
-  variants: { price: number; web_price: number | null; stock: number }[];
+  variants: { color?: string | null; color_hex?: string | null; price: number; web_price: number | null; stock: number }[];
 }
 
 interface Tab {
@@ -25,6 +26,17 @@ function ProductCard({ product, layout }: { product: Product; layout: Layout }) 
   const minPrice = prices.length ? Math.min(...prices) : 0;
   const totalStock = product.variants.reduce((sum, v) => sum + v.stock, 0);
 
+  // De-dupe swatches by hex (multiple variants can share a color), skip
+  // variants with no extracted/entered hex rather than showing a
+  // meaningless gray dot.
+  const swatches = Array.from(
+    new Map(
+      product.variants
+        .filter((v) => v.color_hex && /^#[0-9A-Fa-f]{6}$/.test(v.color_hex))
+        .map((v) => [v.color_hex as string, v.color || v.color_hex])
+    ).entries()
+  );
+
   const widthClass =
     layout === "scroll"
       ? // % resolves against the scrollport so ~2 peek on mobile, ~4 fit on desktop
@@ -33,11 +45,19 @@ function ProductCard({ product, layout }: { product: Product; layout: Layout }) 
 
   return (
     <Link href={`/products/${product.id}`} className={`group cursor-pointer ${widthClass}`}>
-      <div className="relative w-full aspect-square rounded-[16px] overflow-hidden border border-border-default mb-4 bg-surface-elevated">
+      <div className="relative w-full aspect-square overflow-hidden border border-border-default mb-4 bg-surface-elevated">
         {totalStock > 0 && totalStock <= 5 && (
           <div className="absolute top-2 left-2 bg-[#D9822B] text-white font-label-md text-label-md px-2 py-1 rounded-full z-10">
             Few Left
           </div>
+        )}
+        {product.brand && (
+          <span
+            className="absolute bottom-2 right-3 z-10 font-display-md text-[15px] text-white/40 select-none pointer-events-none"
+            aria-hidden="true"
+          >
+            {product.brand}
+          </span>
         )}
         {product.image_url ? (
           <>
@@ -70,6 +90,18 @@ function ProductCard({ product, layout }: { product: Product; layout: Layout }) 
       <div className="flex flex-col gap-1">
         <h3 className="font-body-sm md:font-body-md text-body-sm md:text-body-md text-text-primary line-clamp-1">{product.name}</h3>
         <p className="font-body-sm md:font-body-md text-body-sm md:text-body-md text-text-secondary">Rs. {minPrice.toLocaleString()}</p>
+        {swatches.length > 0 && (
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {swatches.map(([hex, name]) => (
+              <span
+                key={hex}
+                title={name || hex}
+                className="w-3.5 h-3.5 rounded-full border border-border-default shrink-0"
+                style={{ backgroundColor: hex }}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </Link>
   );

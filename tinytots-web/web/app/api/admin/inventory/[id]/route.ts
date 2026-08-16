@@ -14,7 +14,7 @@ export async function PUT(
   const { id } = await params;
   try {
     const body = await request.json();
-    const { price, stock, reorder_level, color, size, web_price_locked, web_round_to } = body;
+    const { price, stock, reorder_level, color, color_hex, size, web_price_locked, web_round_to } = body;
 
     const updates: Record<string, unknown> = {};
     if (price !== undefined) {
@@ -45,6 +45,15 @@ export async function PUT(
       updates.reorder_level = n;
     }
     if (color !== undefined) updates.color = color;
+    if (color_hex !== undefined) {
+      if (color_hex !== null && color_hex !== "" && !/^#[0-9A-Fa-f]{6}$/.test(color_hex)) {
+        return NextResponse.json(
+          { error: "color_hex must be a 6-digit hex code like #C9A876, or empty." },
+          { status: 400 }
+        );
+      }
+      updates.color_hex = color_hex || null;
+    }
     if (size !== undefined) updates.size = size;
 
     // Coerce safely to Boolean and Number to ensure no bad types hit the database

@@ -16,7 +16,7 @@ export async function GET(
     .from("products")
     .select(`
       id, name, sku, description, brand, category, image_url, gender, age_bracket, is_active, signage_badge, related_product_ids,
-      variants ( id, color, size, price, stock, reorder_level, web_price_locked, web_round_to )
+      variants ( id, color, color_hex, size, price, stock, reorder_level, web_price_locked, web_round_to )
     `)
     .eq("id", id)
     .single();

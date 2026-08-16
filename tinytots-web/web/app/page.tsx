@@ -34,6 +34,8 @@ const PRODUCT_SELECT = `
   product_images ( storage_path, is_primary, sort_order ),
   variants (
     id,
+    color,
+    color_hex,
     price,
     web_price,
     stock

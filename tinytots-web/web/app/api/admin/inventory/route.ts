@@ -2,6 +2,7 @@ import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
+import { extractDominantColorHex } from "@/lib/extract-color";
 
 export async function GET(request: NextRequest) {
   const denied = await requireAdmin(request, "canManageInventory");
@@ -36,12 +37,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Stock must be a non-negative whole number." }, { status: 400 });
     }
 
+    // Auto-suggest a swatch hex from the product's primary photo when the
+    // caller didn't supply one. Best-effort only - a failed/slow extraction
+    // must never block variant creation, so this never throws.
+    let colorHex: string | null = body.color_hex || null;
+    if (!colorHex) {
+      const { data: product } = await supabaseAdmin
+        .from("products")
+        .select("image_url")
+        .eq("id", productId)
+        .single();
+      if (product?.image_url) {
+        colorHex = await extractDominantColorHex(product.image_url);
+      }
+    }
+
     const { data, error } = await supabaseAdmin
       .from("variants")
       .insert([
         {
           product_id: productId,
           color: body.color || null,
+          color_hex: colorHex,
           size: body.size || null,
           price,
           stock,
