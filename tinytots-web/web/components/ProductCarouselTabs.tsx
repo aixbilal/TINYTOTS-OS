@@ -40,7 +40,7 @@ function ProductCard({ product, layout }: { product: Product; layout: Layout }) 
   const widthClass =
     layout === "scroll"
       ? // % resolves against the scrollport so ~2 peek on mobile, ~4 fit on desktop
-        "shrink-0 w-[45%] md:w-[calc((100%-60px)/4)]"
+        "shrink-0 w-[45%] md:w-[calc((100%-80px)/5)]"
       : "shrink-0 w-[45%] sm:w-auto sm:shrink";
 
   return (
