@@ -32,7 +32,11 @@ function useDebounce<T>(value: T, delay: number): T {
 
 const buttonMotionVariants = {
   step1: { x: 0, width: 100 },
-  step2: { x: -30, width: 200 },
+  // No leftward x-shift on expand - the original component's -30 offset
+  // assumed open space to its left, but this header sits in a fixed grid
+  // column next to the logo, so it visually overlapped "TinyTots" instead
+  // of expanding into empty space. Grows in place / rightward only now.
+  step2: { x: 0, width: 200 },
 };
 
 const iconMotionVariants = {
@@ -240,7 +244,7 @@ export function GooeySearch({
                     width: "100%",
                     color: "#ffffff",
                     position: "absolute",
-                    left: isUnsupported ? 0 : -30,
+                    left: 0,
                     fontSize: 14,
                     cursor: "pointer",
                     display: "block",

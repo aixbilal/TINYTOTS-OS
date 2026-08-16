@@ -304,11 +304,11 @@ export default async function Home() {
 
       <div className="max-w-container-max mx-auto px-5 md:px-16 md:px-margin-desktop px-margin-mobile">
         {trustItems.length > 0 && (
-          <section className="w-full border-t border-b border-border-default py-4 mb-stack-lg bg-surface-elevated">
+          <section className="w-full border border-brand-primary/20 py-4 mb-stack-lg bg-brand-primary/[0.04]">
             <div className="flex flex-wrap md:flex-nowrap justify-center md:justify-between items-center gap-6 px-4">
               {trustItems.map((item, i) => (
                 <div key={`${item.label}-${i}`} className="contents">
-                  {i > 0 && <div className="hidden md:block w-px h-6 bg-border-default" />}
+                  {i > 0 && <div className="hidden md:block w-px h-6 bg-brand-primary/20" />}
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-brand-primary">{item.icon}</span>
                     <span className="font-label-md text-label-md text-text-secondary uppercase">
@@ -342,7 +342,7 @@ export default async function Home() {
         </section>
 
         {/* Editorial story: "Designed with love. Made for childhood." */}
-        <section className="relative w-screen left-1/2 -translate-x-1/2 mb-stack-lg grid grid-cols-1 md:grid-cols-2 gap-bento-gap items-stretch">
+        <section className="relative w-screen left-1/2 -translate-x-1/2 mb-stack-lg grid grid-cols-1 md:grid-cols-2 items-stretch">
           <div className="relative rounded-none overflow-hidden min-h-[280px] md:min-h-[400px]">
             <Image
               src={content.editorial_image_url || HOMEPAGE_DEFAULTS.editorial_image_url}
@@ -352,7 +352,12 @@ export default async function Home() {
               className="object-cover"
             />
           </div>
-          <div className="relative flex flex-col justify-center bg-brand-primary/[0.18] px-6 py-10 md:px-12 overflow-hidden">
+          <div
+            className="relative flex flex-col justify-center px-6 py-10 md:px-12 overflow-hidden"
+            style={{
+              background: "linear-gradient(to right, rgba(97,104,69,0.10) 0%, rgba(97,104,69,0.24) 100%)",
+            }}
+          >
             <svg
               className="absolute bottom-0 right-0 w-32 md:w-44 h-auto text-brand-primary/20 pointer-events-none"
               viewBox="0 0 160 200"
@@ -590,9 +595,9 @@ export default async function Home() {
             <h2 className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-stack-md">
               {content.usp_heading || HOMEPAGE_DEFAULTS.usp_heading}
             </h2>
-            <div className="flex flex-wrap justify-center gap-x-12 gap-y-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-8 max-w-4xl mx-auto">
               {uspItems.map((item: { icon: string; title: string; description: string }, i: number) => (
-                <div key={i} className="flex flex-col items-center gap-2 w-[150px]">
+                <div key={i} className="flex flex-col items-center gap-2 px-2">
                   <span className="material-symbols-outlined text-brand-primary text-[28px]">
                     {item.icon || "star"}
                   </span>

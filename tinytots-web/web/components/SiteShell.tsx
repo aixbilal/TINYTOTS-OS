@@ -180,28 +180,14 @@ function AccountMenu() {
 
   if (!user) {
     return (
-      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-        <Link
-          href="/login"
-          className="hidden md:inline-block font-body-sm text-body-sm text-text-secondary hover:text-brand-primary px-3 py-2 rounded-full transition-colors"
-        >
-          Sign in
-        </Link>
-        <Link
-          href="/signup"
-          className="hidden md:inline-block font-body-sm text-body-sm bg-brand-primary text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
-        >
-          Sign up
-        </Link>
-        <Link
-          href="/login"
-          className="md:hidden text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center"
-          title="Account"
-          aria-label="Account"
-        >
-          <span className="material-symbols-outlined">person</span>
-        </Link>
-      </div>
+      <Link
+        href="/login"
+        className="text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center"
+        title="Sign in"
+        aria-label="Sign in"
+      >
+        <span className="material-symbols-outlined">person</span>
+      </Link>
     );
   }
 
