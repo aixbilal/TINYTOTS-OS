@@ -352,7 +352,7 @@ export default async function Home() {
               className="object-cover"
             />
           </div>
-          <div className="relative flex flex-col justify-center bg-surface-canvas px-6 py-10 md:px-12 overflow-hidden">
+          <div className="relative flex flex-col justify-center bg-brand-primary/[0.08] px-6 py-10 md:px-12 overflow-hidden">
             <svg
               className="absolute bottom-0 right-0 w-32 md:w-44 h-auto text-brand-primary/20 pointer-events-none"
               viewBox="0 0 160 200"
