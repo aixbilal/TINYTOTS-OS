@@ -101,8 +101,8 @@ async function getProduct(id: string) {
     .from("products")
     .select(
       `
-      id, name, sku, description, brand, category, image_url, related_product_ids,
-      variants ( id, color, size, price, web_price, web_base_price, web_discount_percent, stock )
+      id, name, sku, description, brand, category, image_url, related_product_ids, created_at,
+      variants ( id, color, color_hex, size, price, web_price, web_base_price, web_discount_percent, stock )
     `
     )
     .eq("id", id)
@@ -226,7 +226,7 @@ export default async function ProductDetailPage({
         <span className="text-text-primary">{product.name}</span>
       </nav>
 
-      <div className="grid md:grid-cols-[minmax(0,420px)_1fr] gap-gutter">
+      <div className="grid md:grid-cols-[minmax(0,600px)_1fr] gap-gutter">
       <ProductDetailInteractive
           productId={product.id}
           productName={product.name}
@@ -235,6 +235,7 @@ export default async function ProductDetailPage({
           description={safeDescription}
           variants={product.variants}
           images={galleryImages}
+          createdAt={product.created_at}
         />
       </div>
 

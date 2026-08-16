@@ -75,62 +75,9 @@ export default function ProductGallery({
   const displayImage = sorted[activeIndex] ?? sorted[0];
 
   return (
-    <div className="flex flex-col gap-3">
-      <div
-        className="relative aspect-square rounded-[16px] overflow-hidden border border-border-default bg-surface-secondary touch-pan-y select-none"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        onTouchCancel={() => {
-          touchStartX.current = null;
-          touchStartY.current = null;
-        }}
-        role="group"
-        aria-roledescription="carousel"
-        aria-label={`${productName} images`}
-      >
-        {sorted.map((img, i) => {
-          const isActive = i === activeIndex;
-          return (
-            <div
-              key={img.id}
-              className={`absolute inset-0 transition-opacity duration-300 ${
-                isActive ? "opacity-100 z-[1]" : "opacity-0 z-0 pointer-events-none"
-              }`}
-              aria-hidden={!isActive}
-            >
-              <Image
-                className="object-cover"
-                src={img.url}
-                alt={isActive ? productName : ""}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority={i === 0}
-                draggable={false}
-              />
-            </div>
-          );
-        })}
-
-        {sorted.length > 1 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[2] flex items-center gap-1.5 md:hidden">
-            {sorted.map((img, i) => (
-              <button
-                key={img.id}
-                type="button"
-                aria-label={`Go to image ${i + 1}`}
-                aria-current={i === activeIndex ? true : undefined}
-                onClick={() => goTo(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === activeIndex ? "w-6 bg-white shadow" : "w-2 bg-white/60"
-                }`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
+    <div className="flex flex-col md:flex-row gap-3">
       {sorted.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="hidden md:flex flex-col gap-2 order-1 shrink-0">
           {sorted.map((img, i) => (
             <button
               key={img.id}
@@ -144,6 +91,98 @@ export default function ProductGallery({
           ))}
         </div>
       )}
+
+      <div className="order-2 flex-1 min-w-0">
+        <div
+          className="relative aspect-square rounded-[16px] overflow-hidden border border-border-default bg-surface-secondary touch-pan-y select-none"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          onTouchCancel={() => {
+            touchStartX.current = null;
+            touchStartY.current = null;
+          }}
+          role="group"
+          aria-roledescription="carousel"
+          aria-label={`${productName} images`}
+        >
+          {sorted.map((img, i) => {
+            const isActive = i === activeIndex;
+            return (
+              <div
+                key={img.id}
+                className={`absolute inset-0 transition-opacity duration-300 ${
+                  isActive ? "opacity-100 z-[1]" : "opacity-0 z-0 pointer-events-none"
+                }`}
+                aria-hidden={!isActive}
+              >
+                <Image
+                  className="object-cover"
+                  src={img.url}
+                  alt={isActive ? productName : ""}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority={i === 0}
+                  draggable={false}
+                />
+              </div>
+            );
+          })}
+
+          {sorted.length > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Previous image"
+                onClick={() => goTo(activeIndex - 1)}
+                className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 z-[2] w-9 h-9 items-center justify-center rounded-full bg-white/90 shadow hover:bg-white transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px] text-text-primary">chevron_left</span>
+              </button>
+              <button
+                type="button"
+                aria-label="Next image"
+                onClick={() => goTo(activeIndex + 1)}
+                className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 z-[2] w-9 h-9 items-center justify-center rounded-full bg-white/90 shadow hover:bg-white transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px] text-text-primary">chevron_right</span>
+              </button>
+            </>
+          )}
+
+          {sorted.length > 1 && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[2] flex items-center gap-1.5 md:hidden">
+              {sorted.map((img, i) => (
+                <button
+                  key={img.id}
+                  type="button"
+                  aria-label={`Go to image ${i + 1}`}
+                  aria-current={i === activeIndex ? true : undefined}
+                  onClick={() => goTo(i)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    i === activeIndex ? "w-6 bg-white shadow" : "w-2 bg-white/60"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {sorted.length > 1 && (
+          <div className="flex md:hidden gap-2 overflow-x-auto mt-3">
+            {sorted.map((img, i) => (
+              <button
+                key={img.id}
+                type="button"
+                onClick={() => setActiveIndex(i)}
+                className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition-colors"
+                style={{ borderColor: img.id === displayImage.id ? "#616845" : "transparent" }}
+              >
+                <Image src={img.url} alt="" fill sizes="64px" className="object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

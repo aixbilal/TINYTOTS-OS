@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 
 type Variant = {
   id: number;
   color: string | null;
+  color_hex: string | null;
   size: string | null;
   price: number;
   web_price: number | null;
@@ -48,6 +49,11 @@ function findVariant(
   return variants.find((v) => normColor(v.color) === color && normSize(v.size) === size);
 }
 
+function hexForColor(variants: Variant[], color: string): string | null {
+  const v = variants.find((v) => normColor(v.color) === color && v.color_hex);
+  return v?.color_hex ?? null;
+}
+
 function pickBestVariant(variants: Variant[]): Variant | undefined {
   return variants.find((v) => v.stock > 0) ?? variants[0];
 }
@@ -78,6 +84,7 @@ export default function AddToCart({
   const selectedId = isControlled ? selectedVariantId : internalSelectedId;
   const selected = variants.find((v) => v.id === selectedId) ?? null;
   const [added, setAdded] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   const colors = useMemo(() => {
     const set = new Set<string>();
@@ -153,7 +160,7 @@ export default function AddToCart({
         price: displayPrice(selected),
         maxStock: selected.stock,
       },
-      1
+      quantity
     );
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
@@ -172,6 +179,27 @@ export default function AddToCart({
           : `Out of stock for ${combo}`;
       })()
     : "";
+
+  useEffect(() => {
+    setQuantity(1);
+  }, [selectedId]);
+
+  function handleBuyItNow() {
+    if (!selected || selected.stock === 0) return;
+    addItem(
+      {
+        variantId: selected.id,
+        productId,
+        productName,
+        size: selected.size,
+        color: selected.color,
+        price: displayPrice(selected),
+        maxStock: selected.stock,
+      },
+      quantity
+    );
+    window.location.href = "/checkout";
+  }
 
   return (
     <div>
@@ -199,26 +227,35 @@ export default function AddToCart({
             Color{selectedColor ? `: ${selectedColor}` : ""}
           </p>
           {showColorSelector && (
-            <div className="flex flex-wrap gap-2" role="listbox" aria-label="Color">
+            <div className="flex flex-wrap gap-3" role="listbox" aria-label="Color">
               {colors.map((color) => {
                 const colorVariants = variants.filter((v) => normColor(v.color) === color);
                 const colorHasStock = colorVariants.some((v) => v.stock > 0);
                 const isSelected = selectedColor === color;
+                const hex = hexForColor(variants, color);
                 return (
                   <button
                     key={color}
                     type="button"
                     role="option"
                     aria-selected={isSelected}
+                    aria-label={color}
+                    title={color}
                     onClick={() => selectColor(color)}
                     disabled={!colorHasStock && !isSelected}
-                    className={`px-4 py-2 rounded-lg border font-body-sm text-body-sm transition-colors ${
-                      isSelected
-                        ? "border-brand-primary bg-brand-primary text-white"
-                        : "border-border-default text-text-secondary hover:bg-surface-secondary"
+                    className={`relative w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                      isSelected ? "border-brand-primary" : "border-transparent hover:border-border-default"
                     } ${!colorHasStock ? "opacity-40" : ""}`}
                   >
-                    {color}
+                    <span
+                      className="w-6 h-6 rounded-full border border-black/10"
+                      style={{ backgroundColor: hex || "#D4D4D4" }}
+                    />
+                    {isSelected && (
+                      <span className="material-symbols-outlined absolute text-[14px] text-white drop-shadow-[0_0_2px_rgba(0,0,0,0.6)]">
+                        check
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -274,14 +311,73 @@ export default function AddToCart({
 
       <p className="mt-3 font-body-sm text-body-sm text-text-secondary">{stockLabel}</p>
 
-      <button
-        type="button"
-        onClick={handleAddToCart}
-        disabled={!selected || selected.stock === 0}
-        className="mt-6 w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
-      >
-        {added ? "Added ✓" : "Add to Cart"}
-      </button>
+      <div className="mt-6">
+        <p className="font-label-lg text-label-lg text-text-primary mb-2">Quantity</p>
+        <div className="inline-flex items-center border border-border-default rounded-lg">
+          <button
+            type="button"
+            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            disabled={quantity <= 1}
+            aria-label="Decrease quantity"
+            className="w-10 h-10 flex items-center justify-center text-text-primary hover:bg-surface-secondary disabled:opacity-30 transition-colors"
+          >
+            −
+          </button>
+          <span className="w-10 text-center font-body-md text-body-md text-text-primary">{quantity}</span>
+          <button
+            type="button"
+            onClick={() => setQuantity((q) => Math.min(selected?.stock ?? 99, q + 1))}
+            disabled={!selected || quantity >= selected.stock}
+            aria-label="Increase quantity"
+            className="w-10 h-10 flex items-center justify-center text-text-primary hover:bg-surface-secondary disabled:opacity-30 transition-colors"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-col sm:flex-row gap-3">
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          disabled={!selected || selected.stock === 0}
+          className="flex-1 py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          {added ? "Added ✓" : "Add to Cart"}
+        </button>
+        <button
+          type="button"
+          onClick={handleBuyItNow}
+          disabled={!selected || selected.stock === 0}
+          className="flex-1 py-4 rounded-xl border border-brand-primary text-brand-primary font-button text-button hover:bg-brand-primary/[0.06] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          Buy It Now
+        </button>
+      </div>
+
+      <div className="mt-6 grid grid-cols-3 gap-3 pt-6 border-t border-border-default">
+        <div className="flex items-start gap-2">
+          <span className="material-symbols-outlined text-brand-primary text-[20px]">local_shipping</span>
+          <div>
+            <p className="font-label-md text-label-md text-text-primary">Free shipping</p>
+            <p className="font-label-md text-label-md text-text-secondary">on orders over $75</p>
+          </div>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="material-symbols-outlined text-brand-primary text-[20px]">replay</span>
+          <div>
+            <p className="font-label-md text-label-md text-text-primary">Easy returns</p>
+            <p className="font-label-md text-label-md text-text-secondary">60-day returns</p>
+          </div>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="material-symbols-outlined text-brand-primary text-[20px]">verified_user</span>
+          <div>
+            <p className="font-label-md text-label-md text-text-primary">Secure checkout</p>
+            <p className="font-label-md text-label-md text-text-secondary">Safe &amp; trusted</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 } 
