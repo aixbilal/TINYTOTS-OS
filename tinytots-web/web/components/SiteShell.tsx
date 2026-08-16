@@ -16,7 +16,7 @@ import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
 import { CACHE_KEYS, readSessionJson, writeSessionJson } from "@/lib/client-cache";
 import { useOnline } from "@/hooks/useOnline";
 import { useCart } from "@/lib/cart-context";
-import { GooeySearch, type GooeySearchItem } from "@/components/ui/gooey-search";
+import SearchTakeover from "@/components/SearchTakeover";
 
 // Below-fold chrome — keep off the homepage critical JS path.
 const UgcFeed = dynamic(() => import("@/components/UgcFeed"), { ssr: false });
@@ -28,38 +28,6 @@ export type AnnouncementData = {
   link: string;
   style?: string;
 };
-
-function HeaderGooeySearch() {
-  const [allProducts, setAllProducts] = useState<any[] | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/products")
-      .then((res) => res.json())
-      .then((json) => {
-        if (!cancelled) setAllProducts(json.data || []);
-      })
-      .catch(() => {
-        if (!cancelled) setAllProducts([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  function search(query: string): GooeySearchItem[] {
-    const needle = query.trim().toLowerCase();
-    if (!needle || !allProducts) return [];
-    return allProducts
-      .filter((p) => [p.name, p.brand, p.sku, p.category].filter(Boolean).join(" ").toLowerCase().includes(needle))
-      .map((p) => ({
-        label: p.brand ? `${p.name} — ${p.brand}` : p.name,
-        href: `/products/${p.id}`,
-      }));
-  }
-
-  return <GooeySearch onSearch={search} placeholder="Search products..." buttonLabel="Search" />;
-}
 
 function AnnouncementBar({ data }: { data: { enabled: boolean; text: string; link: string; style?: string } | null }) {
   if (!data?.enabled || !data.text) return null;
@@ -180,14 +148,28 @@ function AccountMenu() {
 
   if (!user) {
     return (
-      <Link
-        href="/login"
-        className="text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center"
-        title="Sign in"
-        aria-label="Sign in"
-      >
-        <span className="material-symbols-outlined">person</span>
-      </Link>
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <Link
+          href="/login"
+          className="hidden md:inline-block font-body-sm text-body-sm text-text-secondary hover:text-brand-primary px-3 py-2 rounded-full transition-colors"
+        >
+          Sign in
+        </Link>
+        <Link
+          href="/signup"
+          className="hidden md:inline-block font-body-sm text-body-sm bg-brand-primary text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
+        >
+          Sign up
+        </Link>
+        <Link
+          href="/login"
+          className="md:hidden text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center"
+          title="Account"
+          aria-label="Account"
+        >
+          <span className="material-symbols-outlined">person</span>
+        </Link>
+      </div>
     );
   }
 
@@ -335,6 +317,7 @@ export default function SiteShell({
   announcement?: AnnouncementData | null;
 }>) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const headerWrapRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(80);
   const [headerHidden, setHeaderHidden] = useState(false);
@@ -401,7 +384,7 @@ export default function SiteShell({
             <div
               ref={headerWrapRef}
               className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out"
-              style={{ transform: headerHidden ? "translateY(-100%)" : "translateY(0)" }}
+              style={{ transform: headerHidden || searchOpen ? "translateY(-100%)" : "translateY(0)" }}
             >
               <AnnouncementBar data={announcement} />
               <header className="bg-surface-canvas/80 backdrop-blur-md border-b border-border-default">
@@ -460,9 +443,14 @@ export default function SiteShell({
                   </span>
                 </Link>
                 <div className="flex items-center gap-1 sm:gap-2 md:gap-4 justify-end shrink-0">
-                  <div className="relative shrink-0">
-                    <HeaderGooeySearch />
-                  </div>
+                  <button
+                    onClick={() => setSearchOpen(true)}
+                    className="text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center"
+                    title="Search"
+                    aria-label="Search"
+                  >
+                    <span className="material-symbols-outlined">search</span>
+                  </button>
                   <AccountMenu />
                   <Link
                     href="/account/wishlist"
@@ -480,6 +468,7 @@ export default function SiteShell({
             </div>
 
             <MobileMenu open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} topOffset={headerHeight} />
+            <SearchTakeover open={searchOpen} onClose={() => setSearchOpen(false)} />
             {!mobileMenuOpen && <MobileSubNav />}
             <CartStickyBar />
 
