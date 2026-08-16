@@ -92,7 +92,7 @@
   --color-border-default: #d2c7b4;      /* Warm Stone */
   --color-border-strong: #bab2a6;       /* Muted Taupe */
 
-  --color-brand-primary: #8f5030;       /* Accent — deep terracotta, 5.56:1 with white/ivory text on it */
+  --color-brand-primary: #616845;       /* Accent — olive green, matches approved final homepage reference. 5.87:1 with white text (WCAG AA pass). Was terracotta #8f5030 before the final-spec pivot — see 01-BRAND doc update. */
   --color-brand-accent: #8f5030;
 
   /* Spacing */
@@ -255,7 +255,7 @@
   --card-foreground: #4a4f44; /* text-primary */
   --popover: #ffffff; /* surface-elevated */
   --popover-foreground: #4a4f44; /* text-primary */
-  --primary: #8f5030; /* brand-primary */
+  --primary: #616845; /* brand-primary - olive green, see 01-BRAND doc update */
   --primary-foreground: #ffffff; /* matches text-white convention on brand-primary CTAs elsewhere */
   --secondary: #e7d8c0; /* surface-secondary */
   --secondary-foreground: #4a4f44; /* text-primary */
@@ -266,7 +266,7 @@
   --destructive: #b91c1c; /* Tailwind red-700 — matches established text-red-700/border-red-700 stopgap */
   --border: #d2c7b4; /* border-default */
   --input: #d2c7b4; /* border-default */
-  --ring: #8f5030; /* brand-primary */
+  --ring: #616845; /* brand-primary */
   --radius: 0.625rem;
 }
 

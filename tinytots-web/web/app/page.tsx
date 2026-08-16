@@ -330,6 +330,7 @@ export default async function Home() {
           </h2>
           <ProductCarouselTabs
             hideHeading
+            layout="scroll"
             tabs={[
               {
                 key: "trending",
@@ -341,7 +342,7 @@ export default async function Home() {
         </section>
 
         {/* Editorial story: "Designed with love. Made for childhood." */}
-        <section className="mb-stack-lg grid grid-cols-1 md:grid-cols-2 gap-bento-gap items-stretch">
+        <section className="relative w-screen left-1/2 -translate-x-1/2 mb-stack-lg grid grid-cols-1 md:grid-cols-2 gap-bento-gap items-stretch">
           <div className="relative rounded-none overflow-hidden min-h-[280px] md:min-h-[400px]">
             <Image
               src={content.editorial_image_url || HOMEPAGE_DEFAULTS.editorial_image_url}
@@ -351,7 +352,24 @@ export default async function Home() {
               className="object-cover"
             />
           </div>
-          <div className="flex flex-col justify-center bg-surface-elevated px-6 py-10 md:px-12">
+          <div className="relative flex flex-col justify-center bg-surface-canvas px-6 py-10 md:px-12 overflow-hidden">
+            <svg
+              className="absolute bottom-0 right-0 w-32 md:w-44 h-auto text-brand-primary/20 pointer-events-none"
+              viewBox="0 0 160 200"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              aria-hidden="true"
+            >
+              <path d="M80 200 V60" />
+              <path d="M80 130 C55 120 45 95 55 70" />
+              <path d="M80 100 C105 90 115 65 105 40" />
+              <path d="M80 75 C60 65 55 45 65 25" />
+              <ellipse cx="52" cy="66" rx="9" ry="14" transform="rotate(-30 52 66)" />
+              <ellipse cx="103" cy="37" rx="9" ry="14" transform="rotate(25 103 37)" />
+              <ellipse cx="63" cy="22" rx="8" ry="12" transform="rotate(-15 63 22)" />
+              <circle cx="80" cy="55" r="4" />
+            </svg>
             <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3">
               {content.editorial_eyebrow || HOMEPAGE_DEFAULTS.editorial_eyebrow}
             </span>
@@ -363,15 +381,17 @@ export default async function Home() {
             </p>
             <Link
               href={content.editorial_cta_link || HOMEPAGE_DEFAULTS.editorial_cta_link}
-              className="inline-flex items-center justify-center bg-brand-primary text-white font-button text-button h-11 px-6 w-fit hover:opacity-90 transition-opacity duration-300"
+              className="inline-flex items-center justify-center bg-brand-primary text-white font-button text-button h-11 px-6 w-fit hover:opacity-90 transition-opacity duration-300 relative z-10"
             >
               {content.editorial_cta_text || HOMEPAGE_DEFAULTS.editorial_cta_text}
             </Link>
           </div>
         </section>
 
-        {/* Girls / Boys / New Arrivals — three equal collection cards */}
-        <section className="mb-stack-lg">
+        {/* Girls / Boys / New Arrivals — three equal collection cards.
+            Full-bleed with padding equal to the inter-tile gap, so the
+            edge-to-tile spacing matches the tile-to-tile spacing exactly. */}
+        <section className="relative w-screen left-1/2 -translate-x-1/2 mb-stack-lg px-bento-gap">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
             <Link
               href="/products?gender=girl"
@@ -455,7 +475,7 @@ export default async function Home() {
             content.meadow_product_ids,
             content.meadow_link ?? HOMEPAGE_DEFAULTS.meadow_link
           )}
-          className="relative flex flex-col md:flex-row mb-stack-lg overflow-hidden group cursor-pointer bg-surface-elevated"
+          className="relative w-screen left-1/2 -translate-x-1/2 flex flex-col md:flex-row mb-stack-lg overflow-hidden group cursor-pointer bg-surface-elevated"
         >
           {/* Mobile: plain text panel above the image, no overlay needed for legibility */}
           <div className="md:hidden flex flex-col justify-center px-6 py-8">
@@ -500,10 +520,19 @@ export default async function Home() {
         </Link>
 
 
-        {/* Two supporting lifestyle/brand editorial modules */}
+        {/* Two supporting lifestyle/brand editorial modules. Each image
+            fades into the panel's flat background color at the seam via a
+            CSS mask (no hard cut between photo and text side) - the panel
+            itself stays a solid flat color. */}
         <section className="mb-stack-lg grid grid-cols-1 md:grid-cols-2 gap-bento-gap">
-          <div className="flex flex-col sm:flex-row gap-5 items-start">
-            <div className="relative w-full sm:w-[38%] aspect-[4/5] shrink-0 overflow-hidden">
+          <div className="flex flex-col sm:flex-row gap-0 items-stretch bg-surface-canvas">
+            <div
+              className="relative w-full sm:w-[42%] aspect-[4/5] shrink-0 overflow-hidden"
+              style={{
+                maskImage: "linear-gradient(to right, black 60%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to right, black 60%, transparent 100%)",
+              }}
+            >
               <Image
                 src={content.lifestyle_1_image_url || HOMEPAGE_DEFAULTS.lifestyle_1_image_url}
                 alt=""
@@ -512,7 +541,7 @@ export default async function Home() {
                 className="object-cover"
               />
             </div>
-            <div className="flex flex-col justify-center pt-1">
+            <div className="flex flex-col justify-center pt-1 px-6 py-8 sm:pl-0 sm:pr-8 -ml-8 sm:-ml-12 relative z-10">
               <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-2">
                 {content.lifestyle_1_eyebrow || HOMEPAGE_DEFAULTS.lifestyle_1_eyebrow}
               </span>
@@ -531,8 +560,14 @@ export default async function Home() {
               </Link>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-5 items-start">
-            <div className="relative w-full sm:w-[38%] aspect-[4/5] shrink-0 overflow-hidden">
+          <div className="flex flex-col sm:flex-row gap-0 items-stretch bg-surface-canvas">
+            <div
+              className="relative w-full sm:w-[42%] aspect-[4/5] shrink-0 overflow-hidden"
+              style={{
+                maskImage: "linear-gradient(to right, black 60%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to right, black 60%, transparent 100%)",
+              }}
+            >
               <Image
                 src={content.lifestyle_2_image_url || HOMEPAGE_DEFAULTS.lifestyle_2_image_url}
                 alt=""
@@ -541,7 +576,7 @@ export default async function Home() {
                 className="object-cover"
               />
             </div>
-            <div className="flex flex-col justify-center pt-1">
+            <div className="flex flex-col justify-center pt-1 px-6 py-8 sm:pl-0 sm:pr-8 -ml-8 sm:-ml-12 relative z-10">
               <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-2">
                 {content.lifestyle_2_eyebrow || HOMEPAGE_DEFAULTS.lifestyle_2_eyebrow}
               </span>
@@ -585,7 +620,7 @@ export default async function Home() {
       </div>
 
       {/* Large emotional closing CTA — full-bleed, sits outside the padded container */}
-      <section className="relative w-full min-h-[360px] md:min-h-[440px] overflow-hidden mb-stack-lg flex items-center">
+      <section className="relative w-screen left-1/2 -translate-x-1/2 min-h-[360px] md:min-h-[440px] overflow-hidden mb-stack-lg flex items-center">
         <Image
           src={content.closing_cta_image_url || HOMEPAGE_DEFAULTS.closing_cta_image_url}
           alt=""

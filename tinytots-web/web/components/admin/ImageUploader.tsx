@@ -258,7 +258,7 @@ export default function ImageUploader({
             <div
               key={img.id}
               className="relative w-28 h-28 rounded-lg overflow-hidden border-2 group"
-              style={{ borderColor: img.is_primary ? "#8f5030" : "transparent" }}
+              style={{ borderColor: img.is_primary ? "#616845" : "transparent" }}
             >
               <img src={img.url} alt="" className="w-full h-full object-cover" />
               {img.is_primary && (

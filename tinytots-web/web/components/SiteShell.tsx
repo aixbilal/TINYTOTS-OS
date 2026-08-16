@@ -414,6 +414,40 @@ export default function SiteShell({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const headerWrapRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(80);
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const lastScrollYRef = useRef(0);
+
+  useEffect(() => {
+    if (mobileMenuOpen || searchOpen) setHeaderHidden(false);
+  }, [mobileMenuOpen, searchOpen]);
+
+  useEffect(() => {
+    lastScrollYRef.current = window.scrollY;
+    let ticking = false;
+
+    function handleScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const currentY = window.scrollY;
+        const last = lastScrollYRef.current;
+        const delta = currentY - last;
+
+        // Ignore tiny jitter and don't hide until scrolled past the header
+        // itself, so the bar doesn't flicker while still at the very top.
+        if (Math.abs(delta) > 4 && currentY > headerHeight) {
+          setHeaderHidden(delta > 0);
+        } else if (currentY <= headerHeight) {
+          setHeaderHidden(false);
+        }
+        lastScrollYRef.current = currentY;
+        ticking = false;
+      });
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [headerHeight]);
 
   useEffect(() => {
     const el = headerWrapRef.current;
@@ -441,7 +475,11 @@ export default function SiteShell({
           <CartProvider>
           <WishlistProvider>
             {/* FIXED NAVBAR WRAPPER (Spans 100% width, centered inside) */}
-            <div ref={headerWrapRef} className="fixed top-0 left-0 right-0 z-50">
+            <div
+              ref={headerWrapRef}
+              className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out"
+              style={{ transform: headerHidden ? "translateY(-100%)" : "translateY(0)" }}
+            >
               <AnnouncementBar data={announcement} />
               <header className="bg-surface-canvas/80 backdrop-blur-md border-b border-border-default">
               <nav className="grid grid-cols-[1fr_auto_1fr] items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto w-full">

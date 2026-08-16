@@ -53,7 +53,8 @@ function ProductCard({ product, layout }: { product: Product; layout: Layout }) 
         )}
         {product.brand && (
           <span
-            className="absolute bottom-2 right-3 z-10 font-display-md text-[15px] text-white/40 select-none pointer-events-none"
+            className="absolute bottom-2 right-3 z-10 font-display-md text-[15px] text-white/80 select-none pointer-events-none"
+            style={{ textShadow: "0 1px 4px rgba(0,0,0,0.45)" }}
             aria-hidden="true"
           >
             {product.brand}
