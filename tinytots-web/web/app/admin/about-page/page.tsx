@@ -12,13 +12,22 @@ interface Pillar {
 
 interface AboutContent {
   hero_image_url: string;
+  hero_image_url_mobile: string;
+  hero_eyebrow: string;
   hero_headline: string;
+  hero_subtext: string;
   quote_text: string;
   quote_attribution: string;
   body_paragraph_1: string;
   body_paragraph_2: string;
   body_paragraph_3: string;
+  section2_eyebrow: string;
+  section2_headline: string;
+  section2_body: string;
+  section2_image_url: string;
+  section2_signature: string;
   pillars: Pillar[];
+  section4_eyebrow: string;
   cta_image_url: string;
   cta_heading: string;
   cta_button_text: string;
@@ -112,7 +121,7 @@ export default function AdminAboutPage() {
           <h2 className="text-base font-semibold text-gray-900 mb-4">Hero Banner</h2>
           <div className="flex flex-col gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Hero image URL</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Hero image URL (desktop, 16:9)</label>
               <input
                 value={content.hero_image_url || ""}
                 onChange={(e) => updateField("hero_image_url", e.target.value)}
@@ -125,10 +134,35 @@ export default function AdminAboutPage() {
               )}
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Hero image URL (mobile, optional - falls back to desktop crop)</label>
+              <input
+                value={content.hero_image_url_mobile || ""}
+                onChange={(e) => updateField("hero_image_url_mobile", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Eyebrow</label>
+              <input
+                value={content.hero_eyebrow || ""}
+                onChange={(e) => updateField("hero_eyebrow", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Headline</label>
               <textarea
                 value={content.hero_headline || ""}
                 onChange={(e) => updateField("hero_headline", e.target.value)}
+                rows={2}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Subtext</label>
+              <textarea
+                value={content.hero_subtext || ""}
+                onChange={(e) => updateField("hero_subtext", e.target.value)}
                 rows={2}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
               />
@@ -171,15 +205,70 @@ export default function AdminAboutPage() {
           </div>
         </div>
 
+        {/* Section 2 — Built on love */}
+        <div className="border border-gray-200 rounded-lg p-5">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            &quot;Built on Love&quot; Section
+          </h2>
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+              <input
+                value={content.section2_image_url || ""}
+                onChange={(e) => updateField("section2_image_url", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+              {content.section2_image_url && (
+                <div className="mt-2 w-20 h-20 relative rounded-md overflow-hidden border border-gray-200">
+                  <Image src={content.section2_image_url} alt="" fill className="object-cover" unoptimized />
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Eyebrow</label>
+              <input
+                value={content.section2_eyebrow || ""}
+                onChange={(e) => updateField("section2_eyebrow", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Headline</label>
+              <input
+                value={content.section2_headline || ""}
+                onChange={(e) => updateField("section2_headline", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Body</label>
+              <textarea
+                value={content.section2_body || ""}
+                onChange={(e) => updateField("section2_body", e.target.value)}
+                rows={3}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Signature line</label>
+              <input
+                value={content.section2_signature || ""}
+                onChange={(e) => updateField("section2_signature", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Pillars */}
         <div className="border border-gray-200 rounded-lg p-5">
-          <h2 className="text-base font-semibold text-gray-900 mb-1">Core Pillar Cards</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-1">What We Stand For (cards)</h2>
           <p className="text-sm text-gray-500 mb-4">
-            The 3 cards shown under "Our Core Pillars". Icon names are{" "}
+            The cards shown under "What We Stand For". Icon names are{" "}
             <a href="https://fonts.google.com/icons" target="_blank" rel="noreferrer" className="underline">
               Material Symbols
             </a>{" "}
-            (e.g. eco, shield, map).
+            (e.g. eco, favorite, spa, diversity_3).
           </p>
           <div className="flex flex-col gap-3">
             {content.pillars.map((p, i) => (
@@ -197,6 +286,17 @@ export default function AdminAboutPage() {
                     placeholder="Title"
                     className="flex-1 border border-gray-300 rounded-md px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setContent((prev) =>
+                        prev ? { ...prev, pillars: prev.pillars.filter((_, idx) => idx !== i) } : prev
+                      )
+                    }
+                    className="text-sm text-red-600 hover:underline shrink-0"
+                  >
+                    Remove
+                  </button>
                 </div>
                 <textarea
                   value={p.body}
@@ -207,15 +307,34 @@ export default function AdminAboutPage() {
                 />
               </div>
             ))}
+            <button
+              type="button"
+              onClick={() =>
+                setContent((prev) =>
+                  prev ? { ...prev, pillars: [...prev.pillars, { icon: "star", title: "", body: "" }] } : prev
+                )
+              }
+              className="text-sm font-medium text-gray-700 border border-dashed border-gray-300 rounded-md py-2 hover:bg-gray-50"
+            >
+              + Add card
+            </button>
           </div>
         </div>
 
         {/* CTA */}
         <div className="border border-gray-200 rounded-lg p-5">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Closing CTA Banner</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">&quot;Creating Memories&quot; Closing Section</h2>
           <div className="flex flex-col gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Background image URL</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Eyebrow</label>
+              <input
+                value={content.section4_eyebrow || ""}
+                onChange={(e) => updateField("section4_eyebrow", e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
               <input
                 value={content.cta_image_url || ""}
                 onChange={(e) => updateField("cta_image_url", e.target.value)}

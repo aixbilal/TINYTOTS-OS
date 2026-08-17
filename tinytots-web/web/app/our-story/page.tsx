@@ -1,121 +1,220 @@
 import Link from "next/link";
+import Image from "next/image";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 
-// Static-generate — this is pure marketing content, no per-user data.
-// ISR-revalidate every hour since it changes rarely (updated_at-driven CMS edits).
+// Static-generate — pure marketing content, no per-user data. ISR-revalidate
+// hourly since it changes rarely (admin-edited CMS content).
 export const revalidate = 3600;
 
 const DEFAULTS = {
-  hero_image_url:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDcHOEBpwtxoe3pT3NNiOQoUlZSPXHZXzjeoQOBkGcnwMqk8LNEfS_BLaNFvbDX-hie2mEl7T0RXcYZiRo62Rvdf50WGU9U4BD5oXHj7_E-gwRRFNXsBN-fTWavIdwpKxC17urnpJTVwBoPKRa1I79HkhFnqTLljxe6--Z6Hlwkbqweez3itoFTvxizLNFwL3tMrsZt3LeJQ-PBMbb1EiJJB23UvYLpk3iw905UJTcODCR79jbCm2P_w_RYfYB_hiR-KWOI441C-kke",
-  hero_headline: "Designed for play. Made for comfort. Built for Pakistan.",
-  quote_text:
-    "We believe childhood is a brief, magical window. Our garments shouldn't distract from the play — they should enable it, naturally.",
-  quote_attribution: "The Founders",
+  hero_image_url: "/images/homepage/editorial-story-02.webp",
+  hero_image_url_mobile: "",
+  hero_eyebrow: "Our Story",
+  hero_headline: "Timeless pieces, made for tiny hearts.",
+  hero_subtext:
+    "TinyTots began with a simple belief - childhood is beautiful, and what they wear should be too.",
   body_paragraph_1:
-    "TinyTots was born out of a simple necessity: the search for uncompromising quality in children's wear that didn't forsake the environment or local craftsmanship.",
-  body_paragraph_2:
-    "We champion ethical manufacturing processes, partnering directly with artisanal workshops across Pakistan. Every piece is constructed from thoughtfully sourced organic materials, ensuring a gentle touch against delicate skin while remaining robust enough for the rigors of playground adventures.",
-  body_paragraph_3:
-    "By streamlining our supply chain and focusing on timeless essentials, we deliver sustainable luxury at a pricing model that respects families. It's a commitment to our children, our community, and our earth.",
+    "We create thoughtfully designed clothing that's soft, comfortable, and made to be cherished today, handed down tomorrow, and remembered always.",
+  section2_eyebrow: "From The Beginning",
+  section2_headline: "Built on love, inspired by little moments.",
+  section2_body:
+    "Founded in 2024, TinyTots was created for modern families who value quality, simplicity, and meaning in the everyday. From the fabrics we choose to the details we design, everything we do is guided by care.",
+  section2_image_url: "/images/homepage/lifestyle-support.webp",
+  section2_signature: "With love, The TinyTots Team",
   pillars: [
-    { icon: "eco", title: "Soft on Skin", body: "Sourced from pure, organic cotton fields. Free from harsh chemicals, synthetic dyes, or irritating tags, ensuring maximum comfort for sensitive early years." },
-    { icon: "strikethrough_s", title: "Built for Play", body: "Engineered with reinforced double-stitching at critical stress points. Our garments withstand crawling, climbing, and countless wash cycles without losing their shape." },
-    { icon: "map", title: "Ethically Sourced", body: "Proudly designed and ethically produced in Pakistan. We ensure fair wages, safe working conditions, and actively support local artisan communities." },
+    { icon: "eco", title: "Thoughtful Quality", body: "We use premium, breathable fabrics that are gentle on delicate skin and made to last." },
+    { icon: "favorite", title: "Made with Care", body: "Every piece is designed with love and attention to every little detail." },
+    { icon: "spa", title: "Timeless Style", body: "Classic, neutral designs that never go out of style and can be cherished for years." },
+    { icon: "diversity_3", title: "For Every Family", body: "Inclusive sizing, flexible essentials, and pieces that fit beautifully into real family life." },
   ],
-  cta_image_url:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuC7yxVcADAps3cmNLkJr8FGA6JeKmVrlesZnXqwQdhOLqdCGmVEKY22R7aE09WRXqNokfy8JzvSPf3tssmBSiWdkYwuIooiwQQfCn8_jlfsUFc1RbMINfy5orTZSQHYih3obVl7aqtOJBD_jt1CxBXMFKAUEkAe59L0zZspz8oyJFHsPhjfLpcIj4hQWwp8lx3tMlWlR0RX3UoQ0ZVBf1Gzs8Do92kjAB4OpHGYrUYsGE5gjbGuH3Ez-MwiXx_V2uhCVSGd0GHJGZlT",
-  cta_heading: "Ready to experience the difference?",
-  cta_button_text: "Explore Our Collections",
+  section4_eyebrow: "More Than Clothes",
+  cta_image_url: "/images/homepage/brand-story-support.webp",
+  cta_heading: "Creating memories that last a lifetime.",
+  body_paragraph_2:
+    "TinyTots is here to celebrate the wonder of childhood and be part of your most precious moments.",
+  cta_button_text: "Shop Our Collections",
   cta_button_link: "/products",
 };
 
-export default async function Page() {
+export default async function OurStoryPage() {
   const { data } = await supabase.from("about_page_content").select("*").eq("id", 1).single();
   const c = { ...DEFAULTS, ...(data || {}) };
   const pillars = c.pillars && c.pillars.length > 0 ? c.pillars : DEFAULTS.pillars;
 
   return (
-    <main className="max-w-container-max mx-auto md:px-margin-desktop px-margin-mobile">
-      {/* Hero — full-vibrancy photo + bottom-left dark scrim for headline contrast */}
-      <section className="relative w-full h-[320px] md:h-[560px] rounded-[16px] overflow-hidden mb-stack-lg border border-border-default">
-        <div
-          className="absolute inset-0 bg-cover bg-center w-full h-full z-0"
-          style={{ backgroundImage: `url('${c.hero_image_url}')` }}
+    <>
+      {/* Hero — single full-bleed image, text overlaid directly (same proven
+          pattern as the homepage hero: text sits on the photo's naturally
+          lighter side, not a separate solid panel). */}
+      <section className="relative w-screen left-1/2 -translate-x-1/2 aspect-[4/5] sm:aspect-[16/9] mb-stack-lg overflow-hidden bg-surface-canvas">
+        {c.hero_image_url_mobile ? (
+          <Image
+            src={c.hero_image_url_mobile}
+            alt=""
+            fill
+            sizes="100vw"
+            priority
+            className="object-cover sm:hidden"
+          />
+        ) : null}
+        <Image
+          src={c.hero_image_url}
+          alt=""
+          fill
+          sizes="100vw"
+          priority
+          className={`object-cover ${c.hero_image_url_mobile ? "hidden sm:block" : ""}`}
         />
         <div
-          className="absolute inset-0 z-10 pointer-events-none"
+          className="absolute inset-0 z-[1] pointer-events-none"
           style={{
-            background: "linear-gradient(to top right, rgba(0,0,0,0.6), rgba(0,0,0,0) 60%)",
+            background:
+              "linear-gradient(to right, rgba(250,247,242,0.92) 0%, rgba(250,247,242,0.55) 38%, rgba(250,247,242,0) 62%)",
           }}
         />
-        <div className="absolute inset-0 z-20 flex items-end justify-start p-6 md:p-10 lg:p-12">
-          <h1 className="font-display-md text-[28px] md:text-[40px] max-w-[18ch] md:max-w-xl text-left text-white leading-[1.15] tracking-tight">
-            {c.hero_headline}
-          </h1>
-        </div>
-      </section>
-
-      {/* Founders manifesto */}
-      <section className="py-stack-lg grid grid-cols-1 md:grid-cols-12 gap-gutter items-center">
-        <div className="md:col-span-5 md:col-start-1">
-          <blockquote className="font-headline-md text-headline-md text-brand-primary italic pr-2 md:pr-8 border-l-4 border-brand-primary/60 pl-6">
-            &ldquo;{c.quote_text}&rdquo;
-          </blockquote>
-          <p className="mt-6 font-label-md text-label-md text-text-secondary uppercase tracking-widest">
-            {c.quote_attribution}
-          </p>
-        </div>
-        <div className="md:col-span-6 md:col-start-7 text-text-secondary">
-          <p className="font-body-lg text-body-md md:text-body-lg mb-6">{c.body_paragraph_1}</p>
-          <p className="font-body-md text-body-md mb-6">{c.body_paragraph_2}</p>
-          <p className="font-body-md text-body-md">{c.body_paragraph_3}</p>
-        </div>
-      </section>
-
-      {/* Core pillars */}
-      <section className="py-stack-lg -mx-margin-mobile md:mx-0 px-margin-mobile md:px-0 bg-surface-secondary rounded-[16px]">
-        <div className="px-6 md:px-12 py-stack-lg">
-          <div className="text-center mb-12">
-            <h2 className="font-headline-sm text-headline-sm text-text-primary mb-3">Our Core Pillars</h2>
-            <p className="font-body-lg text-body-md md:text-body-lg text-text-secondary max-w-2xl mx-auto">
-              The unyielding standards we measure every garment against.
-            </p>
+        <div className="absolute inset-0 z-[2] flex flex-col justify-center px-6 sm:px-10 md:px-16">
+          <div className="max-w-md">
+            <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3 block">
+              {c.hero_eyebrow}
+            </span>
+            <h1 className="font-display-md text-[30px] sm:text-[36px] md:text-[44px] text-text-primary leading-[1.15] tracking-tight mb-4">
+              {c.hero_headline}
+            </h1>
+            {c.hero_subtext && (
+              <p className="font-body-md text-body-md text-text-secondary mb-3 leading-snug">{c.hero_subtext}</p>
+            )}
+            {c.body_paragraph_1 && (
+              <p className="font-body-md text-body-md text-text-secondary leading-snug">{c.body_paragraph_1}</p>
+            )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
+        </div>
+      </section>
+
+      <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
+        {/* Built on love, inspired by little moments */}
+        <section className="mb-stack-lg grid grid-cols-1 md:grid-cols-2 gap-bento-gap items-center">
+          <div className="relative aspect-[4/5] md:aspect-square overflow-hidden">
+            <Image
+              src={c.section2_image_url}
+              alt=""
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+            />
+          </div>
+          <div className="relative overflow-hidden py-4">
+            <svg
+              className="absolute bottom-0 right-0 w-28 md:w-36 h-auto text-brand-primary/20 pointer-events-none"
+              viewBox="0 0 160 200"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              aria-hidden="true"
+            >
+              <path d="M80 200 V60" />
+              <path d="M80 130 C55 120 45 95 55 70" />
+              <path d="M80 100 C105 90 115 65 105 40" />
+              <ellipse cx="52" cy="66" rx="9" ry="14" transform="rotate(-30 52 66)" />
+              <ellipse cx="103" cy="37" rx="9" ry="14" transform="rotate(25 103 37)" />
+            </svg>
+            <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3 block">
+              {c.section2_eyebrow}
+            </span>
+            <h2 className="font-display-md text-[26px] md:text-[32px] text-text-primary tracking-tight mb-4 max-w-md">
+              {c.section2_headline}
+            </h2>
+            <p className="font-body-md text-body-md text-text-secondary mb-6 max-w-sm leading-relaxed">
+              {c.section2_body}
+            </p>
+            <p className="font-display-md italic text-[18px] text-text-primary">{c.section2_signature}</p>
+          </div>
+        </section>
+      </div>
+
+      {/* What We Stand For */}
+      <section className="w-screen relative left-1/2 -translate-x-1/2 bg-brand-primary/[0.04] py-stack-lg mb-stack-lg">
+        <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
+          <h2 className="font-label-md text-label-md uppercase tracking-wide text-text-secondary text-center mb-stack-md">
+            What We Stand For
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-8 max-w-4xl mx-auto">
             {pillars.map((p: { icon: string; title: string; body: string }, i: number) => (
-              <div
-                key={i}
-                className="bg-surface-elevated rounded-[16px] p-6 md:p-8 border border-border-default shadow-[0px_4px_20px_rgba(79,98,99,0.04)] hover:shadow-[0px_8px_30px_rgba(79,98,99,0.08)] transition-all duration-300 hover:-translate-y-1 flex flex-col items-start"
-              >
-                <div className="w-12 h-12 rounded-full bg-brand-primary/10 flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-brand-primary">{p.icon}</span>
-                </div>
-                <h3 className="font-title-lg text-title-lg text-text-primary mb-3">{p.title}</h3>
-                <p className="font-body-md text-body-md text-text-secondary">{p.body}</p>
+              <div key={i} className="flex flex-col items-center text-center gap-2 px-2">
+                <span className="material-symbols-outlined text-brand-primary text-[28px]">{p.icon}</span>
+                <h3 className="font-headline-md text-headline-md text-text-primary">{p.title}</h3>
+                <p className="font-body-sm text-body-sm text-text-secondary">{p.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Closing CTA */}
-      <section className="relative my-stack-lg py-16 md:py-32 rounded-[16px] overflow-hidden border border-border-default flex items-center justify-center text-center">
-        <div
-          className="absolute inset-0 bg-cover bg-center w-full h-full z-0"
-          style={{ backgroundImage: `url('${c.cta_image_url}')` }}
-        />
-        <div className="absolute inset-0 bg-surface-inverse/40 z-10" />
-        <div className="relative z-20 px-6">
-          <h2 className="font-headline-md text-headline-md text-text-inverse mb-8">{c.cta_heading}</h2>
-          <Link
-            href={c.cta_button_link}
-            className="inline-flex items-center justify-center px-8 py-4 bg-brand-primary text-white rounded-full font-label-md text-label-md uppercase tracking-wider hover:opacity-90 transition-opacity shadow-lg hover:shadow-xl hover:-translate-y-0.5 duration-200"
-          >
-            {c.cta_button_text}
-          </Link>
+      <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
+        {/* Creating memories that last a lifetime */}
+        <section className="mb-stack-lg grid grid-cols-1 md:grid-cols-2 gap-bento-gap items-center">
+          <div className="relative aspect-[4/5] md:aspect-square overflow-hidden order-2 md:order-1">
+            <Image
+              src={c.cta_image_url}
+              alt=""
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+            />
+          </div>
+          <div className="order-1 md:order-2">
+            <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3 block">
+              {c.section4_eyebrow}
+            </span>
+            <h2 className="font-display-md text-[26px] md:text-[32px] text-text-primary tracking-tight mb-4 max-w-md">
+              {c.cta_heading}
+            </h2>
+            <p className="font-body-md text-body-md text-text-secondary mb-6 max-w-sm leading-relaxed">
+              {c.body_paragraph_2}
+            </p>
+            <Link
+              href={c.cta_button_link}
+              className="inline-flex items-center gap-2 bg-brand-primary text-white font-button text-button h-12 px-6 hover:opacity-90 transition-opacity"
+            >
+              {c.cta_button_text}
+              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </Link>
+          </div>
+        </section>
+      </div>
+
+      {/* Trust strip — same real claims already used site-wide, plain 4-item row */}
+      <section className="w-screen relative left-1/2 -translate-x-1/2 bg-surface-elevated py-8 mb-stack-lg">
+        <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-brand-primary">local_shipping</span>
+            <div>
+              <p className="font-label-md text-label-md text-text-primary font-semibold">Free shipping</p>
+              <p className="font-label-md text-label-md text-text-secondary">On all orders over $75</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-brand-primary">replay</span>
+            <div>
+              <p className="font-label-md text-label-md text-text-primary font-semibold">Easy returns</p>
+              <p className="font-label-md text-label-md text-text-secondary">60-day returns</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-brand-primary">lock</span>
+            <div>
+              <p className="font-label-md text-label-md text-text-primary font-semibold">Secure payments</p>
+              <p className="font-label-md text-label-md text-text-secondary">Safe &amp; trusted checkout</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-brand-primary">favorite</span>
+            <div>
+              <p className="font-label-md text-label-md text-text-primary font-semibold">Loved by families</p>
+              <p className="font-label-md text-label-md text-text-secondary">Trusted by TinyTots parents</p>
+            </div>
+          </div>
         </div>
       </section>
-    </main>
+    </>
   );
 }
