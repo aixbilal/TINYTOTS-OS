@@ -154,18 +154,15 @@ export default function AddToCart({
     setTimeout(() => setAdded(false), 1500);
   }
 
+  // Clean availability indicator instead of the raw "N in stock for Color ·
+  // Size" sentence: silent when healthy, a small low-stock note only when
+  // truly low, explicit only when actually unavailable.
   const stockLabel = selected
-    ? (() => {
-        const colorPart = normColor(selected.color);
-        const sizePart = normSize(selected.size);
-        const combo =
-          colorPart && sizePart !== "One Size"
-            ? `${colorPart} · ${sizePart}`
-            : colorPart || sizePart;
-        return selected.stock > 0
-          ? `${selected.stock} in stock for ${combo}`
-          : `Out of stock for ${combo}`;
-      })()
+    ? selected.stock === 0
+      ? "Out of stock"
+      : selected.stock <= 5
+        ? `Only ${selected.stock} left`
+        : ""
     : "";
 
   useEffect(() => {
@@ -254,9 +251,20 @@ export default function AddToCart({
       )}
 
       <div className={hasColorAxis ? "mt-4" : "mt-6"}>
-        <p className="font-label-lg text-label-lg text-text-primary mb-2">
-          Size{showSizeSelector ? "" : selectedSize ? `: ${selectedSize}` : ""}
-        </p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="font-label-lg text-label-lg text-text-primary">
+            Size{showSizeSelector ? "" : selectedSize ? `: ${selectedSize}` : ""}
+          </p>
+          <a
+            href="/size-guide"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-label-md text-label-md text-brand-primary hover:underline flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[14px]">straighten</span>
+            Size Guide
+          </a>
+        </div>
         {showSizeSelector && (
           <div className="flex flex-wrap gap-2" role="listbox" aria-label="Size">
             {allSizes.map((size) => {
@@ -298,7 +306,11 @@ export default function AddToCart({
         )}
       </div>
 
-      <p className="mt-3 font-body-sm text-body-sm text-text-secondary">{stockLabel}</p>
+      {stockLabel && (
+        <p className={`mt-3 font-body-sm text-body-sm ${selected?.stock === 0 ? "text-red-700" : "text-brand-primary"}`}>
+          {stockLabel}
+        </p>
+      )}
 
       <div className="mt-6">
         <p className="font-label-lg text-label-lg text-text-primary mb-2">Quantity</p>

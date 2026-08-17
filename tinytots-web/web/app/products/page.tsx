@@ -13,6 +13,7 @@ import {
 } from "@/lib/client-cache";
 import { useOnline } from "@/hooks/useOnline";
 import { compareSizes, groupSizesIntoBuckets } from "@/lib/size-sort";
+import InternalTrustStrip from "@/components/InternalTrustStrip";
 
 type Category = { name: string; slug: string };
 type Variant = {
@@ -665,6 +666,7 @@ function ProductsContent() {
           </div>
         </div>
       </main>
+      <InternalTrustStrip />
     </>
   );
 }

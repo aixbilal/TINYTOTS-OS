@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import InternalTrustStrip from "@/components/InternalTrustStrip";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
@@ -186,6 +187,7 @@ export default function CheckoutPage() {
     msg ? <p className="font-label-md text-label-md text-red-700 mt-1">{msg}</p> : null;
 
   return (
+    <>
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
       <OfflineNotice feature="Checkout" />
       <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Checkout</h1>
@@ -460,5 +462,7 @@ export default function CheckoutPage() {
       </div>
       </div>
     </main>
+    <InternalTrustStrip />
+    </>
   );
 }

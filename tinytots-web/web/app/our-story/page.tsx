@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
+import InternalTrustStrip from "@/components/InternalTrustStrip";
 
 // Static-generate — pure marketing content, no per-user data. ISR-revalidate
 // hourly since it changes rarely (admin-edited CMS content).
@@ -150,71 +151,39 @@ export default async function OurStoryPage() {
       </section>
 
       <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
-        {/* Creating memories that last a lifetime */}
-        <section className="mb-stack-lg grid grid-cols-1 md:grid-cols-2 gap-bento-gap items-center">
-          <div className="relative aspect-[4/5] md:aspect-square overflow-hidden order-2 md:order-1">
-            <Image
-              src={c.cta_image_url}
-              alt=""
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-            />
-          </div>
-          <div className="order-1 md:order-2">
-            <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3 block">
-              {c.section4_eyebrow}
-            </span>
-            <h2 className="font-display-md text-[26px] md:text-[32px] text-text-primary tracking-tight mb-4 max-w-md">
-              {c.cta_heading}
-            </h2>
-            <p className="font-body-md text-body-md text-text-secondary mb-6 max-w-sm leading-relaxed">
-              {c.body_paragraph_2}
-            </p>
-            <Link
-              href={c.cta_button_link}
-              className="inline-flex items-center gap-2 bg-brand-primary text-white font-button text-button h-12 px-6 hover:opacity-90 transition-opacity"
-            >
-              {c.cta_button_text}
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </Link>
-          </div>
-        </section>
       </div>
 
-      {/* Trust strip — exactly 4 points, Pakistan-specific wording */}
-      <section className="w-screen relative left-1/2 -translate-x-1/2 bg-surface-elevated py-8 mb-stack-lg">
-        <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-brand-primary">eco</span>
-            <div>
-              <p className="font-label-md text-label-md text-text-primary font-semibold">Premium Quality</p>
-              <p className="font-label-md text-label-md text-text-secondary">Thoughtfully made fabrics</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-brand-primary">local_shipping</span>
-            <div>
-              <p className="font-label-md text-label-md text-text-primary font-semibold">Free Shipping</p>
-              <p className="font-label-md text-label-md text-text-secondary">Across Pakistan</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-brand-primary">replay</span>
-            <div>
-              <p className="font-label-md text-label-md text-text-primary font-semibold">Easy Returns</p>
-              <p className="font-label-md text-label-md text-text-secondary">7-day return policy</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-brand-primary">lock</span>
-            <div>
-              <p className="font-label-md text-label-md text-text-primary font-semibold">Secure Payments</p>
-              <p className="font-label-md text-label-md text-text-secondary">Safe &amp; trusted payments</p>
-            </div>
-          </div>
+      {/* Creating memories that last a lifetime — full-bleed banner per
+          master batch spec (was a contained two-column block). Uses the
+          dedicated about_page_content.cta_image_url asset, same
+          full-bleed + gradient-scrim pattern as the hero/homepage. */}
+      <Link
+        href={c.cta_button_link}
+        className="relative w-screen left-1/2 -translate-x-1/2 min-h-[380px] md:min-h-[440px] overflow-hidden mb-stack-lg flex items-center"
+      >
+        <Image src={c.cta_image_url} alt="" fill sizes="100vw" className="object-cover" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(to top right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0) 70%)",
+          }}
+        />
+        <div className="relative z-10 px-6 md:px-16 max-w-md">
+          <span className="font-label-md text-label-md uppercase tracking-wider text-white/80 mb-3 block">
+            {c.section4_eyebrow}
+          </span>
+          <h2 className="font-display-md text-[28px] md:text-[36px] text-white tracking-tight mb-4">
+            {c.cta_heading}
+          </h2>
+          <p className="font-body-md text-body-md text-white/90 mb-6">{c.body_paragraph_2}</p>
+          <span className="inline-flex items-center gap-2 bg-white text-text-primary font-button text-button h-12 px-6 hover:bg-surface-canvas transition-colors w-fit">
+            {c.cta_button_text}
+            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+          </span>
         </div>
-      </section>
+      </Link>
+
+      <InternalTrustStrip />
     </>
   );
 }

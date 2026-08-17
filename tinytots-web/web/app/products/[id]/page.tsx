@@ -9,6 +9,7 @@ import { htmlToPlainText } from "@/lib/html-text";
 import { sanitizeContentHtml } from "@/lib/sanitize";
 import { absoluteUrl } from "@/lib/site-url";
 import Link from "next/link";
+import InternalTrustStrip from "@/components/InternalTrustStrip";
 
 // Static-generate top product IDs at build time, then ISR-revalidate every
 // 60s — same trade-off already used on the homepage (app/page.tsx). Removes
@@ -213,6 +214,7 @@ export default async function ProductDetailPage({
   };
 
   return (
+    <>
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
       <script
         type="application/ld+json"
@@ -282,5 +284,7 @@ export default async function ProductDetailPage({
         </section>
       )}
     </main>
+    <InternalTrustStrip />
+    </>
   );
 }

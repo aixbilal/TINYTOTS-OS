@@ -6,6 +6,7 @@ import CouponInput from "@/components/CouponInput";
 import OfflineNotice from "@/components/OfflineNotice";
 import VoucherVault from "@/components/VoucherVault";
 import Link from "next/link";
+import InternalTrustStrip from "@/components/InternalTrustStrip";
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, subtotal, appliedCoupon, appliedVoucher, total } = useCart();
@@ -36,6 +37,7 @@ export default function CartPage() {
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
+    <>
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
       <OfflineNotice feature="Cart and checkout" />
       <h1 className="font-display-md text-display-md text-text-primary">
@@ -204,5 +206,7 @@ export default function CartPage() {
         </div>
       </div>
     </main>
+    <InternalTrustStrip />
+    </>
   );
 }

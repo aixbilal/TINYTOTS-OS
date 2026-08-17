@@ -58,6 +58,24 @@ function AnnouncementBar({ data }: { data: { enabled: boolean; text: string; lin
   );
 }
 
+// Fixed, non-admin-editable Pakistan-policy strip shown on internal pages
+// only - deliberately NOT driven by homepage_content.announcement_* so
+// editing the Homepage's announcement in admin never affects internal
+// pages, and vice versa. Static real business policy, not marketing copy.
+function InternalAnnouncementBar() {
+  return (
+    <div className="bg-brand-primary text-white w-full">
+      <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop flex items-center justify-between gap-4 py-2">
+        <span className="font-label-md text-label-md truncate">Free shipping across Pakistan</span>
+        <span className="font-label-md text-label-md hidden sm:flex items-center gap-4 shrink-0">
+          <span>Easy 7-day returns</span>
+          <Link href="/help" className="hover:underline">Help</Link>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function MobileMenu({ open, onClose, topOffset }: { open: boolean; onClose: () => void; topOffset: number }) {
   const online = useOnline();
   const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
@@ -386,7 +404,7 @@ export default function SiteShell({
               className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out"
               style={{ transform: headerHidden || searchOpen ? "translateY(-100%)" : "translateY(0)" }}
             >
-              <AnnouncementBar data={announcement} />
+              {pathname === "/" ? <AnnouncementBar data={announcement} /> : <InternalAnnouncementBar />}
               <header className="bg-surface-canvas/80 backdrop-blur-md border-b border-border-default">
               <nav className="grid grid-cols-[1fr_auto_1fr] items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto w-full">
                 <div className="flex items-center gap-6 justify-start">
@@ -398,7 +416,7 @@ export default function SiteShell({
                     <span className="material-symbols-outlined">{mobileMenuOpen ? "close" : "menu"}</span>
                   </button>
                   <div className="hidden md:flex items-center gap-6">
-                    {(pathname === "/cart" || pathname === "/checkout") && (
+                    {pathname !== "/" && (
                       <Link
                         href="/"
                         className="font-body-md text-body-md pb-1 transition-colors border-b-2 text-text-secondary hover:text-brand-primary border-transparent"
@@ -434,6 +452,34 @@ export default function SiteShell({
                     >
                       Collections
                     </Link>
+                    {pathname !== "/" && (
+                      <>
+                        <Link
+                          href="/our-story"
+                          className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${
+                            pathname === "/our-story" ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
+                          }`}
+                        >
+                          About
+                        </Link>
+                        <Link
+                          href="/blog"
+                          className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${
+                            pathname?.startsWith("/blog") ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
+                          }`}
+                        >
+                          Blog
+                        </Link>
+                        <Link
+                          href="/help"
+                          className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${
+                            pathname === "/help" ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
+                          }`}
+                        >
+                          Help
+                        </Link>
+                      </>
+                    )}
                     <Link
                       href="/sale"
                       className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${

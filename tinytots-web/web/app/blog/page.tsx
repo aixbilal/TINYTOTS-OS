@@ -3,6 +3,7 @@ import Image from "next/image";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { supabaseAnon } from "@/lib/supabase-anon";
 import BlogSubscribeForm from "@/components/BlogSubscribeForm";
+import InternalTrustStrip from "@/components/InternalTrustStrip";
 
 // Static-generate, ISR-revalidate every 60s — same pattern already used
 // site-wide for content pages.
@@ -268,6 +269,7 @@ export default async function BlogPage({
           <BlogSubscribeForm />
         </div>
       </section>
+      <InternalTrustStrip />
     </>
   );
 }
