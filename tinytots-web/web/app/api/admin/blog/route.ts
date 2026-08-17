@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, content, author, featured_image_url, is_published, slug: rawSlug, category } = body;
+    const { title, content, author, featured_image_url, is_published, slug: rawSlug, category, is_featured, is_popular } = body;
 
     if (!title || !content) {
       return NextResponse.json({ error: "Title and content are required" }, { status: 400 });
@@ -65,6 +65,8 @@ export async function POST(req: NextRequest) {
         category: category && isBlogCategory(category) ? category : null,
         is_published: !!is_published,
         published_at: is_published ? new Date().toISOString() : null,
+        is_featured: !!is_featured,
+        is_popular: !!is_popular,
       })
       .select()
       .single();

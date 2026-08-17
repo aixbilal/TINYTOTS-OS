@@ -37,7 +37,7 @@ export async function PATCH(
   try {
     const params = await (context.params as any);
     const body = await req.json();
-    const { title, content, author, featured_image_url, is_published, slug: rawSlug, category } = body;
+    const { title, content, author, featured_image_url, is_published, slug: rawSlug, category, is_featured, is_popular } = body;
 
     const updates: Record<string, any> = {};
     if (title !== undefined) updates.title = title.trim();
@@ -82,6 +82,8 @@ export async function PATCH(
         updates.published_at = null;
       }
     }
+    if (is_featured !== undefined) updates.is_featured = !!is_featured;
+    if (is_popular !== undefined) updates.is_popular = !!is_popular;
 
     const { data: post, error } = await supabaseAdmin
       .from("blog_posts")

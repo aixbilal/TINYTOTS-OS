@@ -48,6 +48,8 @@ export default function BlogEditorPage() {
   const [featuredImageUrl, setFeaturedImageUrl] = useState("");
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [isPublished, setIsPublished] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [isPopular, setIsPopular] = useState(false);
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -68,6 +70,8 @@ export default function BlogEditorPage() {
       setContent(data.post.content);
       setFeaturedImageUrl(data.post.featured_image_url || "");
       setIsPublished(data.post.is_published);
+      setIsFeatured(!!data.post.is_featured);
+      setIsPopular(!!data.post.is_popular);
     } else {
       setErrorMsg(data.error || "Failed to load post");
     }
@@ -153,6 +157,8 @@ export default function BlogEditorPage() {
         author,
         featured_image_url: featuredImageUrl,
         is_published: publish,
+        is_featured: isFeatured,
+        is_popular: isPopular,
       };
 
       const res = isEditing
@@ -245,6 +251,17 @@ export default function BlogEditorPage() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} />
+            Featured Story (shown as the large tile at the top of /blog)
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={isPopular} onChange={(e) => setIsPopular(e.target.checked)} />
+            Popular Post (shown in the /blog sidebar)
+          </label>
         </div>
 
         <div>
