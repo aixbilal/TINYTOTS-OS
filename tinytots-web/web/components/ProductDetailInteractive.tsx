@@ -63,6 +63,7 @@ export default function ProductDetailInteractive({
           images={images}
           productName={productName}
           selectedVariantId={selectedVariantId}
+          wishlistButton={<WishlistButton productId={productId} className="w-10 h-10 border border-border-default bg-white/90" />}
         />
       </div>
 
@@ -72,12 +73,9 @@ export default function ProductDetailInteractive({
             New
           </span>
         )}
-      <div className="flex items-start justify-between gap-3">
-          <h1 className="font-display-md text-display-md text-text-primary break-words">
-            {productName}
-          </h1>
-          <WishlistButton productId={productId} className="shrink-0 w-10 h-10 border border-border-default" />
-        </div>
+        <h1 className="font-display-xl text-display-md text-text-primary break-words">
+          {productName}
+        </h1>
         <p className="font-body-sm text-body-sm text-text-secondary mt-1">
           {brand} {category ? `· ${category}` : ""}
         </p>

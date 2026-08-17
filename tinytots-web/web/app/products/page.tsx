@@ -12,7 +12,7 @@ import {
   readSessionJson,
 } from "@/lib/client-cache";
 import { useOnline } from "@/hooks/useOnline";
-import { compareSizes, groupSizesIntoBuckets } from "@/lib/size-sort";
+import { compareSizes } from "@/lib/size-sort";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
 type Category = { name: string; slug: string };
@@ -51,7 +51,7 @@ const DEFAULT_SHOP_CONTENT: ShopContent = {
   hero_eyebrow: "Shop All",
   hero_headline: "Timeless styles for little hearts.",
   hero_subtext: "Discover thoughtfully made pieces for every moment, every season, every little adventure.",
-  hero_image_url: "/images/homepage/editorial-story-01.webp",
+  hero_image_url: "",
   hero_image_url_mobile: "",
 };
 
@@ -107,7 +107,7 @@ function ShopHero({ content }: { content: ShopContent }) {
           <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3 block">
             {content.hero_eyebrow}
           </span>
-          <h1 className="font-display-md text-[30px] sm:text-[36px] md:text-[44px] text-text-primary leading-[1.15] tracking-tight mb-4">
+          <h1 className="font-display-xl text-[30px] sm:text-[36px] md:text-[44px] text-text-primary leading-[1.15] tracking-tight mb-4">
             {content.hero_headline}
           </h1>
           <p className="font-body-md text-body-md text-text-secondary max-w-sm">{content.hero_subtext}</p>
@@ -318,44 +318,6 @@ function ProductsContent() {
     return Array.from(s).sort(compareSizes);
   }, [products]);
 
-  // Group the real sorted sizes into up to 5 numbered range buckets, so the
-  // filter is "pick a range" (button 1 to button 3) rather than a long flat
-  // list of every distinct size label repeated as its own button.
-  const sizeBuckets = useMemo(() => groupSizesIntoBuckets(availableSizes, 5), [availableSizes]);
-  const [ageRangeStart, setAgeRangeStart] = useState<number | null>(null);
-  const [ageRangeEnd, setAgeRangeEnd] = useState<number | null>(null);
-
-  function clickAgeButton(index: number) {
-    if (ageRangeStart === null) {
-      setAgeRangeStart(index);
-      setAgeRangeEnd(index);
-      return;
-    }
-    if (ageRangeStart !== null && ageRangeEnd !== null && ageRangeStart === ageRangeEnd && index === ageRangeStart) {
-      // Clicking the same single-selected bucket again clears the filter.
-      setAgeRangeStart(null);
-      setAgeRangeEnd(null);
-      return;
-    }
-    // Extend the range to include the newly clicked bucket, whichever side it's on.
-    setAgeRangeStart(Math.min(ageRangeStart, index));
-    setAgeRangeEnd(Math.max(ageRangeEnd ?? ageRangeStart, index));
-  }
-
-  // Sync the bucket range selection into the real sizeFilters set that
-  // actually drives filtering, so no separate/duplicate filter logic exists.
-  useEffect(() => {
-    if (ageRangeStart === null || ageRangeEnd === null || sizeBuckets.length === 0) {
-      return;
-    }
-    const selectedSizes = new Set<string>();
-    for (let i = ageRangeStart; i <= ageRangeEnd; i++) {
-      sizeBuckets[i]?.sizes.forEach((sz) => selectedSizes.add(sz));
-    }
-    setSizeFilters(selectedSizes);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ageRangeStart, ageRangeEnd, sizeBuckets]);
-
   const availableColors = useMemo(() => {
     const m = new Map<string, string>();
     products.forEach((p) =>
@@ -431,8 +393,6 @@ function ProductsContent() {
     setSizeFilters(new Set());
     setColorFilters(new Set());
     setPriceRange(null);
-    setAgeRangeStart(null);
-    setAgeRangeEnd(null);
   }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -530,37 +490,25 @@ function ProductsContent() {
               </div>
             </FilterSection>
 
-            {sizeBuckets.length > 0 && (
-              <FilterSection title="Age / Size">
-                <div className="flex gap-2 mb-2">
-                  {sizeBuckets.map((bucket, i) => {
-                    const isInRange =
-                      ageRangeStart !== null && ageRangeEnd !== null && i >= ageRangeStart && i <= ageRangeEnd;
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => clickAgeButton(i)}
-                        title={bucket.label}
-                        aria-pressed={isInRange}
-                        className={`w-9 h-9 rounded-full border font-body-sm text-body-sm transition-colors shrink-0 ${
-                          isInRange
-                            ? "border-brand-primary bg-brand-primary text-white"
-                            : "border-border-default text-text-secondary hover:border-brand-primary"
-                        }`}
-                      >
-                        {i + 1}
-                      </button>
-                    );
-                  })}
+            {availableSizes.length > 0 && (
+              <FilterSection title="Size">
+                <div className="grid grid-cols-3 gap-2">
+                  {availableSizes.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => toggleSetValue(sizeFilters, size, setSizeFilters)}
+                      aria-pressed={sizeFilters.has(size)}
+                      className={`px-2 py-1.5 rounded-md border font-body-sm text-body-sm transition-colors ${
+                        sizeFilters.has(size)
+                          ? "border-brand-primary bg-brand-primary text-white"
+                          : "border-border-default text-text-secondary hover:border-brand-primary"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
                 </div>
-                <p className="font-label-md text-label-md text-text-secondary">
-                  {ageRangeStart !== null && ageRangeEnd !== null
-                    ? `${sizeBuckets[ageRangeStart]?.sizes[0]} – ${
-                        sizeBuckets[ageRangeEnd]?.sizes[sizeBuckets[ageRangeEnd].sizes.length - 1]
-                      }`
-                    : "Select a range"}
-                </p>
               </FilterSection>
             )}
 

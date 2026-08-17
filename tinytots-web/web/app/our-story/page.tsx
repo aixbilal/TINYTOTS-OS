@@ -8,7 +8,7 @@ import InternalTrustStrip from "@/components/InternalTrustStrip";
 export const revalidate = 3600;
 
 const DEFAULTS = {
-  hero_image_url: "/images/homepage/editorial-story-02.webp",
+  hero_image_url: "",
   hero_image_url_mobile: "",
   hero_eyebrow: "Our Story",
   hero_headline: "Timeless pieces, made for tiny hearts.",
@@ -20,7 +20,7 @@ const DEFAULTS = {
   section2_headline: "Built on love, inspired by little moments.",
   section2_body:
     "Founded in 2024, TinyTots was created for modern families who value quality, simplicity, and meaning in the everyday. From the fabrics we choose to the details we design, everything we do is guided by care.",
-  section2_image_url: "/images/homepage/lifestyle-support.webp",
+  section2_image_url: "",
   section2_signature: "With love, The TinyTots Team",
   pillars: [
     { icon: "eco", title: "Thoughtful Quality", body: "We use premium, breathable fabrics that are gentle on delicate skin and made to last." },
@@ -29,7 +29,7 @@ const DEFAULTS = {
     { icon: "diversity_3", title: "For Every Family", body: "Inclusive sizing, flexible essentials, and pieces that fit beautifully into real family life." },
   ],
   section4_eyebrow: "More Than Clothes",
-  cta_image_url: "/images/homepage/brand-story-support.webp",
+  cta_image_url: "",
   cta_heading: "Creating memories that last a lifetime.",
   body_paragraph_2:
     "TinyTots is here to celebrate the wonder of childhood and be part of your most precious moments.",
@@ -57,15 +57,21 @@ export default async function OurStoryPage() {
             priority
             className="object-cover sm:hidden"
           />
-        ) : null}
-        <Image
-          src={c.hero_image_url}
-          alt=""
-          fill
-          sizes="100vw"
-          priority
-          className={`object-cover ${c.hero_image_url_mobile ? "hidden sm:block" : ""}`}
-        />
+        ) : (
+          <div className="absolute inset-0 sm:hidden bg-surface-secondary" />
+        )}
+        {c.hero_image_url ? (
+          <Image
+            src={c.hero_image_url}
+            alt=""
+            fill
+            sizes="100vw"
+            priority
+            className={`object-cover ${c.hero_image_url_mobile ? "hidden sm:block" : ""}`}
+          />
+        ) : (
+          <div className={`absolute inset-0 bg-surface-secondary ${c.hero_image_url_mobile ? "hidden sm:block" : ""}`} />
+        )}
         <div
           className="absolute inset-0 z-[1] pointer-events-none"
           style={{
@@ -78,7 +84,7 @@ export default async function OurStoryPage() {
             <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3 block">
               {c.hero_eyebrow}
             </span>
-            <h1 className="font-display-md text-[30px] sm:text-[36px] md:text-[44px] text-text-primary leading-[1.15] tracking-tight mb-4">
+            <h1 className="font-display-xl text-[30px] sm:text-[36px] md:text-[44px] text-text-primary leading-[1.15] tracking-tight mb-4">
               {c.hero_headline}
             </h1>
             {c.hero_subtext && (
@@ -95,13 +101,17 @@ export default async function OurStoryPage() {
         {/* Built on love, inspired by little moments */}
         <section className="mb-stack-lg grid grid-cols-1 md:grid-cols-2 gap-bento-gap items-center">
           <div className="relative aspect-[4/5] md:aspect-square overflow-hidden">
-            <Image
-              src={c.section2_image_url}
-              alt=""
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-            />
+            {c.section2_image_url ? (
+              <Image
+                src={c.section2_image_url}
+                alt=""
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-surface-secondary" />
+            )}
           </div>
           <div className="relative overflow-hidden py-4">
             <svg
@@ -121,13 +131,13 @@ export default async function OurStoryPage() {
             <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3 block">
               {c.section2_eyebrow}
             </span>
-            <h2 className="font-display-md text-[26px] md:text-[32px] text-text-primary tracking-tight mb-4 max-w-md">
+            <h2 className="font-display-xl text-[26px] md:text-[32px] text-text-primary tracking-tight mb-4 max-w-md">
               {c.section2_headline}
             </h2>
             <p className="font-body-md text-body-md text-text-secondary mb-6 max-w-sm leading-relaxed">
               {c.section2_body}
             </p>
-            <p className="font-display-md italic text-[18px] text-text-primary">{c.section2_signature}</p>
+            <p className="font-display-xl italic text-[18px] text-text-primary">{c.section2_signature}</p>
           </div>
         </section>
       </div>
@@ -161,7 +171,11 @@ export default async function OurStoryPage() {
         href={c.cta_button_link}
         className="relative w-screen left-1/2 -translate-x-1/2 min-h-[380px] md:min-h-[440px] overflow-hidden mb-stack-lg flex items-center"
       >
-        <Image src={c.cta_image_url} alt="" fill sizes="100vw" className="object-cover" />
+        {c.cta_image_url ? (
+          <Image src={c.cta_image_url} alt="" fill sizes="100vw" className="object-cover" />
+        ) : (
+          <div className="absolute inset-0 bg-surface-secondary" />
+        )}
         <div
           className="absolute inset-0"
           style={{
@@ -172,7 +186,7 @@ export default async function OurStoryPage() {
           <span className="font-label-md text-label-md uppercase tracking-wider text-white/80 mb-3 block">
             {c.section4_eyebrow}
           </span>
-          <h2 className="font-display-md text-[28px] md:text-[36px] text-white tracking-tight mb-4">
+          <h2 className="font-display-xl text-[28px] md:text-[36px] text-white tracking-tight mb-4">
             {c.cta_heading}
           </h2>
           <p className="font-body-md text-body-md text-white/90 mb-6">{c.body_paragraph_2}</p>

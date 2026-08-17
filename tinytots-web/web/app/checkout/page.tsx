@@ -190,7 +190,27 @@ export default function CheckoutPage() {
     <>
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
       <OfflineNotice feature="Checkout" />
-      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Checkout</h1>
+      <h1 className="font-display-xl text-display-md text-text-primary mb-stack-md">Checkout</h1>
+
+      {/* Non-interactive visual progress indicator - the actual flow is a
+          real single-page form with one submit, this is presentation only,
+          per explicit instruction not to fake multi-step navigation. */}
+      <div className="flex items-center gap-3 mb-stack-lg font-label-md text-label-md text-text-secondary flex-wrap">
+        <span className="flex items-center gap-2">
+          <span className="w-6 h-6 rounded-full bg-brand-primary text-white flex items-center justify-center text-[12px]">1</span>
+          <span className="text-text-primary font-semibold">Shipping</span>
+        </span>
+        <span className="w-8 h-px bg-border-default" />
+        <span className="flex items-center gap-2">
+          <span className="w-6 h-6 rounded-full bg-brand-primary text-white flex items-center justify-center text-[12px]">2</span>
+          <span className="text-text-primary font-semibold">Payment</span>
+        </span>
+        <span className="w-8 h-px bg-border-default" />
+        <span className="flex items-center gap-2">
+          <span className="w-6 h-6 rounded-full bg-brand-primary text-white flex items-center justify-center text-[12px]">3</span>
+          <span className="text-text-primary font-semibold">Review &amp; Place Order</span>
+        </span>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
       <div className="md:col-span-2">
@@ -444,9 +464,9 @@ export default function CheckoutPage() {
             Delivery fee and any COD token amount will be confirmed after you place the order.
           </p>
 
-          <div className="flex justify-between font-headline-lg text-headline-lg text-text-primary pt-2 border-t border-brand-primary/15">
-            <span>Estimated Total</span>
-            <span className="text-brand-primary">Rs. {total.toLocaleString()}</span>
+          <div className="flex justify-between items-baseline font-headline-lg text-headline-lg text-text-primary pt-2 border-t border-brand-primary/15">
+            <span className="whitespace-nowrap">Estimated Total</span>
+            <span className="text-brand-primary whitespace-nowrap">Rs. {total.toLocaleString()}</span>
           </div>
         </div>
 

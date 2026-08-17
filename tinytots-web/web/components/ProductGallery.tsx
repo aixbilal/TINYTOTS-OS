@@ -16,10 +16,12 @@ export default function ProductGallery({
   images,
   productName,
   selectedVariantId,
+  wishlistButton,
 }: {
   images: GalleryImage[];
   productName: string;
   selectedVariantId?: number | null;
+  wishlistButton?: React.ReactNode;
 }) {
   const forVariant = selectedVariantId
     ? images.filter((img) => (img.variant_ids ?? []).includes(selectedVariantId))
@@ -105,6 +107,9 @@ export default function ProductGallery({
           aria-roledescription="carousel"
           aria-label={`${productName} images`}
         >
+          {wishlistButton && (
+            <div className="absolute top-3 right-3 z-[3]">{wishlistButton}</div>
+          )}
           {sorted.map((img, i) => {
             const isActive = i === activeIndex;
             return (

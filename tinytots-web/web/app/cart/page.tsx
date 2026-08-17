@@ -18,7 +18,7 @@ export default function CartPage() {
         <span className="material-symbols-outlined text-[48px] text-text-secondary">
           shopping_bag
         </span>
-        <h1 className="font-display-md text-display-md text-text-primary mt-4 mb-2">
+        <h1 className="font-display-xl text-display-md text-text-primary mt-4 mb-2">
           Your Cart is Empty
         </h1>
         <p className="font-body-md text-body-md text-text-secondary mb-6">
@@ -40,7 +40,7 @@ export default function CartPage() {
     <>
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
       <OfflineNotice feature="Cart and checkout" />
-      <h1 className="font-display-md text-display-md text-text-primary">
+      <h1 className="font-display-xl text-display-md text-text-primary">
         Your Cart ({itemCount})
       </h1>
 
@@ -174,9 +174,9 @@ export default function CartPage() {
               <span className="shrink-0">Calculated at checkout</span>
             </div>
 
-            <div className="flex justify-between gap-3 font-headline-lg text-headline-lg text-text-primary pt-2 border-t border-brand-primary/15">
-              <span>Estimated Total</span>
-              <span className="text-brand-primary tabular-nums shrink-0">Rs. {total.toLocaleString()}</span>
+            <div className="flex justify-between items-baseline gap-3 font-headline-lg text-headline-lg text-text-primary pt-2 border-t border-brand-primary/15">
+              <span className="whitespace-nowrap">Estimated Total</span>
+              <span className="text-brand-primary tabular-nums shrink-0 whitespace-nowrap">Rs. {total.toLocaleString()}</span>
             </div>
           </div>
 

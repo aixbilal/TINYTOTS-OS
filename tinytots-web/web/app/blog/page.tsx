@@ -18,12 +18,12 @@ const BLOG_CATEGORIES = [
 ];
 
 const HERO_DEFAULTS = {
-  hero_image_url: "/images/homepage/promotional-campaign.webp",
+  hero_image_url: "",
   hero_image_url_mobile: "",
   hero_eyebrow: "The Journal",
   hero_headline: "Stories, style guides, and care tips.",
   hero_subtext: "For your little ones, from our family to yours.",
-  subscribe_image_url: "/images/homepage/cta-closing-visual.webp",
+  subscribe_image_url: "",
   subscribe_headline: "Never miss a story.",
   subscribe_subtext: "Get new articles, style guides, and care tips delivered to your inbox.",
 };
@@ -93,15 +93,21 @@ export default async function BlogPage({
       <section className="relative w-screen left-1/2 -translate-x-1/2 aspect-[4/5] sm:aspect-[16/9] mb-stack-lg overflow-hidden bg-surface-canvas">
         {hero.hero_image_url_mobile ? (
           <Image src={hero.hero_image_url_mobile} alt="" fill sizes="100vw" priority className="object-cover sm:hidden" />
-        ) : null}
-        <Image
-          src={hero.hero_image_url}
-          alt=""
-          fill
-          sizes="100vw"
-          priority
-          className={`object-cover ${hero.hero_image_url_mobile ? "hidden sm:block" : ""}`}
-        />
+        ) : (
+          <div className="absolute inset-0 sm:hidden bg-surface-secondary" />
+        )}
+        {hero.hero_image_url ? (
+          <Image
+            src={hero.hero_image_url}
+            alt=""
+            fill
+            sizes="100vw"
+            priority
+            className={`object-cover ${hero.hero_image_url_mobile ? "hidden sm:block" : ""}`}
+          />
+        ) : (
+          <div className={`absolute inset-0 bg-surface-secondary ${hero.hero_image_url_mobile ? "hidden sm:block" : ""}`} />
+        )}
         <div
           className="absolute inset-0 z-[1] pointer-events-none"
           style={{
@@ -114,7 +120,7 @@ export default async function BlogPage({
             <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3 block">
               {hero.hero_eyebrow}
             </span>
-            <h1 className="font-display-md text-[30px] sm:text-[36px] md:text-[44px] text-text-primary leading-[1.15] tracking-tight mb-4">
+            <h1 className="font-display-xl text-[30px] sm:text-[36px] md:text-[44px] text-text-primary leading-[1.15] tracking-tight mb-4">
               {hero.hero_headline}
             </h1>
             <p className="font-body-md text-body-md text-text-secondary leading-snug">{hero.hero_subtext}</p>
@@ -148,7 +154,7 @@ export default async function BlogPage({
               <span className="font-label-md text-label-md uppercase tracking-wider text-brand-primary mb-3">
                 Featured Story
               </span>
-              <h2 className="font-display-md text-[24px] md:text-[30px] text-text-primary tracking-tight mb-3 group-hover:text-brand-primary transition-colors">
+              <h2 className="font-display-xl text-[24px] md:text-[30px] text-text-primary tracking-tight mb-3 group-hover:text-brand-primary transition-colors">
                 {featured.title}
               </h2>
               <p className="font-body-md text-body-md text-text-secondary mb-4 leading-relaxed">
@@ -256,13 +262,17 @@ export default async function BlogPage({
 
       {/* Email subscribe banner */}
       <section className="relative w-screen left-1/2 -translate-x-1/2 min-h-[280px] overflow-hidden mb-stack-lg flex items-center">
-        <Image src={hero.subscribe_image_url} alt="" fill sizes="100vw" className="object-cover" />
+        {hero.subscribe_image_url ? (
+          <Image src={hero.subscribe_image_url} alt="" fill sizes="100vw" className="object-cover" />
+        ) : (
+          <div className="absolute inset-0 bg-surface-secondary" />
+        )}
         <div
           className="absolute inset-0"
           style={{ background: "linear-gradient(to top right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0) 70%)" }}
         />
         <div className="relative z-10 px-6 md:px-16 max-w-md">
-          <h2 className="font-display-md text-[26px] md:text-[32px] text-white tracking-tight mb-3">
+          <h2 className="font-display-xl text-[26px] md:text-[32px] text-white tracking-tight mb-3">
             {hero.subscribe_headline}
           </h2>
           <p className="font-body-md text-body-md text-white/90 mb-5">{hero.subscribe_subtext}</p>

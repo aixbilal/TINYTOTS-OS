@@ -137,7 +137,7 @@ export default async function BlogPostPage({
               {post.category}
             </span>
           )}
-          <h1 className="font-display-md text-[28px] md:text-[36px] text-text-primary tracking-tight leading-[1.15] mb-4">
+          <h1 className="font-display-xl text-[28px] md:text-[36px] text-text-primary tracking-tight leading-[1.15] mb-4">
             {post.title}
           </h1>
           <div className="flex items-center gap-3 font-label-md text-label-md text-text-secondary mb-6">
@@ -162,8 +162,8 @@ export default async function BlogPostPage({
             className="w-full text-text-primary font-body-md text-body-md leading-relaxed space-y-4
 break-words [&_*]:max-w-full [&_*]:box-border
               [&_p]:mb-4 [&_p]:leading-relaxed
-              [&_h1]:font-display-md [&_h1]:text-[22px] [&_h1]:mt-6 [&_h1]:mb-2
-              [&_h2]:font-display-md [&_h2]:text-[19px] [&_h2]:mt-6 [&_h2]:mb-2
+              [&_h1]:font-display-xl [&_h1]:text-[22px] [&_h1]:mt-6 [&_h1]:mb-2
+              [&_h2]:font-display-xl [&_h2]:text-[19px] [&_h2]:mt-6 [&_h2]:mb-2
               [&_h3]:font-headline-md [&_h3]:text-headline-md [&_h3]:mt-4 [&_h3]:mb-2
               [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2
               [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
