@@ -182,35 +182,35 @@ export default async function OurStoryPage() {
         </section>
       </div>
 
-      {/* Trust strip — same real claims already used site-wide, plain 4-item row */}
+      {/* Trust strip — exactly 4 points, Pakistan-specific wording */}
       <section className="w-screen relative left-1/2 -translate-x-1/2 bg-surface-elevated py-8 mb-stack-lg">
         <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-2 md:grid-cols-4 gap-6">
           <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-brand-primary">eco</span>
+            <div>
+              <p className="font-label-md text-label-md text-text-primary font-semibold">Premium Quality</p>
+              <p className="font-label-md text-label-md text-text-secondary">Thoughtfully made fabrics</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-brand-primary">local_shipping</span>
             <div>
-              <p className="font-label-md text-label-md text-text-primary font-semibold">Free shipping</p>
-              <p className="font-label-md text-label-md text-text-secondary">On all orders over $75</p>
+              <p className="font-label-md text-label-md text-text-primary font-semibold">Free Shipping</p>
+              <p className="font-label-md text-label-md text-text-secondary">Across Pakistan</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-brand-primary">replay</span>
             <div>
-              <p className="font-label-md text-label-md text-text-primary font-semibold">Easy returns</p>
-              <p className="font-label-md text-label-md text-text-secondary">60-day returns</p>
+              <p className="font-label-md text-label-md text-text-primary font-semibold">Easy Returns</p>
+              <p className="font-label-md text-label-md text-text-secondary">7-day return policy</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-brand-primary">lock</span>
             <div>
-              <p className="font-label-md text-label-md text-text-primary font-semibold">Secure payments</p>
-              <p className="font-label-md text-label-md text-text-secondary">Safe &amp; trusted checkout</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-brand-primary">favorite</span>
-            <div>
-              <p className="font-label-md text-label-md text-text-primary font-semibold">Loved by families</p>
-              <p className="font-label-md text-label-md text-text-secondary">Trusted by TinyTots parents</p>
+              <p className="font-label-md text-label-md text-text-primary font-semibold">Secure Payments</p>
+              <p className="font-label-md text-label-md text-text-secondary">Safe &amp; trusted payments</p>
             </div>
           </div>
         </div>

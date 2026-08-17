@@ -7,13 +7,6 @@ import OfflineNotice from "@/components/OfflineNotice";
 import VoucherVault from "@/components/VoucherVault";
 import Link from "next/link";
 
-// Matches the $75 figure already used in trust-strip copy elsewhere on the
-// site (e.g. homepage). Note: cart totals are in Rs (PKR) while this
-// threshold is a bare "75" reused from existing $-labeled site copy - a
-// pre-existing currency-label inconsistency across the site, not something
-// introduced here. Flagging rather than silently picking a new number.
-const FREE_SHIPPING_THRESHOLD = 75;
-
 export default function CartPage() {
   const { items, updateQuantity, removeItem, subtotal, appliedCoupon, appliedVoucher, total } = useCart();
 
@@ -41,8 +34,6 @@ export default function CartPage() {
   }
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
-  const amountToFreeShipping = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
-  const progressPercent = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
 
   return (
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
@@ -51,23 +42,9 @@ export default function CartPage() {
         Your Cart ({itemCount})
       </h1>
 
-      {amountToFreeShipping > 0 ? (
-        <div className="mt-4 mb-8 max-w-xl">
-          <p className="font-body-sm text-body-sm text-text-secondary mb-2">
-            You&apos;re {FREE_SHIPPING_THRESHOLD - subtotal > 0 ? amountToFreeShipping.toLocaleString() : 0} away from free shipping!
-          </p>
-          <div className="h-1.5 rounded-full bg-surface-secondary overflow-hidden">
-            <div
-              className="h-full bg-brand-primary transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        </div>
-      ) : (
-        <p className="mt-4 mb-8 font-body-sm text-body-sm text-brand-primary max-w-xl">
-          You&apos;ve unlocked free shipping!
-        </p>
-      )}
+      <p className="mt-4 mb-8 font-body-sm text-body-sm text-text-secondary max-w-xl">
+        Free shipping across Pakistan. Remote areas may have a shipping fee depending on the area.
+      </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
         <div className="md:col-span-2 min-w-0">
@@ -213,11 +190,11 @@ export default function CartPage() {
             <p className="font-label-md text-label-md text-text-primary mb-1">Why families love TinyTots</p>
             <p className="font-body-sm text-body-sm text-text-secondary flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[16px] text-brand-primary">check</span>
-              Free shipping on orders over $75
+              Free shipping across Pakistan
             </p>
             <p className="font-body-sm text-body-sm text-text-secondary flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[16px] text-brand-primary">check</span>
-              Easy 60-day returns
+              Easy 7-day returns
             </p>
             <p className="font-body-sm text-body-sm text-text-secondary flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[16px] text-brand-primary">check</span>

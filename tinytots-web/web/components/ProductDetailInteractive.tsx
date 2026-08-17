@@ -125,7 +125,7 @@ export default function ProductDetailInteractive({
             </button>
             {openSection === "shipping" && (
               <div className="font-body-md text-body-md text-text-secondary pb-4">
-                <p>Free shipping on orders over $75. Easy 60-day returns.</p>
+                <p>Free shipping across Pakistan. Easy 7-day returns.</p>
                 <a href="/shipping-returns" className="text-brand-primary hover:underline">
                   Full shipping &amp; returns policy →
                 </a>

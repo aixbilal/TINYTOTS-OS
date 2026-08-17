@@ -349,14 +349,14 @@ export default function AddToCart({
           <span className="material-symbols-outlined text-brand-primary text-[20px]">local_shipping</span>
           <div>
             <p className="font-label-md text-label-md text-text-primary">Free shipping</p>
-            <p className="font-label-md text-label-md text-text-secondary">on orders over $75</p>
+            <p className="font-label-md text-label-md text-text-secondary">Across Pakistan</p>
           </div>
         </div>
         <div className="flex items-start gap-2">
           <span className="material-symbols-outlined text-brand-primary text-[20px]">replay</span>
           <div>
             <p className="font-label-md text-label-md text-text-primary">Easy returns</p>
-            <p className="font-label-md text-label-md text-text-secondary">60-day returns</p>
+            <p className="font-label-md text-label-md text-text-secondary">7-day returns</p>
           </div>
         </div>
         <div className="flex items-start gap-2">

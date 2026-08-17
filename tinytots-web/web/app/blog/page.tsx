@@ -59,7 +59,8 @@ export default async function BlogPage({
 }) {
   const { category } = await searchParams;
 
-  const { data: heroData } = await supabaseAnon.from("blog_page_content").select("*").eq("id", 1).single();
+  const { data: heroData, error: heroError } = await supabaseAnon.from("blog_page_content").select("*").eq("id", 1).single();
+  if (heroError) console.error("[blog] Failed to fetch blog_page_content:", heroError.message);
   const hero = { ...HERO_DEFAULTS, ...(heroData || {}) };
 
   let query = supabaseAdmin
@@ -70,7 +71,15 @@ export default async function BlogPage({
 
   if (category) query = query.eq("category", category);
 
-  const { data: posts } = await query;
+  const { data: posts, error: postsError } = await query;
+  if (postsError) {
+    // Was silently swallowed before (data destructured, error ignored) -
+    // that's exactly why a missing column (e.g. is_featured/is_popular not
+    // yet migrated) would fail the whole query and just render as an empty
+    // "no posts" page instead of a visible, diagnosable error. Logging
+    // server-side now so this failure mode is never silent again.
+    console.error("[blog] Failed to fetch blog_posts:", postsError.message);
+  }
   const allPosts = posts || [];
 
   const featured = allPosts.find((p) => p.is_featured) || allPosts[0];
