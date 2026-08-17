@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
@@ -185,20 +186,24 @@ export default function CheckoutPage() {
     msg ? <p className="font-label-md text-label-md text-red-700 mt-1">{msg}</p> : null;
 
   return (
-    <main className="max-w-5xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
-      <div className="md:col-span-2">
-        <OfflineNotice feature="Checkout" />
-        <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Checkout</h1>
+    <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <OfflineNotice feature="Checkout" />
+      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Checkout</h1>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
+      <div className="md:col-span-2">
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-md">
         {!user && (
           <div>
-            <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Contact details</h2>
+            <h2 className="font-label-lg text-label-lg uppercase tracking-wide text-text-primary mb-3">
+              1. Shipping Information
+            </h2>
             <div className="flex flex-col gap-3">
               <div>
+                <label className="font-label-md text-label-md text-text-secondary mb-1 block">Full Name</label>
                 <input
                   type="text"
-                  placeholder="Full name"
+                  placeholder="Enter your full name"
                   value={guestName}
                   onChange={(e) => setGuestName(sanitize(e.target.value, MAX_LEN.name))}
                   maxLength={MAX_LEN.name}
@@ -208,9 +213,10 @@ export default function CheckoutPage() {
               </div>
 
               <div>
+                <label className="font-label-md text-label-md text-text-secondary mb-1 block">Phone Number</label>
                 <input
                   type="tel"
-                  placeholder="Phone number (e.g. 03001234567)"
+                  placeholder="Enter your phone number (e.g. 03001234567)"
                   value={guestPhone}
                   onChange={(e) => setGuestPhone(sanitize(e.target.value, MAX_LEN.phone))}
                   maxLength={MAX_LEN.phone}
@@ -222,7 +228,12 @@ export default function CheckoutPage() {
           </div>
   )}
       <div>
-            <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Shipping address</h2>
+            {user && (
+              <h2 className="font-label-lg text-label-lg uppercase tracking-wide text-text-primary mb-3">
+                1. Shipping Information
+              </h2>
+            )}
+            <label className="font-label-md text-label-md text-text-secondary mb-1 block">Shipping Address</label>
 
             {user && savedAddresses.length > 0 && (
               <div className="flex flex-col gap-2 mb-3">
@@ -294,7 +305,7 @@ export default function CheckoutPage() {
 
           {user && ordersCount === 0 && (
             <div>
-              <h2 className="font-headline-md text-headline-md text-text-primary mb-3">
+              <h2 className="font-label-lg text-label-lg uppercase tracking-wide text-text-primary mb-3">
                 Referral code (optional)
               </h2>
               <input
@@ -312,13 +323,13 @@ export default function CheckoutPage() {
           )}
 
           <div>
-            <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Payment method</h2>
+            <h2 className="font-label-lg text-label-lg uppercase tracking-wide text-text-primary mb-3">2. Payment Method</h2>
             <div className="flex flex-col gap-2">
               {[
           { value: "cod", label: "Cash on Delivery (available across Pakistan)", comingSoon: false },
-                { value: "card", label: "Card", comingSoon: true },
-                { value: "jazzcash", label: "JazzCash", comingSoon: true },
                 { value: "easypaisa", label: "Easypaisa", comingSoon: true },
+                { value: "jazzcash", label: "JazzCash", comingSoon: true },
+                { value: "card", label: "Bank Card", comingSoon: true },
               ].map((option) => (
                 <label
                   key={option.value}
@@ -363,19 +374,51 @@ export default function CheckoutPage() {
       </div>
 
 {/* Sticky order summary */}
-<div className="md:sticky md:top-24 border border-border-default rounded-xl p-6 bg-surface-elevated flex flex-col gap-3">
-        <h2 className="font-headline-md text-headline-md text-text-primary mb-1">Order Summary</h2>
+<div
+  className="md:sticky md:top-24 rounded-xl p-6 flex flex-col gap-3"
+  style={{
+    background: "linear-gradient(160deg, rgba(97,104,69,0.08) 0%, rgba(97,104,69,0.02) 100%)",
+    border: "1px solid rgba(97,104,69,0.15)",
+  }}
+>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="font-label-lg text-label-lg uppercase tracking-wide text-text-primary">Order Summary</h2>
+          <Link href="/cart" className="font-label-md text-label-md text-brand-primary hover:underline">
+            Edit Cart
+          </Link>
+        </div>
 
-        {items.map((item) => (
-          <div key={item.variantId} className="flex justify-between font-body-sm text-body-sm text-text-secondary">
-            <span>
-              {item.productName} × {item.quantity}
-            </span>
-            <span>Rs. {(item.price * item.quantity).toLocaleString()}</span>
-          </div>
-        ))}
+        <div className="flex flex-col gap-3 divide-y divide-brand-primary/10">
+          {items.map((item) => (
+            <div key={item.variantId} className="flex gap-3 pt-3 first:pt-0">
+              <div className="relative w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-surface-elevated">
+                {item.imageUrl ? (
+                  <Image src={item.imageUrl} alt="" fill sizes="56px" className="object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-text-secondary">
+                    <span className="material-symbols-outlined text-[18px]">image</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-body-sm text-body-sm text-text-primary font-semibold break-words">
+                  {item.productName}
+                </p>
+                <p className="font-label-md text-label-md text-text-secondary">
+                  {item.color}
+                  {item.color && item.size ? " · " : ""}
+                  {item.size}
+                </p>
+                <p className="font-label-md text-label-md text-text-secondary">Qty: {item.quantity}</p>
+              </div>
+              <p className="font-body-sm text-body-sm text-text-primary shrink-0">
+                Rs. {(item.price * item.quantity).toLocaleString()}
+              </p>
+            </div>
+          ))}
+        </div>
 
-        <div className="flex flex-col gap-2 pt-2 border-t border-border-default">
+        <div className="flex flex-col gap-2 pt-2 border-t border-brand-primary/15">
           <div className="flex justify-between font-body-md text-body-md text-text-secondary">
             <span>Subtotal</span>
             <span>Rs. {subtotal.toLocaleString()}</span>
@@ -399,11 +442,22 @@ export default function CheckoutPage() {
             Delivery fee and any COD token amount will be confirmed after you place the order.
           </p>
 
-          <div className="flex justify-between font-headline-lg text-headline-lg text-text-primary pt-2 border-t border-border-default">
-            <span>Total</span>
+          <div className="flex justify-between font-headline-lg text-headline-lg text-text-primary pt-2 border-t border-brand-primary/15">
+            <span>Estimated Total</span>
             <span className="text-brand-primary">Rs. {total.toLocaleString()}</span>
           </div>
         </div>
+
+        <div className="rounded-lg bg-surface-elevated p-4 flex items-start gap-3">
+          <span className="material-symbols-outlined text-brand-primary text-[22px] shrink-0">shield</span>
+          <div>
+            <p className="font-label-md text-label-md text-text-primary font-semibold">Secure Checkout</p>
+            <p className="font-label-md text-label-md text-text-secondary">
+              Your information is protected and never shared.
+            </p>
+          </div>
+        </div>
+      </div>
       </div>
     </main>
   );
