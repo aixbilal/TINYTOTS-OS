@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import InternalTrustStrip from "@/components/InternalTrustStrip";
 import {
   HELP_CATEGORIES,
   normalizeHelpCategory,
@@ -39,12 +40,22 @@ export default function HelpCenterIndex({ articles }: { articles: HelpIndexArtic
   }, [articles, query]);
 
   return (
-    <div className="w-full min-h-screen py-10 px-4 sm:px-6 max-w-3xl mx-auto">
-      <div className="mb-8 text-center sm:text-left">
-        <h1 className="text-3xl sm:text-5xl font-bold text-text-primary tracking-tight mb-3">
+    <>
+    <div className="w-full max-w-3xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <nav className="font-body-sm text-body-sm text-text-secondary mb-stack-sm flex items-center gap-2">
+        <Link href="/" className="hover:text-brand-primary transition-colors">Home</Link>
+        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        <span className="text-text-primary">Help Center</span>
+      </nav>
+
+      <div className="mb-stack-lg text-center sm:text-left">
+        <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-2 block">
           Help Center
+        </span>
+        <h1 className="font-display-xl text-display-md text-text-primary tracking-tight mb-3">
+          How can we help you?
         </h1>
-        <p className="text-text-secondary text-base sm:text-lg mb-6">
+        <p className="font-body-md text-body-md text-text-secondary mb-6">
           Answers to common questions about orders, delivery, and returns.
         </p>
         <label className="sr-only" htmlFor="help-search">
@@ -57,25 +68,25 @@ export default function HelpCenterIndex({ articles }: { articles: HelpIndexArtic
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search articles..."
           maxLength={100}
-          className="w-full border border-border-default rounded-xl px-4 py-3 bg-surface-elevated font-body-md text-body-md text-text-primary placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+          className="w-full border border-border-default rounded-xl px-4 py-3.5 bg-surface-elevated font-body-md text-body-md text-text-primary placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-brand-primary"
         />
       </div>
 
       {articles.length === 0 && (
-        <p className="text-text-secondary">No help articles published yet.</p>
+        <p className="font-body-md text-body-md text-text-secondary">No help articles published yet.</p>
       )}
 
       {articles.length > 0 && grouped.length === 0 && (
-        <p className="text-text-secondary">
+        <p className="font-body-md text-body-md text-text-secondary">
           No articles match &ldquo;{query.trim()}&rdquo;.
         </p>
       )}
 
       {grouped.map((group) => (
-        <div key={group.value} className="mb-8">
+        <div key={group.value} className="mb-stack-md">
           <div className="flex items-baseline justify-between gap-3 mb-3">
-            <h2 className="text-lg font-bold text-text-primary">{group.label}</h2>
-            <span className="text-xs text-text-secondary tabular-nums">
+            <h2 className="font-headline-lg text-headline-lg text-text-primary">{group.label}</h2>
+            <span className="font-label-md text-label-md text-text-secondary tabular-nums">
               {group.items.length} {group.items.length === 1 ? "article" : "articles"}
             </span>
           </div>
@@ -84,17 +95,34 @@ export default function HelpCenterIndex({ articles }: { articles: HelpIndexArtic
               <Link
                 key={a.id}
                 href={`/help/${a.slug}`}
-                className="group flex items-center justify-between rounded-2xl bg-surface-elevated border border-border-default hover:border-brand-primary/40 hover:shadow-sm transition-all px-5 py-4"
+                className="group flex items-center justify-between rounded-xl bg-surface-elevated border border-border-default hover:border-brand-primary/40 hover:shadow-sm transition-all px-5 py-4"
               >
-                <span className="font-medium text-text-primary group-hover:text-brand-primary transition-colors">
+                <span className="font-body-md text-body-md text-text-primary group-hover:text-brand-primary transition-colors">
                   {a.title}
                 </span>
-                <span className="text-brand-primary text-sm shrink-0 ml-3">→</span>
+                <span className="material-symbols-outlined text-brand-primary text-[18px] shrink-0 ml-3">arrow_forward</span>
               </Link>
             ))}
           </div>
         </div>
       ))}
+
+      <div className="mt-stack-lg border border-border-default rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-brand-primary/[0.04]">
+        <div>
+          <h3 className="font-headline-md text-headline-md text-text-primary mb-1">Still need help?</h3>
+          <p className="font-body-sm text-body-sm text-text-secondary">Our team is happy to help with anything not covered here.</p>
+        </div>
+        <Link
+          href="/contact"
+          className="shrink-0 bg-brand-primary text-white font-button text-button px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
+        >
+          Contact Us
+        </Link>
+      </div>
     </div>
+    <div className="mt-stack-lg">
+      <InternalTrustStrip />
+    </div>
+    </>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import InternalTrustStrip from "@/components/InternalTrustStrip";
 import { isValidPakPhone, PAK_PHONE_ERROR } from "@/lib/validate-phone";
 
 const STATUS_STEPS = ["new", "processing", "shipped", "delivered"];
@@ -70,34 +71,58 @@ function TrackOrderForm() {
   }
 
   return (
+    <>
     <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-      <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Track Your Order</h1>
+      <nav className="font-body-sm text-body-sm text-text-secondary mb-stack-sm flex items-center gap-2">
+        <Link href="/" className="hover:text-brand-primary transition-colors">Home</Link>
+        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        <span className="text-text-primary">Track Order</span>
+      </nav>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3 mb-stack-md">
-        <input
-          type="text"
-          placeholder="Order number (e.g. ORD-1234567890)"
-          value={orderNumber}
-          onChange={(e) => setOrderNumber(e.target.value)}
-          className={inputClass}
-          required
-        />
-        <input
-          type="tel"
-          placeholder="Phone number used at checkout"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className={inputClass}
-          required
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          {loading ? "Searching..." : "Track Order"}
-        </button>
-      </form>
+      <h1 className="font-display-xl text-display-md text-text-primary mb-2">Track Your Order</h1>
+      <p className="font-body-md text-body-md text-text-secondary mb-stack-md">
+        Enter your order number and the phone number used at checkout to see its current status.
+      </p>
+
+      <div className="border border-border-default rounded-xl p-5 md:p-6 bg-surface-elevated">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div>
+            <label className="font-label-md text-label-md text-text-secondary mb-1 block">Order Number</label>
+            <input
+              type="text"
+              placeholder="e.g. ORD-1234567890"
+              value={orderNumber}
+              onChange={(e) => setOrderNumber(e.target.value)}
+              className={inputClass}
+              required
+            />
+          </div>
+          <div>
+            <label className="font-label-md text-label-md text-text-secondary mb-1 block">Phone Number</label>
+            <input
+              type="tel"
+              placeholder="Phone number used at checkout"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className={inputClass}
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity disabled:opacity-50 mt-1"
+          >
+            {loading ? "Searching..." : "Track Order"}
+          </button>
+          <Link
+            href="/products"
+            className="text-center py-3 rounded-xl border border-border-default text-text-primary font-button text-button hover:border-brand-primary transition-colors"
+          >
+            Continue Shopping
+          </Link>
+        </form>
+      </div>
 
       {error && (
         <p className="font-body-sm text-body-sm text-red-700 border border-red-700/30 bg-red-700/10 rounded-lg px-4 py-3 mb-stack-md">
@@ -174,10 +199,17 @@ function TrackOrderForm() {
         </div>
       )}
 
-      <Link href="/" className="inline-block mt-stack-md text-brand-primary hover:underline font-body-sm text-body-sm">
-        Continue shopping
-      </Link>
+      <p className="mt-stack-md font-body-sm text-body-sm text-text-secondary">
+        Need help finding your order?{" "}
+        <Link href="/help" className="text-brand-primary hover:underline">
+          Visit our Help Center
+        </Link>
+      </p>
     </main>
+    <div className="mt-stack-lg">
+      <InternalTrustStrip />
+    </div>
+    </>
   );
 }
 
