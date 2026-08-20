@@ -55,7 +55,7 @@
   const siteUrl = getSiteUrl();
   const defaultTitle = "TinyTots | Premium Kids Clothing";
   const defaultDescription =
-    "Ethically crafted, modern essentials for every stage of your child's early journey. Soft, durable kids clothing with free delivery and easy 7-day returns.";
+    "Thoughtfully made, modern essentials for every stage of your child's early journey. Soft, durable kids clothing with free delivery and easy 7-day returns.";
 
   export const metadata: Metadata = {
     metadataBase: new URL(siteUrl),

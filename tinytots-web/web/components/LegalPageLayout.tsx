@@ -12,12 +12,17 @@ export default function LegalPageLayout({
   intro,
   sections,
   children,
+  heroIcon = "gavel",
 }: {
   title: string;
   lastUpdated: string;
   intro?: string;
   sections: Section[];
   children: React.ReactNode;
+  /** Material Symbols icon shown in the decorative hero panel - lets Terms
+      (gavel) and Privacy (shield) read as distinct pages, not a reused
+      generic asset. */
+  heroIcon?: string;
 }) {
   const [activeId, setActiveId] = useState(sections[0]?.id);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -65,7 +70,7 @@ export default function LegalPageLayout({
           </div>
           <div className="hidden md:block relative aspect-[4/5] rounded-[16px] overflow-hidden bg-brand-primary/[0.06]">
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[48px] text-brand-primary/30">gavel</span>
+              <span className="material-symbols-outlined text-[48px] text-brand-primary/30">{heroIcon}</span>
             </div>
           </div>
         </div>

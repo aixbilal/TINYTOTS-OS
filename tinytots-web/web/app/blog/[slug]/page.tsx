@@ -112,6 +112,18 @@ export default async function BlogPostPage({
     .limit(3);
   const related = relatedRaw || [];
 
+  // Prev/Next within the same real published order the /blog listing uses
+  // (newest first) - no fabricated adjacency, just the actual publish order.
+  const { data: allSlugsRaw } = await supabaseAdmin
+    .from("blog_posts")
+    .select("id, slug, title")
+    .eq("is_published", true)
+    .order("published_at", { ascending: false });
+  const allSlugs = allSlugsRaw || [];
+  const currentIdx = allSlugs.findIndex((p) => p.id === post.id);
+  const newerPost = currentIdx > 0 ? allSlugs[currentIdx - 1] : null;
+  const olderPost = currentIdx >= 0 && currentIdx < allSlugs.length - 1 ? allSlugs[currentIdx + 1] : null;
+
   return (
     <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
       <nav className="font-label-md text-label-md text-text-secondary mb-stack-sm flex items-center gap-1.5 flex-wrap">
@@ -192,9 +204,34 @@ break-words [&_*]:max-w-full [&_*]:box-border
               <span className="material-symbols-outlined text-[16px]">mail</span>
             </a>
           </div>
+
+          {(olderPost || newerPost) && (
+            <div className="mt-6 pt-6 border-t border-border-default flex items-center justify-between gap-4">
+              {olderPost ? (
+                <Link
+                  href={`/blog/${olderPost.slug}`}
+                  className="min-w-0 group flex items-center gap-1.5 font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px] shrink-0">arrow_back</span>
+                  <span className="truncate">{olderPost.title}</span>
+                </Link>
+              ) : (
+                <span />
+              )}
+              {newerPost && (
+                <Link
+                  href={`/blog/${newerPost.slug}`}
+                  className="min-w-0 group flex items-center gap-1.5 font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors text-right ml-auto"
+                >
+                  <span className="truncate">{newerPost.title}</span>
+                  <span className="material-symbols-outlined text-[18px] shrink-0">arrow_forward</span>
+                </Link>
+              )}
+            </div>
+          )}
         </article>
 
-        <aside className="flex flex-col gap-6">
+        <aside className="min-w-0 flex flex-col gap-6">
           <div className="bg-surface-elevated border border-border-default p-5">
             <h3 className="font-label-lg text-label-lg uppercase tracking-wide text-text-primary mb-3">
               About the Author

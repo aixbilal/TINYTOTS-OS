@@ -48,9 +48,9 @@ export default function CartPage() {
         Free shipping across Pakistan. Remote areas may have a shipping fee depending on the area.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
-        <div className="md:col-span-2 min-w-0">
-          <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto] gap-4 font-label-md text-label-md uppercase tracking-wide text-text-secondary pb-3 border-b border-border-default">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-stack-md items-start">
+        <div className="lg:col-span-2 min-w-0">
+          <div className="hidden lg:grid grid-cols-[1fr_auto_auto_auto] gap-4 font-label-md text-label-md uppercase tracking-wide text-text-secondary pb-3 border-b border-border-default">
             <span>Product</span>
             <span className="w-24 text-right">Price</span>
             <span className="w-28 text-center">Quantity</span>
@@ -70,7 +70,7 @@ export default function CartPage() {
                   )}
                 </div>
 
-                <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:gap-4 items-center">
+                <div className="flex-1 min-w-0 grid grid-cols-1 lg:grid-cols-[1fr_auto_auto_auto] gap-2 lg:gap-4 items-center">
                   <div className="min-w-0">
                     <p className="font-headline-md text-headline-md text-text-primary break-words">
                       {item.productName}
@@ -83,11 +83,11 @@ export default function CartPage() {
                     )}
                   </div>
 
-                  <p className="md:w-24 md:text-right font-body-md text-body-md text-text-primary">
+                  <p className="lg:w-24 lg:text-right font-body-md text-body-md text-text-primary">
                     Rs. {item.price.toLocaleString()}
                   </p>
 
-                  <div className="flex items-center gap-2 md:w-28 md:justify-center">
+                  <div className="flex items-center gap-2 lg:w-28 lg:justify-center">
                     <div className="flex items-center border border-border-default rounded-lg">
                       <button
                         onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
@@ -117,7 +117,7 @@ export default function CartPage() {
                     </button>
                   </div>
 
-                  <p className="md:w-24 md:text-right font-body-md text-body-md font-semibold text-text-primary tabular-nums">
+                  <p className="lg:w-24 lg:text-right font-body-md text-body-md font-semibold text-text-primary tabular-nums">
                     Rs. {(item.price * item.quantity).toLocaleString()}
                   </p>
                 </div>
@@ -141,7 +141,7 @@ export default function CartPage() {
         </div>
 
         <div
-          className="md:sticky md:top-24 rounded-xl p-4 sm:p-6 flex flex-col gap-4 min-w-0"
+          className="lg:sticky lg:top-24 rounded-xl p-4 sm:p-6 flex flex-col gap-4 min-w-0"
           style={{
             background: "linear-gradient(160deg, rgba(97,104,69,0.08) 0%, rgba(97,104,69,0.02) 100%)",
             border: "1px solid rgba(97,104,69,0.15)",
@@ -174,9 +174,9 @@ export default function CartPage() {
               <span className="shrink-0">Calculated at checkout</span>
             </div>
 
-            <div className="flex justify-between items-baseline gap-3 font-headline-lg text-headline-lg text-text-primary pt-2 border-t border-brand-primary/15">
-              <span className="whitespace-nowrap">Estimated Total</span>
-              <span className="text-brand-primary tabular-nums shrink-0 whitespace-nowrap">Rs. {total.toLocaleString()}</span>
+            <div className="flex justify-between items-baseline gap-3 pt-2 border-t border-brand-primary/15">
+              <span className="font-label-lg text-label-lg uppercase tracking-wide text-text-primary whitespace-nowrap">Estimated Total</span>
+              <span className="font-headline-lg text-headline-lg text-brand-primary tabular-nums shrink-0 whitespace-nowrap">Rs. {total.toLocaleString()}</span>
             </div>
           </div>
 

@@ -202,6 +202,56 @@ function ProductCard({ product }: { product: Product }) {
   );
 }
 
+const SIZE_CHIPS_COLLAPSED_COUNT = 12;
+
+function SizeChipGrid({
+  groups,
+  sizeFilters,
+  onToggle,
+}: {
+  groups: { label: string; rawValues: string[] }[];
+  sizeFilters: Set<string>;
+  onToggle: (rawValues: string[]) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? groups : groups.slice(0, SIZE_CHIPS_COLLAPSED_COUNT);
+  const hasMore = groups.length > SIZE_CHIPS_COLLAPSED_COUNT;
+
+  return (
+    <div>
+      <div className="grid grid-cols-4 gap-1.5">
+        {visible.map((group) => {
+          const isActive = group.rawValues.some((v) => sizeFilters.has(v));
+          return (
+            <button
+              key={group.label}
+              type="button"
+              onClick={() => onToggle(group.rawValues)}
+              aria-pressed={isActive}
+              className={`px-1.5 py-1 rounded-md border font-label-md text-label-md leading-tight transition-colors ${
+                isActive
+                  ? "border-brand-primary bg-brand-primary text-white"
+                  : "border-border-default text-text-secondary hover:border-brand-primary"
+              }`}
+            >
+              {group.label}
+            </button>
+          );
+        })}
+      </div>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          className="mt-2 font-body-sm text-body-sm text-brand-primary hover:underline"
+        >
+          {expanded ? "Show fewer sizes" : `Show all sizes (${groups.length})`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(true);
   return (
@@ -505,26 +555,7 @@ function ProductsContent() {
 
             {sizeGroups.length > 0 && (
               <FilterSection title="Size">
-                <div className="grid grid-cols-3 gap-2">
-                  {sizeGroups.map((group) => {
-                    const isActive = group.rawValues.some((v) => sizeFilters.has(v));
-                    return (
-                      <button
-                        key={group.label}
-                        type="button"
-                        onClick={() => toggleSizeGroup(group.rawValues)}
-                        aria-pressed={isActive}
-                        className={`px-2 py-1.5 rounded-md border font-body-sm text-body-sm transition-colors ${
-                          isActive
-                            ? "border-brand-primary bg-brand-primary text-white"
-                            : "border-border-default text-text-secondary hover:border-brand-primary"
-                        }`}
-                      >
-                        {group.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                <SizeChipGrid groups={sizeGroups} sizeFilters={sizeFilters} onToggle={toggleSizeGroup} />
               </FilterSection>
             )}
 

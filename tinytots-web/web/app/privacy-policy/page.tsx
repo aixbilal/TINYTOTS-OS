@@ -1,6 +1,8 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import LegalPageLayout from "@/components/LegalPageLayout";
-import { extractTocAndAnnotate } from "@/lib/site-page-toc";
+import LegalAccordionSections from "@/components/LegalAccordionSections";
+import LegalContactCta from "@/components/LegalContactCta";
+import { extractTocAndAnnotate, splitIntoSections } from "@/lib/site-page-toc";
 import { sanitizeContentHtml } from "@/lib/sanitize";
 
 // Static-generate — legal content, edited rarely via admin CMS.
@@ -13,11 +15,12 @@ export default async function PrivacyPolicyPage() {
     .eq("slug", "privacy-policy")
     .single();
 
-  const { html, sections } = extractTocAndAnnotate(
+  const { html, sections: tocSections } = extractTocAndAnnotate(
     page?.content || "<p>Content coming soon.</p>"
   );
 
   const safeHtml = sanitizeContentHtml(html);
+  const sections = splitIntoSections(safeHtml);
 
   return (
     <LegalPageLayout
@@ -25,18 +28,18 @@ export default async function PrivacyPolicyPage() {
       lastUpdated={
         page?.updated_at ? new Date(page.updated_at).toLocaleDateString() : ""
       }
-      sections={sections}
+      sections={tocSections}
+      heroIcon="shield"
     >
-      <div
-        className="w-full break-words text-text-secondary font-body-md text-body-md
-          [&_h2]:font-headline-lg [&_h2]:text-text-primary [&_h2]:mb-3 [&_h2]:mt-2
-          [&_p]:mb-4 [&_p]:leading-relaxed
-          [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-2
-          [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_ol]:space-y-2
-          [&_strong]:font-semibold [&_strong]:text-text-primary
-          [&_a]:text-brand-primary [&_a]:underline"
-        dangerouslySetInnerHTML={{ __html: safeHtml }}
-      />
+      {sections.length > 0 ? (
+        <LegalAccordionSections sections={sections} />
+      ) : (
+        <div
+          className="w-full break-words text-text-secondary font-body-md text-body-md [&_p]:mb-4"
+          dangerouslySetInnerHTML={{ __html: safeHtml }}
+        />
+      )}
+      <LegalContactCta pageLabel="Privacy Policy" />
     </LegalPageLayout>
   );
 }

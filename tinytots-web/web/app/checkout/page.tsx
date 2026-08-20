@@ -212,8 +212,8 @@ export default function CheckoutPage() {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-stack-md items-start">
-      <div className="md:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-stack-md items-start">
+      <div className="lg:col-span-2">
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-md">
         {!user && (
           <div>
@@ -397,7 +397,7 @@ export default function CheckoutPage() {
 
 {/* Sticky order summary */}
 <div
-  className="md:sticky md:top-24 rounded-xl p-6 flex flex-col gap-3"
+  className="lg:sticky lg:top-24 rounded-xl p-6 flex flex-col gap-3"
   style={{
     background: "linear-gradient(160deg, rgba(97,104,69,0.08) 0%, rgba(97,104,69,0.02) 100%)",
     border: "1px solid rgba(97,104,69,0.15)",
@@ -464,9 +464,9 @@ export default function CheckoutPage() {
             Delivery fee and any COD token amount will be confirmed after you place the order.
           </p>
 
-          <div className="flex justify-between items-baseline font-headline-lg text-headline-lg text-text-primary pt-2 border-t border-brand-primary/15">
-            <span className="whitespace-nowrap">Estimated Total</span>
-            <span className="text-brand-primary whitespace-nowrap">Rs. {total.toLocaleString()}</span>
+          <div className="flex justify-between items-baseline gap-3 pt-2 border-t border-brand-primary/15">
+            <span className="font-label-lg text-label-lg uppercase tracking-wide text-text-primary whitespace-nowrap">Estimated Total</span>
+            <span className="font-headline-lg text-headline-lg text-brand-primary tabular-nums shrink-0 whitespace-nowrap">Rs. {total.toLocaleString()}</span>
           </div>
         </div>
 

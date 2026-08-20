@@ -228,7 +228,7 @@ export default async function ProductDetailPage({
         <span className="text-text-primary">{product.name}</span>
       </nav>
 
-      <div className="grid md:grid-cols-[minmax(0,720px)_1fr] gap-gutter">
+      <div className="grid lg:grid-cols-[minmax(0,720px)_1fr] gap-gutter">
       <ProductDetailInteractive
           productId={product.id}
           productName={product.name}

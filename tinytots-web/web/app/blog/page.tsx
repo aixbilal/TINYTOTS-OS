@@ -170,7 +170,7 @@ export default async function BlogPage({
 
         {/* Main column (articles) + sidebar (popular posts + tags) */}
         <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-stack-md items-start mb-stack-lg">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="min-w-0 grid grid-cols-1 sm:grid-cols-2 gap-5">
             {restPosts.map((post) => (
               <Link
                 key={post.id}
@@ -218,7 +218,7 @@ export default async function BlogPage({
             )}
           </div>
 
-          <div className="flex flex-col gap-6">
+          <div className="min-w-0 flex flex-col gap-6">
             {popularPosts.length > 0 && (
               <div>
                 <h3 className="font-label-lg text-label-lg uppercase tracking-wide text-text-primary mb-3">

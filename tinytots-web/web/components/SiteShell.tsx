@@ -549,6 +549,8 @@ export default function SiteShell({
                   </div>
                   <div className="flex flex-col gap-2.5">
                     <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-1">Help</h4>
+                    <Link href="/help" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Help Center</Link>
+                    <Link href="/track-order" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Track Order</Link>
                     <Link href="/size-guide" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Size Guide</Link>
                     <Link href="/shipping-returns" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Shipping &amp; Delivery</Link>
                     <Link href="/account/returns" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Returns &amp; Exchanges</Link>
