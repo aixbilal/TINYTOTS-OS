@@ -31,6 +31,45 @@ export function compareSizes(a: string, b: string) {
 }
 
 /**
+ * Normalizes a raw size string for DISPLAY comparison only - trims
+ * whitespace, collapses internal spaces, standardizes the range dash and
+ * unit casing (e.g. "3 - 4 y" and "3-4Y" both normalize to "3-4Y"). Never
+ * used to alter what's stored in the database, only to detect when two
+ * differently-formatted raw values represent the same real size for the
+ * customer-facing filter.
+ */
+export function normalizeSizeLabel(size: string): string {
+  return size
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\s*-\s*/g, "-")
+    .replace(/(\d)\s*([myMY])\b/g, (_, num, unit) => `${num}${unit.toUpperCase()}`)
+    .replace(/^([a-z])/, (c) => c.toUpperCase());
+}
+
+/**
+ * Groups real raw size values by their normalized display label, so the
+ * filter shows one clean chip per real size even if the catalog has
+ * formatting inconsistencies (e.g. "3-4Y" vs "3 - 4y" from different
+ * product entries) - clicking a chip still filters against every raw
+ * value that collapsed into it, so real filtering behavior is unchanged.
+ */
+export function groupSizesForDisplay(
+  rawSizes: string[]
+): { label: string; rawValues: string[] }[] {
+  const byLabel = new Map<string, string[]>();
+  for (const raw of rawSizes) {
+    const label = normalizeSizeLabel(raw);
+    const list = byLabel.get(label) || [];
+    list.push(raw);
+    byLabel.set(label, list);
+  }
+  return Array.from(byLabel.entries())
+    .map(([label, rawValues]) => ({ label, rawValues }))
+    .sort((a, b) => compareSizes(a.label, b.label));
+}
+
+/**
  * Groups a sorted list of real sizes into up to `bucketCount` contiguous
  * numbered ranges (e.g. bucket 1 = ["0-3M","3-6M"], bucket 2 = ["6-9M",...]).
  * Fewer buckets than requested if there aren't enough distinct sizes.

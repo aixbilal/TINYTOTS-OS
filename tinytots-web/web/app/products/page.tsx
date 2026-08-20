@@ -12,7 +12,7 @@ import {
   readSessionJson,
 } from "@/lib/client-cache";
 import { useOnline } from "@/hooks/useOnline";
-import { compareSizes } from "@/lib/size-sort";
+import { compareSizes, groupSizesForDisplay } from "@/lib/size-sort";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
 type Category = { name: string; slug: string };
@@ -318,6 +318,19 @@ function ProductsContent() {
     return Array.from(s).sort(compareSizes);
   }, [products]);
 
+  // Group raw sizes into clean display chips - one chip per real size even
+  // if the catalog has formatting inconsistencies (see lib/size-sort.ts).
+  const sizeGroups = useMemo(() => groupSizesForDisplay(availableSizes), [availableSizes]);
+
+  function toggleSizeGroup(rawValues: string[]) {
+    setSizeFilters((prev) => {
+      const next = new Set(prev);
+      const allSelected = rawValues.every((v) => next.has(v));
+      rawValues.forEach((v) => (allSelected ? next.delete(v) : next.add(v)));
+      return next;
+    });
+  }
+
   const availableColors = useMemo(() => {
     const m = new Map<string, string>();
     products.forEach((p) =>
@@ -490,24 +503,27 @@ function ProductsContent() {
               </div>
             </FilterSection>
 
-            {availableSizes.length > 0 && (
+            {sizeGroups.length > 0 && (
               <FilterSection title="Size">
                 <div className="grid grid-cols-3 gap-2">
-                  {availableSizes.map((size) => (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => toggleSetValue(sizeFilters, size, setSizeFilters)}
-                      aria-pressed={sizeFilters.has(size)}
-                      className={`px-2 py-1.5 rounded-md border font-body-sm text-body-sm transition-colors ${
-                        sizeFilters.has(size)
-                          ? "border-brand-primary bg-brand-primary text-white"
-                          : "border-border-default text-text-secondary hover:border-brand-primary"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+                  {sizeGroups.map((group) => {
+                    const isActive = group.rawValues.some((v) => sizeFilters.has(v));
+                    return (
+                      <button
+                        key={group.label}
+                        type="button"
+                        onClick={() => toggleSizeGroup(group.rawValues)}
+                        aria-pressed={isActive}
+                        className={`px-2 py-1.5 rounded-md border font-body-sm text-body-sm transition-colors ${
+                          isActive
+                            ? "border-brand-primary bg-brand-primary text-white"
+                            : "border-border-default text-text-secondary hover:border-brand-primary"
+                        }`}
+                      >
+                        {group.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </FilterSection>
             )}

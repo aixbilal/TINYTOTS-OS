@@ -170,20 +170,20 @@ export default async function BlogPage({
 
         {/* Main column (articles) + sidebar (popular posts + tags) */}
         <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-stack-md items-start mb-stack-lg">
-          <div className="flex flex-col gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {restPosts.map((post) => (
               <Link
                 key={post.id}
                 href={`/blog/${post.slug}`}
-                className="group flex flex-col sm:flex-row items-stretch gap-5 border border-border-default hover:border-brand-primary/40 transition-colors p-4"
+                className="group flex flex-col border border-border-default hover:border-brand-primary/40 transition-colors overflow-hidden"
               >
-                <div className="h-40 sm:h-32 w-full sm:w-44 overflow-hidden bg-surface-secondary shrink-0 flex items-center justify-center">
+                <div className="aspect-[4/3] w-full overflow-hidden bg-surface-secondary flex items-center justify-center shrink-0">
                   {post.featured_image_url ? (
                     <Image
                       src={post.featured_image_url}
                       alt=""
-                      width={176}
-                      height={128}
+                      width={400}
+                      height={300}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
@@ -192,7 +192,7 @@ export default async function BlogPage({
                     </span>
                   )}
                 </div>
-                <div className="flex flex-col justify-between w-full min-w-0 py-0.5">
+                <div className="flex flex-col justify-between flex-1 p-4">
                   <div>
                     {post.category && (
                       <span className="font-label-md text-label-md uppercase tracking-wider text-brand-primary">
@@ -214,7 +214,7 @@ export default async function BlogPage({
               </Link>
             ))}
             {restPosts.length === 0 && !featured && (
-              <p className="font-body-md text-body-md text-text-secondary py-8">No posts published yet.</p>
+              <p className="font-body-md text-body-md text-text-secondary py-8 sm:col-span-2">No posts published yet.</p>
             )}
           </div>
 
@@ -260,25 +260,28 @@ export default async function BlogPage({
         </div>
       </div>
 
-      {/* Email subscribe banner */}
-      <section className="relative w-screen left-1/2 -translate-x-1/2 min-h-[280px] overflow-hidden mb-stack-lg flex items-center">
-        {hero.subscribe_image_url ? (
-          <Image src={hero.subscribe_image_url} alt="" fill sizes="100vw" className="object-cover" />
-        ) : (
-          <div className="absolute inset-0 bg-surface-secondary" />
-        )}
-        <div
-          className="absolute inset-0"
-          style={{ background: "linear-gradient(to top right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0) 70%)" }}
-        />
-        <div className="relative z-10 px-6 md:px-16 max-w-md">
-          <h2 className="font-display-xl text-[26px] md:text-[32px] text-white tracking-tight mb-3">
-            {hero.subscribe_headline}
-          </h2>
-          <p className="font-body-md text-body-md text-white/90 mb-5">{hero.subscribe_subtext}</p>
-          <BlogSubscribeForm />
+      {/* Email subscribe - compact horizontal banner, contained (not
+          full-bleed/oversized like the previous dark full-width version) */}
+      <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop mb-stack-lg">
+        <div className="relative flex flex-col sm:flex-row items-center gap-5 overflow-hidden rounded-xl border border-brand-primary/15 bg-brand-primary/[0.05] p-5 sm:p-6">
+          <div className="relative w-full sm:w-32 aspect-[4/3] sm:aspect-square shrink-0 overflow-hidden rounded-lg bg-surface-secondary">
+            {hero.subscribe_image_url ? (
+              <Image src={hero.subscribe_image_url} alt="" fill sizes="128px" className="object-cover" />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-text-secondary/40">
+                <span className="material-symbols-outlined text-[28px]">mail</span>
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-display-xl text-[20px] md:text-[24px] text-text-primary tracking-tight mb-1">
+              {hero.subscribe_headline}
+            </h2>
+            <p className="font-body-sm text-body-sm text-text-secondary mb-3">{hero.subscribe_subtext}</p>
+            <BlogSubscribeForm dark={false} />
+          </div>
         </div>
-      </section>
+      </div>
       <InternalTrustStrip />
     </>
   );
