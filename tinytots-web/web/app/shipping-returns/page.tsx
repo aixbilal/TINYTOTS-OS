@@ -1,5 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getStoreContact } from "@/lib/get-store-contact";
+import InternalTrustStrip from "@/components/InternalTrustStrip";
 
 // Static-generate — policy content, edited rarely via admin CMS.
 export const revalidate = 3600;
@@ -52,11 +55,10 @@ const FALLBACK = {
 };
 
 export default async function ShippingReturnsPage() {
-  const { data } = await supabaseAdmin
-    .from("shipping_returns_content")
-    .select("*")
-    .eq("id", 1)
-    .single();
+  const [{ data }, storeContact] = await Promise.all([
+    supabaseAdmin.from("shipping_returns_content").select("*").eq("id", 1).single(),
+    getStoreContact(),
+  ]);
 
   // Array.isArray(...) preserves intentional empty arrays (e.g. cod_tiers: [])
   // instead of falling back to seed data when length === 0.
@@ -72,14 +74,49 @@ export default async function ShippingReturnsPage() {
   };
 
   const showCodSection = content.cod_tiers.length > 0;
+  let sectionNum = 0;
+  const timelinesNum = ++sectionNum;
+  const codNum = showCodSection ? ++sectionNum : 0;
+  const stepsNum = ++sectionNum;
 
   return (
-    <main className="max-w-container-max mx-auto w-full py-stack-lg flex flex-col md:flex-row gap-gutter px-margin-mobile md:px-0">
+    <>
+    <main className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <nav className="font-body-sm text-body-sm text-text-secondary mb-stack-sm flex items-center gap-2">
+        <Link href="/" className="hover:text-brand-primary transition-colors">Home</Link>
+        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        <Link href="/help" className="hover:text-brand-primary transition-colors">Help Center</Link>
+        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+        <span className="text-text-primary">Shipping &amp; Returns</span>
+      </nav>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter items-center mb-stack-lg">
+        <div>
+          <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-2 block">
+            Shipping &amp; Returns
+          </span>
+          <h1 className="font-display-xl text-display-md text-text-primary tracking-tight mb-3">
+            {content.hero_title}
+          </h1>
+          <p className="font-body-md text-body-md text-text-secondary">{content.hero_subtitle}</p>
+        </div>
+        <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
+          <Image
+            src="/images/homepage/lifestyle-support.webp"
+            alt=""
+            fill
+            sizes="(min-width: 768px) 480px, 100vw"
+            className="object-cover"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-gutter">
       <aside className="hidden md:block w-56 shrink-0 sticky top-28 h-fit">
         <p className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider mb-3">
-          Contents
+          On This Page
         </p>
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-1 mb-6">
           {content.toc.map((s) => (
             <a
               key={s.id}
@@ -90,24 +127,30 @@ export default async function ShippingReturnsPage() {
             </a>
           ))}
         </nav>
+        <div className="border border-border-default rounded-xl p-5 bg-surface-elevated flex flex-col items-start gap-2">
+          <span className="material-symbols-outlined text-brand-primary text-[26px]">support_agent</span>
+          <p className="font-body-sm text-body-sm text-text-primary font-semibold">Still have questions?</p>
+          <p className="font-label-md text-label-md text-text-secondary">Our customer care team is here to help.</p>
+          <Link
+            href="/contact"
+            className="mt-1 bg-brand-primary text-white font-button text-button px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+          >
+            Contact Us
+          </Link>
+        </div>
       </aside>
 
       <div className="flex-grow min-w-0">
-        <div className="text-center max-w-2xl mx-auto mb-stack-lg">
-          <h1 className="font-display-md text-display-md text-text-primary mb-3">{content.hero_title}</h1>
-          <p className="font-body-md text-body-md text-text-secondary">{content.hero_subtitle}</p>
-        </div>
-
-        <section id="delivery-timelines" className="mb-stack-lg">
-          <h2 className="font-headline-lg text-text-primary mb-stack-sm">{content.timelines_heading}</h2>
+        <section id="delivery-timelines" className="mb-stack-lg scroll-mt-28">
+          <h2 className="font-headline-lg text-text-primary mb-stack-sm">{timelinesNum}. {content.timelines_heading}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
             {content.timelines.map((t) => (
               <div
                 key={t.label}
                 className="border border-border-default rounded-2xl p-6 bg-surface-elevated flex flex-col items-center text-center gap-2"
               >
-                <span className="material-symbols-outlined text-brand-primary bg-brand-primary/10 p-3 rounded-full text-[24px]">
-                  {t.icon}
+                <span className="flex items-center justify-center w-12 h-12 rounded-full bg-brand-primary/10 text-brand-primary">
+                  <span className="material-symbols-outlined text-[24px]">{t.icon}</span>
                 </span>
                 <p className="font-body-sm text-body-sm text-text-secondary">{t.label}</p>
                 <p className="font-headline-md text-headline-md text-text-primary">{t.value}</p>
@@ -117,8 +160,8 @@ export default async function ShippingReturnsPage() {
         </section>
 
         {showCodSection && (
-          <section id="cash-on-delivery" className="mb-stack-lg">
-            <h2 className="font-headline-lg text-text-primary mb-2">{content.cod_heading}</h2>
+          <section id="cash-on-delivery" className="mb-stack-lg scroll-mt-28">
+            <h2 className="font-headline-lg text-text-primary mb-2">{codNum}. {content.cod_heading}</h2>
             <p className="font-body-md text-body-md text-text-secondary mb-stack-sm max-w-2xl">
               {content.cod_intro}
             </p>
@@ -138,9 +181,9 @@ export default async function ShippingReturnsPage() {
           </section>
         )}
 
-        <section id="returns-process" className="mb-stack-lg">
-          <h2 className="font-headline-lg text-text-primary mb-stack-sm">{content.steps_heading}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
+        <section id="returns-process" className="mb-stack-lg scroll-mt-28">
+          <h2 className="font-headline-lg text-text-primary mb-stack-sm">{stepsNum}. {content.steps_heading}</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-bento-gap">
             {content.steps.map((step, i) => (
               <div
                 key={step.title}
@@ -159,23 +202,68 @@ export default async function ShippingReturnsPage() {
           </div>
         </section>
 
-        <section className="border border-border-default rounded-2xl p-8 bg-surface-elevated flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
-          <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-brand-primary text-[32px]">support_agent</span>
-            <div>
-              <p className="font-headline-md text-headline-md text-text-primary">{content.contact_heading}</p>
-              <p className="font-body-sm text-body-sm text-text-secondary">{content.contact_body}</p>
-            </div>
-          </div>
+        <div className="md:hidden border border-border-default rounded-2xl p-6 bg-surface-elevated flex flex-col items-center text-center gap-2 mb-stack-lg">
+          <span className="material-symbols-outlined text-brand-primary text-[26px]">support_agent</span>
+          <p className="font-body-sm text-body-sm text-text-primary font-semibold">Still have questions?</p>
+          <p className="font-label-md text-label-md text-text-secondary">Our customer care team is here to help.</p>
           <Link
-            href={content.contact_button_link || "/help"}
-            className="bg-brand-primary text-white font-button text-button h-12 px-6 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 whitespace-nowrap"
+            href="/contact"
+            className="mt-1 bg-brand-primary text-white font-button text-button px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
           >
-            {content.contact_button_text}{" "}
-            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+            Contact Us
           </Link>
+        </div>
+
+        <section className="border border-border-default rounded-2xl overflow-hidden bg-surface-elevated grid grid-cols-1 lg:grid-cols-2">
+          <div className="relative w-full aspect-[16/9] lg:aspect-auto">
+            <Image
+              src="/images/homepage/brand-story-support.webp"
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 480px, 100vw"
+              className="object-cover"
+            />
+          </div>
+          <div className="p-8 flex flex-col justify-center gap-3">
+            <p className="font-headline-md text-headline-md text-text-primary">{content.contact_heading}</p>
+            <p className="font-body-sm text-body-sm text-text-secondary">{content.contact_body}</p>
+            <div className="flex flex-col gap-2 mt-1 font-body-sm text-body-sm text-text-secondary">
+              {storeContact.whatsapp && (
+                <p className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-brand-primary text-[18px]">chat</span>
+                  WhatsApp: <span className="text-text-primary">{storeContact.whatsapp}</span>
+                </p>
+              )}
+              {storeContact.phone && (
+                <p className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-brand-primary text-[18px]">call</span>
+                  Phone: <span className="text-text-primary">{storeContact.phone}</span>
+                </p>
+              )}
+              <p className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-brand-primary text-[18px]">mail</span>
+                Email: <span className="text-text-primary">{storeContact.email}</span>
+              </p>
+              {storeContact.hours && (
+                <p className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-brand-primary text-[18px]">schedule</span>
+                  {storeContact.hours}
+                </p>
+              )}
+            </div>
+            <Link
+              href={content.contact_button_link || "/help"}
+              className="mt-2 bg-brand-primary text-white font-button text-button h-12 px-6 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 whitespace-nowrap w-fit"
+            >
+              {content.contact_button_text}{" "}
+              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </Link>
+          </div>
         </section>
       </div>
+      </div>
     </main>
+    <InternalTrustStrip />
+    </>
   );
 }

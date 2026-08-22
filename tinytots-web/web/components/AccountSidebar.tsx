@@ -6,11 +6,13 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 
 const LINKS = [
-  { href: "/account", label: "Profile & Settings", icon: "person" },
-  { href: "/account#orders", label: "Orders", icon: "local_shipping" },
-  { href: "/account/returns", label: "Returns & Refunds", icon: "assignment_return" },
-  { href: "/account/addresses", label: "Saved Addresses", icon: "location_on" },
-  { href: "/account/wishlist", label: "Wishlist", icon: "favorite" },
+  { href: "/account", label: "Overview", icon: "dashboard" },
+  { href: "/account/orders", label: "Order History", icon: "local_shipping" },
+  { href: "/account/wishlist", label: "Wishlist & Saved Items", icon: "favorite" },
+  { href: "/account/addresses", label: "Profile & Addresses", icon: "person" },
+  { href: "/account#vouchers", label: "My Coupons", icon: "confirmation_number" },
+  { href: "/track-order", label: "Track Your Order", icon: "location_on" },
+  { href: "/account/returns", label: "Returns & Exchanges", icon: "assignment_return" },
   { href: "/account/settings", label: "Login & Security", icon: "lock" },
 ];
 

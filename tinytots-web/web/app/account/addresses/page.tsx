@@ -16,11 +16,19 @@ type Address = {
   is_default: boolean;
 };
 
+const PROFILE_MAX_LEN = { name: 80, phone: 20 };
+
 export default function AddressesPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [customerName, setCustomerName] = useState<string | null>(null);
+  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState("");
+  const [profilePhone, setProfilePhone] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +55,7 @@ export default function AddressesPage() {
     setError(null);
     const { data: customer } = await supabase
       .from("customers")
-      .select("id, full_name")
+      .select("id, full_name, email, phone")
       .eq("auth_user_id", user!.id)
       .single();
 
@@ -59,6 +67,9 @@ export default function AddressesPage() {
 
     setCustomerId(customer.id);
     setCustomerName(customer.full_name);
+    setCustomerEmail(customer.email);
+    setProfileName(customer.full_name || "");
+    setProfilePhone(customer.phone || "");
 
     const { data, error: addrError } = await supabase
       .from("addresses")
@@ -73,6 +84,29 @@ export default function AddressesPage() {
       setAddresses(data || []);
     }
     setLoading(false);
+  }
+
+  async function handleProfileSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!customerId || !profileName.trim() || !profilePhone.trim()) return;
+
+    setProfileSaving(true);
+    setProfileError(null);
+    setProfileSaved(false);
+
+    const { error: saveError } = await supabase
+      .from("customers")
+      .update({ full_name: profileName.trim(), phone: profilePhone.trim() })
+      .eq("id", customerId);
+
+    setProfileSaving(false);
+    if (saveError) {
+      setProfileError("Couldn't save your profile. Please try again.");
+      return;
+    }
+    setCustomerName(profileName.trim());
+    setProfileSaved(true);
+    setTimeout(() => setProfileSaved(false), 2500);
   }
 
   function resetForm() {
@@ -162,13 +196,66 @@ export default function AddressesPage() {
       <AccountSidebar name={customerName} />
 
       <section className="flex-grow flex flex-col gap-stack-md min-w-0">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="font-display-md text-display-md text-text-primary">Address Book</h1>
-            <p className="font-body-md text-body-md text-text-secondary mt-2">
-              Manage your shipping addresses for faster checkout.
-            </p>
+        <div>
+          <h1 className="font-display-md text-display-md text-text-primary">Profile & Addresses</h1>
+          <p className="font-body-md text-body-md text-text-secondary mt-2">
+            Manage your personal information and saved addresses.
+          </p>
+        </div>
+
+        {error && <p className="font-label-md text-label-md text-red-700">{error}</p>}
+
+        {/* Profile Information */}
+        <form
+          onSubmit={handleProfileSave}
+          className="border border-border-subtle rounded-2xl p-6 bg-surface-elevated flex flex-col gap-4"
+        >
+          <h2 className="font-headline-md text-headline-md text-text-primary">Profile Information</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="font-label-md text-label-md text-text-secondary mb-1.5 block">Full Name</label>
+              <input
+                type="text"
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value.slice(0, PROFILE_MAX_LEN.name))}
+                maxLength={PROFILE_MAX_LEN.name}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="font-label-md text-label-md text-text-secondary mb-1.5 block">Email Address</label>
+              <input
+                type="email"
+                value={customerEmail ?? ""}
+                disabled
+                title="Email is tied to your login and can't be changed here."
+                className={`${inputClass} opacity-60 cursor-not-allowed`}
+              />
+            </div>
+            <div>
+              <label className="font-label-md text-label-md text-text-secondary mb-1.5 block">Phone Number</label>
+              <input
+                type="tel"
+                value={profilePhone}
+                onChange={(e) => setProfilePhone(e.target.value.slice(0, PROFILE_MAX_LEN.phone))}
+                maxLength={PROFILE_MAX_LEN.phone}
+                className={inputClass}
+              />
+            </div>
           </div>
+          {profileError && <p className="font-label-md text-label-md text-red-700">{profileError}</p>}
+          {profileSaved && <p className="font-label-md text-label-md text-green-700">Profile updated.</p>}
+          <button
+            type="submit"
+            disabled={profileSaving}
+            className="self-start bg-brand-primary text-white font-button text-button px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {profileSaving ? "Saving..." : "Save Changes"}
+          </button>
+        </form>
+
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <h2 className="font-headline-md text-headline-md text-text-primary">Saved Addresses</h2>
           {!showForm && (
             <button
               onClick={() => setShowForm(true)}
@@ -178,8 +265,6 @@ export default function AddressesPage() {
             </button>
           )}
         </div>
-
-        {error && <p className="font-label-md text-label-md text-red-700">{error}</p>}
 
         {showForm && (
           <form
@@ -253,13 +338,15 @@ export default function AddressesPage() {
                 )}
                 <div className="flex items-center gap-3 mb-4">
                   <span
-                    className={`material-symbols-outlined p-2 rounded-full ${
+                    className={`flex items-center justify-center w-9 h-9 rounded-full ${
                       a.is_default
                         ? "text-brand-primary bg-brand-primary/20"
                         : "text-text-secondary bg-surface-secondary"
                     }`}
                   >
-                    {a.is_default ? "local_shipping" : "house"}
+                    <span className="material-symbols-outlined text-[20px]">
+                      {a.is_default ? "local_shipping" : "house"}
+                    </span>
                   </span>
                   <h3 className="font-headline-md text-headline-md text-text-primary">{a.label}</h3>
                 </div>

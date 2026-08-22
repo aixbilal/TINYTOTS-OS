@@ -49,6 +49,13 @@ const STATUS_PILL: Record<string, string> = {
   cancelled: "bg-red-700/10 text-red-700 border-red-700/30",
 };
 
+const QUICK_LINKS = [
+  { href: "/track-order", label: "Track Your Order", body: "Check real-time status", icon: "local_shipping" },
+  { href: "/account/orders", label: "Order History", body: "View your past orders", icon: "receipt_long" },
+  { href: "/account/wishlist", label: "Wishlist", body: "See your favorites", icon: "favorite" },
+  { href: "/account/returns", label: "Returns & Exchanges", body: "Start a return", icon: "assignment_return" },
+];
+
 export default function AccountPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
@@ -127,7 +134,8 @@ export default function AccountPage() {
   const activeVouchers = vouchers.filter(
     (v) => !v.is_used && new Date(v.expires_at) >= new Date()
   );
-  const latestOrder = orders[0];
+  const totalSpent = orders.filter((o) => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
+  const recentOrders = orders.slice(0, 3);
 
   return (
     <main className="max-w-container-max mx-auto w-full py-stack-lg flex flex-col md:flex-row gap-gutter">
@@ -165,126 +173,106 @@ export default function AccountPage() {
 
         {error && <p className="font-label-md text-label-md text-red-700">{error}</p>}
 
-        {/* Bento Row: Latest Order + Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-bento-gap" id="orders">
-          {/* Latest Order Card */}
-          <div className="bg-surface-elevated rounded-2xl p-6 border border-border-subtle shadow-sm flex flex-col justify-between">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h2 className="font-headline-md text-headline-md text-text-primary mb-1">Latest Order</h2>
-                <p className="font-body-sm text-body-sm text-text-secondary">
-                  {latestOrder
-                    ? `Order #${latestOrder.order_number} • Placed ${new Date(latestOrder.created_at).toLocaleDateString()}`
-                    : "No orders yet"}
-                </p>
-              </div>
-              {latestOrder && (
-                <span
-                  className={`px-3 py-1 rounded-full font-label-md text-label-md flex items-center gap-1 border ${
-                    STATUS_PILL[latestOrder.status] ?? "bg-surface-secondary text-text-secondary border-border-default"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[14px]">local_shipping</span>
-                  {STATUS_LABELS[latestOrder.status] ?? latestOrder.status}
-                </span>
+        {/* Quick Links */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-bento-gap">
+          {QUICK_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="bg-surface-elevated rounded-2xl p-5 border border-border-subtle shadow-sm hover:border-brand-primary/40 transition-colors flex flex-col gap-2"
+            >
+              <span className="material-symbols-outlined text-brand-primary text-[24px]">{link.icon}</span>
+              <span className="font-body-md text-body-md text-text-primary font-semibold">{link.label}</span>
+              <span className="font-label-md text-label-md text-text-secondary">{link.body}</span>
+            </Link>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-bento-gap items-start">
+          {/* Recent Orders */}
+          <div className="lg:col-span-2 bg-surface-elevated rounded-2xl p-6 border border-border-subtle shadow-sm min-w-0">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-headline-md text-headline-md text-text-primary">Recent Orders</h2>
+              {orders.length > 0 && (
+                <Link href="/account/orders" className="font-label-md text-label-md text-brand-primary hover:underline flex items-center gap-1">
+                  View all orders <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </Link>
               )}
             </div>
 
-            {latestOrder ? (
-              <Link
-                href={`/order-confirmation/${latestOrder.order_number}`}
-                className="flex items-center gap-4 bg-surface-secondary p-4 rounded-xl hover:bg-surface-tertiary transition-colors"
-              >
-                <div className="w-16 h-16 rounded-lg bg-brand-primary/10 flex items-center justify-center text-brand-primary shrink-0">
-                  <span className="material-symbols-outlined text-[28px]">shopping_bag</span>
-                </div>
-                <div className="flex-grow min-w-0">
-                  <p className="font-body-sm text-body-md text-text-primary font-medium truncate">
-                    Rs. {latestOrder.total.toLocaleString()}
-                  </p>
-                  <p className="font-body-sm text-body-sm text-text-secondary mt-1">
-                    {latestOrder.payment_method}
-                  </p>
-                </div>
-                <span className="bg-brand-primary text-white w-10 h-10 rounded-lg flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-                </span>
-              </Link>
-            ) : (
+            {recentOrders.length === 0 ? (
               <Link
                 href="/products"
                 className="flex items-center justify-center gap-2 bg-surface-secondary p-4 rounded-xl hover:bg-surface-tertiary transition-colors font-body-sm text-body-sm text-brand-primary"
               >
                 Start shopping <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
               </Link>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {recentOrders.map((order) => (
+                  <Link
+                    key={order.id}
+                    href={`/account/orders/${order.order_number}`}
+                    className="flex items-center justify-between gap-3 border border-border-subtle rounded-xl p-4 hover:border-brand-primary/40 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-body-sm text-body-sm text-text-primary font-medium truncate">
+                        Order #{order.order_number}
+                      </p>
+                      <p className="font-label-md text-label-md text-text-secondary mt-1">
+                        {new Date(order.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span
+                        className={`px-2.5 py-1 rounded-full font-label-md text-label-md border whitespace-nowrap ${
+                          STATUS_PILL[order.status] ?? "bg-surface-secondary text-text-secondary border-border-default"
+                        }`}
+                      >
+                        {STATUS_LABELS[order.status] ?? order.status}
+                      </span>
+                      <p className="font-body-sm text-body-sm text-text-primary whitespace-nowrap">
+                        Rs. {order.total.toLocaleString()}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Quick Links Card */}
-          <div className="bg-surface-elevated rounded-2xl p-6 border border-border-subtle shadow-sm flex flex-col justify-between">
-            <div className="mb-6">
-              <h2 className="font-headline-md text-headline-md text-text-primary mb-1">Quick Actions</h2>
-              <p className="font-body-sm text-body-sm text-text-secondary">Manage your recent activity.</p>
+          {/* Account Summary */}
+          <div className="bg-surface-elevated rounded-2xl p-6 border border-border-subtle shadow-sm flex flex-col gap-4 min-w-0">
+            <h2 className="font-headline-md text-headline-md text-text-primary">Account Summary</h2>
+            <div className="flex items-center justify-between">
+              <span className="font-body-sm text-body-sm text-text-secondary">Total Orders</span>
+              <span className="font-headline-md text-headline-md text-text-primary">{orders.length}</span>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Link
-                href="/account/wishlist"
-                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-border-subtle hover:border-brand-primary/50 hover:bg-surface-secondary transition-all group text-center h-28"
-              >
-                <span className="material-symbols-outlined text-text-secondary group-hover:text-brand-primary transition-colors text-[28px]">
-                  favorite
-                </span>
-                <span className="font-body-sm text-body-sm text-text-primary font-medium">My Wishlist</span>
-              </Link>
-              <Link
-                href="/track-order"
-                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-border-subtle hover:border-brand-primary/50 hover:bg-surface-secondary transition-all group text-center h-28"
-              >
-                <span className="material-symbols-outlined text-text-secondary group-hover:text-brand-primary transition-colors text-[28px]">
-                  inventory_2
-                </span>
-                <span className="font-body-sm text-body-sm text-text-primary font-medium">Track Shipment</span>
-              </Link>
+            <div className="flex items-center justify-between">
+              <span className="font-body-sm text-body-sm text-text-secondary">Total Spent</span>
+              <span className="font-headline-md text-headline-md text-text-primary">Rs. {totalSpent.toLocaleString()}</span>
             </div>
+            <div className="flex items-center justify-between">
+              <span className="font-body-sm text-body-sm text-text-secondary">Available Coupons</span>
+              <span className="font-headline-md text-headline-md text-text-primary">{activeVouchers.length}</span>
+            </div>
+            <Link href="/account/addresses" className="font-label-md text-label-md text-brand-primary hover:underline mt-1">
+              Manage profile & addresses →
+            </Link>
+            <button
+              onClick={signOut}
+              className="font-label-md text-label-md text-red-700 hover:underline text-left"
+            >
+              Log out
+            </button>
           </div>
         </div>
 
-        {/* Profile */}
-        {customer && (
-          <section className="bg-surface-elevated rounded-2xl p-6 border border-border-subtle shadow-sm">
-            <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Profile</h2>
-            <div className="flex flex-col gap-1 font-body-sm text-body-sm text-text-secondary">
-              <p><span className="text-text-primary">Name:</span> {customer.full_name}</p>
-              <p><span className="text-text-primary">Email:</span> {customer.email}</p>
-              <p><span className="text-text-primary">Phone:</span> {customer.phone}</p>
-              <p><span className="text-text-primary">Orders placed:</span> {customer.orders_count}</p>
-              <p>
-                <span className="text-text-primary">Your referral code:</span>{" "}
-                <span className="font-mono font-semibold text-brand-primary">{customer.referral_code}</span>
-              </p>
-              <p className="font-label-md text-label-md text-text-secondary">
-                Share this with friends — they enter it at checkout on their first order.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-4 mt-4">
-              <Link href="/account/addresses" className="font-body-sm text-body-sm text-brand-primary hover:underline">
-                Manage saved addresses →
-              </Link>
-              <button
-                onClick={signOut}
-                className="font-body-sm text-body-sm text-red-700 hover:underline"
-              >
-                Log out
-              </button>
-            </div>
-          </section>
-        )}
-
         {/* Vouchers */}
-        <section className="bg-surface-elevated rounded-2xl p-6 border border-border-subtle shadow-sm">
-          <h2 className="font-headline-md text-headline-md text-text-primary mb-3">My Vouchers</h2>
+        <section id="vouchers" className="bg-surface-elevated rounded-2xl p-6 border border-border-subtle shadow-sm scroll-mt-28">
+          <h2 className="font-headline-md text-headline-md text-text-primary mb-3">My Coupons</h2>
           {vouchers.length === 0 ? (
-            <p className="font-body-sm text-body-sm text-text-secondary">No vouchers yet.</p>
+            <p className="font-body-sm text-body-sm text-text-secondary">No coupons yet.</p>
           ) : (
             <div className="flex flex-col gap-2">
               {vouchers.map((v) => {
@@ -309,39 +297,6 @@ export default function AccountPage() {
                   </div>
                 );
               })}
-            </div>
-          )}
-        </section>
-
-        {/* Order History */}
-        <section className="bg-surface-elevated rounded-2xl p-6 border border-border-subtle shadow-sm">
-          <h2 className="font-headline-md text-headline-md text-text-primary mb-3">Order History</h2>
-          {orders.length === 0 ? (
-            <p className="font-body-sm text-body-sm text-text-secondary">
-              No orders yet. <Link href="/products" className="text-brand-primary hover:underline">Start shopping</Link>
-            </p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {orders.map((order) => (
-                <Link
-                  key={order.id}
-                  href={`/order-confirmation/${order.order_number}`}
-                  className="border border-border-subtle rounded-xl p-4 flex justify-between items-center hover:border-brand-primary transition-colors"
-                >
-                  <div>
-                    <p className="font-body-md text-body-md text-text-primary">{order.order_number}</p>
-                    <p className="font-label-md text-label-md text-text-secondary">
-                      {new Date(order.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-body-sm text-body-sm text-text-secondary">
-                      {STATUS_LABELS[order.status] ?? order.status}
-                    </p>
-                    <p className="font-body-md text-body-md text-text-primary">Rs. {order.total.toLocaleString()}</p>
-                  </div>
-                </Link>
-              ))}
             </div>
           )}
         </section>
