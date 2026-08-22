@@ -126,25 +126,33 @@ export default function WishlistPage() {
                 onClick={moveAllToBag}
                 className="px-6 py-3 bg-brand-primary text-white rounded-lg font-button text-button hover:opacity-90 transition-opacity"
               >
-                Move All to Bag
+                Add All to Bag
               </button>
             </div>
           )}
         </div>
 
         {products.length === 0 ? (
-          <p className="font-body-sm text-body-sm text-text-secondary">
-            Nothing saved yet.{" "}
-            <Link href="/products" className="text-brand-primary hover:underline">
-              Browse products
+          <div className="bg-surface-elevated rounded-2xl border border-border-subtle shadow-sm p-10 flex flex-col items-center text-center gap-3">
+            <span className="material-symbols-outlined text-brand-primary text-[40px]">favorite</span>
+            <h2 className="font-headline-md text-headline-md text-text-primary">Nothing saved yet</h2>
+            <p className="font-body-sm text-body-sm text-text-secondary max-w-sm">
+              Tap the heart on any product to save it here for later.
+            </p>
+            <Link
+              href="/products"
+              className="mt-2 bg-brand-primary text-white font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
+            >
+              Browse Products
             </Link>
-          </p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-bento-gap">
             {products.map((p) => {
               const variant = p.variants?.[0];
               const price = variant?.web_price ?? variant?.price;
-              const inStock = p.variants?.some((v) => v.stock > 0);
+              const totalStock = p.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0;
+              const inStock = totalStock > 0;
               const subtitle = [variant?.color, variant?.size].filter(Boolean).join(" / ");
 
               return (
@@ -197,9 +205,19 @@ export default function WishlistPage() {
                         {p.name}
                       </h3>
                     </Link>
-                    <p className={`font-body-sm text-body-sm text-text-secondary mb-4 ${!inStock ? "opacity-70" : ""}`}>
+                    <p className={`font-body-sm text-body-sm text-text-secondary mb-1 ${!inStock ? "opacity-70" : ""}`}>
                       {subtitle || p.brand}
                     </p>
+                    {inStock && (
+                      totalStock <= 3 ? (
+                        <p className="font-label-md text-label-md text-[#D9822B] mb-3">Only {totalStock} left</p>
+                      ) : (
+                        <p className="font-label-md text-label-md text-green-700 mb-3 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]">check</span> In Stock
+                        </p>
+                      )
+                    )}
+                    {!inStock && <div className="mb-3" />}
                     <div className="mt-auto flex items-center justify-between">
                       <span className={`font-body-lg text-body-lg text-text-primary font-semibold ${!inStock ? "opacity-70" : ""}`}>
                         {price ? `Rs. ${price.toLocaleString()}` : ""}
