@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
-import HeaderCart from "@/components/HeaderCart";
 import CartStickyBar from "@/components/CartStickyBar";
 import MobileSubNav from "@/components/MobileSubNav";
 import { shouldShowFooterFaq } from "@/components/FooterFaq";
-import { useAuth } from "@/lib/auth-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
+import HomepageHeader from "@/components/HomepageHeader";
+import InternalHeader from "@/components/InternalHeader";
 import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
 import { CACHE_KEYS, readSessionJson, writeSessionJson } from "@/lib/client-cache";
 import { useOnline } from "@/hooks/useOnline";
@@ -113,7 +113,7 @@ function MobileMenu({ open, onClose, topOffset }: { open: boolean; onClose: () =
   );
 
   return (
-    <div className="md:hidden fixed inset-x-0 bottom-0 bg-surface-canvas z-[90] overflow-y-auto" style={{ top: topOffset }}>
+    <div className="lg:hidden fixed inset-x-0 bottom-0 bg-surface-canvas z-[90] overflow-y-auto" style={{ top: topOffset }}>
       <div className="px-margin-mobile py-6 flex flex-col gap-6">
         <div>
           <p className="font-label-lg text-label-lg text-brand-primary font-semibold uppercase tracking-wider mb-1 px-3">Shop</p>
@@ -148,85 +148,6 @@ function MobileMenu({ open, onClose, topOffset }: { open: boolean; onClose: () =
           <MenuLink href="/shipping-returns" label="Shipping & Returns" icon="local_shipping" />
         </div>
       </div>
-    </div>
-  );
-}
-
-function AccountMenu() {
-  const { user, loading, signOut } = useAuth();
-  const [open, setOpen] = useState(false);
-
-  if (loading) {
-    return (
-      <div className="p-2 rounded-full flex items-center justify-center opacity-50">
-        <span className="material-symbols-outlined">person</span>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-        <Link
-          href="/login"
-          className="hidden md:inline-block font-body-sm text-body-sm text-text-secondary hover:text-brand-primary px-3 py-2 rounded-full transition-colors"
-        >
-          Sign in
-        </Link>
-        <Link
-          href="/signup"
-          className="hidden md:inline-block font-body-sm text-body-sm bg-brand-primary text-white px-4 py-2 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap"
-        >
-          Sign up
-        </Link>
-        <Link
-          href="/login"
-          className="md:hidden text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center"
-          title="Account"
-          aria-label="Account"
-        >
-          <span className="material-symbols-outlined">person</span>
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="text-brand-primary hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center"
-        title="Account"
-      >
-        <span className="material-symbols-outlined">account_circle</span>
-      </button>
-      {open && (
-        <div className="absolute right-0 mt-2 w-48 bg-surface-elevated border border-border-default rounded-xl shadow-lg py-2 z-50">
-      <Link
-            href="/account"
-            onClick={() => setOpen(false)}
-            className="block px-4 py-2 font-body-sm text-body-sm text-text-primary hover:bg-surface-secondary"
-          >
-            My Account
-          </Link>
-          <Link
-            href="/account/wishlist"
-            onClick={() => setOpen(false)}
-            className="block px-4 py-2 font-body-sm text-body-sm text-text-primary hover:bg-surface-secondary"
-          >
-            My Wishlist
-          </Link>
-          <button
-            onClick={async () => {
-              setOpen(false);
-              await signOut();
-            }}
-            className="block w-full text-left px-4 py-2 font-body-sm text-body-sm text-red-700 hover:bg-surface-secondary"
-          >
-            Log out
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -406,118 +327,19 @@ export default function SiteShell({
             >
               {pathname === "/" ? <AnnouncementBar data={announcement} /> : <InternalAnnouncementBar />}
               <header className="bg-surface-canvas/80 backdrop-blur-md border-b border-border-default">
-              <nav className="grid grid-cols-[1fr_auto_1fr] items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto w-full">
-                <div className="flex items-center gap-6 justify-start">
-                  <button
-                    onClick={() => setMobileMenuOpen((o) => !o)}
-                    className="md:hidden text-text-secondary hover:text-brand-primary p-2 -ml-2 rounded-full flex items-center justify-center"
-                    aria-label="Menu"
-                  >
-                    <span className="material-symbols-outlined">{mobileMenuOpen ? "close" : "menu"}</span>
-                  </button>
-                  <div className="hidden md:flex items-center gap-4 lg:gap-5 flex-nowrap whitespace-nowrap">
-                    {pathname !== "/" && (
-                      <Link
-                        href="/"
-                        className="font-body-md text-body-md pb-1 transition-colors border-b-2 text-text-secondary hover:text-brand-primary border-transparent"
-                      >
-                        Home
-                      </Link>
-                    )}
-                    <Link
-                      href="/products?sort=newest"
-                      className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${
-                        pathname === "/products" ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
-                      }`}
-                    >
-                      New In
-                    </Link>
-                    <Link
-                      href="/products?gender=girl"
-                      className="font-body-md text-body-md pb-1 transition-colors border-b-2 text-text-secondary hover:text-brand-primary border-transparent"
-                    >
-                      Girls
-                    </Link>
-                    <Link
-                      href="/products?gender=boy"
-                      className="font-body-md text-body-md pb-1 transition-colors border-b-2 text-text-secondary hover:text-brand-primary border-transparent"
-                    >
-                      Boys
-                    </Link>
-                    <Link
-                      href="/collections"
-                      className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${
-                        pathname === "/collections" ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
-                      }`}
-                    >
-                      Collections
-                    </Link>
-                    {pathname !== "/" && (
-                      <>
-                        <Link
-                          href="/our-story"
-                          className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${
-                            pathname === "/our-story" ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
-                          }`}
-                        >
-                          About
-                        </Link>
-                        <Link
-                          href="/blog"
-                          className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${
-                            pathname?.startsWith("/blog") ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
-                          }`}
-                        >
-                          Blog
-                        </Link>
-                        <Link
-                          href="/help"
-                          className={`font-body-md text-body-md pb-1 transition-colors border-b-2 ${
-                            pathname === "/help" ? "text-brand-primary border-brand-primary" : "text-text-secondary hover:text-brand-primary border-transparent"
-                          }`}
-                        >
-                          Help
-                        </Link>
-                      </>
-                    )}
-                    {pathname === "/" && (
-                      <Link
-                        href="/sale"
-                        className="font-body-md text-body-md pb-1 transition-colors border-b-2 text-text-secondary hover:text-brand-primary border-transparent"
-                      >
-                        Sale
-                      </Link>
-                    )}
-                  </div>
-                </div>
-                <Link href="/" className="flex flex-col items-center justify-self-center leading-none">
-                  <span className="font-display-md text-display-md text-text-primary tracking-[0.08em] uppercase">TinyTots</span>
-                  <span className="hidden md:block font-label-md text-label-md text-text-secondary uppercase tracking-wider mt-0.5">
-                    Timeless for tiny hearts
-                  </span>
-                </Link>
-                <div className="flex items-center gap-1 sm:gap-2 md:gap-4 justify-end shrink-0">
-                  <button
-                    onClick={() => setSearchOpen(true)}
-                    className="text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center"
-                    title="Search"
-                    aria-label="Search"
-                  >
-                    <span className="material-symbols-outlined">search</span>
-                  </button>
-                  <AccountMenu />
-                  <Link
-                    href="/account/wishlist"
-                    className="text-text-secondary hover:text-brand-primary transition-colors hover:bg-surface-secondary p-2 rounded-full flex items-center justify-center"
-                    title="Wishlist"
-                    aria-label="Wishlist"
-                  >
-                    <span className="material-symbols-outlined">favorite</span>
-                  </Link>
-                  {/* Cart last so it isn't clipped off-screen on narrow phones */}
-                  <HeaderCart />
-                </div>
-              </nav>
+              {pathname === "/" ? (
+                <HomepageHeader
+                  mobileMenuOpen={mobileMenuOpen}
+                  onToggleMobileMenu={() => setMobileMenuOpen((o) => !o)}
+                  onSearchClick={() => setSearchOpen(true)}
+                />
+              ) : (
+                <InternalHeader
+                  mobileMenuOpen={mobileMenuOpen}
+                  onToggleMobileMenu={() => setMobileMenuOpen((o) => !o)}
+                  onSearchClick={() => setSearchOpen(true)}
+                />
+              )}
             </header>
             </div>
 
