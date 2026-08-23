@@ -99,7 +99,7 @@ export default function SizeGuidePage() {
           <div className="flex-grow min-w-0 flex flex-col gap-stack-lg">
             <section id="how-to-measure" className="scroll-mt-28">
               <h2 className="font-headline-lg text-headline-lg text-text-primary mb-stack-sm">1. How to Measure</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-bento-gap">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-bento-gap">
                 {HOW_TO_MEASURE.map((m) => (
                   <div key={m.title} className="border border-border-default rounded-2xl p-6 bg-surface-elevated flex flex-col gap-2">
                     <span className="material-symbols-outlined text-brand-primary text-[26px]">{m.icon}</span>

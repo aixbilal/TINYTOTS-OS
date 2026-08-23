@@ -91,7 +91,7 @@ export default function LoginPage() {
   return (
     <main className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg">
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] rounded-2xl border border-border-default overflow-hidden bg-surface-elevated">
-        <div className="p-8 md:p-12">
+        <div className="p-8 md:p-12 min-w-0">
           <h1 className="font-display-md text-display-md text-text-primary mb-2">Welcome back!</h1>
           <p className="font-body-md text-body-md text-text-secondary mb-stack-md">Sign in to continue to your account.</p>
 
@@ -174,7 +174,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <div className="hidden md:flex flex-col justify-center gap-6 bg-brand-primary/[0.05] border-t md:border-t-0 md:border-l border-border-default p-8">
+        <div className="hidden md:flex flex-col justify-center gap-6 bg-brand-primary/[0.05] border-t md:border-t-0 md:border-l border-border-default p-8 min-w-0">
           <div>
             <span className="font-label-md text-label-md uppercase tracking-wider text-brand-primary block mb-2">
               Why sign in?
@@ -186,7 +186,7 @@ export default function LoginPage() {
               <span className="w-10 h-10 rounded-full bg-surface-elevated border border-border-subtle flex items-center justify-center text-brand-primary shrink-0">
                 <span className="material-symbols-outlined text-[20px]">{b.icon}</span>
               </span>
-              <div>
+              <div className="min-w-0">
                 <p className="font-body-md text-body-md text-text-primary font-semibold">{b.title}</p>
                 <p className="font-body-sm text-body-sm text-text-secondary">{b.body}</p>
               </div>

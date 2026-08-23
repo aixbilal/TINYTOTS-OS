@@ -127,7 +127,7 @@ export default function SignupPage() {
   return (
     <main className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg">
       <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] rounded-2xl border border-border-default overflow-hidden bg-surface-elevated">
-        <div className="p-8 md:p-12">
+        <div className="p-8 md:p-12 min-w-0">
           <h1 className="font-display-md text-display-md text-text-primary mb-2">Create your account</h1>
           <p className="font-body-md text-body-md text-text-secondary mb-stack-md">Join TinyTots and start your journey with us.</p>
 
@@ -240,7 +240,7 @@ export default function SignupPage() {
           </form>
         </div>
 
-        <div className="hidden md:flex flex-col justify-center gap-6 bg-brand-primary/[0.05] border-t md:border-t-0 md:border-l border-border-default p-8">
+        <div className="hidden md:flex flex-col justify-center gap-6 bg-brand-primary/[0.05] border-t md:border-t-0 md:border-l border-border-default p-8 min-w-0">
           <h2 className="font-display-md text-[26px] text-text-primary leading-snug">
             Timeless styles, thoughtfully made for little hearts.
           </h2>
