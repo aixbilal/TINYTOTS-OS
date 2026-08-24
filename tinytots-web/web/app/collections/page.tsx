@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
@@ -23,7 +24,8 @@ export default async function CollectionsPage() {
   const [{ data: categoryRows }, { data: productRows }] = await Promise.all([
     supabaseAdmin
       .from("categories")
-      .select("id, name, slug")
+      .select("id, name, slug, image_url, description")
+      .eq("is_active", true)
       .order("display_order", { ascending: true })
       .order("name", { ascending: true }),
     supabaseAdmin.from("products").select("category").eq("is_active", true),
@@ -86,18 +88,34 @@ export default async function CollectionsPage() {
                     href={`/collections/${c.slug}`}
                     className="group flex flex-col rounded-2xl border border-border-default bg-surface-elevated overflow-hidden hover:border-brand-primary/40 hover:shadow-sm transition-all"
                   >
-                    {/* No per-collection image field exists yet — a consistent
-                        neutral placeholder, not a borrowed or fabricated photo. */}
+                    {/* Real admin-uploaded image when set; otherwise the same
+                        neutral placeholder as before — never borrowed or
+                        fabricated, and never another collection's image. */}
                     <div className="relative aspect-[4/3] bg-surface-secondary flex items-center justify-center overflow-hidden">
-                      <span className="material-symbols-outlined text-brand-primary/40 text-[56px] transition-transform duration-500 group-hover:scale-110">
-                        checkroom
-                      </span>
+                      {c.image_url ? (
+                        <Image
+                          src={c.image_url}
+                          alt={c.name}
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <span className="material-symbols-outlined text-brand-primary/40 text-[56px] transition-transform duration-500 group-hover:scale-110">
+                          checkroom
+                        </span>
+                      )}
                     </div>
                     <div className="p-5 flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="font-headline-md text-headline-md text-text-primary group-hover:text-brand-primary transition-colors truncate">
                           {c.name}
                         </h3>
+                        {c.description && (
+                          <p className="font-body-sm text-body-sm text-text-secondary mt-0.5 line-clamp-1">
+                            {c.description}
+                          </p>
+                        )}
                         <p className="font-label-md text-label-md text-text-secondary mt-0.5">
                           {count} {count === 1 ? "product" : "products"}
                         </p>

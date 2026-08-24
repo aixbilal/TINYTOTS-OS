@@ -18,7 +18,7 @@ type Product = {
   image_url: string | null;
   variants: Variant[];
 };
-type Category = { id: number; name: string; slug: string };
+type Category = { id: number; name: string; slug: string; description?: string | null };
 
 const SORTS = [
   { value: "newest", label: "Newest" },
@@ -368,6 +368,9 @@ export default function CollectionPageClient({
           <h1 className="font-display-md text-display-md text-text-primary mb-1">
             {notFound ? "Collection not found" : category?.name || "Shop All"}
           </h1>
+          {!notFound && category?.description && (
+            <p className="font-body-md text-body-md text-text-secondary max-w-xl mb-1">{category.description}</p>
+          )}
           {!loading && !notFound && (
             <p className="font-body-md text-body-md text-text-secondary">{filtered.length} items found</p>
           )}

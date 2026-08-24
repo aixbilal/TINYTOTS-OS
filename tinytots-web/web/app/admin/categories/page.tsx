@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
 import RelatedProductPicker from "@/components/admin/RelatedProductPicker";
+import AspectImageUploader from "@/components/admin/AspectImageUploader";
 
 interface Category {
   id: number;
@@ -10,6 +11,9 @@ interface Category {
   slug: string;
   display_order: number;
   related_product_ids?: number[] | null;
+  image_url?: string | null;
+  description?: string | null;
+  is_active?: boolean;
 }
 
 interface Product {
@@ -30,6 +34,10 @@ export default function AdminCategoriesPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [editOrder, setEditOrder] = useState("0");
+  const [editImageUrl, setEditImageUrl] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editActive, setEditActive] = useState(true);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // Which category's product-assignment panel is currently open
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -95,16 +103,30 @@ export default function AdminCategoriesPage() {
     setEditingId(c.id);
     setEditName(c.name);
     setEditOrder(String(c.display_order));
+    setEditImageUrl(c.image_url || "");
+    setEditDescription(c.description || "");
+    setEditActive(c.is_active !== false);
+    setExpandedId(null);
+    setRelatedExpandedId(null);
   }
 
   async function saveEdit() {
     if (!editingId) return;
+    setSavingEdit(true);
+    setErrorMsg("");
     const res = await adminFetch(`/api/admin/categories/${editingId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editName.trim(), display_order: editOrder }),
+      body: JSON.stringify({
+        name: editName.trim(),
+        display_order: editOrder,
+        image_url: editImageUrl,
+        description: editDescription,
+        is_active: editActive,
+      }),
     });
     const data = await res.json();
+    setSavingEdit(false);
     if (!res.ok) {
       setErrorMsg(data.error || "Failed to update category");
       return;
@@ -131,6 +153,7 @@ export default function AdminCategoriesPage() {
     }
     setExpandedId(c.id);
     setRelatedExpandedId(null);
+    setEditingId(null);
     setSearch("");
     // Pre-check whichever products are currently assigned to this category
     const current = new Set(
@@ -146,6 +169,7 @@ export default function AdminCategoriesPage() {
     }
     setRelatedExpandedId(c.id);
     setExpandedId(null);
+    setEditingId(null);
     setRelatedIds(
       Array.isArray(c.related_product_ids)
         ? c.related_product_ids.map(Number).filter((id) => Number.isFinite(id))
@@ -228,11 +252,12 @@ export default function AdminCategoriesPage() {
   }, [products, search]);
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Categories</h1>
       <p className="text-sm text-gray-500 mb-6">
         Manage the categories available when adding or editing products, and assign
         products to a category directly from here. Lower "Order" values show first.
+        These are also the Collections shown on the customer-facing /collections page.
       </p>
 
       {errorMsg && (
@@ -267,8 +292,10 @@ export default function AdminCategoriesPage() {
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
               <tr>
+                <th className="px-6 py-3">Image</th>
                 <th className="px-6 py-3">Name</th>
                 <th className="px-6 py-3">Order</th>
+                <th className="px-6 py-3">Status</th>
                 <th className="px-6 py-3">Products</th>
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
@@ -277,66 +304,132 @@ export default function AdminCategoriesPage() {
               {categories.map((c) => (
                 <Fragment key={c.id}>
                   <tr className="hover:bg-gray-50">
-                    {editingId === c.id ? (
-                      <>
-                        <td className="px-6 py-3">
-                          <input
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            className="border rounded px-2 py-1 text-sm w-full"
-                          />
-                        </td>
-                        <td className="px-6 py-3">
-                          <input
-                            type="number"
-                            value={editOrder}
-                            onChange={(e) => setEditOrder(e.target.value)}
-                            className="border rounded px-2 py-1 text-sm w-20"
-                          />
-                        </td>
-                        <td className="px-6 py-3 text-gray-400">—</td>
-                        <td className="px-6 py-3 text-right space-x-3">
-                          <button onClick={saveEdit} className="text-xs font-medium text-indigo-600 hover:underline">
-                            Save
-                          </button>
-                          <button onClick={() => setEditingId(null)} className="text-xs font-medium text-gray-500 hover:underline">
-                            Cancel
-                          </button>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-6 py-4 font-medium text-gray-900">{c.name}</td>
-                        <td className="px-6 py-4">{c.display_order}</td>
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => openAssigner(c)}
-                            className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline"
-                          >
-                            {countsByName[c.name] || 0} product{(countsByName[c.name] || 0) === 1 ? "" : "s"}
-                            <span className="text-gray-400">{expandedId === c.id ? "▲" : "▼"}</span>
-                          </button>
-                        </td>
-                        <td className="px-6 py-4 text-right space-x-3">
-                          <button
-                            onClick={() => openRelatedPicker(c)}
-                            className="text-xs font-medium text-indigo-600 hover:underline"
-                          >
-                            Related{relatedExpandedId === c.id ? " ▲" : ""}
-                          </button>
-                          <button onClick={() => startEdit(c)} className="text-xs font-medium text-indigo-600 hover:underline">
-                            Edit
-                          </button>
-                          <button onClick={() => handleDelete(c.id)} className="text-xs font-medium text-red-600 hover:underline">
-                            Delete
-                          </button>
-                        </td>
-                      </>
-                    )}
+                    <td className="px-6 py-4">
+                      <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center">
+                        {c.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={c.image_url} alt={c.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-gray-300 text-xs">—</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      {c.name}
+                      <div className="text-xs text-gray-400 font-normal">/{c.slug}</div>
+                    </td>
+                    <td className="px-6 py-4">{c.display_order}</td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          c.is_active !== false ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {c.is_active !== false ? "Active" : "Hidden"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => openAssigner(c)}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline"
+                      >
+                        {countsByName[c.name] || 0} product{(countsByName[c.name] || 0) === 1 ? "" : "s"}
+                        <span className="text-gray-400">{expandedId === c.id ? "▲" : "▼"}</span>
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 text-right space-x-3">
+                      <button
+                        onClick={() => openRelatedPicker(c)}
+                        className="text-xs font-medium text-indigo-600 hover:underline"
+                      >
+                        Related{relatedExpandedId === c.id ? " ▲" : ""}
+                      </button>
+                      <button
+                        onClick={() => (editingId === c.id ? setEditingId(null) : startEdit(c))}
+                        className="text-xs font-medium text-indigo-600 hover:underline"
+                      >
+                        Edit{editingId === c.id ? " ▲" : ""}
+                      </button>
+                      <button onClick={() => handleDelete(c.id)} className="text-xs font-medium text-red-600 hover:underline">
+                        Delete
+                      </button>
+                    </td>
                   </tr>
+                  {editingId === c.id && (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-4 bg-gray-50">
+                        <div className="flex flex-col gap-4 max-w-lg">
+                          <AspectImageUploader
+                            label="Collection image (shown on the /collections card)"
+                            value={editImageUrl}
+                            onChange={setEditImageUrl}
+                            aspect={4 / 3}
+                            aspectLabel="4:3"
+                            previewClassName="aspect-[4/3] max-w-[220px]"
+                            outputWidth={900}
+                            outputHeight={675}
+                            variant="desktop"
+                          />
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                            <input
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Description (shown on the /collections card, optional)
+                            </label>
+                            <textarea
+                              value={editDescription}
+                              onChange={(e) => setEditDescription(e.target.value)}
+                              rows={2}
+                              className="border border-gray-300 rounded-md px-3 py-2 text-sm w-full"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+                            <input
+                              type="number"
+                              value={editOrder}
+                              onChange={(e) => setEditOrder(e.target.value)}
+                              className="border border-gray-300 rounded-md px-3 py-2 text-sm w-24"
+                            />
+                          </div>
+                          <label className="flex items-center gap-2 text-sm text-gray-700">
+                            <input
+                              type="checkbox"
+                              checked={editActive}
+                              onChange={(e) => setEditActive(e.target.checked)}
+                              className="h-4 w-4"
+                            />
+                            Active (visible on /collections and /collections/{"{slug}"})
+                          </label>
+                          <div className="flex justify-end gap-3">
+                            <button
+                              onClick={() => setEditingId(null)}
+                              disabled={savingEdit}
+                              className="text-xs font-medium text-gray-500 hover:underline"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={saveEdit}
+                              disabled={savingEdit}
+                              className="bg-indigo-600 text-white px-4 py-1.5 rounded-md text-xs font-medium hover:bg-indigo-700 disabled:opacity-50"
+                            >
+                              {savingEdit ? "Saving..." : "Save changes"}
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                   {relatedExpandedId === c.id && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-4 bg-gray-50">
+                      <td colSpan={6} className="px-6 py-4 bg-gray-50">
                         <RelatedProductPicker
                           label={`You May Also Like defaults — ${c.name}`}
                           helpText="Used when a product in this category has no per-product related picks. Leave empty to use automatic same-category suggestions."
@@ -365,7 +458,7 @@ export default function AdminCategoriesPage() {
                   )}
                   {expandedId === c.id && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-4 bg-gray-50">
+                      <td colSpan={6} className="px-6 py-4 bg-gray-50">
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <input
                             type="text"

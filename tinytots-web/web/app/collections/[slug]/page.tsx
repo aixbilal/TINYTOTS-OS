@@ -13,7 +13,11 @@ const PRODUCT_SELECT = `
 `;
 
 export async function generateStaticParams() {
-  const { data } = await supabaseAdmin.from("categories").select("slug").order("slug", { ascending: true });
+  const { data } = await supabaseAdmin
+    .from("categories")
+    .select("slug")
+    .eq("is_active", true)
+    .order("slug", { ascending: true });
   return (data || []).filter((c) => c.slug).map((c) => ({ slug: c.slug }));
 }
 
@@ -27,6 +31,7 @@ export async function generateMetadata({
     .from("categories")
     .select("name")
     .eq("slug", slug)
+    .eq("is_active", true)
     .maybeSingle();
 
   const title = category?.name || "Shop";
@@ -36,8 +41,9 @@ export async function generateMetadata({
 async function getCategoryAndProducts(slug: string) {
   const { data: category } = await supabase
     .from("categories")
-    .select("id, name, slug")
+    .select("id, name, slug, description")
     .eq("slug", slug)
+    .eq("is_active", true)
     .maybeSingle();
 
   if (!category) return { category: null, products: [] };

@@ -38,6 +38,9 @@ export async function PATCH(
         .map((id: unknown) => Number(id))
         .filter((id: number) => Number.isFinite(id) && id > 0);
     }
+    if (typeof body.image_url === "string") updates.image_url = body.image_url;
+    if (typeof body.description === "string") updates.description = body.description;
+    if (typeof body.is_active === "boolean") updates.is_active = body.is_active;
 
     const { data, error } = await supabaseAdmin
       .from("categories")
