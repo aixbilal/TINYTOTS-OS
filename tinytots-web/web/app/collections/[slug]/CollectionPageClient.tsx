@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import WishlistButton from "@/components/WishlistButton";
 import {
   buildSizeFilterOptions,
   productMatchesSizeFilter,
@@ -104,10 +105,9 @@ export default function CollectionPageClient({
         const cat = cats.find((c: Category) => c.slug === slug);
         setCategory(cat || null);
 
-        const catName = cat?.name;
-        const filtered = catName
-          ? allProducts.filter((p: Product) => p.category === catName)
-          : allProducts;
+        // No matching category (invalid slug) must show zero products, not
+        // silently fall back to the entire catalog.
+        const filtered = cat ? allProducts.filter((p: Product) => p.category === cat.name) : [];
         setProducts(filtered);
         setError(null);
       })
@@ -353,20 +353,24 @@ export default function CollectionPageClient({
     </div>
   );
 
+  const notFound = !loading && !category;
+
   return (
     <main className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg">
       <div className="flex items-center gap-1 font-body-sm text-body-sm text-text-secondary mb-stack-sm">
         <Link href="/" className="hover:text-brand-primary transition-colors">Home</Link>
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <span className="text-text-primary">{category?.name || "Shop"}</span>
+        <span className="text-text-primary">{notFound ? "Collections" : category?.name || "Shop"}</span>
       </div>
 
       <div className="flex justify-between items-end mb-stack-md flex-wrap gap-4">
         <div>
           <h1 className="font-display-md text-display-md text-text-primary mb-1">
-            {category?.name || "Shop All"}
+            {notFound ? "Collection not found" : category?.name || "Shop All"}
           </h1>
-          {!loading && <p className="font-body-md text-body-md text-text-secondary">{filtered.length} items found</p>}
+          {!loading && !notFound && (
+            <p className="font-body-md text-body-md text-text-secondary">{filtered.length} items found</p>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -404,6 +408,19 @@ export default function CollectionPageClient({
         <div className="flex-grow min-w-0">
           {loading ? (
             <p className="font-body-md text-body-md text-text-secondary">Loading products...</p>
+          ) : notFound ? (
+            <div className="border border-dashed border-border-default rounded-2xl p-12 flex flex-col items-center text-center gap-3">
+              <span className="material-symbols-outlined text-[40px] text-text-secondary">category</span>
+              <p className="font-body-md text-body-md text-text-secondary">
+                We couldn&apos;t find that collection. It may have moved or no longer exists.
+              </p>
+              <Link
+                href="/collections"
+                className="mt-2 bg-brand-primary text-white font-button text-button px-6 py-3 rounded-xl hover:opacity-90 transition-opacity"
+              >
+                Browse Collections
+              </Link>
+            </div>
           ) : filtered.length === 0 ? (
             <div className="border border-dashed border-border-default rounded-2xl p-12 flex flex-col items-center text-center gap-3">
               <span className="material-symbols-outlined text-[40px] text-text-secondary">search_off</span>
@@ -424,6 +441,10 @@ export default function CollectionPageClient({
                 return (
                   <Link key={p.id} href={`/products/${p.id}`} className="group cursor-pointer">
                     <div className="relative w-full aspect-square rounded-2xl overflow-hidden border border-border-default mb-3 bg-surface-elevated">
+                      <WishlistButton
+                        productId={p.id}
+                        className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur-sm w-8 h-8 shadow-sm rounded-full"
+                      />
                       {p.image_url ? (
                         <>
                           <Image

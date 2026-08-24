@@ -29,7 +29,7 @@ export async function generateMetadata({
     .eq("slug", slug)
     .maybeSingle();
 
-  const title = category?.name ? `${category.name} | TinyTots` : "Shop | TinyTots";
+  const title = category?.name || "Shop";
   return { title };
 }
 
