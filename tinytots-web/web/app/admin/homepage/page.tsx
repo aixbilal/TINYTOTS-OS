@@ -1097,11 +1097,11 @@ export default function AdminHomepagePage() {
               label="Closing banner image"
               value={content.closing_cta_image_url || ""}
               onChange={(v) => updateField("closing_cta_image_url", v)}
-              aspect={TILE_ASPECT}
-              aspectLabel="3:2"
-              previewClassName="aspect-[3/2]"
+              aspect={16 / 9}
+              aspectLabel="16:9"
+              previewClassName="aspect-[16/9]"
               outputWidth={1920}
-              outputHeight={1280}
+              outputHeight={1080}
               variant="desktop"
             />
             <TextField
