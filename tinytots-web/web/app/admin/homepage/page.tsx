@@ -25,10 +25,6 @@ interface HomepageContent {
   trending_selection_type: "products" | "category";
   trending_category: string | null;
   trending_product_ids: number[] | null;
-  stack_heading: string;
-  stack_selection_type: "products" | "category";
-  stack_category: string | null;
-  stack_product_ids: number[] | null;
   announcement_enabled: boolean;
   announcement_text: string;
   announcement_link: string;
@@ -125,7 +121,6 @@ const TILE_ASPECT = 3 / 2;
 
 type ProductIdField =
   | "trending_product_ids"
-  | "stack_product_ids"
   | "meadow_product_ids"
   | "boys_product_ids"
   | "girls_product_ids"
@@ -167,10 +162,6 @@ function normalizeHomepageContent(c: Partial<HomepageContent> & Record<string, u
     trending_selection_type: c.trending_selection_type === "category" ? "category" : "products",
     trending_category: (c.trending_category as string | null) ?? null,
     trending_product_ids: Array.isArray(c.trending_product_ids) ? c.trending_product_ids.map(Number) : [],
-    stack_heading: String(c.stack_heading || "Trending Now"),
-    stack_selection_type: c.stack_selection_type === "category" ? "category" : "products",
-    stack_category: (c.stack_category as string | null) ?? null,
-    stack_product_ids: Array.isArray(c.stack_product_ids) ? c.stack_product_ids.map(Number) : [],
     announcement_enabled: Boolean(c.announcement_enabled),
     announcement_text: String(c.announcement_text || ""),
     announcement_link: String(c.announcement_link || ""),
@@ -497,57 +488,9 @@ export default function AdminHomepagePage() {
       )}
 
       <div className="flex flex-col gap-6">
-        {/* 1. Announcement (sitewide) */}
+        {/* 1. Hero */}
         <SectionCard
-          title="1. Announcement bar"
-          hint="Shown above the header on every storefront page (not homepage-only)."
-        >
-          <label className="flex items-center gap-2 mb-4 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={!!content.announcement_enabled}
-              onChange={(e) => updateField("announcement_enabled", e.target.checked)}
-            />
-            Show announcement bar
-          </label>
-          <div className="flex flex-col gap-3">
-            <TextField
-              label="Text"
-              value={content.announcement_text || ""}
-              onChange={(v) => updateField("announcement_text", v)}
-              placeholder="Free shipping on orders over Rs. 3,000"
-            />
-            <TextField
-              label="Link (optional)"
-              value={content.announcement_link || ""}
-              onChange={(v) => updateField("announcement_link", v)}
-              placeholder="/products"
-            />
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Style</label>
-              <div className="flex gap-2">
-                {(["static", "marquee"] as const).map((style) => (
-                  <button
-                    key={style}
-                    type="button"
-                    onClick={() => updateField("announcement_style", style)}
-                    className={`text-sm font-medium px-3 py-1.5 rounded-md ${
-                      (content.announcement_style || "static") === style
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {style === "static" ? "Still" : "Scrolling loop"}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* 2. Hero */}
-        <SectionCard
-          title="2. Hero banner"
+          title="1. Hero banner"
           hint="Full-bleed rotating slides. Auto-advances about every 12 seconds. Upload desktop (16:9) and mobile (4:5) crops per slide."
         >
           <div className="flex flex-col gap-4">
@@ -667,9 +610,9 @@ export default function AdminHomepagePage() {
           </div>
         </SectionCard>
 
-        {/* 3. Trust strip */}
+        {/* 2. Trust strip */}
         <SectionCard
-          title="3. Trust strip"
+          title="2. Trust strip"
           hint="The COD / free delivery / returns row directly under the hero."
         >
           <div className="flex flex-col gap-3">
@@ -717,9 +660,9 @@ export default function AdminHomepagePage() {
           </div>
         </SectionCard>
 
-        {/* 4. Trending product grid — homepage section under trust strip */}
+        {/* 3. Trending product grid — homepage section under trust strip */}
         <SectionCard
-          title="4. Trending Now — product grid"
+          title="3. Trending Now — product grid"
           hint="Homepage: large heading + product cards under the trust strip. Saves to trending_heading + trending products."
         >
           <div className="flex flex-col gap-3">
@@ -744,19 +687,186 @@ export default function AdminHomepagePage() {
           </div>
         </SectionCard>
 
-        {/* 5. Testimonials note */}
-        <SectionCard title="5. Testimonials">
-          <p className="text-sm text-gray-600">
-            Managed separately so quotes can be reused. Edit in{" "}
-            <Link href="/admin/testimonials" className="text-indigo-600 hover:underline font-medium">
-              Testimonials
-            </Link>
-            .
-          </p>
+        {/* 4. Editorial story */}
+        <SectionCard title="4. Editorial story" hint={'"Designed with love. Made for childhood." section.'}>
+          <div className="flex flex-col gap-3">
+            <AspectImageUploader
+              label="Editorial image"
+              value={content.editorial_image_url || ""}
+              onChange={(v) => updateField("editorial_image_url", v)}
+              aspect={TILE_ASPECT}
+              aspectLabel="3:2"
+              previewClassName="aspect-[3/2]"
+              outputWidth={1536}
+              outputHeight={1024}
+              variant="desktop"
+            />
+            <TextField
+              label="Eyebrow"
+              value={content.editorial_eyebrow || ""}
+              onChange={(v) => updateField("editorial_eyebrow", v)}
+            />
+            <TextField
+              label="Headline"
+              value={content.editorial_headline || ""}
+              onChange={(v) => updateField("editorial_headline", v)}
+            />
+            <TextField
+              label="Body"
+              value={content.editorial_body || ""}
+              onChange={(v) => updateField("editorial_body", v)}
+            />
+            <TextField
+              label="CTA text"
+              value={content.editorial_cta_text || ""}
+              onChange={(v) => updateField("editorial_cta_text", v)}
+            />
+            <TextField
+              label="CTA link"
+              value={content.editorial_cta_link || ""}
+              onChange={(v) => updateField("editorial_cta_link", v)}
+              placeholder="/our-story"
+            />
+          </div>
         </SectionCard>
 
-        {/* 6. Spring Moments seasonal campaign */}
-        <SectionCard title="6. Spring Moments campaign banner" hint="Full-width seasonal banner, reuses the meadow_* fields (badge text shown as the eyebrow, e.g. 'Hello Spring').">
+        {/* 5. Girls */}
+        <SectionCard title="5. Girls collection card" hint="First of three collection cards (Girls / Boys / New Arrivals).">
+          <div className="flex flex-col gap-3 mb-4">
+            <AspectImageUploader
+              label="Tile image"
+              value={content.girls_image_url || ""}
+              onChange={(v) => updateField("girls_image_url", v)}
+              aspect={TILE_ASPECT}
+              aspectLabel="3:2"
+              previewClassName="aspect-[3/2]"
+              outputWidth={1536}
+              outputHeight={1024}
+              variant="desktop"
+            />
+            <TextField
+              label="Heading"
+              value={content.girls_heading || ""}
+              onChange={(v) => updateField("girls_heading", v)}
+            />
+            <TextField
+              label="Button text"
+              value={content.girls_button_text || ""}
+              onChange={(v) => updateField("girls_button_text", v)}
+            />
+            <TextField
+              label="Fallback link"
+              value={content.girls_link || ""}
+              onChange={(v) => updateField("girls_link", v)}
+              placeholder="/products"
+            />
+          </div>
+          <SectionSelector
+            label="Tile link target"
+            mode="link"
+            selectionType={content.girls_selection_type || "category"}
+            category={content.girls_category}
+            productIds={content.girls_product_ids}
+            categories={categories}
+            products={products}
+            onChangeType={(t) => updateField("girls_selection_type", t)}
+            onChangeCategory={(slug) => updateField("girls_category", slug)}
+            onToggleProduct={(id) => toggleProduct("girls_product_ids", id)}
+          />
+        </SectionCard>
+
+        {/* 6. Boys */}
+        <SectionCard title="6. Boys collection card" hint="Second of three collection cards (Girls / Boys / New Arrivals).">
+          <div className="flex flex-col gap-3 mb-4">
+            <AspectImageUploader
+              label="Tile image"
+              value={content.boys_image_url || ""}
+              onChange={(v) => updateField("boys_image_url", v)}
+              aspect={TILE_ASPECT}
+              aspectLabel="3:2"
+              previewClassName="aspect-[3/2]"
+              outputWidth={1536}
+              outputHeight={1024}
+              variant="desktop"
+            />
+            <TextField
+              label="Heading"
+              value={content.boys_heading || ""}
+              onChange={(v) => updateField("boys_heading", v)}
+            />
+            <TextField
+              label="Button text"
+              value={content.boys_button_text || ""}
+              onChange={(v) => updateField("boys_button_text", v)}
+            />
+            <TextField
+              label="Fallback link"
+              value={content.boys_link || ""}
+              onChange={(v) => updateField("boys_link", v)}
+              placeholder="/products"
+            />
+          </div>
+          <SectionSelector
+            label="Tile link target"
+            mode="link"
+            selectionType={content.boys_selection_type || "category"}
+            category={content.boys_category}
+            productIds={content.boys_product_ids}
+            categories={categories}
+            products={products}
+            onChangeType={(t) => updateField("boys_selection_type", t)}
+            onChangeCategory={(slug) => updateField("boys_category", slug)}
+            onToggleProduct={(id) => toggleProduct("boys_product_ids", id)}
+          />
+        </SectionCard>
+
+        {/* 7. New Arrivals collection card */}
+        <SectionCard title="7. New Arrivals card" hint="Third collection card, next to Girls/Boys.">
+          <div className="flex flex-col gap-3 mb-4">
+            <AspectImageUploader
+              label="Card image"
+              value={content.new_arrivals_image_url || ""}
+              onChange={(v) => updateField("new_arrivals_image_url", v)}
+              aspect={TILE_ASPECT}
+              aspectLabel="3:2"
+              previewClassName="aspect-[3/2]"
+              outputWidth={1536}
+              outputHeight={1024}
+              variant="desktop"
+            />
+            <TextField
+              label="Heading"
+              value={content.new_arrivals_heading || ""}
+              onChange={(v) => updateField("new_arrivals_heading", v)}
+            />
+            <TextField
+              label="Button text"
+              value={content.new_arrivals_button_text || ""}
+              onChange={(v) => updateField("new_arrivals_button_text", v)}
+            />
+            <TextField
+              label="Fallback link"
+              value={content.new_arrivals_link || ""}
+              onChange={(v) => updateField("new_arrivals_link", v)}
+              placeholder="/products?sort=newest"
+            />
+          </div>
+          <SectionSelector
+            label="Card link target"
+            mode="link"
+            selectionType={content.new_arrivals_selection_type || "category"}
+            category={content.new_arrivals_category}
+            productIds={content.new_arrivals_product_ids}
+            categories={categories}
+            products={products}
+            onChangeType={(t) => updateField("new_arrivals_selection_type", t)}
+            onChangeCategory={(slug) => updateField("new_arrivals_category", slug)}
+            onToggleProduct={(id) => toggleProduct("new_arrivals_product_ids", id)}
+          />
+        </SectionCard>
+
+        {/* 8. Spring Moments seasonal campaign */}
+        <SectionCard title="8. Spring Moments campaign banner" hint="Full-width seasonal banner, reuses the meadow_* fields (badge text shown as the eyebrow, e.g. 'Hello Spring').">
           <div className="flex flex-col gap-3 mb-4">
             <AspectImageUploader
               label="Banner image"
@@ -805,186 +915,8 @@ export default function AdminHomepagePage() {
           />
         </SectionCard>
 
-        {/* 7. Boys */}
-        <SectionCard title="7. Boys collection card" hint="First of three collection cards (Girls / Boys / New Arrivals).">
-          <div className="flex flex-col gap-3 mb-4">
-            <AspectImageUploader
-              label="Tile image"
-              value={content.boys_image_url || ""}
-              onChange={(v) => updateField("boys_image_url", v)}
-              aspect={TILE_ASPECT}
-              aspectLabel="3:2"
-              previewClassName="aspect-[3/2]"
-              outputWidth={1536}
-              outputHeight={1024}
-              variant="desktop"
-            />
-            <TextField
-              label="Heading"
-              value={content.boys_heading || ""}
-              onChange={(v) => updateField("boys_heading", v)}
-            />
-            <TextField
-              label="Button text"
-              value={content.boys_button_text || ""}
-              onChange={(v) => updateField("boys_button_text", v)}
-            />
-            <TextField
-              label="Fallback link"
-              value={content.boys_link || ""}
-              onChange={(v) => updateField("boys_link", v)}
-              placeholder="/products"
-            />
-          </div>
-          <SectionSelector
-            label="Tile link target"
-            mode="link"
-            selectionType={content.boys_selection_type || "category"}
-            category={content.boys_category}
-            productIds={content.boys_product_ids}
-            categories={categories}
-            products={products}
-            onChangeType={(t) => updateField("boys_selection_type", t)}
-            onChangeCategory={(slug) => updateField("boys_category", slug)}
-            onToggleProduct={(id) => toggleProduct("boys_product_ids", id)}
-          />
-        </SectionCard>
-
-        {/* 8. Girls */}
-        <SectionCard title="8. Girls collection card" hint="Second of three collection cards (Girls / Boys / New Arrivals).">
-          <div className="flex flex-col gap-3 mb-4">
-            <AspectImageUploader
-              label="Tile image"
-              value={content.girls_image_url || ""}
-              onChange={(v) => updateField("girls_image_url", v)}
-              aspect={TILE_ASPECT}
-              aspectLabel="3:2"
-              previewClassName="aspect-[3/2]"
-              outputWidth={1536}
-              outputHeight={1024}
-              variant="desktop"
-            />
-            <TextField
-              label="Heading"
-              value={content.girls_heading || ""}
-              onChange={(v) => updateField("girls_heading", v)}
-            />
-            <TextField
-              label="Button text"
-              value={content.girls_button_text || ""}
-              onChange={(v) => updateField("girls_button_text", v)}
-            />
-            <TextField
-              label="Fallback link"
-              value={content.girls_link || ""}
-              onChange={(v) => updateField("girls_link", v)}
-              placeholder="/products"
-            />
-          </div>
-          <SectionSelector
-            label="Tile link target"
-            mode="link"
-            selectionType={content.girls_selection_type || "category"}
-            category={content.girls_category}
-            productIds={content.girls_product_ids}
-            categories={categories}
-            products={products}
-            onChangeType={(t) => updateField("girls_selection_type", t)}
-            onChangeCategory={(slug) => updateField("girls_category", slug)}
-            onToggleProduct={(id) => toggleProduct("girls_product_ids", id)}
-          />
-        </SectionCard>
-
-        {/* 8b. New Arrivals collection card */}
-        <SectionCard title="8b. New Arrivals card" hint="Third collection card, next to Girls/Boys.">
-          <div className="flex flex-col gap-3 mb-4">
-            <AspectImageUploader
-              label="Card image"
-              value={content.new_arrivals_image_url || ""}
-              onChange={(v) => updateField("new_arrivals_image_url", v)}
-              aspect={TILE_ASPECT}
-              aspectLabel="3:2"
-              previewClassName="aspect-[3/2]"
-              outputWidth={1536}
-              outputHeight={1024}
-              variant="desktop"
-            />
-            <TextField
-              label="Heading"
-              value={content.new_arrivals_heading || ""}
-              onChange={(v) => updateField("new_arrivals_heading", v)}
-            />
-            <TextField
-              label="Button text"
-              value={content.new_arrivals_button_text || ""}
-              onChange={(v) => updateField("new_arrivals_button_text", v)}
-            />
-            <TextField
-              label="Fallback link"
-              value={content.new_arrivals_link || ""}
-              onChange={(v) => updateField("new_arrivals_link", v)}
-              placeholder="/products?sort=newest"
-            />
-          </div>
-          <SectionSelector
-            label="Card link target"
-            mode="link"
-            selectionType={content.new_arrivals_selection_type || "category"}
-            category={content.new_arrivals_category}
-            productIds={content.new_arrivals_product_ids}
-            categories={categories}
-            products={products}
-            onChangeType={(t) => updateField("new_arrivals_selection_type", t)}
-            onChangeCategory={(slug) => updateField("new_arrivals_category", slug)}
-            onToggleProduct={(id) => toggleProduct("new_arrivals_product_ids", id)}
-          />
-        </SectionCard>
-
-        {/* 8c. Editorial story */}
-        <SectionCard title="8c. Editorial story" hint={'"Designed with love. Made for childhood." section.'}>
-          <div className="flex flex-col gap-3">
-            <AspectImageUploader
-              label="Editorial image"
-              value={content.editorial_image_url || ""}
-              onChange={(v) => updateField("editorial_image_url", v)}
-              aspect={TILE_ASPECT}
-              aspectLabel="3:2"
-              previewClassName="aspect-[3/2]"
-              outputWidth={1536}
-              outputHeight={1024}
-              variant="desktop"
-            />
-            <TextField
-              label="Eyebrow"
-              value={content.editorial_eyebrow || ""}
-              onChange={(v) => updateField("editorial_eyebrow", v)}
-            />
-            <TextField
-              label="Headline"
-              value={content.editorial_headline || ""}
-              onChange={(v) => updateField("editorial_headline", v)}
-            />
-            <TextField
-              label="Body"
-              value={content.editorial_body || ""}
-              onChange={(v) => updateField("editorial_body", v)}
-            />
-            <TextField
-              label="CTA text"
-              value={content.editorial_cta_text || ""}
-              onChange={(v) => updateField("editorial_cta_text", v)}
-            />
-            <TextField
-              label="CTA link"
-              value={content.editorial_cta_link || ""}
-              onChange={(v) => updateField("editorial_cta_link", v)}
-              placeholder="/our-story"
-            />
-          </div>
-        </SectionCard>
-
-        {/* 8d. Lifestyle module 1 */}
-        <SectionCard title="8d. Lifestyle module 1" hint={'"Beautiful pieces for real life" supporting module.'}>
+        {/* 9. Lifestyle module 1 */}
+        <SectionCard title="9. Lifestyle module 1" hint={'"Beautiful pieces for real life" supporting module.'}>
           <div className="flex flex-col gap-3">
             <AspectImageUploader
               label="Module image"
@@ -1025,8 +957,8 @@ export default function AdminHomepagePage() {
           </div>
         </SectionCard>
 
-        {/* 8e. Lifestyle module 2 */}
-        <SectionCard title="8e. Lifestyle module 2" hint={'"For the moments that matter" supporting module.'}>
+        {/* 10. Lifestyle module 2 */}
+        <SectionCard title="10. Lifestyle module 2" hint={'"For the moments that matter" supporting module.'}>
           <div className="flex flex-col gap-3">
             <AspectImageUploader
               label="Module image"
@@ -1067,46 +999,9 @@ export default function AdminHomepagePage() {
           </div>
         </SectionCard>
 
-        {/* 8f. Closing CTA */}
-        <SectionCard title="8f. Closing CTA" hint={'"Made to be memories. Beautiful always." final banner before footer.'}>
-          <div className="flex flex-col gap-3">
-            <AspectImageUploader
-              label="Closing banner image"
-              value={content.closing_cta_image_url || ""}
-              onChange={(v) => updateField("closing_cta_image_url", v)}
-              aspect={TILE_ASPECT}
-              aspectLabel="3:2"
-              previewClassName="aspect-[3/2]"
-              outputWidth={1920}
-              outputHeight={1280}
-              variant="desktop"
-            />
-            <TextField
-              label="Headline"
-              value={content.closing_cta_headline || ""}
-              onChange={(v) => updateField("closing_cta_headline", v)}
-            />
-            <TextField
-              label="Subtext"
-              value={content.closing_cta_subtext || ""}
-              onChange={(v) => updateField("closing_cta_subtext", v)}
-            />
-            <TextField
-              label="Button text"
-              value={content.closing_cta_button_text || ""}
-              onChange={(v) => updateField("closing_cta_button_text", v)}
-            />
-            <TextField
-              label="Button link"
-              value={content.closing_cta_button_link || ""}
-              onChange={(v) => updateField("closing_cta_button_link", v)}
-            />
-          </div>
-        </SectionCard>
-
-        {/* 10. USP */}
+        {/* 11. USP */}
         <SectionCard
-          title="10. Why Choose TinyTots"
+          title="11. Why Choose TinyTots"
           hint={
             <>
               Icon row near the bottom of the homepage. Use{" "}
@@ -1184,8 +1079,56 @@ export default function AdminHomepagePage() {
           </div>
         </SectionCard>
 
-        {/* 11. UGC note */}
-        <SectionCard title="11. Tag Us / UGC feed">
+        {/* 12. Testimonials note */}
+        <SectionCard title="12. Testimonials">
+          <p className="text-sm text-gray-600">
+            Managed separately so quotes can be reused. Edit in{" "}
+            <Link href="/admin/testimonials" className="text-indigo-600 hover:underline font-medium">
+              Testimonials
+            </Link>
+            .
+          </p>
+        </SectionCard>
+
+        {/* 13. Closing CTA */}
+        <SectionCard title="13. Closing CTA" hint={'"Made to be memories. Beautiful always." final banner before footer.'}>
+          <div className="flex flex-col gap-3">
+            <AspectImageUploader
+              label="Closing banner image"
+              value={content.closing_cta_image_url || ""}
+              onChange={(v) => updateField("closing_cta_image_url", v)}
+              aspect={TILE_ASPECT}
+              aspectLabel="3:2"
+              previewClassName="aspect-[3/2]"
+              outputWidth={1920}
+              outputHeight={1280}
+              variant="desktop"
+            />
+            <TextField
+              label="Headline"
+              value={content.closing_cta_headline || ""}
+              onChange={(v) => updateField("closing_cta_headline", v)}
+            />
+            <TextField
+              label="Subtext"
+              value={content.closing_cta_subtext || ""}
+              onChange={(v) => updateField("closing_cta_subtext", v)}
+            />
+            <TextField
+              label="Button text"
+              value={content.closing_cta_button_text || ""}
+              onChange={(v) => updateField("closing_cta_button_text", v)}
+            />
+            <TextField
+              label="Button link"
+              value={content.closing_cta_button_link || ""}
+              onChange={(v) => updateField("closing_cta_button_link", v)}
+            />
+          </div>
+        </SectionCard>
+
+        {/* 14. UGC note */}
+        <SectionCard title="14. Tag Us / UGC feed">
           <p className="text-sm text-gray-600">
             Shown above the footer on every page. Edit posts in{" "}
             <Link href="/admin/ugc-posts" className="text-indigo-600 hover:underline font-medium">
@@ -1193,6 +1136,54 @@ export default function AdminHomepagePage() {
             </Link>
             .
           </p>
+        </SectionCard>
+
+        {/* Global — not part of the homepage layout above */}
+        <SectionCard
+          title="Global Announcement Bar"
+          hint="Shown above the header on every storefront page, not just the homepage. Kept here since this is where it has always been edited."
+        >
+          <label className="flex items-center gap-2 mb-4 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={!!content.announcement_enabled}
+              onChange={(e) => updateField("announcement_enabled", e.target.checked)}
+            />
+            Show announcement bar
+          </label>
+          <div className="flex flex-col gap-3">
+            <TextField
+              label="Text"
+              value={content.announcement_text || ""}
+              onChange={(v) => updateField("announcement_text", v)}
+              placeholder="Free shipping on orders over Rs. 3,000"
+            />
+            <TextField
+              label="Link (optional)"
+              value={content.announcement_link || ""}
+              onChange={(v) => updateField("announcement_link", v)}
+              placeholder="/products"
+            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Style</label>
+              <div className="flex gap-2">
+                {(["static", "marquee"] as const).map((style) => (
+                  <button
+                    key={style}
+                    type="button"
+                    onClick={() => updateField("announcement_style", style)}
+                    className={`text-sm font-medium px-3 py-1.5 rounded-md ${
+                      (content.announcement_style || "static") === style
+                        ? "bg-gray-900 text-white"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {style === "static" ? "Still" : "Scrolling loop"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </SectionCard>
       </div>
     </div>

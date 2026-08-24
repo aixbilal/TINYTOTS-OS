@@ -145,7 +145,7 @@ export default function AdminSiteContentPage() {
   }
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: "trust", label: "Trust strip" },
+    { id: "trust", label: "Trust items (campaigns)" },
     { id: "features", label: "Feature icons" },
     { id: "stats", label: "Stats" },
     { id: "badges", label: "Badges" },
@@ -182,6 +182,10 @@ export default function AdminSiteContentPage() {
           <p className="text-sm text-gray-500">Loading libraries...</p>
         ) : tab === "trust" ? (
           <>
+            <p className="mb-4 text-sm text-gray-500">
+              Used only by campaign pages and in-store signage — not the trust strip shown site-wide
+              on customer pages (that one is a separate, fixed four-item strip).
+            </p>
             <div className="mb-4 flex flex-col gap-2">
               {trustItems.map((item, index) => (
                 <div key={item.id} className="flex items-center gap-2 rounded-md border border-gray-200 p-2">
