@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { supabaseAnon } from "@/lib/supabase-anon";
 import BlogSubscribeForm from "@/components/BlogSubscribeForm";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
+
+export const metadata: Metadata = { title: "Blog" };
 
 // Static-generate, ISR-revalidate every 60s — same pattern already used
 // site-wide for content pages.

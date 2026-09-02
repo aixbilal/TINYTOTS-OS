@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 import JumpToSectionSelect from "@/components/JumpToSectionSelect";
+
+export const metadata: Metadata = { title: "Size Guide" };
 
 const AGE_SIZES = [
   { age: "0–3 Months", height: "50–61 cm", weight: "3–6 kg", label: "NB / 0-3M" },

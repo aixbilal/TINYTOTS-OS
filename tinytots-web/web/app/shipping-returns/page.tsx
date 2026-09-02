@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getStoreContact } from "@/lib/get-store-contact";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
+
+export const metadata: Metadata = { title: "Shipping & Returns" };
 
 // Static-generate — policy content, edited rarely via admin CMS.
 export const revalidate = 3600;

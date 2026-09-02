@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import HelpCenterIndex, { type HelpPageContent } from "@/components/HelpCenterIndex";
 import { normalizeHelpCategory } from "@/lib/help-categories";
+
+export const metadata: Metadata = { title: "Help Center" };
 
 // Static-generate — policy content, edited rarely via admin CMS.
 export const revalidate = 3600;

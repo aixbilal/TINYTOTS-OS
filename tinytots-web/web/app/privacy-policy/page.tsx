@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import LegalPageLayout from "@/components/LegalPageLayout";
 import LegalAccordionSections from "@/components/LegalAccordionSections";
 import LegalContactCta from "@/components/LegalContactCta";
 import { extractTocAndAnnotate, splitIntoSections } from "@/lib/site-page-toc";
 import { sanitizeContentHtml } from "@/lib/sanitize";
+
+export const metadata: Metadata = { title: "Privacy Policy" };
 
 // Static-generate — legal content, edited rarely via admin CMS.
 export const revalidate = 3600;

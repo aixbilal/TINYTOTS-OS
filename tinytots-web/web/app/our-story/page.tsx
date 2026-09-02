@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
+
+export const metadata: Metadata = { title: "Our Story" };
 
 // Static-generate — pure marketing content, no per-user data. ISR-revalidate
 // hourly since it changes rarely (admin-edited CMS content).
@@ -72,15 +75,25 @@ export default async function OurStoryPage() {
         ) : (
           <div className={`absolute inset-0 bg-surface-secondary ${c.hero_image_url_mobile ? "hidden sm:block" : ""}`} />
         )}
+        {/* Desktop scrim — unchanged. */}
         <div
-          className="absolute inset-0 z-[1] pointer-events-none"
+          className="absolute inset-0 z-[1] pointer-events-none hidden sm:block"
           style={{
             background:
               "linear-gradient(to right, rgba(250,247,242,0.92) 0%, rgba(250,247,242,0.55) 38%, rgba(250,247,242,0) 62%)",
           }}
         />
+        {/* Mobile scrim — the subject sits on the right, so protect the left
+            column more heavily and fade out later. */}
+        <div
+          className="absolute inset-0 z-[1] pointer-events-none sm:hidden"
+          style={{
+            background:
+              "linear-gradient(to right, rgba(250,247,242,0.97) 0%, rgba(250,247,242,0.9) 45%, rgba(250,247,242,0.55) 68%, rgba(250,247,242,0) 90%)",
+          }}
+        />
         <div className="absolute inset-0 z-[2] flex flex-col justify-center px-6 sm:px-10 md:px-16">
-          <div className="max-w-md">
+          <div className="max-w-[15rem] sm:max-w-md">
             <span className="font-label-md text-label-md uppercase tracking-wider text-text-secondary mb-3 block">
               {c.hero_eyebrow}
             </span>
@@ -90,12 +103,23 @@ export default async function OurStoryPage() {
             {c.hero_subtext && (
               <p className="font-body-md text-body-md text-text-secondary mb-3 leading-snug">{c.hero_subtext}</p>
             )}
+            {/* Long supporting paragraph would cover the subject at mobile
+                widths — it renders below the hero on mobile instead (see
+                after </section>), and stays in the overlay from sm: up. */}
             {c.body_paragraph_1 && (
-              <p className="font-body-md text-body-md text-text-secondary leading-snug">{c.body_paragraph_1}</p>
+              <p className="hidden sm:block font-body-md text-body-md text-text-secondary leading-snug">{c.body_paragraph_1}</p>
             )}
           </div>
         </div>
       </section>
+
+      {c.body_paragraph_1 && (
+        <div className="sm:hidden max-w-container-max mx-auto px-margin-mobile mb-stack-lg">
+          <p className="font-body-md text-body-md text-text-secondary leading-snug">
+            {c.body_paragraph_1}
+          </p>
+        </div>
+      )}
 
       <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop">
         {/* Built on love, inspired by little moments */}

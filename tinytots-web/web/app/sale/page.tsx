@@ -6,7 +6,7 @@ import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Sale | TinyTots",
+  title: "Sale",
   description: "Shop current markdowns on TinyTots kids clothing.",
 };
 
