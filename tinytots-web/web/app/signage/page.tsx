@@ -583,7 +583,7 @@ function SignagePageContent() {
   return (
     <main className={styles.stage} style={themeVariables(theme)}>
       {previewId && <div className={styles.previewBadge}>PREVIEW MODE — NOT LIVE</div>}
-      {campaign && display && (
+      {campaign && display ? (
         <div className={`${styles.canvas} ${styles.fade}`} style={{ opacity: fading ? 0 : 1 }}>
           <Header header={header} />
           <Hero campaign={{ ...campaign, theme }} />
@@ -591,6 +591,14 @@ function SignagePageContent() {
           <TrustStrip items={display.trust_items} />
           <Testimonials testimonials={display.testimonials} />
           <Footer socialLinks={display.social_links} footerSettings={display.footer_settings} />
+        </div>
+      ) : (
+        /* Intentional holding screen: no active/scheduled campaign. Kept
+           deliberately quiet (brand wordmark only) — this is a customer-facing
+           in-store display, so it must never show an error or "empty" notice. */
+        <div className={styles.holding}>
+          <span className={`${playfair.className} ${styles.holdingLogo}`}>{header.logo_text || "TinyTots"}</span>
+          <span className={styles.holdingLine}>{header.tagline || "Premium Kids Wear"}</span>
         </div>
       )}
     </main>
