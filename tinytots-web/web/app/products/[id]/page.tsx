@@ -10,7 +10,7 @@ import { htmlToPlainText } from "@/lib/html-text";
 import { sanitizeContentHtml } from "@/lib/sanitize";
 import { jsonLdScriptString } from "@/lib/json-ld";
 import { absoluteUrl } from "@/lib/site-url";
-import { pageMetadata, breadcrumbJsonLd, NOINDEX_NOFOLLOW } from "@/lib/seo";
+import { pageMetadata, breadcrumbJsonLd, NOINDEX_NOFOLLOW, SITE_NAME, orgId } from "@/lib/seo";
 import Link from "next/link";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
@@ -194,6 +194,9 @@ export default async function ProductDetailPage({
       availability: inStock
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",
+      // The seller is always TinyTots even when `brand` is a third-party label
+      // (Mayoral, Levi's, …) — links the offer to the one Organization entity.
+      seller: { "@type": "Organization", "@id": orgId(), name: SITE_NAME },
     },
   };
 

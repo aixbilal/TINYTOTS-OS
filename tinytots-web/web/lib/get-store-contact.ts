@@ -3,7 +3,10 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 // Server-side helper mirroring the whitelist logic in /api/store-contact —
 // used by server components that need this data during SSR without an
 // internal HTTP round-trip. Keep the PUBLIC_KEYS list in sync with that route.
+// (SOCIAL_KEYS are public URLs already rendered on the storefront; they feed
+// Organization.sameAs and are not exposed through the /api/store-contact route.)
 const PUBLIC_KEYS = ["store_phone", "store_whatsapp", "store_hours"];
+const SOCIAL_KEYS = ["store_facebook", "store_instagram", "store_tiktok"];
 
 export type StoreContact = {
   phone: string | null;
@@ -11,13 +14,15 @@ export type StoreContact = {
   hours: string | null;
   email: string;
   location: string;
+  /** Configured official social profile URLs (non-empty only). */
+  socials: string[];
 };
 
 export async function getStoreContact(): Promise<StoreContact> {
   const { data, error } = await supabaseAdmin
     .from("app_settings")
     .select("key, value")
-    .in("key", PUBLIC_KEYS);
+    .in("key", [...PUBLIC_KEYS, ...SOCIAL_KEYS]);
 
   const settings: Record<string, string> = {};
   if (!error) {
@@ -32,5 +37,6 @@ export async function getStoreContact(): Promise<StoreContact> {
     hours: settings.store_hours || null,
     email: "support@tinytotsofficial.com",
     location: "Toba Tek Singh, Punjab, Pakistan",
+    socials: SOCIAL_KEYS.map((k) => settings[k]).filter(Boolean),
   };
 }

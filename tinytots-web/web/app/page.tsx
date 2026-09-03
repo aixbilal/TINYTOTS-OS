@@ -11,6 +11,7 @@ import HeroLcpPreload from "@/components/HeroLcpPreload";
 import { resolveHeroSlides } from "@/lib/hero-slides";
 import { pageMetadata, organizationJsonLd, websiteJsonLd, OG_DEFAULT_IMAGE } from "@/lib/seo";
 import { jsonLdScriptString } from "@/lib/json-ld";
+import { getStoreContact } from "@/lib/get-store-contact";
 
 // ISR: keep homepage fresh for admin edits without force-dynamic TTFB hit on every request.
 // 60s is a good balance for stock/price/image updates vs PageSpeed LCP.
@@ -272,6 +273,7 @@ export default async function Home() {
     content.trending_product_ids
   );
 
+  const storeContact = await getStoreContact();
   const heroSlides = resolveHeroSlides(content);
   const lcpSlide = heroSlides[0];
   const trustItems = resolveTrustItems(content.trust_items);
@@ -283,7 +285,15 @@ export default async function Home() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdScriptString(organizationJsonLd()) }}
+        dangerouslySetInnerHTML={{
+          __html: jsonLdScriptString(
+            organizationJsonLd({
+              sameAs: storeContact.socials,
+              telephone: storeContact.phone,
+              email: storeContact.email,
+            })
+          ),
+        }}
       />
       <script
         type="application/ld+json"

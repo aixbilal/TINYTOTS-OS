@@ -96,14 +96,53 @@ export const NOINDEX_NOFOLLOW: Metadata["robots"] = { index: false, follow: fals
 
 /* ---------------------------------------------------------------- JSON-LD -- */
 
-export function organizationJsonLd() {
+/** Stable schema.org node ids so Organization/WebSite/publisher all resolve to
+ *  one entity for answer engines, instead of repeated anonymous nodes. */
+export const orgId = () => `${getSiteUrl()}/#organization`;
+export const websiteId = () => `${getSiteUrl()}/#website`;
+
+/**
+ * Factual one-sentence description of the TinyTots entity, derived from the
+ * existing Our Story copy + the site-wide trust strip / payment facts. No
+ * unverified claims (no "premium", "#1", "award", "ethical").
+ */
+export const ORG_DESCRIPTION =
+  "TinyTots is a family-run children's clothing retailer based in Toba Tek Singh, Pakistan, offering a curated range of local and imported kidswear with Cash on Delivery and free delivery across Pakistan.";
+
+export interface OrgProfile {
+  /** Verified official profile URLs from app_settings (store_facebook/…). */
+  sameAs?: string[];
+  /** Configured public support phone (app_settings.store_phone). */
+  telephone?: string | null;
+  /** Canonical public support email. */
+  email?: string | null;
+}
+
+export function organizationJsonLd(profile: OrgProfile = {}) {
   const site = getSiteUrl();
+  const sameAs = (profile.sameAs ?? []).filter(Boolean);
+  const hasContact = Boolean(profile.telephone || profile.email);
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": orgId(),
     name: SITE_NAME,
     url: `${site}/`,
     logo: `${site}/icon.png`,
+    description: ORG_DESCRIPTION,
+    ...(sameAs.length ? { sameAs } : {}),
+    ...(hasContact
+      ? {
+          contactPoint: {
+            "@type": "ContactPoint",
+            contactType: "customer support",
+            ...(profile.telephone ? { telephone: profile.telephone } : {}),
+            ...(profile.email ? { email: profile.email } : {}),
+            areaServed: "PK",
+            availableLanguage: ["en", "ur"],
+          },
+        }
+      : {}),
   };
 }
 
@@ -112,8 +151,10 @@ export function websiteJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": websiteId(),
     name: SITE_NAME,
     url: `${site}/`,
+    publisher: { "@id": orgId() },
   };
 }
 

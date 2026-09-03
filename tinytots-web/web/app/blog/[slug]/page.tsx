@@ -6,7 +6,7 @@ import { htmlToPlainText } from "@/lib/html-text";
 import { sanitizeContentHtml } from "@/lib/sanitize";
 import { absoluteUrl, getSiteUrl } from "@/lib/site-url";
 import { jsonLdScriptString } from "@/lib/json-ld";
-import { pageMetadata, breadcrumbJsonLd, SITE_NAME } from "@/lib/seo";
+import { pageMetadata, breadcrumbJsonLd, SITE_NAME, orgId } from "@/lib/seo";
 import BlogSubscribeForm from "@/components/BlogSubscribeForm";
 
 // Static-generate known blog post slugs at build time, ISR-revalidate every
@@ -25,6 +25,22 @@ export async function generateStaticParams() {
 
 function sanitizePostHtml(html: string): string {
   return sanitizeContentHtml(html);
+}
+
+/**
+ * A byline that is the brand itself or an editorial-desk label ("TinyTots
+ * Editorial", "TinyTots Team") is the Organization, not a named individual —
+ * never invent a Person for it.
+ */
+function authorNode(raw: unknown) {
+  const name = String(raw ?? "").trim();
+  const isOrg =
+    !name ||
+    /(^|\s)(editorial|team|staff)$/i.test(name) ||
+    name.toLowerCase() === SITE_NAME.toLowerCase();
+  return isOrg
+    ? { "@type": "Organization", "@id": orgId(), name: SITE_NAME }
+    : { "@type": "Person", name };
 }
 
 // Explicit locale + UTC timezone so server-render and client-hydrate always
@@ -105,11 +121,10 @@ export default async function BlogPostPage({
     datePublished: post.published_at || undefined,
     mainEntityOfPage: canonical,
     url: canonical,
-    author: post.author
-      ? { "@type": "Person", name: String(post.author).trim() }
-      : { "@type": "Organization", name: SITE_NAME },
+    author: authorNode(post.author),
     publisher: {
       "@type": "Organization",
+      "@id": orgId(),
       name: SITE_NAME,
       logo: { "@type": "ImageObject", url: `${getSiteUrl()}/icon.png` },
     },
