@@ -21,6 +21,7 @@ import SearchTakeover from "@/components/SearchTakeover";
 // Below-fold chrome — keep off the homepage critical JS path.
 const UgcFeed = dynamic(() => import("@/components/UgcFeed"), { ssr: false });
 const FooterFaq = dynamic(() => import("@/components/FooterFaq"), { ssr: false });
+const ProductFinder = dynamic(() => import("@/components/ProductFinder"), { ssr: false });
 
 export type AnnouncementData = {
   enabled: boolean;
@@ -382,6 +383,7 @@ export default function SiteShell({
             <SearchTakeover open={searchOpen} onClose={() => setSearchOpen(false)} />
             {!mobileMenuOpen && <MobileSubNav />}
             <CartStickyBar />
+            <ProductFinder />
 
             {/* MAIN CONTENT — no flex-grow (that created a huge empty gap above the footer) */}
             <MainContent>{children}</MainContent>
