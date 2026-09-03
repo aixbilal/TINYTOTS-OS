@@ -20,7 +20,7 @@ function sanitize(v: string, max: number) {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, total, appliedCoupon, appliedVoucher, clearCart } = useCart();
+  const { items, subtotal, total, appliedCoupon, appliedVoucher, clearCart, cartHydrated } = useCart();
   const { user } = useAuth();
 
   const [guestName, setGuestName] = useState("");
@@ -70,6 +70,14 @@ export default function CheckoutPage() {
         }
       });
   }, [user]);
+
+  if (!cartHydrated) {
+    return (
+      <main className="max-w-2xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+        <p className="text-text-secondary font-body-md text-body-md animate-pulse">Loading your cart…</p>
+      </main>
+    );
+  }
 
   if (items.length === 0) {
     return (

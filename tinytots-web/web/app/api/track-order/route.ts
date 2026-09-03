@@ -63,8 +63,13 @@ export async function GET(request: NextRequest) {
     .eq("order_number", orderNumber)
     .single();
 
+  // Same response whether the order number doesn't exist or the phone doesn't
+  // match, so this endpoint can't be used to probe which order numbers are real.
   if (error || !order) {
-    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Order not found. Please check your order number and phone." },
+      { status: 404 }
+    );
   }
 
   // Verify identity: match phone against the guest phone or the linked

@@ -76,7 +76,17 @@ function InternalAnnouncementBar() {
   );
 }
 
-function MobileMenu({ open, onClose, topOffset }: { open: boolean; onClose: () => void; topOffset: number }) {
+function MobileMenu({
+  open,
+  onClose,
+  topOffset,
+  onSearch,
+}: {
+  open: boolean;
+  onClose: () => void;
+  topOffset: number;
+  onSearch: () => void;
+}) {
   const online = useOnline();
   const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
 
@@ -117,6 +127,17 @@ function MobileMenu({ open, onClose, topOffset }: { open: boolean; onClose: () =
       <div className="px-margin-mobile py-6 flex flex-col gap-6">
         <div>
           <p className="font-label-lg text-label-lg text-brand-primary font-semibold uppercase tracking-wider mb-1 px-3">Shop</p>
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              onSearch();
+            }}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg font-body-md text-body-md text-text-primary hover:bg-surface-secondary transition-colors"
+          >
+            <span className="material-symbols-outlined text-[20px] text-text-secondary">search</span>
+            Search
+          </button>
           <MenuLink href="/" label="Home" icon="home" />
           <MenuLink href="/products" label="Shop All" icon="storefront" />
           {categories.map((c) => (
@@ -343,7 +364,12 @@ export default function SiteShell({
             </header>
             </div>
 
-            <MobileMenu open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} topOffset={headerHeight} />
+            <MobileMenu
+              open={mobileMenuOpen}
+              onClose={() => setMobileMenuOpen(false)}
+              topOffset={headerHeight}
+              onSearch={() => setSearchOpen(true)}
+            />
             <SearchTakeover open={searchOpen} onClose={() => setSearchOpen(false)} />
             {!mobileMenuOpen && <MobileSubNav />}
             <CartStickyBar />

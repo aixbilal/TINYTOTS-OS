@@ -9,7 +9,20 @@ import Link from "next/link";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, subtotal, appliedCoupon, appliedVoucher, total } = useCart();
+  const { items, updateQuantity, removeItem, subtotal, appliedCoupon, appliedVoucher, total, cartHydrated } = useCart();
+
+  // Wait for the persisted cart to be read before deciding it's empty —
+  // otherwise a refresh flashes the empty state for a frame (FUNC-01).
+  if (!cartHydrated) {
+    return (
+      <main className="max-w-2xl mx-auto py-stack-lg text-center px-margin-mobile">
+        <span className="material-symbols-outlined text-[48px] text-text-secondary animate-pulse">
+          shopping_bag
+        </span>
+        <p className="font-body-md text-body-md text-text-secondary mt-4">Loading your cart…</p>
+      </main>
+    );
+  }
 
   if (items.length === 0) {
     return (

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context";
 import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
 
 const BENEFITS = [
@@ -15,6 +16,13 @@ const BENEFITS = [
 
 export default function LoginPage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
+
+  // Already signed in? Don't show the sign-in form — send them to their account.
+  // OAuth returns through /auth/callback (not here), so this can't loop.
+  useEffect(() => {
+    if (!loading && user) router.replace("/account");
+  }, [user, loading, router]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
