@@ -66,13 +66,28 @@ export async function rateLimit(
 }
 
 export function clientIp(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first;
-  }
+  // On Vercel, `x-real-ip` and `x-vercel-forwarded-for` are set by the platform
+  // edge to the real TCP peer and cannot be spoofed by the caller. The left-most
+  // entry of `x-forwarded-for` IS caller-appendable (Vercel appends the real IP
+  // to the right), so trusting it would let an attacker rotate a fake IP to
+  // bypass every per-IP limit. Only fall back to `x-forwarded-for` for local /
+  // non-Vercel dev, and take its last hop (closest trusted proxy) rather than
+  // the first.
   const realIp = req.headers.get("x-real-ip")?.trim();
   if (realIp) return realIp;
+
+  const vercelForwarded = req.headers
+    .get("x-vercel-forwarded-for")
+    ?.split(",")[0]
+    ?.trim();
+  if (vercelForwarded) return vercelForwarded;
+
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const hops = forwarded.split(",").map((s) => s.trim()).filter(Boolean);
+    if (hops.length) return hops[hops.length - 1];
+  }
+
   return "unknown";
 }
 

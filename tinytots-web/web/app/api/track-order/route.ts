@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
+import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 // GET /api/track-order?order_number=ORD-123&phone=03001234567
 // Guests have no auth session, so we verify identity by matching
@@ -16,30 +17,35 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // This endpoint is unauthenticated and returns order details on a
+  // (order_number + phone) match. Rate limit both by caller IP (general
+  // scraping) and by order_number (brute-forcing one order's phone).
+  const ipLimited = await rateLimit(`track-order-ip:${clientIp(request)}`, {
+    limit: 15,
+    windowMs: 60_000,
+  });
+  if (!ipLimited.ok) return rateLimitResponse(ipLimited.retryAfterSec);
+
+  const orderLimited = await rateLimit(`track-order-num:${orderNumber}`, {
+    limit: 8,
+    windowMs: 10 * 60_000,
+  });
+  if (!orderLimited.ok) return rateLimitResponse(orderLimited.retryAfterSec);
+
   const phoneDigits = phone.replace(/[\s-]/g, "");
 
   const { data: order, error } = await supabase
     .from("orders")
     .select(
       `
-      id,
       order_number,
       status,
-      guest_name,
       guest_phone,
-      shipping_address,
-      shipping_city,
       payment_method,
-      cod_tier,
       cod_token_amount,
       cod_token_paid,
-      subtotal,
-      delivery_fee,
-      discount_total,
       total,
       created_at,
-      updated_at,
-      customer_id,
       customers ( phone ),
       order_items (
         id,
@@ -61,8 +67,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
-  // Match phone against either the guest phone or the linked customer's phone
-  const registeredPhone = order.guest_phone ?? (order.customers as any)?.phone;
+  // Verify identity: match phone against the guest phone or the linked
+  // customer's phone. `guest_phone` / `customers.phone` are used here only
+  // for verification and are NOT included in the response.
+  const linkedCustomer = order.customers as unknown as { phone: string | null } | null;
+  const registeredPhone = order.guest_phone ?? linkedCustomer?.phone;
   if (!registeredPhone || registeredPhone.replace(/[\s-]/g, "") !== phoneDigits) {
     return NextResponse.json(
       { error: "Order not found. Please check your order number and phone." },
@@ -70,5 +79,44 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({ data: order }, { status: 200 });
+  type TrackOrderItem = {
+    id: number;
+    quantity: number;
+    unit_price: number;
+    line_total: number;
+    variants: {
+      size: string | null;
+      color: string | null;
+      products: { name: string } | null;
+    } | null;
+  };
+
+  // Minimal payload — only what the Track Order UI renders. No address, no
+  // phone/email, no internal financial breakdown.
+  const safe = {
+    order_number: order.order_number,
+    status: order.status,
+    created_at: order.created_at,
+    total: order.total,
+    payment_method: order.payment_method,
+    cod_token_amount: order.cod_token_amount,
+    cod_token_paid: order.cod_token_paid,
+    order_items: ((order.order_items ?? []) as unknown as TrackOrderItem[]).map((item) => ({
+      id: item.id,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      line_total: item.line_total,
+      variants: item.variants
+        ? {
+            size: item.variants.size,
+            color: item.variants.color,
+            products: item.variants.products
+              ? { name: item.variants.products.name }
+              : null,
+          }
+        : null,
+    })),
+  };
+
+  return NextResponse.json({ data: safe }, { status: 200 });
 }

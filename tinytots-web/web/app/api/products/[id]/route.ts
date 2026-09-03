@@ -4,7 +4,7 @@ import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
 import { normalizeSignageProductBadge } from "@/lib/signage-campaign";
-import { normalizeQuillHtml } from "@/lib/html-text";
+import { sanitizeContentHtml } from "@/lib/sanitize";
 
 // GET /api/products/[id]
 // Returns one product with all its variants.
@@ -106,7 +106,8 @@ export async function PUT(
       updates.category = category;
     }
     if (typeof updates.description === "string" && updates.description !== "") {
-      updates.description = normalizeQuillHtml(updates.description);
+      // Sanitize on write (matches the storefront read-path sanitizer).
+      updates.description = sanitizeContentHtml(updates.description);
     }
     if (Array.isArray(body.related_product_ids)) {
       updates.related_product_ids = body.related_product_ids

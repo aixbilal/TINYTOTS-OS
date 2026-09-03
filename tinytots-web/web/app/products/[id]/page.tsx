@@ -7,6 +7,7 @@ import { getRelatedProductsForPdp } from "@/lib/related-products";
 import { getShopMoreCategories } from "@/lib/shop-more-categories";
 import { htmlToPlainText } from "@/lib/html-text";
 import { sanitizeContentHtml } from "@/lib/sanitize";
+import { jsonLdScriptString } from "@/lib/json-ld";
 import { absoluteUrl } from "@/lib/site-url";
 import Link from "next/link";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
@@ -218,7 +219,7 @@ export default async function ProductDetailPage({
     <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScriptString(productJsonLd) }}
       />
       <nav className="text-body-sm font-body-sm text-text-secondary mb-stack-sm flex items-center gap-2">
         <Link href="/" className="hover:text-brand-primary transition-colors">Home</Link>

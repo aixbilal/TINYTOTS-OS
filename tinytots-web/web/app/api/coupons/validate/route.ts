@@ -1,6 +1,7 @@
 import { apiErrorResponse } from "@/lib/api-error";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 /**
  * POST /api/coupons/validate — public storefront helper.
@@ -8,6 +9,13 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
  * Does not expose usage counts, max uses, or other internal coupon fields.
  */
 export async function POST(req: NextRequest) {
+  // Throttle automated coupon-code guessing / enumeration.
+  const limited = await rateLimit(`coupon-validate:${clientIp(req)}`, {
+    limit: 15,
+    windowMs: 60_000,
+  });
+  if (!limited.ok) return rateLimitResponse(limited.retryAfterSec);
+
   try {
     const { code, subtotal } = await req.json();
 

@@ -3,7 +3,7 @@ import { apiErrorResponse } from "@/lib/api-error";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdmin } from "@/lib/require-admin";
-import { normalizeQuillHtml } from "@/lib/html-text";
+import { sanitizeContentHtml } from "@/lib/sanitize";
 
 // Without this, Next.js can cache this route's data fetch, so newly
 // uploaded images, price changes, and stock updates from the admin panel
@@ -132,10 +132,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Sanitize on write (not just on read) so stored product HTML is always
+    // safe regardless of which surface later renders it. sanitizeContentHtml
+    // also normalizes Quill markup, so this replaces the old normalize-only step.
     const cleanDescription =
       description == null || description === ""
         ? description
-        : normalizeQuillHtml(String(description));
+        : sanitizeContentHtml(String(description));
 
     const { data: product, error: productError } = await supabaseAdmin
       .from("products")

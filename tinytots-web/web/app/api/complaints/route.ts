@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { isValidPakPhoneServer, PAK_PHONE_ERROR } from "@/lib/validate-phone";
+import { isValidPakPhoneServer, normalizePakPhone, PAK_PHONE_ERROR } from "@/lib/validate-phone";
 import { Agent, setGlobalDispatcher } from "undici";
 
 setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
@@ -95,15 +95,58 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // If an order_id is given, confirm it actually exists (avoid orphaned/fake references)
+    // order_item_ids are only meaningful in the context of a referenced order.
+    const rawItemIds = Array.isArray(order_item_ids)
+      ? order_item_ids.map((v: unknown) => Number(v)).filter((v: number) => Number.isInteger(v) && v > 0)
+      : [];
+    let safeOrderItemIds: number[] = [];
+
     if (order_id) {
+      // Confirm the order exists AND that the reporter is entitled to it —
+      // an authenticated caller must own it; a guest must present the phone
+      // the order was placed with. Never let a caller attach a complaint to
+      // an arbitrary order id.
       const { data: order } = await supabaseAdmin
         .from("orders")
-        .select("id")
+        .select("id, customer_id, guest_phone")
         .eq("id", order_id)
-        .single();
+        .maybeSingle();
       if (!order) {
         return NextResponse.json({ error: "Order not found." }, { status: 400 });
+      }
+
+      if (customerId) {
+        if (order.customer_id !== customerId) {
+          return NextResponse.json(
+            { error: "This order is not associated with your account." },
+            { status: 403 }
+          );
+        }
+      } else {
+        const reporterPhone = normalizePakPhone(reporter_phone);
+        const orderPhone = normalizePakPhone(order.guest_phone);
+        if (!reporterPhone || !orderPhone || reporterPhone !== orderPhone) {
+          return NextResponse.json(
+            { error: "The phone number provided does not match this order." },
+            { status: 403 }
+          );
+        }
+      }
+
+      // Every submitted order_item_id must belong to this order.
+      if (rawItemIds.length > 0) {
+        const { data: itemRows } = await supabaseAdmin
+          .from("order_items")
+          .select("id")
+          .eq("order_id", order_id);
+        const allowed = new Set((itemRows ?? []).map((r) => r.id));
+        if (rawItemIds.some((id) => !allowed.has(id))) {
+          return NextResponse.json(
+            { error: "One or more selected items do not belong to this order." },
+            { status: 400 }
+          );
+        }
+        safeOrderItemIds = rawItemIds;
       }
     }
 
@@ -116,7 +159,7 @@ export async function POST(req: NextRequest) {
         reporter_phone: customerId ? null : reporter_phone?.trim() || null,
         type: type || "other",
         message: message.trim(),
-        order_item_ids: Array.isArray(order_item_ids) ? order_item_ids : [],
+        order_item_ids: safeOrderItemIds,
         photo_url: photo_url || null,
         preferred_refund_method: type === "return" ? preferred_refund_method || null : null,
       })

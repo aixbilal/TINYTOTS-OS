@@ -10,6 +10,65 @@ function hasSupabaseAuthCookie(request: NextRequest): boolean {
   });
 }
 
+function addNoIndex(res: NextResponse): NextResponse {
+  res.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return res;
+}
+
+/**
+ * Server-side gate for the /admin/* pages. This is defense-in-depth and a
+ * crawler hint — `requireAdmin` on every /api/admin/* route remains the
+ * authoritative authorization boundary. Anonymous or non-admin visitors are
+ * redirected to /admin/login instead of being served the panel shell, and all
+ * /admin responses carry X-Robots-Tag: noindex.
+ */
+async function guardAdmin(request: NextRequest): Promise<NextResponse> {
+  const loginUrl = request.nextUrl.clone();
+  loginUrl.pathname = "/admin/login";
+  loginUrl.search = "";
+  const toLogin = () => addNoIndex(NextResponse.redirect(loginUrl));
+
+  const pathname = request.nextUrl.pathname;
+  if (pathname === "/admin/login" || pathname.startsWith("/admin/login/")) {
+    return addNoIndex(NextResponse.next({ request }));
+  }
+
+  if (!hasSupabaseAuthCookie(request)) return toLogin();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll() {
+          /* read-only: no cookie propagation needed for a gate decision */
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return toLogin();
+
+  const { data: adminRow, error } = await supabase
+    .from("admin_users")
+    .select("is_active")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  // Fail closed on a definitive "not an active admin"; fail open on a transient
+  // read error so a DB blip can't lock out a real admin (client guard + API
+  // requireAdmin still protect all data).
+  if (!error && (!adminRow || adminRow.is_active !== true)) return toLogin();
+
+  return addNoIndex(NextResponse.next({ request }));
+}
+
 /**
  * Phone is a required profile field (self-attested). Any signed-in customer
  * without customers.phone is sent to /account/add-phone — for email and Google.
@@ -17,6 +76,13 @@ function hasSupabaseAuthCookie(request: NextRequest): boolean {
  * Auth sessions must live in cookies (@supabase/ssr) for this to see them.
  */
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // Admin pages: server-gated + noindex (see guardAdmin).
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return guardAdmin(request);
+  }
+
   // Anonymous visitors: no JWT refresh / getUser — critical for homepage LCP/TTFB.
   if (!hasSupabaseAuthCookie(request)) {
     return NextResponse.next({ request });
@@ -53,8 +119,6 @@ export async function middleware(request: NextRequest) {
   if (!user) {
     return response;
   }
-
-  const pathname = request.nextUrl.pathname;
 
   // Always refresh the session on these paths, but never force the phone gate.
   const phoneGateExempt =
