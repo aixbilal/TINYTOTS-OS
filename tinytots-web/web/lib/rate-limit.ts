@@ -73,6 +73,12 @@ export function clientIp(req: Request): string {
   // bypass every per-IP limit. Only fall back to `x-forwarded-for` for local /
   // non-Vercel dev, and take its last hop (closest trusted proxy) rather than
   // the first.
+  // On Cloudflare, `cf-connecting-ip` is set by the edge to the real TCP peer
+  // and cannot be spoofed by the caller — same trust level as `x-real-ip` on
+  // Vercel. Checked first so per-IP limits are correct on Workers.
+  const cfIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp;
+
   const realIp = req.headers.get("x-real-ip")?.trim();
   if (realIp) return realIp;
 

@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { can, ROLE_PERMISSIONS } from "@/lib/admin-permissions";
-import { Agent, setGlobalDispatcher } from "undici";
+import { forceIpv4Outbound } from "@/lib/force-ipv4";
 
 // Same IPv4 fix as supabase-admin.ts — ensures it's applied even if this
 // file's supabaseAuth client is constructed before supabase-admin.ts runs.
-setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
+// No-op on Cloudflare Workers. See lib/force-ipv4.ts.
+void forceIpv4Outbound();
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;

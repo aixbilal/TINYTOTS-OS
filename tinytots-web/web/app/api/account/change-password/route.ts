@@ -3,9 +3,9 @@ import { apiErrorResponse } from "@/lib/api-error";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { validatePassword } from "@/lib/validate-password";
-import { Agent, setGlobalDispatcher } from "undici";
+import { forceIpv4Outbound } from "@/lib/force-ipv4";
 
-setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
+void forceIpv4Outbound();
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;

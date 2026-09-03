@@ -4,9 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import { getSettingNumber, getSetting } from "@/lib/settings";
 import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
-import { Agent, setGlobalDispatcher } from "undici";
+import { forceIpv4Outbound } from "@/lib/force-ipv4";
 
-setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
+void forceIpv4Outbound();
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;

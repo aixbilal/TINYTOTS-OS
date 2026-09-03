@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tinytots",
+  "main": ".open-next/worker.js",
+  // 2026-08-04+ turns on modern Node.js compatibility behaviour by default
+  // (per current Workers docs); nodejs_compat + global_fetch_strictly_public
+  // are the two flags @opennextjs/cloudflare requires.
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "tinytots"
+    }
+  ],
+  // App uses a custom Supabase image loader and never hits /_next/image in
+  // production, so this binding is unused today — kept per OpenNext guidance
+  // so image optimization has a backend if the loader is ever removed.
+  "images": {
+    "binding": "IMAGES"
+  }
+}

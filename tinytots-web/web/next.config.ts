@@ -43,6 +43,15 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   // X-Powered-By: Next.js leaks the framework/version — no upside.
   poweredByHeader: false,
+  turbopack: {
+    resolveAlias: {
+      // @serwist/turbopack statically references `import("esbuild-wasm")` as a
+      // fallback to native esbuild. We use `useNativeEsbuild: true`, so that
+      // branch is dead code — alias it to a throwing stub so the Cloudflare/
+      // OpenNext esbuild pass doesn't fail resolving an uninstalled package.
+      "esbuild-wasm": "./cloudflare-shims/esbuild-wasm-stub.js",
+    },
+  },
   // Do NOT mark isomorphic-dompurify/jsdom as serverExternalPackages —
   // on Vercel that triggers externalRequire → ERR_REQUIRE_ESM via
   // html-encoding-sniffer/@exodus/bytes. Server HTML is sanitized with
