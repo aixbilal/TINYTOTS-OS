@@ -12,9 +12,9 @@ import { isValidPakPhone, PAK_PHONE_ERROR } from "@/lib/validate-phone";
 const MAX_LEN = { name: 80, phone: 20, email: 100, password: 72 };
 
 const HIGHLIGHTS = [
-  "Made with love & care",
-  "Thoughtfully made materials",
-  "Designed for comfort",
+  "Chosen with love & care",
+  "Comfortable, everyday fabrics",
+  "Curated for comfort",
   "Trusted by families across Pakistan",
 ];
 
@@ -242,7 +242,7 @@ export default function SignupPage() {
 
         <div className="hidden md:flex flex-col justify-center gap-6 bg-brand-primary/[0.05] border-t md:border-t-0 md:border-l border-border-default p-8 min-w-0">
           <h2 className="font-display-md text-[26px] text-text-primary leading-snug">
-            Timeless styles, thoughtfully made for little hearts.
+            Timeless styles, thoughtfully chosen for little hearts.
           </h2>
           <ul className="flex flex-col gap-3">
             {HIGHLIGHTS.map((h) => (

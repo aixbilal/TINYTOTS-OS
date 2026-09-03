@@ -54,9 +54,9 @@
     "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block";
 
   const siteUrl = getSiteUrl();
-  const defaultTitle = "TinyTots | Premium Kids Clothing";
+  const defaultTitle = "TinyTots | Kids Clothing in Pakistan";
   const defaultDescription =
-    "Thoughtfully made, modern essentials for every stage of your child's early journey. Soft, durable kids clothing with free delivery and easy 7-day returns.";
+    "Curated children's clothing from TinyTots — local and imported pieces with Cash on Delivery and easy 7-day returns. Free shipping across Pakistan; remote areas may have a delivery fee.";
 
   export const metadata: Metadata = {
     metadataBase: new URL(siteUrl),

@@ -49,7 +49,7 @@ type ShopContent = {
 export const DEFAULT_SHOP_CONTENT: ShopContent = {
   hero_eyebrow: "Shop All",
   hero_headline: "Timeless styles for little hearts.",
-  hero_subtext: "Discover thoughtfully made pieces for every moment, every season, every little adventure.",
+  hero_subtext: "Discover comfortable, well-chosen pieces for every moment, every season, every little adventure.",
   hero_image_url: "",
   hero_image_url_mobile: "",
 };

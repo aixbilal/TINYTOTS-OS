@@ -23,9 +23,9 @@ export const preferredRegion = ["sin1", "bom1", "hnd1"];
 // Heavy client islands — code-split so framer-motion / supabase realtime stay off the critical path.
 const TestimonialsCarousel = dynamic(() => import("@/components/TestimonialsCarousel"));
 
-const HOME_TITLE = "TinyTots | Premium Kids Clothing";
+const HOME_TITLE = "TinyTots | Kids Clothing in Pakistan";
 const HOME_DESCRIPTION =
-  "Ethically crafted, modern essentials for every stage of your child's early journey. Soft, durable kids clothing with free delivery and easy 7-day returns.";
+  "Shop curated local and imported children's clothing from TinyTots, with Cash on Delivery and easy 7-day returns. Free shipping across Pakistan; remote areas may have a delivery fee.";
 
 const PRODUCT_SELECT = `
   id,
@@ -104,7 +104,7 @@ async function getProductsForSection(
 
 const DEFAULT_TRUST_ITEMS = [
   { icon: "payments", label: "Cash on Delivery Available" },
-  { icon: "local_shipping", label: "Free Delivery on All Orders" },
+  { icon: "local_shipping", label: "Free Delivery Across Pakistan" },
   { icon: "replay", label: "Easy 7-Day Returns" },
 ];
 
@@ -116,7 +116,7 @@ const HOMEPAGE_DEFAULTS = {
   hero_image_url_mobile: "",
   hero_video_url: "",
   hero_headline: "Playful Designs for Little Pioneers",
-  hero_subtext: "Ethically crafted, modern essentials for every stage of your child's early journey.",
+  hero_subtext: "Curated, comfortable everyday clothing for every stage of your child's early years.",
   hero_button_text: "Shop New Arrivals",
   hero_button_link: "#trending",
   trending_heading: "Loved by little ones",
@@ -142,13 +142,13 @@ const HOMEPAGE_DEFAULTS = {
   editorial_eyebrow: "Made With Heart",
   editorial_headline: "Designed with love. Made for childhood.",
   editorial_body:
-    "Every piece is crafted from premium natural fabrics with gentle details and timeless silhouettes - made to be worn, loved, and passed down.",
+    "A curated mix of local and imported pieces, chosen for comfort, gentle details and timeless style - made to be worn, loved, and passed down.",
   editorial_image_url: "/images/homepage/editorial-story-01.webp",
   editorial_cta_text: "Our Story",
   editorial_cta_link: "/our-story",
   lifestyle_1_eyebrow: "Rooted In Quality",
   lifestyle_1_headline: "Beautiful pieces for real life.",
-  lifestyle_1_body: "We believe in slow fashion, lasting quality, and the little details that make a big difference.",
+  lifestyle_1_body: "We believe in lasting quality and the little details that make a big difference.",
   lifestyle_1_image_url: "/images/homepage/lifestyle-support.webp",
   lifestyle_1_cta_text: "Learn More",
   lifestyle_1_cta_link: "/our-story",
@@ -164,9 +164,9 @@ const HOMEPAGE_DEFAULTS = {
   closing_cta_button_text: "Shop the Collection",
   closing_cta_button_link: "/products",
   usp_items: [
-    { icon: "eco", title: "Ethically Sourced", description: "Every piece is made with responsibly sourced, child-safe materials." },
-    { icon: "verified", title: "Certified Safe", description: "Fabrics tested and certified for sensitive skin." },
-    { icon: "shield", title: "Built to Last", description: "Reinforced seams and stitching made for real play." },
+    { icon: "eco", title: "Curated Selection", description: "Local and imported kidswear, chosen piece by piece." },
+    { icon: "verified", title: "Comfort First", description: "Soft, everyday fabrics chosen with little ones in mind." },
+    { icon: "shield", title: "Built for Play", description: "Sturdy everyday pieces for real, active kids." },
     { icon: "local_shipping", title: "Easy Returns", description: "7-day hassle-free returns on every order." },
   ],
 };

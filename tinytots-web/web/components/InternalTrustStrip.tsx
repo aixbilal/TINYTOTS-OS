@@ -7,8 +7,8 @@ export default function InternalTrustStrip() {
   const items = [
     {
       icon: "eco",
-      title: "Premium Quality",
-      body: "Thoughtfully made",
+      title: "Quality Checked",
+      body: "Every piece, before it ships",
     },
     {
       icon: "local_shipping",

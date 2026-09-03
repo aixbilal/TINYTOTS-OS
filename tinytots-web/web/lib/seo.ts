@@ -102,26 +102,46 @@ export const orgId = () => `${getSiteUrl()}/#organization`;
 export const websiteId = () => `${getSiteUrl()}/#website`;
 
 /**
- * Factual one-sentence description of the TinyTots entity, derived from the
- * existing Our Story copy + the site-wide trust strip / payment facts. No
- * unverified claims (no "premium", "#1", "award", "ethical").
+ * Factual description of the TinyTots entity, derived only from existing
+ * approved content: Our Story ("family-run … based in Toba Tek Singh …
+ * curated mix … local … imported"), the payment facts (COD active), and the
+ * shipping policy INCLUDING its remote-area exception. No unverified claims
+ * (no "premium", "#1", "award", "ethical", "manufactured"). An answer engine
+ * must not be able to infer that every remote address always ships free.
  */
 export const ORG_DESCRIPTION =
-  "TinyTots is a family-run children's clothing retailer based in Toba Tek Singh, Pakistan, offering a curated range of local and imported kidswear with Cash on Delivery and free delivery across Pakistan.";
+  "TinyTots is a family-run children's clothing retailer based in Toba Tek Singh, Pakistan, offering a curated range of local and imported kidswear with Cash on Delivery and shipping across Pakistan. Free shipping is available across Pakistan; remote areas may have a shipping fee depending on the area.";
+
+/** Only absolute http/https URLs belong in Organization.sameAs — never a bare
+ *  handle, relative path, javascript: URL or empty string. */
+function validSameAs(urls: string[] | undefined): string[] {
+  return (urls ?? [])
+    .map((u) => (typeof u === "string" ? u.trim() : ""))
+    .filter((u) => {
+      try {
+        const p = new URL(u).protocol;
+        return p === "http:" || p === "https:";
+      } catch {
+        return false;
+      }
+    });
+}
 
 export interface OrgProfile {
-  /** Verified official profile URLs from app_settings (store_facebook/…). */
+  /** Configured official profile URLs from app_settings (store_facebook/…). */
   sameAs?: string[];
   /** Configured public support phone (app_settings.store_phone). */
   telephone?: string | null;
-  /** Canonical public support email. */
+  /** Configured public support email (app_settings.store_email, if set). */
   email?: string | null;
 }
 
 export function organizationJsonLd(profile: OrgProfile = {}) {
   const site = getSiteUrl();
-  const sameAs = (profile.sameAs ?? []).filter(Boolean);
-  const hasContact = Boolean(profile.telephone || profile.email);
+  const sameAs = validSameAs(profile.sameAs);
+  const telephone = profile.telephone?.trim() || "";
+  const email = profile.email?.trim() || "";
+  const hasContact = Boolean(telephone || email);
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -133,13 +153,14 @@ export function organizationJsonLd(profile: OrgProfile = {}) {
     ...(sameAs.length ? { sameAs } : {}),
     ...(hasContact
       ? {
+          // Only real, publicly-listed contact data — no availableLanguage
+          // claim (the business content doesn't establish supported languages).
           contactPoint: {
             "@type": "ContactPoint",
             contactType: "customer support",
-            ...(profile.telephone ? { telephone: profile.telephone } : {}),
-            ...(profile.email ? { email: profile.email } : {}),
+            ...(telephone ? { telephone } : {}),
+            ...(email ? { email } : {}),
             areaServed: "PK",
-            availableLanguage: ["en", "ur"],
           },
         }
       : {}),

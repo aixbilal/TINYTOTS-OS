@@ -23,17 +23,17 @@ const DEFAULTS = {
   hero_subtext:
     "TinyTots began with a simple belief - childhood is beautiful, and what they wear should be too.",
   body_paragraph_1:
-    "We create thoughtfully designed clothing that's soft, comfortable, and made to be cherished today, handed down tomorrow, and remembered always.",
+    "We bring together a curated selection of children's clothing that's soft, comfortable, and made to be cherished today, handed down tomorrow, and remembered always.",
   section2_eyebrow: "From The Beginning",
   section2_headline: "Built on love, inspired by little moments.",
   section2_body:
-    "Founded in 2024, TinyTots was created for modern families who value quality, simplicity, and meaning in the everyday. From the fabrics we choose to the details we design, everything we do is guided by care.",
+    "A new, family-run business for modern families who value quality, simplicity, and meaning in the everyday. From the brands we choose to the way every order is packed, everything we do is guided by care.",
   section2_image_url: "",
   section2_signature: "With love, The TinyTots Team",
   pillars: [
-    { icon: "eco", title: "Thoughtful Quality", body: "We use premium, breathable fabrics that are gentle on delicate skin and made to last." },
-    { icon: "favorite", title: "Made with Care", body: "Every piece is designed with love and attention to every little detail." },
-    { icon: "spa", title: "Timeless Style", body: "Classic, neutral designs that never go out of style and can be cherished for years." },
+    { icon: "eco", title: "Thoughtful Selection", body: "Comfortable, breathable everyday fabrics, chosen to be soft and to last." },
+    { icon: "favorite", title: "Packed with Care", body: "Every order is checked and packed with care and attention to detail." },
+    { icon: "spa", title: "Timeless Style", body: "Classic, neutral styles that never go out of fashion and can be cherished for years." },
     { icon: "diversity_3", title: "For Every Family", body: "Inclusive sizing, flexible essentials, and pieces that fit beautifully into real family life." },
   ],
   section4_eyebrow: "More Than Clothes",
