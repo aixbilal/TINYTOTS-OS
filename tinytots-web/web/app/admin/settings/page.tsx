@@ -5,7 +5,7 @@ import { adminFetch } from "@/lib/admin-fetch";
 import { metaFor, isAbsoluteHttpUrl, SETTINGS_SECTIONS } from "@/lib/admin-settings-meta";
 import { AdminPageHeader, AdminCard, AdminButton } from "@/components/admin/ui";
 
-type Setting = { key: string; value: string; description: string | null; updated_at: string };
+type Setting = { key: string; value: string; description: string | null; updated_at: string | null };
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Setting[]>([]);
@@ -186,7 +186,9 @@ export default function SettingsPage() {
                     </div>
 
                     <p className="mt-2 font-label-md text-[11px] text-text-secondary">
-                      Last updated {new Date(setting.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      {setting.updated_at
+                        ? `Last updated ${new Date(setting.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`
+                        : "Not set yet"}
                     </p>
                   </div>
                 );

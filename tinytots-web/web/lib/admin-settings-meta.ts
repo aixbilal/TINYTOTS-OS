@@ -15,6 +15,7 @@ export interface SettingMeta {
 
 export const SETTINGS_SECTIONS = [
   "Rewards & discounts",
+  "Online pricing",
   "Store operations",
   "Store profile",
   "Social profiles",
@@ -51,6 +52,23 @@ export const SETTINGS_META: Record<string, SettingMeta> = {
     section: "Rewards & discounts",
     type: "percent",
     help: "Cap on coupon + referral discount combined. Vouchers are excluded from this cap.",
+  },
+  default_web_markup_percent: {
+    label: "Default website markup (%)",
+    section: "Online pricing",
+    type: "number",
+    help: "Added to the physical-shop price to set the website price, for any variant whose website price is not manually locked. Changing this re-prices unlocked variants the next time each one is saved.",
+    placeholder: "25",
+  },
+  web_round_to: {
+    label: "Round website prices to",
+    section: "Online pricing",
+    type: "select",
+    help: "Website prices are rounded up to the nearest of this amount. A variant can still override this individually.",
+    options: [
+      { value: "50", label: "Nearest Rs. 50" },
+      { value: "100", label: "Nearest Rs. 100" },
+    ],
   },
   cod_city_mode: {
     label: "Cash on Delivery coverage",
