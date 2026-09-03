@@ -42,10 +42,22 @@ export async function PATCH(req: NextRequest) {
 
     const { key, value } = parsed.data;
 
-    if (key.includes("amount") || key.includes("days")) {
+    if (key.includes("amount") || key.includes("days") || key.includes("percent")) {
       if (!Number.isFinite(Number(value)) || Number(value) < 0) {
         return NextResponse.json(
           { error: `${key} must be a non-negative number` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Social profile URLs feed Organization.sameAs — only accept absolute
+    // http/https URLs so a bare handle can never end up in structured data.
+    if (key === "store_facebook" || key === "store_instagram" || key === "store_tiktok") {
+      const trimmed = value.trim();
+      if (trimmed !== "" && !/^https?:\/\/[^\s]+$/i.test(trimmed)) {
+        return NextResponse.json(
+          { error: `${key} must be a full URL starting with https://` },
           { status: 400 }
         );
       }

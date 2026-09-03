@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth-context";
 import { can } from "@/lib/admin-permissions";
@@ -47,12 +47,82 @@ function getRequiredPermission(pathname: string) {
   return match?.permission;
 }
 
+// --- Grouped navigation -----------------------------------------------------
+// Route + permission pairs are unchanged from the flat list; only the visual
+// grouping is new. `perm: null` = visible to any active team member.
+type NavItem = { href: string; label: string; icon: string; perm: Parameters<typeof can>[1] | null };
+type NavGroup = { label: string | null; items: NavItem[] };
+
+const NAV_GROUPS: NavGroup[] = [
+  { label: null, items: [{ href: "/admin", label: "Dashboard", icon: "dashboard", perm: null }] },
+  {
+    label: "Operations",
+    items: [
+      { href: "/admin/orders", label: "Orders", icon: "receipt_long", perm: "canManageOrders" },
+      { href: "/admin/reports", label: "Reports", icon: "bar_chart", perm: "canManageOrders" },
+      { href: "/admin/complaints", label: "Complaints", icon: "support_agent", perm: "canHandleComplaints" },
+    ],
+  },
+  {
+    label: "Catalog",
+    items: [
+      { href: "/admin/products", label: "Products", icon: "inventory_2", perm: "canManageInventory" },
+      { href: "/admin/categories", label: "Categories", icon: "category", perm: "canManageInventory" },
+    ],
+  },
+  {
+    label: "Promotions",
+    items: [
+      { href: "/admin/discounts", label: "Discounts", icon: "percent", perm: "canManageDiscounts" },
+      { href: "/admin/coupons", label: "Coupons", icon: "confirmation_number", perm: "canManageCoupons" },
+      { href: "/admin/referrals", label: "Referrals", icon: "group_add", perm: "canManageReferrals" },
+      { href: "/admin/vouchers", label: "Vouchers", icon: "card_giftcard", perm: "canManageReferrals" },
+    ],
+  },
+  {
+    label: "Content",
+    items: [
+      { href: "/admin/homepage", label: "Homepage", icon: "home", perm: "canManageSettings" },
+      { href: "/admin/blog", label: "Blog", icon: "article", perm: "canManageBlog" },
+      { href: "/admin/blog-content", label: "Blog Page Content", icon: "feed", perm: "canManageBlog" },
+      { href: "/admin/help", label: "Help Center", icon: "help_center", perm: "canManageHelp" },
+      { href: "/admin/help-content", label: "Help Page Content", icon: "quiz", perm: "canManageHelp" },
+      { href: "/admin/about-page", label: "Our Story Page", icon: "auto_stories", perm: "canManagePages" },
+      { href: "/admin/shipping-returns", label: "Shipping & Returns", icon: "local_shipping", perm: "canManagePages" },
+      { href: "/admin/pages", label: "Site Pages", icon: "description", perm: "canManagePages" },
+      { href: "/admin/testimonials", label: "Testimonials", icon: "reviews", perm: "canManageSettings" },
+      { href: "/admin/ugc-posts", label: "Instagram / UGC Feed", icon: "photo_library", perm: "canManageSettings" },
+    ],
+  },
+  {
+    label: "Store experience",
+    items: [
+      { href: "/admin/campaigns", label: "Campaigns", icon: "campaign", perm: "canManageSettings" },
+      { href: "/admin/site-content", label: "Signage Libraries", icon: "collections", perm: "canManageSettings" },
+      { href: "/admin/shipping-cities", label: "Delivery Cities", icon: "pin_drop", perm: "canManageSettings" },
+    ],
+  },
+  {
+    label: "Administration",
+    items: [
+      { href: "/admin/team", label: "Team", icon: "groups", perm: "canManageTeam" },
+      { href: "/admin/settings", label: "Settings", icon: "settings", perm: "canManageSettings" },
+    ],
+  },
+  { label: "Account", items: [{ href: "/admin/account", label: "My Account", icon: "person", perm: null }] },
+];
+
 function AdminShell({ children }: { children: React.ReactNode }) {
   const { admin, loading, signOut } = useAdminAuth();
   const pathname = usePathname();
   const router = useRouter();
   const isLoginPage = pathname === "/admin/login";
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!loading && !admin && !isLoginPage) {
@@ -78,12 +148,20 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     };
   }, [loading, admin, isLoginPage, router, signOut]);
 
+  const visibleGroups = useMemo(() => {
+    if (!admin) return [];
+    return NAV_GROUPS.map((g) => ({
+      ...g,
+      items: g.items.filter((it) => it.perm === null || can(admin.role, it.perm)),
+    })).filter((g) => g.items.length > 0);
+  }, [admin]);
+
   if (isLoginPage) return <>{children}</>;
 
   if (loading) {
     return (
-      <main className="p-8 font-body-md text-body-md text-text-secondary">
-        Checking admin access...
+      <main className="grid min-h-screen place-items-center bg-surface-canvas p-8">
+        <p className="font-body-sm text-body-sm text-text-secondary">Checking admin access…</p>
       </main>
     );
   }
@@ -96,104 +174,114 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const requiredPermission = getRequiredPermission(pathname || "");
   const accessDenied = requiredPermission && !can(admin.role, requiredPermission);
 
-  const navItem = (href: string, label: string) => {
-    const active = pathname === href || (href !== "/admin" && pathname?.startsWith(href));
+  const NavLink = ({ item }: { item: NavItem }) => {
+    const active = pathname === item.href || (item.href !== "/admin" && pathname?.startsWith(item.href + "/")) ||
+      (item.href !== "/admin" && pathname === item.href);
     return (
       <Link
-        href={href}
-        onClick={() => setSidebarOpen(false)}
-        className={`block px-4 py-2 rounded-lg font-body-sm text-body-sm ${
+        href={item.href}
+        aria-current={active ? "page" : undefined}
+        className={`flex items-center gap-2.5 rounded-md px-3 py-2 font-body-sm text-body-sm transition-colors ${
           active
             ? "bg-brand-primary text-white"
-            : "text-text-secondary hover:bg-surface-secondary"
+            : "text-text-secondary hover:bg-surface-secondary hover:text-text-primary"
         }`}
       >
-        {label}
+        <span className={`material-symbols-outlined text-[19px] ${active ? "text-white" : "text-text-secondary"}`} aria-hidden>
+          {item.icon}
+        </span>
+        <span className="truncate">{item.label}</span>
       </Link>
     );
   };
 
+  const sidebarContent = (
+    <>
+      <div className="flex items-center justify-between px-3 pb-3 pt-1">
+        <span className="font-headline-md text-headline-md font-semibold text-text-primary">
+          TinyTots <span className="text-brand-primary">Admin</span>
+        </span>
+        <button
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close menu"
+          className="lg:hidden rounded-md p-1 text-text-secondary hover:bg-surface-secondary"
+        >
+          <span className="material-symbols-outlined text-[22px]" aria-hidden>close</span>
+        </button>
+      </div>
+      <nav className="flex-1 space-y-4 overflow-y-auto px-1 pb-2">
+        {visibleGroups.map((g, gi) => (
+          <div key={gi}>
+            {g.label && (
+              <p className="px-3 pb-1 font-label-md text-[11px] font-semibold uppercase tracking-wider text-text-secondary/70">
+                {g.label}
+              </p>
+            )}
+            <div className="space-y-0.5">
+              {g.items.map((it) => (
+                <NavLink key={it.href} item={it} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+      <div className="mt-2 border-t border-border-default px-3 pt-3">
+        <p className="truncate font-body-sm text-body-sm text-text-primary">{admin.name}</p>
+        <p className="mb-2 font-label-md text-label-md capitalize text-text-secondary">
+          {admin.role.replace("_", " ")}
+        </p>
+        <button
+          onClick={signOut}
+          className="flex w-full items-center gap-2 rounded-md px-3 py-2 font-body-sm text-body-sm text-red-700 hover:bg-red-50"
+        >
+          <span className="material-symbols-outlined text-[19px]" aria-hidden>logout</span>
+          Log out
+        </button>
+      </div>
+    </>
+  );
+
   return (
-    <div className="flex min-h-screen">
-      {/* Mobile top bar with hamburger trigger */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 border-b border-border-default bg-surface-elevated">
+    <div className="min-h-screen bg-surface-canvas lg:flex">
+      {/* Mobile / tablet top bar (< lg) */}
+      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border-default bg-surface-elevated px-4 py-2.5 lg:hidden">
         <button
           onClick={() => setSidebarOpen(true)}
-          aria-label="Open admin menu"
-          className="p-2 -ml-2 rounded-lg hover:bg-surface-secondary"
+          aria-label="Open menu"
+          aria-expanded={sidebarOpen}
+          className="rounded-md p-1.5 text-text-primary hover:bg-surface-secondary"
         >
-          <span className="material-symbols-outlined text-[24px] text-text-primary">menu</span>
+          <span className="material-symbols-outlined text-[24px]" aria-hidden>menu</span>
         </button>
-        <span className="font-display-sm text-display-sm text-brand-primary">TinyTots Admin</span>
-        <div className="w-8" />
-      </div>
+        <span className="font-headline-md text-headline-md font-semibold text-text-primary">
+          TinyTots <span className="text-brand-primary">Admin</span>
+        </span>
+      </header>
 
-      {/* Backdrop, mobile only, while drawer is open */}
+      {/* Drawer backdrop (< lg) */}
       {sidebarOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black/40 z-40"
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          aria-hidden
         />
       )}
 
+      {/* Sidebar: off-canvas drawer < lg, persistent >= lg */}
       <aside
-        className={`w-64 shrink-0 border-r border-border-default bg-surface-elevated p-4 flex flex-col gap-1 overflow-y-auto
-          fixed inset-y-0 left-0 z-50 transition-transform duration-200
-          md:static md:translate-x-0 md:z-auto
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-[264px] flex-col border-r border-border-default bg-surface-elevated py-3 transition-transform duration-200 ease-out
+          lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >
-        <div className="flex items-center justify-between mb-4 px-2">
-          <span className="font-display-sm text-display-sm text-brand-primary">TinyTots Admin</span>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close admin menu"
-            className="md:hidden p-1 rounded-lg hover:bg-surface-secondary"
-          >
-            <span className="material-symbols-outlined text-[22px] text-text-secondary">close</span>
-          </button>
-        </div>
-        {navItem("/admin", "Dashboard")}
-        {can(admin.role, "canManageInventory") && navItem("/admin/products", "Products")}
-        {can(admin.role, "canManageInventory") && navItem("/admin/categories", "Categories")}
-        {can(admin.role, "canManageOrders") && navItem("/admin/orders", "Orders")}
-        {can(admin.role, "canManageOrders") && navItem("/admin/reports", "Reports")}
-        {can(admin.role, "canManageDiscounts") && navItem("/admin/discounts", "Discounts")}
-        {can(admin.role, "canManageCoupons") && navItem("/admin/coupons", "Coupons")}
-        {can(admin.role, "canManageReferrals") && navItem("/admin/referrals", "Referrals")}
-        {can(admin.role, "canManageReferrals") && navItem("/admin/vouchers", "Vouchers")}
-        {can(admin.role, "canHandleComplaints") && navItem("/admin/complaints", "Complaints")}
-        {can(admin.role, "canManageBlog") && navItem("/admin/blog", "Blog")}
-        {can(admin.role, "canManageBlog") && navItem("/admin/blog-content", "Blog Page Content")}
-        {navItem("/admin/account", "My Account")}
-        {can(admin.role, "canManageTeam") && navItem("/admin/team", "Team")}
-        {can(admin.role, "canManageSettings") && navItem("/admin/homepage", "Homepage")}
-        {can(admin.role, "canManageSettings") && navItem("/admin/campaigns", "Campaigns")}
-        {can(admin.role, "canManageSettings") && navItem("/admin/site-content", "Signage Libraries")}
-        {can(admin.role, "canManageSettings") && navItem("/admin/testimonials", "Testimonials")}
-        {can(admin.role, "canManageSettings") && navItem("/admin/ugc-posts", "Instagram / UGC Feed")}
-        {can(admin.role, "canManageSettings") && navItem("/admin/shipping-cities", "Delivery Cities")}
-        {can(admin.role, "canManageSettings") && navItem("/admin/settings", "Settings")}
-        {can(admin.role, "canManageHelp") && navItem("/admin/help", "Help Center")}
-        {can(admin.role, "canManageHelp") && navItem("/admin/help-content", "Help Page Content")}
-        {can(admin.role, "canManagePages") && navItem("/admin/about-page", "Our Story Page")}
-        {can(admin.role, "canManagePages") && navItem("/admin/shipping-returns", "Shipping & Returns")}
-        {can(admin.role, "canManagePages") && navItem("/admin/pages", "Site Pages")}
-        <div className="mt-auto pt-4 border-t border-border-default">
-          <p className="font-body-sm text-body-sm text-text-primary px-2 mb-1">{admin.name}</p>
-          <p className="font-label-md text-label-md text-text-secondary px-2 mb-3 capitalize">{admin.role.replace("_", " ")}</p>
-          <button
-            onClick={signOut}
-            className="w-full text-left px-4 py-2 rounded-lg font-body-sm text-body-sm text-red-700 hover:bg-surface-secondary"
-          >
-            Log out
-          </button>
-        </div>
+        {sidebarContent}
       </aside>
-      <main className="flex-1 p-4 md:p-8 pt-16 md:pt-8 min-w-0">
+
+      {/* Main content region */}
+      <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
         {accessDenied ? (
-          <div className="max-w-md">
-            <h1 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h1>
-            <p className="text-sm text-gray-500">
+          <div className="mx-auto max-w-md rounded-lg border border-border-default bg-surface-elevated p-6">
+            <h1 className="font-headline-lg text-headline-lg font-semibold text-text-primary">Access denied</h1>
+            <p className="mt-2 font-body-sm text-body-sm text-text-secondary">
               Your role ({admin.role.replace("_", " ")}) doesn&apos;t have permission to view this page.
               If you believe this is a mistake, ask an admin to update your role.
             </p>

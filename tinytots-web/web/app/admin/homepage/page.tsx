@@ -229,6 +229,25 @@ function normalizeHomepageContent(c: Partial<HomepageContent> & Record<string, u
   };
 }
 
+// Section jump targets for the sticky editor toolbar. The order + numbering
+// match the numbered <SectionCard title="N. …"> blocks below 1:1.
+const HP_SECTIONS: { n: number; label: string }[] = [
+  { n: 1, label: "Hero" },
+  { n: 2, label: "Announcement" },
+  { n: 3, label: "Trending" },
+  { n: 4, label: "Editorial" },
+  { n: 5, label: "Girls card" },
+  { n: 6, label: "Boys card" },
+  { n: 7, label: "New Arrivals" },
+  { n: 8, label: "Campaign banner" },
+  { n: 9, label: "Lifestyle 1" },
+  { n: 10, label: "Lifestyle 2" },
+  { n: 11, label: "Trust items" },
+  { n: 12, label: "Testimonials" },
+  { n: 13, label: "Closing CTA" },
+  { n: 14, label: "UGC feed" },
+];
+
 function SectionCard({
   title,
   hint,
@@ -238,12 +257,16 @@ function SectionCard({
   hint?: ReactNode;
   children: ReactNode;
 }) {
+  const num = title.trim().match(/^(\d+)/)?.[1];
   return (
-    <div className="border border-gray-200 rounded-lg p-5 bg-white">
-      <h2 className="text-base font-semibold text-gray-900 mb-1">{title}</h2>
-      {hint && <p className="text-sm text-gray-500 mb-4">{hint}</p>}
+    <section
+      id={num ? `hp-sec-${num}` : undefined}
+      className="scroll-mt-28 rounded-lg border border-border-default bg-surface-elevated p-5"
+    >
+      <h2 className="mb-1 font-headline-md text-headline-md font-semibold text-text-primary">{title}</h2>
+      {hint && <p className="mb-4 font-body-sm text-body-sm text-text-secondary">{hint}</p>}
       <div className={hint ? "" : "mt-4"}>{children}</div>
-    </div>
+    </section>
   );
 }
 
@@ -402,6 +425,7 @@ export default function AdminHomepagePage() {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [snapshot, setSnapshot] = useState<string>("");
 
   useEffect(() => {
     (async () => {
@@ -409,7 +433,9 @@ export default function AdminHomepagePage() {
         const res = await adminFetch("/api/admin/homepage");
         const data = await res.json();
         if (res.ok) {
-          setContent(normalizeHomepageContent(data.content || {}));
+          const normalized = normalizeHomepageContent(data.content || {});
+          setContent(normalized);
+          setSnapshot(JSON.stringify(normalized));
           setProducts(data.products || []);
           setCategories(data.categories || []);
         } else {
@@ -422,6 +448,19 @@ export default function AdminHomepagePage() {
       }
     })();
   }, []);
+
+  const dirty = content != null && JSON.stringify(content) !== snapshot;
+
+  // Standard unsaved-changes guard.
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
 
   function updateField<K extends keyof HomepageContent>(key: K, value: HomepageContent[K]) {
     setContent((prev) => (prev ? { ...prev, [key]: value } : prev));
@@ -448,7 +487,9 @@ export default function AdminHomepagePage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setContent(normalizeHomepageContent(data.content || {}));
+        const normalized = normalizeHomepageContent(data.content || {});
+        setContent(normalized);
+        setSnapshot(JSON.stringify(normalized));
         setSavedAt(Date.now());
       } else {
         setErrorMsg(data.error || "Failed to save changes");
@@ -460,31 +501,65 @@ export default function AdminHomepagePage() {
     }
   }
 
-  if (loading) return <div className="p-6 text-sm text-gray-500">Loading homepage content...</div>;
-  if (!content) return <div className="p-6 text-sm text-red-600">{errorMsg || "Could not load homepage content."}</div>;
+  if (loading) return <p className="font-body-sm text-body-sm text-text-secondary">Loading homepage content…</p>;
+  if (!content)
+    return (
+      <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 font-body-sm text-body-sm text-red-800">
+        {errorMsg || "Could not load homepage content."}
+      </p>
+    );
+
+  const status = saving ? "Saving…" : dirty ? "Unsaved changes" : savedAt ? "All changes saved" : "";
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Homepage Editor</h1>
-          <p className="text-sm text-gray-500">
-            Each block below maps 1:1 to the live homepage. Heading + product picks for Trending grid and
-            the perspective carousel are separate.
-          </p>
+    <div className="mx-auto max-w-4xl pb-16">
+      {/* Sticky editor toolbar: title, section jump-links, global save + state */}
+      <div className="sticky top-0 z-20 -mx-4 mb-6 border-b border-border-default bg-surface-canvas/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="font-headline-lg text-[22px] font-semibold text-text-primary sm:text-[26px]">
+            Homepage editor
+          </h1>
+          <div className="flex items-center gap-3">
+            {status && (
+              <span
+                className={`font-label-md text-label-md ${
+                  dirty && !saving ? "text-amber-700" : "text-text-secondary"
+                }`}
+              >
+                {status}
+              </span>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={saving || !dirty}
+              className="shrink-0 rounded-md bg-brand-primary px-4 py-2 font-body-sm text-body-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          </div>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="shrink-0 text-sm font-medium px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-60"
-        >
-          {saving ? "Saving..." : "Save Changes"}
-        </button>
+        <nav className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+          {HP_SECTIONS.map((s) => (
+            <a
+              key={s.n}
+              href={`#hp-sec-${s.n}`}
+              className="shrink-0 rounded-full border border-border-default bg-surface-elevated px-3 py-1 font-label-md text-label-md text-text-secondary hover:border-brand-primary hover:text-text-primary"
+            >
+              {s.n}. {s.label}
+            </a>
+          ))}
+        </nav>
       </div>
 
-      {errorMsg && <p className="text-sm text-red-700 bg-red-50 px-3 py-2 rounded-md mb-4">{errorMsg}</p>}
-      {savedAt && !errorMsg && (
-        <p className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md mb-4">Saved.</p>
+      {errorMsg && (
+        <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 font-body-sm text-body-sm text-red-800">
+          {errorMsg}
+        </p>
+      )}
+      {savedAt && !errorMsg && !dirty && (
+        <p className="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 font-body-sm text-body-sm text-green-800">
+          Saved.
+        </p>
       )}
 
       <div className="flex flex-col gap-6">

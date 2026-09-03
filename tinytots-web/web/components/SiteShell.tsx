@@ -326,6 +326,11 @@ export default function SiteShell({
   }, [announcement]);
   const pathname = usePathname();
   const isSignage = pathname?.startsWith("/signage");
+  // The Admin back office ships its own application shell (header, sidebar,
+  // auth provider) in app/admin/layout.tsx — it must never render inside the
+  // customer storefront chrome (announcement bar, storefront header, cart /
+  // wishlist, marketing footer, newsletter, UGC feed).
+  const isAdmin = pathname === "/admin" || pathname?.startsWith("/admin/");
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -333,6 +338,10 @@ export default function SiteShell({
 
   if (isSignage) {
     return <div className="min-h-screen overflow-hidden">{children}</div>;
+  }
+
+  if (isAdmin) {
+    return <div className="min-h-screen bg-surface-canvas">{children}</div>;
   }
 
   return (

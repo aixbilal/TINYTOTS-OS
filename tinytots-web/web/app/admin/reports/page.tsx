@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
+import { formatPkr } from "@/lib/admin-format";
+import { AdminPageHeader, AdminCard, AdminTableWrap, AdminTh, AdminTd } from "@/components/admin/ui";
 
 interface ReportData {
   sales: {
@@ -16,16 +18,8 @@ interface ReportData {
     totalDiscountGiven: number;
     breakdown: { code: string; uses: number; discountGiven: number }[];
   };
-  vouchers: {
-    issued: number;
-    used: number;
-    redeemedInOrders: number;
-    bySource: Record<string, number>;
-  };
-  referrals: {
-    created: number;
-    rewarded: number;
-  };
+  vouchers: { issued: number; used: number; redeemedInOrders: number; bySource: Record<string, number> };
+  referrals: { created: number; rewarded: number };
   products: {
     topSellers: { product_id: number; name: string; quantity: number; revenue: number; webMarkupProfit: number }[];
     totalWebMarkupProfit: number;
@@ -38,19 +32,25 @@ function getPresetDates(preset: PresetRange): { start: string; end: string } {
   const now = new Date();
   const end = new Date(now);
   end.setHours(23, 59, 59, 999);
-
-  let start = new Date(now);
-  if (preset === "today") {
-    start.setHours(0, 0, 0, 0);
-  } else if (preset === "week") {
+  const start = new Date(now);
+  if (preset === "today") start.setHours(0, 0, 0, 0);
+  else if (preset === "week") {
     start.setDate(start.getDate() - 7);
     start.setHours(0, 0, 0, 0);
   } else if (preset === "month") {
     start.setDate(1);
     start.setHours(0, 0, 0, 0);
   }
-
   return { start: start.toISOString(), end: end.toISOString() };
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border-default bg-surface-elevated p-4">
+      <p className="font-label-md text-[11px] font-semibold uppercase tracking-wider text-text-secondary">{label}</p>
+      <p className="mt-1 font-headline-lg text-[22px] font-semibold text-text-primary">{value}</p>
+    </div>
+  );
 }
 
 export default function AdminReportsPage() {
@@ -63,7 +63,6 @@ export default function AdminReportsPage() {
 
   const fetchReport = useCallback(async () => {
     let start: string, end: string;
-
     if (preset === "custom") {
       if (!customStart || !customEnd) return;
       start = new Date(customStart).toISOString();
@@ -73,19 +72,14 @@ export default function AdminReportsPage() {
       start = dates.start;
       end = dates.end;
     }
-
     try {
       setLoading(true);
       setErrorMsg("");
       const res = await adminFetch(`/api/admin/reports?start=${start}&end=${end}`);
       const json = await res.json();
-      if (res.ok) {
-        setData(json);
-      } else {
-        setErrorMsg(json.error || "Failed to load report");
-      }
-    } catch (err) {
-      console.error("Failed to load report", err);
+      if (res.ok) setData(json);
+      else setErrorMsg(json.error || "Failed to load report");
+    } catch {
       setErrorMsg("Failed to load report");
     } finally {
       setLoading(false);
@@ -96,38 +90,24 @@ export default function AdminReportsPage() {
     fetchReport();
   }, [fetchReport]);
 
-  const StatCard = ({ label, value }: { label: string; value: string }) => (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-      <p className="text-xs text-gray-400 uppercase mb-1">{label}</p>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-    </div>
-  );
+  const chip = (active: boolean) =>
+    `rounded-full px-3.5 py-1.5 font-label-md text-label-md font-medium transition-colors ${
+      active
+        ? "bg-brand-primary text-white"
+        : "border border-border-default bg-surface-elevated text-text-secondary hover:bg-surface-secondary"
+    }`;
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-        <p className="text-sm text-gray-500">Sales, promotions, and product performance</p>
-      </div>
+    <div className="mx-auto max-w-6xl">
+      <AdminPageHeader title="Reports" description="Sales, promotions and product performance. Cancelled orders are excluded." />
 
-      <div className="flex flex-wrap items-center gap-2 mb-6">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         {(["today", "week", "month"] as const).map((p) => (
-          <button
-            key={p}
-            onClick={() => setPreset(p)}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-              preset === p ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {p === "today" ? "Today" : p === "week" ? "Last 7 Days" : "This Month"}
+          <button key={p} onClick={() => setPreset(p)} className={chip(preset === p)}>
+            {p === "today" ? "Today" : p === "week" ? "Last 7 days" : "This month"}
           </button>
         ))}
-        <button
-          onClick={() => setPreset("custom")}
-          className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-            preset === "custom" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          }`}
-        >
+        <button onClick={() => setPreset("custom")} className={chip(preset === "custom")}>
           Custom
         </button>
         {preset === "custom" && (
@@ -136,141 +116,129 @@ export default function AdminReportsPage() {
               type="date"
               value={customStart}
               onChange={(e) => setCustomStart(e.target.value)}
-              className="border border-gray-300 rounded-md px-2 py-1.5 text-xs"
+              className="rounded-md border border-border-default px-2 py-1.5 font-label-md text-label-md"
             />
-            <span className="text-xs text-gray-400">to</span>
+            <span className="font-label-md text-label-md text-text-secondary">to</span>
             <input
               type="date"
               value={customEnd}
               onChange={(e) => setCustomEnd(e.target.value)}
-              className="border border-gray-300 rounded-md px-2 py-1.5 text-xs"
+              className="rounded-md border border-border-default px-2 py-1.5 font-label-md text-label-md"
             />
           </>
         )}
       </div>
 
       {errorMsg && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded">{errorMsg}</div>
+        <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 font-body-sm text-body-sm text-red-800">{errorMsg}</p>
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500">Loading report...</div>
+        <p className="py-12 text-center font-body-sm text-body-sm text-text-secondary">Loading report…</p>
       ) : data ? (
         <div className="flex flex-col gap-8">
-          {/* Sales overview */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Sales Overview</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <StatCard label="Revenue" value={`Rs. ${data.sales.revenue.toLocaleString()}`} />
-              <StatCard label="Orders" value={data.sales.orderCount.toString()} />
-              <StatCard label="Avg Order Value" value={`Rs. ${Math.round(data.sales.avgOrderValue).toLocaleString()}`} />
-              <StatCard label="Discounts Given" value={`Rs. ${data.sales.totalDiscountGiven.toLocaleString()}`} />
-              <StatCard
-                label="Web Markup Profit"
-                value={`Rs. ${data.products.totalWebMarkupProfit.toLocaleString()}`}
-              />
+            <h2 className="mb-3 font-headline-md text-headline-md font-semibold text-text-primary">Sales overview</h2>
+            <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+              <Stat label="Revenue" value={formatPkr(data.sales.revenue)} />
+              <Stat label="Orders" value={String(data.sales.orderCount)} />
+              <Stat label="Avg order value" value={formatPkr(Math.round(data.sales.avgOrderValue))} />
+              <Stat label="Discounts given" value={formatPkr(data.sales.totalDiscountGiven)} />
+              <Stat label="Web markup profit" value={formatPkr(data.products.totalWebMarkupProfit)} />
             </div>
-            <p className="text-xs text-gray-400 mb-4 -mt-2">
-              Web Markup Profit is extra margin earned from selling online at a higher price than in-store (POS),
-              on top of normal cost-price profit.
+            <p className="mb-3 font-label-md text-label-md text-text-secondary">
+              Web Markup Profit is the extra margin from selling online above the in-store (POS) price, on top of
+              normal cost-price profit.
             </p>
             {data.sales.dailyBreakdown.length > 0 && (
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                <table className="w-full text-left text-sm text-gray-600">
-                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-                    <tr>
-                      <th className="px-4 py-2">Date</th>
-                      <th className="px-4 py-2">Orders</th>
-                      <th className="px-4 py-2">Revenue</th>
+              <AdminTableWrap>
+                <thead>
+                  <tr>
+                    <AdminTh>Date</AdminTh>
+                    <AdminTh className="text-right">Orders</AdminTh>
+                    <AdminTh className="text-right">Revenue</AdminTh>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.sales.dailyBreakdown.map((d) => (
+                    <tr key={d.day}>
+                      <AdminTd>{d.day}</AdminTd>
+                      <AdminTd className="text-right tabular-nums">{d.count}</AdminTd>
+                      <AdminTd className="text-right tabular-nums">{formatPkr(d.revenue)}</AdminTd>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {data.sales.dailyBreakdown.map((d) => (
-                      <tr key={d.day}>
-                        <td className="px-4 py-2">{d.day}</td>
-                        <td className="px-4 py-2">{d.count}</td>
-                        <td className="px-4 py-2">Rs. {d.revenue.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </AdminTableWrap>
             )}
           </section>
 
-          {/* Coupons */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Coupon Performance</h2>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <StatCard label="Total Uses" value={data.coupons.totalUses.toString()} />
-              <StatCard label="Discount Given" value={`Rs. ${data.coupons.totalDiscountGiven.toLocaleString()}`} />
+            <h2 className="mb-3 font-headline-md text-headline-md font-semibold text-text-primary">Coupon performance</h2>
+            <div className="mb-3 grid grid-cols-2 gap-3">
+              <Stat label="Total uses" value={String(data.coupons.totalUses)} />
+              <Stat label="Discount given" value={formatPkr(data.coupons.totalDiscountGiven)} />
             </div>
             {data.coupons.breakdown.length > 0 ? (
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                <table className="w-full text-left text-sm text-gray-600">
-                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-                    <tr>
-                      <th className="px-4 py-2">Code</th>
-                      <th className="px-4 py-2">Uses</th>
-                      <th className="px-4 py-2">Discount Given</th>
+              <AdminTableWrap>
+                <thead>
+                  <tr>
+                    <AdminTh>Code</AdminTh>
+                    <AdminTh className="text-right">Uses</AdminTh>
+                    <AdminTh className="text-right">Discount given</AdminTh>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.coupons.breakdown.map((c) => (
+                    <tr key={c.code}>
+                      <AdminTd className="font-mono font-semibold text-brand-primary">{c.code}</AdminTd>
+                      <AdminTd className="text-right tabular-nums">{c.uses}</AdminTd>
+                      <AdminTd className="text-right tabular-nums">{formatPkr(c.discountGiven)}</AdminTd>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {data.coupons.breakdown.map((c) => (
-                      <tr key={c.code}>
-                        <td className="px-4 py-2 font-mono font-bold text-indigo-600">{c.code}</td>
-                        <td className="px-4 py-2">{c.uses}</td>
-                        <td className="px-4 py-2">Rs. {c.discountGiven.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </AdminTableWrap>
             ) : (
-              <p className="text-sm text-gray-400">No coupons used in this period.</p>
+              <p className="font-body-sm text-body-sm text-text-secondary">No coupons used in this period.</p>
             )}
           </section>
 
-          {/* Vouchers & Referrals */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Vouchers & Referrals</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard label="Vouchers Issued" value={data.vouchers.issued.toString()} />
-              <StatCard label="Vouchers Used" value={data.vouchers.used.toString()} />
-              <StatCard label="Referrals Created" value={data.referrals.created.toString()} />
-              <StatCard label="Referrals Rewarded" value={data.referrals.rewarded.toString()} />
+            <h2 className="mb-3 font-headline-md text-headline-md font-semibold text-text-primary">Vouchers &amp; referrals</h2>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <Stat label="Vouchers issued" value={String(data.vouchers.issued)} />
+              <Stat label="Vouchers used" value={String(data.vouchers.used)} />
+              <Stat label="Referrals created" value={String(data.referrals.created)} />
+              <Stat label="Referrals rewarded" value={String(data.referrals.rewarded)} />
             </div>
           </section>
 
-          {/* Top products */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Top Selling Products</h2>
+            <h2 className="mb-3 font-headline-md text-headline-md font-semibold text-text-primary">Top selling products</h2>
             {data.products.topSellers.length > 0 ? (
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                <table className="w-full text-left text-sm text-gray-600">
-                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-                    <tr>
-                      <th className="px-4 py-2">Product</th>
-                      <th className="px-4 py-2">Units Sold</th>
-                      <th className="px-4 py-2">Revenue</th>
+              <AdminTableWrap>
+                <thead>
+                  <tr>
+                    <AdminTh>Product</AdminTh>
+                    <AdminTh className="text-right">Units sold</AdminTh>
+                    <AdminTh className="text-right">Revenue</AdminTh>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.products.topSellers.map((p) => (
+                    <tr key={p.product_id}>
+                      <AdminTd className="font-medium">{p.name}</AdminTd>
+                      <AdminTd className="text-right tabular-nums">{p.quantity}</AdminTd>
+                      <AdminTd className="text-right tabular-nums">{formatPkr(p.revenue)}</AdminTd>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {data.products.topSellers.map((p) => (
-                      <tr key={p.product_id}>
-                        <td className="px-4 py-2">{p.name}</td>
-                        <td className="px-4 py-2">{p.quantity}</td>
-                        <td className="px-4 py-2">Rs. {p.revenue.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </AdminTableWrap>
             ) : (
-              <p className="text-sm text-gray-400">No sales in this period.</p>
+              <AdminCard>
+                <p className="font-body-sm text-body-sm text-text-secondary">No sales in this period.</p>
+              </AdminCard>
             )}
           </section>
-
         </div>
       ) : null}
     </div>

@@ -1,22 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
+import { metaFor, isAbsoluteHttpUrl, SETTINGS_SECTIONS } from "@/lib/admin-settings-meta";
+import { AdminPageHeader, AdminCard, AdminButton } from "@/components/admin/ui";
 
-type Setting = {
-  key: string;
-  value: string;
-  description: string | null;
-  updated_at: string;
-};
-
-const LABELS: Record<string, string> = {
-  signup_voucher_amount: "Signup Voucher Amount (Rs.)",
-  referral_voucher_amount: "Referral Reward Amount (Rs.)",
-  referral_voucher_valid_days: "Referral Voucher Validity (days)",
-  referee_discount_amount: "Referral Code Discount for Referee (Rs.)",
-  max_discount_percent_of_subtotal: "Max Coupon + Referral Discount (% of subtotal)",
-};
+type Setting = { key: string; value: string; description: string | null; updated_at: string };
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Setting[]>([]);
@@ -52,12 +41,30 @@ export default function SettingsPage() {
     }
   }
 
+  function clientError(key: string, value: string): string | null {
+    const meta = metaFor(key);
+    if ((meta.type === "number" || meta.type === "percent") && value !== "") {
+      const n = Number(value);
+      if (!Number.isFinite(n) || n < 0) return "Enter a non-negative number.";
+      if (meta.type === "percent" && n > 100) return "Enter a value between 0 and 100.";
+    }
+    if (meta.type === "url" && value.trim() !== "" && !isAbsoluteHttpUrl(value)) {
+      return "Enter a full URL starting with https://";
+    }
+    return null;
+  }
+
   async function handleSave(key: string) {
+    const value = editValues[key] ?? "";
+    const ce = clientError(key, value);
+    if (ce) {
+      setError(`${metaFor(key).label}: ${ce}`);
+      return;
+    }
     setSavingKey(key);
     setError(null);
     setSuccessKey(null);
     try {
-      const value = editValues[key];
       const res = await adminFetch("/api/admin/settings", {
         method: "PATCH",
         body: JSON.stringify({ key, value }),
@@ -68,7 +75,7 @@ export default function SettingsPage() {
       }
       setSuccessKey(key);
       await loadSettings();
-      setTimeout(() => setSuccessKey(null), 2000);
+      setTimeout(() => setSuccessKey(null), 2500);
     } catch (err: any) {
       setError(err.message || `Failed to update ${key}`);
     } finally {
@@ -76,69 +83,117 @@ export default function SettingsPage() {
     }
   }
 
-  if (loading) {
-    return <div className="p-6 text-text-secondary">Loading settings...</div>;
-  }
+  const grouped = useMemo(() => {
+    const bySection: Record<string, Setting[]> = {};
+    for (const s of settings) {
+      const sec = metaFor(s.key).section;
+      (bySection[sec] ||= []).push(s);
+    }
+    return [...SETTINGS_SECTIONS]
+      .filter((sec) => bySection[sec]?.length)
+      .map((sec) => ({ section: sec, items: bySection[sec] }));
+  }, [settings]);
+
+  if (loading) return <p className="font-body-sm text-body-sm text-text-secondary">Loading settings…</p>;
 
   return (
-    <div className="p-6 max-w-2xl">
-      <h1 className="text-2xl font-semibold text-text-primary mb-1">Settings</h1>
-      <p className="text-text-secondary text-sm mb-6">
-        Control voucher and reward amounts used across the storefront and admin panel.
-      </p>
+    <div className="mx-auto max-w-3xl">
+      <AdminPageHeader
+        title="Settings"
+        description="Reward amounts, delivery coverage, and the store's public contact and social profiles."
+      />
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-700/30 bg-red-700/10 px-4 py-3 text-red-700 text-sm">
+        <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 font-body-sm text-body-sm text-red-800">
           {error}
-        </div>
+        </p>
       )}
 
-      <div className="flex flex-col gap-4">
-        {settings.map((setting) => {
-          const isDirty = editValues[setting.key] !== setting.value;
-          const isSaving = savingKey === setting.key;
-          const justSaved = successKey === setting.key;
+      <div className="space-y-6">
+        {grouped.map(({ section, items }) => (
+          <AdminCard key={section} title={section} padded={false}>
+            <div className="divide-y divide-border-default">
+              {items.map((setting) => {
+                const meta = metaFor(setting.key);
+                const val = editValues[setting.key] ?? "";
+                const isDirty = val !== setting.value;
+                const isSaving = savingKey === setting.key;
+                const justSaved = successKey === setting.key;
+                const fieldId = `set-${setting.key}`;
 
-          return (
-            <div
-              key={setting.key}
-              className="border border-border-default rounded-xl p-4 bg-surface-elevated"
-            >
-              <label className="block text-sm font-medium text-text-primary mb-1">
-                {LABELS[setting.key] ?? setting.key}
-              </label>
-              {setting.description && (
-                <p className="text-xs text-text-secondary mb-3">{setting.description}</p>
-              )}
+                return (
+                  <div key={setting.key} className="p-4 sm:p-5">
+                    <label htmlFor={fieldId} className="block font-body-sm text-body-sm font-medium text-text-primary">
+                      {meta.label}
+                    </label>
+                    {(meta.help || setting.description) && (
+                      <p className="mt-0.5 font-label-md text-label-md text-text-secondary">
+                        {meta.help || setting.description}
+                      </p>
+                    )}
 
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  min={0}
-                  value={editValues[setting.key] ?? ""}
-                  onChange={(e) =>
-                    setEditValues((prev) => ({ ...prev, [setting.key]: e.target.value }))
-                  }
-                  className="w-40 border border-border-default rounded-lg px-3 py-2 bg-surface-elevated text-text-primary text-sm focus:outline-none focus:border-brand-primary"
-                />
-                <button
-                  onClick={() => handleSave(setting.key)}
-                  disabled={!isDirty || isSaving || !editValues[setting.key]}
-                  className="px-4 py-2 rounded-lg bg-brand-primary text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {isSaving ? "Saving..." : "Save"}
-                </button>
-                {justSaved && (
-                  <span className="text-sm text-green-600">Saved</span>
-                )}
-              </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {meta.type === "select" ? (
+                        <select
+                          id={fieldId}
+                          value={val}
+                          onChange={(e) =>
+                            setEditValues((p) => ({ ...p, [setting.key]: e.target.value }))
+                          }
+                          className="rounded-md border border-border-default bg-surface-elevated px-3 py-2 font-body-sm text-body-sm focus:border-brand-primary focus:outline-none"
+                        >
+                          {(meta.options || []).map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          id={fieldId}
+                          type={
+                            meta.type === "number" || meta.type === "percent"
+                              ? "number"
+                              : meta.type === "tel"
+                                ? "tel"
+                                : meta.type === "url"
+                                  ? "url"
+                                  : "text"
+                          }
+                          inputMode={meta.type === "number" || meta.type === "percent" ? "numeric" : undefined}
+                          min={meta.type === "number" || meta.type === "percent" ? 0 : undefined}
+                          max={meta.type === "percent" ? 100 : undefined}
+                          placeholder={meta.placeholder}
+                          value={val}
+                          onChange={(e) =>
+                            setEditValues((p) => ({ ...p, [setting.key]: e.target.value }))
+                          }
+                          className={`rounded-md border border-border-default bg-surface-elevated px-3 py-2 font-body-sm text-body-sm text-text-primary focus:border-brand-primary focus:outline-none ${
+                            meta.type === "url" || meta.type === "text" ? "w-full max-w-md" : "w-44"
+                          }`}
+                        />
+                      )}
+                      <AdminButton
+                        variant="primary"
+                        onClick={() => handleSave(setting.key)}
+                        disabled={!isDirty || isSaving}
+                      >
+                        {isSaving ? "Saving…" : "Save"}
+                      </AdminButton>
+                      {justSaved && (
+                        <span className="font-label-md text-label-md text-green-700">Saved</span>
+                      )}
+                    </div>
 
-              <p className="text-xs text-text-secondary mt-2">
-                Last updated: {new Date(setting.updated_at).toLocaleString()}
-              </p>
+                    <p className="mt-2 font-label-md text-[11px] text-text-secondary">
+                      Last updated {new Date(setting.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </AdminCard>
+        ))}
       </div>
     </div>
   );
