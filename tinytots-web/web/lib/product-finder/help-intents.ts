@@ -42,7 +42,7 @@ const INTENTS: { id: string; patterns: RegExp[]; intent: HelpIntent }[] = [
   },
   {
     id: "size-guide",
-    patterns: [/\bsize(s|ing)?\b/, /\bmeasurement/, /which size/, /fit(s|ting)?\b/, /how big/],
+    patterns: [/\bsize(s|ing)?\b/, /\bmeasurement/, /which size/, /\bfit(s|ting)?\b/, /how big/],
     intent: {
       id: "size-guide",
       answer: "Our size guide has age-based measurements for every category to help you pick the right fit.",

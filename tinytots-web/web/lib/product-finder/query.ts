@@ -29,10 +29,18 @@ export type FinderResult = {
 
 const MAX_RESULTS = 6;
 
+// Common synonyms a model or a shopper may use for the three finder genders.
+const GENDER_ALIASES: Record<string, FinderGender> = {
+  boys: "boy", male: "boy", man: "boy", men: "boy",
+  girls: "girl", female: "girl", woman: "girl", women: "girl",
+  "boys and girls": "unisex", "girls and boys": "unisex",
+};
+
 export function validateGender(v: unknown): FinderGender | undefined {
-  return typeof v === "string" && (FINDER_GENDERS as readonly string[]).includes(v.toLowerCase())
-    ? (v.toLowerCase() as FinderGender)
-    : undefined;
+  if (typeof v !== "string") return undefined;
+  const s = v.trim().toLowerCase();
+  if ((FINDER_GENDERS as readonly string[]).includes(s)) return s as FinderGender;
+  return GENDER_ALIASES[s];
 }
 
 export function validateAgeBracket(v: unknown): AgeBracket | undefined {
