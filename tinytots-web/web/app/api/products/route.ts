@@ -147,6 +147,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (productError) {
+      // Duplicate SKU (unique violation) — a normal operator mistake, not a
+      // server fault. Give a plain message instead of a raw Postgres error.
+      if (productError.code === "23505") {
+        return NextResponse.json(
+          { error: `A product with SKU "${sku}" already exists. Use a different SKU.` },
+          { status: 409 }
+        );
+      }
       return apiErrorResponse(productError, 500, "products");
     }
 
@@ -169,6 +177,12 @@ export async function POST(request: NextRequest) {
 
     if (variantError) {
       await supabaseAdmin.from("products").delete().eq("id", product.id);
+      if (variantError.code === "23505") {
+        return NextResponse.json(
+          { error: "One of the generated variant SKUs collides with an existing variant. Use a different product SKU." },
+          { status: 409 }
+        );
+      }
       return apiErrorResponse(variantError, 500, "products");
     }
 
