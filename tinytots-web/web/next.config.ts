@@ -18,7 +18,7 @@ const CSP_REPORT_ONLY = [
   // 'unsafe-inline' is required for Next.js' inline bootstrap + JSON-LD; no 'unsafe-eval'.
   "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.googletagmanager.com https://connect.facebook.net",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  `img-src 'self' data: blob: ${SUPABASE_ORIGIN} https://lh3.googleusercontent.com https://www.facebook.com https://www.google-analytics.com`,
+  `img-src 'self' data: blob: ${SUPABASE_ORIGIN} https://www.facebook.com https://www.google-analytics.com`,
   "font-src 'self' https://fonts.gstatic.com",
   `connect-src 'self' ${SUPABASE_ORIGIN} wss://vldjscskhsrrzdhhvcht.supabase.co https://*.upstash.io https://vitals.vercel-insights.com https://va.vercel-scripts.com https://www.google-analytics.com https://*.analytics.google.com https://region1.google-analytics.com https://connect.facebook.net https://www.facebook.com`,
   "frame-src 'self' https://www.facebook.com",
@@ -48,6 +48,12 @@ const nextConfig: NextConfig = {
   // html-encoding-sniffer/@exodus/bytes. Server HTML is sanitized with
   // sanitize-html (lib/sanitize.ts) instead.
   images: {
+    // Custom width-aware loader (lib/supabase-image-loader.ts) rewrites
+    // Supabase object URLs to Supabase's render/image CDN with ?width=.
+    // Vercel's /_next/image optimizer is intentionally bypassed (it 500/504'd
+    // on cold requests for these images). remotePatterns is retained as
+    // documentation of the one trusted remote host; the custom loader does
+    // not enforce it.
     loader: "custom",
     loaderFile: "./lib/supabase-image-loader.ts",
     formats: ["image/avif", "image/webp"],
@@ -56,12 +62,7 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "vldjscskhsrrzdhhvcht.supabase.co",
-        pathname: "/storage/v1/object/public/**",
-      },
-      {
-        protocol: "https",
-        hostname: "lh3.googleusercontent.com",
-        pathname: "/**",
+        pathname: "/storage/v1/**",
       },
     ],
   },

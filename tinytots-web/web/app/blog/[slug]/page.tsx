@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { htmlToPlainText } from "@/lib/html-text";
 import { sanitizeContentHtml } from "@/lib/sanitize";
-import { absoluteUrl } from "@/lib/site-url";
+import { absoluteUrl, getSiteUrl } from "@/lib/site-url";
+import { jsonLdScriptString } from "@/lib/json-ld";
+import { pageMetadata, breadcrumbJsonLd, SITE_NAME } from "@/lib/seo";
 import BlogSubscribeForm from "@/components/BlogSubscribeForm";
 
 // Static-generate known blog post slugs at build time, ISR-revalidate every
@@ -54,30 +56,18 @@ export async function generateMetadata({
     return { title: "Blog" };
   }
 
+  const title = String(post.title || "").trim();
   const description =
-    htmlToPlainText(post.content || "", 155) || `${post.title} — TinyTots Blog`;
-  const title = post.title;
-  const url = absoluteUrl(`/blog/${slug}`);
-  const image = post.featured_image_url || undefined;
+    htmlToPlainText(post.content || "", 155) || `${title} — TinyTots Blog`;
 
-  return {
+  return pageMetadata({
     title,
     description,
-    alternates: { canonical: url },
-    openGraph: {
-      type: "article",
-      title,
-      description,
-      url,
-      images: image ? [{ url: image, alt: title }] : undefined,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: image ? [image] : undefined,
-    },
-  };
+    path: `/blog/${slug}`,
+    ogType: "article",
+    image: post.featured_image_url || null,
+    imageAlt: title,
+  });
 }
 
 function readingTimeMinutes(html: string): number {
@@ -95,13 +85,40 @@ export default async function BlogPostPage({
 
   const { data: post } = await supabaseAdmin
     .from("blog_posts")
-    .select("id, title, author, content, featured_image_url, category, published_at, is_published")
+    .select(
+      "id, title, author, content, featured_image_url, category, published_at, is_published"
+    )
     .eq("slug", slug)
     .single();
 
   if (!post || !post.is_published) {
     notFound();
   }
+
+  const canonical = absoluteUrl(`/blog/${slug}`);
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: String(post.title || "").trim(),
+    description: htmlToPlainText(post.content || "", 200) || undefined,
+    image: post.featured_image_url ? [post.featured_image_url] : undefined,
+    datePublished: post.published_at || undefined,
+    mainEntityOfPage: canonical,
+    url: canonical,
+    author: post.author
+      ? { "@type": "Person", name: String(post.author).trim() }
+      : { "@type": "Organization", name: SITE_NAME },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      logo: { "@type": "ImageObject", url: `${getSiteUrl()}/icon.png` },
+    },
+  };
+  const breadcrumbLd = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Blog", path: "/blog" },
+    { name: String(post.title || "").trim(), path: `/blog/${slug}` },
+  ]);
 
   const { data: relatedRaw } = await supabaseAdmin
     .from("blog_posts")
@@ -126,6 +143,14 @@ export default async function BlogPostPage({
 
   return (
     <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdScriptString(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdScriptString(breadcrumbLd) }}
+      />
       <nav className="font-label-md text-label-md text-text-secondary mb-stack-sm flex items-center gap-1.5 flex-wrap">
         <Link href="/" className="hover:text-brand-primary">Home</Link>
         <span>›</span>

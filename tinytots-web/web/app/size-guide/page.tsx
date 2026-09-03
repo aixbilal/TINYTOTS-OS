@@ -1,9 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 import JumpToSectionSelect from "@/components/JumpToSectionSelect";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Size Guide" };
+export const metadata = pageMetadata({
+  title: "Size Guide",
+  description:
+    "TinyTots kids size guide — age, height and weight charts for baby and children's clothing and shoes, plus fit tips to help you choose the right size.",
+  path: "/size-guide",
+});
 
 const AGE_SIZES = [
   { age: "0–3 Months", height: "50–61 cm", weight: "3–6 kg", label: "NB / 0-3M" },

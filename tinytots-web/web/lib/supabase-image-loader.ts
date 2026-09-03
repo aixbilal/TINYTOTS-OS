@@ -1,22 +1,35 @@
 type LoaderProps = { src: string; width: number; quality?: number };
 
+const SUPABASE_PUBLIC_OBJECT = "/storage/v1/object/public/";
+const SUPABASE_RENDER_IMAGE = "/storage/v1/render/image/public/";
+
 /**
- * Supabase Storage images were round-tripping through Vercel's /_next/image
- * optimizer on every cold request - that re-encode step is what was 500/504ing
- * (Goal A blocker #1). Supabase's own CDN already serves these fast, so we
- * bypass the optimizer entirely for supabase.co URLs and return them as-is.
+ * Width-aware image loader.
  *
- * Everything else (local /public assets, Google-hosted defaults) is ALSO
- * returned as-is now, not routed through /_next/image. That route doesn't
- * exist once images.loader is set to "custom" in next.config.ts - this is
- * documented Next.js behavior, not something a URL parameter can opt back
- * into. The previous version of this file built a /_next/image?url=...
- * link for non-Supabase sources, which 404'd on every single request
- * (confirmed via direct curl - real files on disk, real 200 when fetched
- * directly, 404 only through that dead route). Local images added to this
- * project are pre-optimized (resized + webp) before being committed, so
- * serving them unoptimized-by-Next has no meaningful cost.
+ * Supabase Storage public-object URLs are rewritten to Supabase's own image
+ * transformation CDN (`render/image/public/…?width=&quality=`), so every
+ * srcset candidate Next generates is a real width-specific, re-encoded file.
+ * A 240KB source drops to ~30KB at width=200 — the responsive win PERF-01
+ * was missing.
+ *
+ * We deliberately do NOT route through Vercel's `/_next/image` optimizer:
+ * that re-encode step 500/504'd on cold requests for these Supabase images
+ * in production (the reason a custom loader exists at all). Supabase's CDN
+ * already fronts these files and does the resize at the edge.
+ *
+ * Everything else — local `/images/*` assets (pre-optimized WebP, committed
+ * at their display size) and any other host — is returned unchanged.
  */
-export default function supabaseImageLoader({ src }: LoaderProps) {
+export default function supabaseImageLoader({ src, width, quality }: LoaderProps): string {
+  if (src.includes(SUPABASE_PUBLIC_OBJECT)) {
+    try {
+      const url = new URL(src.replace(SUPABASE_PUBLIC_OBJECT, SUPABASE_RENDER_IMAGE));
+      url.searchParams.set("width", String(width));
+      url.searchParams.set("quality", String(quality ?? 75));
+      return url.toString();
+    } catch {
+      return src;
+    }
+  }
   return src;
 }

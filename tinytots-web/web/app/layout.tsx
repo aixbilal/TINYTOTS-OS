@@ -9,6 +9,7 @@
   import IconFontGuard from "@/components/IconFontGuard";
   import { cn } from "@/lib/utils";
   import { getSiteUrl } from "@/lib/site-url";
+  import { OG_DEFAULT_IMAGE, OG_LOCALE, SITE_NAME } from "@/lib/seo";
   import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 
   // swap: on slow networks, optional never applies the webfont and layout looks broken.
@@ -83,16 +84,18 @@
     },
     openGraph: {
       type: "website",
-      locale: "en_PK",
-      siteName: "TinyTots",
+      locale: OG_LOCALE,
+      siteName: SITE_NAME,
       title: defaultTitle,
       description: defaultDescription,
       url: siteUrl,
+      images: [{ url: OG_DEFAULT_IMAGE, width: 1200, height: 630, alt: SITE_NAME }],
     },
     twitter: {
       card: "summary_large_image",
       title: defaultTitle,
       description: defaultDescription,
+      images: [OG_DEFAULT_IMAGE],
     },
   };
 

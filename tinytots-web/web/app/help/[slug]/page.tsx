@@ -8,7 +8,8 @@ import {
   helpCategoryLabel,
   normalizeHelpCategory,
 } from "@/lib/help-categories";
-import { absoluteUrl } from "@/lib/site-url";
+import { jsonLdScriptString } from "@/lib/json-ld";
+import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
 // Static-generate known help article slugs at build time, ISR-revalidate
@@ -44,28 +45,17 @@ export async function generateMetadata({
     return { title: "Help Center" };
   }
 
+  const title = String(article.title || "").trim();
   const description =
     htmlToPlainText(article.content || "", 155) ||
-    `${article.title} — TinyTots Help Center`;
-  const title = article.title;
-  const url = absoluteUrl(`/help/${slug}`);
+    `${title} — TinyTots Help Center`;
 
-  return {
+  return pageMetadata({
     title,
     description,
-    alternates: { canonical: url },
-    openGraph: {
-      type: "article",
-      title,
-      description,
-      url,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-    },
-  };
+    path: `/help/${slug}`,
+    ogType: "article",
+  });
 }
 
 export default async function HelpArticlePage({
@@ -99,6 +89,18 @@ export default async function HelpArticlePage({
 
   return (
     <>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: jsonLdScriptString(
+          breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Help Center", path: "/help" },
+            { name: String(article.title || "").trim(), path: `/help/${slug}` },
+          ])
+        ),
+      }}
+    />
     <div className="max-w-container-max mx-auto w-full px-margin-mobile md:px-margin-desktop py-stack-lg">
       <nav
         aria-label="Breadcrumb"

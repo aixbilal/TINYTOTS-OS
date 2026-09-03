@@ -1,9 +1,14 @@
-import type { Metadata } from "next";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import HelpCenterIndex, { type HelpPageContent } from "@/components/HelpCenterIndex";
 import { normalizeHelpCategory } from "@/lib/help-categories";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Help Center" };
+export const metadata = pageMetadata({
+  title: "Help Center",
+  description:
+    "TinyTots Help Center — answers about orders, shipping across Pakistan, cash on delivery, returns and exchanges, sizing, and your account.",
+  path: "/help",
+});
 
 // Static-generate — policy content, edited rarely via admin CMS.
 export const revalidate = 3600;

@@ -9,7 +9,8 @@ import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 import HomepageHero from "@/components/HomepageHero";
 import HeroLcpPreload from "@/components/HeroLcpPreload";
 import { resolveHeroSlides } from "@/lib/hero-slides";
-import { absoluteUrl } from "@/lib/site-url";
+import { pageMetadata, organizationJsonLd, websiteJsonLd, OG_DEFAULT_IMAGE } from "@/lib/seo";
+import { jsonLdScriptString } from "@/lib/json-ld";
 
 // ISR: keep homepage fresh for admin edits without force-dynamic TTFB hit on every request.
 // 60s is a good balance for stock/price/image updates vs PageSpeed LCP.
@@ -107,8 +108,10 @@ const DEFAULT_TRUST_ITEMS = [
 ];
 
 const HOMEPAGE_DEFAULTS = {
-  hero_image_url:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDcHOEBpwtxoe3pT3NNiOQoUlZSPXHZXzjeoQOBkGcnwMqk8LNEfS_BLaNFvbDX-hie2mEl7T0RXcYZiRo62Rvdf50WGU9U4BD5oXHj7_E-gwRRFNXsBN-fTWavIdwpKxC17urnpJTVwBoPKRa1I79HkhFnqTLljxe6--Z6Hlwkbqweez3itoFTvxizLNFwL3tMrsZt3LeJQ-PBMbb1EiJJB23UvYLpk3iw905UJTcODCR79jbCm2P_w_RYfYB_hiR-KWOI441C-kke",
+  // Fallbacks only — the live homepage_content row supplies real images.
+  // These point at owned, committed brand assets so a missing DB row can
+  // never surface a third-party demo image.
+  hero_image_url: "/images/homepage/editorial-story-01.webp",
   hero_image_url_mobile: "",
   hero_video_url: "",
   hero_headline: "Playful Designs for Little Pioneers",
@@ -118,19 +121,16 @@ const HOMEPAGE_DEFAULTS = {
   trending_heading: "Loved by little ones",
   trust_items: DEFAULT_TRUST_ITEMS,
   usp_heading: "Why Choose TinyTots",
-  meadow_image_url:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuD8Kx1YOh37r9_tpddrRx-z8ThyZ74VSqpZ8NqUnuAkyKpMprUo6QvWwqSSsEAdqYjmB8_VspVcq243mW9a22_3h2uBkoj0HsGYa9zMowQLOW9MHk0XF5DbcrXkdkT-N_-7h5kT9AGG2BKHkZ6lR4Z-1-JuIolvhibU6NmMriHSQUJDGTJf97EnY-lHUWEAB0lC50ARUK0xVIRuln4l0asI6-ON9Q36p900XcyxhlFoKFDQGDSKpihL40rJhWsAylmx-xlFJabMaUOM",
+  meadow_image_url: "/images/homepage/promotional-campaign.webp",
   meadow_badge_text: "Spring Collection",
   meadow_heading: "Soft Pastels Edit",
   meadow_button_text: "Explore Collection",
   meadow_link: "/products",
-  boys_image_url:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBOxH5NNX2M4TZ_MpabUd6iR43Lqhl4mFUPL1vygsT6U1bIZ5Wap_3XSxsXwMWuTpJtQjGi1xQUQ0xlBJTfeIdLJbliy7pXKJo4yrKNaOC-9z47-0vKeKtG0yMUAieIJkIQzShvCusjWv4HMiprijPupQmRH7maK_H1bGvYeJOQPSB6-Vvc2ST4xCIh72JtiSddsb8tEqrSymHPvPcFy4cFJ4xxnkl7A9vkWZEQ12bIJVnmM-Pu-aPA1yPpjf6jsWkS9BLBw74821_i",
+  boys_image_url: "/images/homepage/boys-tile.webp",
   boys_heading: "Boys",
   boys_button_text: "Shop Now",
   boys_link: "/products",
-  girls_image_url:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuAex1tG2uv7lMIPIdDrPkL8txTXP-5lNjCD9jng7kNs6OcH_Ky94n8BWlY6cuBw71fG3Y01Wk_cRUvqnae2Q0zgpo5_zC77fJXWem1322uBxd60gIILFisAPS8wpWKA21VbKHRG7-aJ41OJBfx8Za033flnWypc0wBXWIfw6Z0DtvlSFrUpW0waIQ7CT6yae7FvGXNj0ydtDn_RlUQCdvs-59xozzxbXO0S77lPanQ7IV2gjCXPsPIhHgv2Vr3i3DLgN9EgUgj0WR_s",
+  girls_image_url: "/images/homepage/girls-tile.webp",
   girls_heading: "Girls",
   girls_button_text: "Shop Now",
   girls_link: "/products",
@@ -188,28 +188,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const ogImage =
     slides[0]?.image_url ||
     content.hero_image_url ||
-    HOMEPAGE_DEFAULTS.hero_image_url;
+    OG_DEFAULT_IMAGE;
 
-  return {
-    title: { absolute: HOME_TITLE },
+  return pageMetadata({
+    absoluteTitle: HOME_TITLE,
     description: HOME_DESCRIPTION,
-    alternates: { canonical: absoluteUrl("/") },
-    openGraph: {
-      type: "website",
-      title: HOME_TITLE,
-      description: HOME_DESCRIPTION,
-      url: absoluteUrl("/"),
-      images: ogImage
-        ? [{ url: ogImage, width: 1200, height: 630, alt: "TinyTots" }]
-        : undefined,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: HOME_TITLE,
-      description: HOME_DESCRIPTION,
-      images: ogImage ? [ogImage] : undefined,
-    },
-  };
+    path: "/",
+    image: ogImage,
+    imageAlt: "TinyTots",
+  });
 }
 
 function sectionLink(
@@ -294,6 +281,14 @@ export default async function Home() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdScriptString(organizationJsonLd()) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdScriptString(websiteJsonLd()) }}
+      />
       {lcpSlide && (
         <HeroLcpPreload
           desktopUrl={lcpSlide.image_url || lcpSlide.image_url_mobile}

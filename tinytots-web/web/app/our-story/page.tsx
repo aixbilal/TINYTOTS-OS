@@ -1,10 +1,15 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
+import { pageMetadata } from "@/lib/seo";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
-export const metadata: Metadata = { title: "Our Story" };
+export const metadata = pageMetadata({
+  title: "Our Story",
+  description:
+    "The story behind TinyTots — a Pakistan-based kidswear brand built on the belief that childhood is beautiful and what children wear should be too.",
+  path: "/our-story",
+});
 
 // Static-generate — pure marketing content, no per-user data. ISR-revalidate
 // hourly since it changes rarely (admin-edited CMS content).

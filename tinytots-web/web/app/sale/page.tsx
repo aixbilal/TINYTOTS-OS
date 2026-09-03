@@ -1,14 +1,23 @@
 import type { Metadata } from "next";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
+import { pageMetadata, NOINDEX_FOLLOW } from "@/lib/seo";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 
 // ISR: sale composition changes when discounts start/end, not on every request.
 export const revalidate = 60;
 
-export const metadata: Metadata = {
-  title: "Sale",
-  description: "Shop current markdowns on TinyTots kids clothing.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const ids = await getSaleProductIds();
+  return pageMetadata({
+    title: "Sale",
+    description:
+      "Current markdowns on TinyTots kids clothing — discounted baby and children's pieces while stocks last, with free shipping across Pakistan.",
+    path: "/sale",
+    // Nothing on sale right now → keep the route live but out of the index
+    // until it has real content.
+    robots: ids.length === 0 ? NOINDEX_FOLLOW : undefined,
+  });
+}
 
 const PRODUCT_SELECT = `
   id,

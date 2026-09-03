@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { notFound } from "next/navigation";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import ProductDetailInteractive from "@/components/ProductDetailInteractive";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
@@ -9,6 +10,7 @@ import { htmlToPlainText } from "@/lib/html-text";
 import { sanitizeContentHtml } from "@/lib/sanitize";
 import { jsonLdScriptString } from "@/lib/json-ld";
 import { absoluteUrl } from "@/lib/site-url";
+import { pageMetadata, breadcrumbJsonLd, NOINDEX_NOFOLLOW } from "@/lib/seo";
 import Link from "next/link";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
@@ -43,9 +45,10 @@ export async function generateMetadata({
     .maybeSingle();
 
   if (!product) {
-    return { title: "Product not found" };
+    return { title: "Product not found", robots: NOINDEX_NOFOLLOW };
   }
 
+  const name = (product.name || "").trim();
   const fromDescription = htmlToPlainText(product.description || "", 200)
     .replace(/^(ABOUT THE PRODUCT|WHY YOU'LL LOVE IT|QUICK DETAILS|HOW TO STYLE IT)\s*/i, "")
     .slice(0, 155)
@@ -54,8 +57,7 @@ export async function generateMetadata({
     .filter(Boolean)
     .join(" · ");
   const description = fromDescription || fallback;
-  const title = `${product.name} | TinyTots`;
-  const url = absoluteUrl(`/products/${id}`);
+  const title = `${name} | TinyTots`;
 
   let imageUrl = product.image_url || "";
   if (!imageUrl) {
@@ -74,28 +76,16 @@ export async function generateMetadata({
     }
   }
 
-  return {
-    // absolute: parent /products layout also sets a title; without absolute,
-    // Next can omit the root `%s | TinyTots` template on this segment.
-    title: { absolute: title },
+  // absolute title: the parent /products layout also sets a title; without
+  // absolute, Next can omit the root `%s | TinyTots` template on this segment.
+  return pageMetadata({
+    absoluteTitle: title,
     description,
-    alternates: { canonical: url },
-    openGraph: {
-      type: "website",
-      title,
-      description,
-      url,
-      images: imageUrl
-        ? [{ url: imageUrl, width: 800, height: 800, alt: product.name }]
-        : undefined,
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: imageUrl ? [imageUrl] : undefined,
-    },
-  };
+    path: `/products/${id}`,
+    ogType: "website",
+    image: imageUrl || null,
+    imageAlt: name,
+  });
 }
 
 async function getProduct(id: string) {
@@ -143,28 +133,21 @@ export default async function ProductDetailPage({
 }) {
   const { id } = await params;
   const [product, images] = await Promise.all([getProduct(id), getProductImages(id)]);
-  const safeDescription = product?.description ? sanitizeContentHtml(product.description) : null;
-  const [relatedProducts, shopMoreCategories] = product
-    ? await Promise.all([
-        getRelatedProductsForPdp(
-          product.id,
-          product.category,
-          product.related_product_ids as number[] | null
-        ),
-        getShopMoreCategories(product.category, 4),
-      ])
-    : [[], []];
 
+  // Unknown or inactive product → real 404, never an indexable 200 "not found".
   if (!product) {
-    return (
-      <main className="max-w-3xl mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-        <p className="text-text-secondary">Product not found.</p>
-        <Link href="/products" className="text-brand-primary hover:underline">
-          ← Back to shop
-        </Link>
-      </main>
-    );
+    notFound();
   }
+
+  const safeDescription = product.description ? sanitizeContentHtml(product.description) : null;
+  const [relatedProducts, shopMoreCategories] = await Promise.all([
+    getRelatedProductsForPdp(
+      product.id,
+      product.category,
+      product.related_product_ids as number[] | null
+    ),
+    getShopMoreCategories(product.category, 4),
+  ]);
 
   // Fallback for products created before the multi-image gallery existed:
   // if there are no product_images rows but products.image_url is set
@@ -220,6 +203,18 @@ export default async function ProductDetailPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdScriptString(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdScriptString(
+            breadcrumbJsonLd([
+              { name: "Home", path: "/" },
+              { name: "Shop All", path: "/products" },
+              { name: product.name, path: `/products/${product.id}` },
+            ])
+          ),
+        }}
       />
       <nav className="text-body-sm font-body-sm text-text-secondary mb-stack-sm flex items-center gap-2">
         <Link href="/" className="hover:text-brand-primary transition-colors">Home</Link>

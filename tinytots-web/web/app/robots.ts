@@ -9,14 +9,17 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
+        // Private / transactional / auth areas. robots.txt controls crawling,
+        // not indexing — each of these also carries a noindex robots tag.
         disallow: [
           "/admin",
           "/admin/",
           "/api/",
           "/account",
           "/account/",
-          "/checkout",
           "/cart",
+          "/checkout",
+          "/order-confirmation",
           "/auth/",
           "/login",
           "/signup",
@@ -27,6 +30,8 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: `${site}/sitemap.xml`,
-    host: site,
+    // `host` is a non-standard directive (Google ignores it); omitted for
+    // standards cleanliness. Canonical host is enforced via <link rel=canonical>
+    // and absolute URLs from getSiteUrl().
   };
 }

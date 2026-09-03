@@ -1,12 +1,17 @@
-import type { Metadata } from "next";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import LegalPageLayout from "@/components/LegalPageLayout";
 import LegalAccordionSections from "@/components/LegalAccordionSections";
 import LegalContactCta from "@/components/LegalContactCta";
 import { extractTocAndAnnotate, splitIntoSections } from "@/lib/site-page-toc";
 import { sanitizeContentHtml } from "@/lib/sanitize";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Terms & Conditions" };
+export const metadata = pageMetadata({
+  title: "Terms & Conditions",
+  description:
+    "TinyTots Terms & Conditions — the terms that apply when you browse tinytotsofficial.com and place an order with us in Pakistan.",
+  path: "/terms",
+});
 
 // Static-generate — legal content, edited rarely via admin CMS.
 export const revalidate = 3600;

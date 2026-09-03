@@ -1,16 +1,18 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { pageMetadata } from "@/lib/seo";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
 // Static-generate — category list changes rarely (admin-managed).
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Collections",
-  description: "Browse TinyTots pieces grouped by collection — find what you're looking for, faster.",
-};
+  description:
+    "Shop TinyTots kids clothing by collection — browse every category of baby and children's essentials in one place, with free shipping across Pakistan.",
+  path: "/collections",
+});
 
 const SHOP_BY = [
   { label: "New In", icon: "auto_awesome", href: "/products?sort=newest" },

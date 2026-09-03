@@ -1,12 +1,17 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { supabaseAnon } from "@/lib/supabase-anon";
+import { pageMetadata } from "@/lib/seo";
 import BlogSubscribeForm from "@/components/BlogSubscribeForm";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
-export const metadata: Metadata = { title: "Blog" };
+export const metadata = pageMetadata({
+  title: "Blog",
+  description:
+    "The TinyTots journal — parenting tips, kids' style and care guides, sizing help, and stories from behind the brand.",
+  path: "/blog",
+});
 
 // Static-generate, ISR-revalidate every 60s — same pattern already used
 // site-wide for content pages.

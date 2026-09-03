@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import Link from "next/link";
+import { NOINDEX_NOFOLLOW } from "@/lib/seo";
+
+export const metadata: Metadata = { title: "Order Confirmation", robots: NOINDEX_NOFOLLOW };
 
 async function getOrder(orderNumber: string) {
   const { data: order, error } = await supabase

@@ -1,11 +1,16 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getStoreContact } from "@/lib/get-store-contact";
+import { pageMetadata } from "@/lib/seo";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
-export const metadata: Metadata = { title: "Shipping & Returns" };
+export const metadata = pageMetadata({
+  title: "Shipping & Returns",
+  description:
+    "How TinyTots delivery and returns work — free shipping across Pakistan, cash on delivery, and easy 7-day returns on unworn items with tags.",
+  path: "/shipping-returns",
+});
 
 // Static-generate — policy content, edited rarely via admin CMS.
 export const revalidate = 3600;
