@@ -11,7 +11,7 @@
  * generic reason string.
  */
 
-const DEFAULT_MODEL = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
+const DEFAULT_MODEL = process.env.GEMINI_MODEL?.trim() || "gemini-3.6-flash";
 const ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const TIMEOUT_MS = 15_000;
 
