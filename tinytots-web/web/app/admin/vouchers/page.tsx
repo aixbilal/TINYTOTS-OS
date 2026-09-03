@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
+import { AdminPageHeader, AdminAlert } from "@/components/admin/ui";
 
 interface Voucher {
   id: number;
@@ -66,37 +67,45 @@ export default function AdminVouchersPage() {
   const totalOutstanding = filtered.filter((v) => !v.is_used).reduce((sum, v) => sum + Number(v.amount), 0);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Vouchers</h1>
-        <p className="text-sm text-gray-500">All customer vouchers, across referral, signup, and return/refund sources</p>
-      </div>
+    <div className="mx-auto max-w-7xl">
+      <AdminPageHeader
+        breadcrumb={["Marketing", "Vouchers"]}
+        title="Vouchers"
+        description="All customer vouchers, across referral, signup, and return/refund sources."
+      />
 
-      {errorMsg && <p className="text-sm text-red-700 bg-red-50 px-3 py-2 rounded-md mb-4">{errorMsg}</p>}
+      {errorMsg && (
+        <div className="mb-4">
+          <AdminAlert tone="danger">{errorMsg}</AdminAlert>
+        </div>
+      )}
 
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
           {(["all", "referral", "signup", "return_refund"] as const).map((f) => (
             <button
               key={f}
               onClick={() => setSourceFilter(f)}
-              className={`text-sm px-3 py-1.5 rounded-md font-medium ${
-                sourceFilter === f ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              className={`rounded-md px-3 py-1.5 font-body-sm text-body-sm font-medium transition-colors ${
+                sourceFilter === f
+                  ? "bg-brand-primary text-white"
+                  : "bg-surface-secondary text-text-secondary hover:text-text-primary"
               }`}
             >
               {f === "all" ? "All" : SOURCE_LABELS[f]}
             </button>
           ))}
         </div>
-        <p className="text-sm text-gray-500">
-          Outstanding (unused): <span className="font-semibold text-gray-900">Rs. {totalOutstanding.toLocaleString()}</span>
+        <p className="font-body-sm text-body-sm text-text-secondary">
+          Outstanding (unused):{" "}
+          <span className="font-semibold text-text-primary">Rs. {totalOutstanding.toLocaleString()}</span>
         </p>
       </div>
 
       {loading ? (
-        <p className="text-sm text-gray-500">Loading...</p>
+        <p className="font-body-sm text-body-sm text-text-secondary">Loading…</p>
       ) : (
-        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+        <div className="overflow-x-auto rounded-lg border border-border-default">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-600 text-left">
               <tr>

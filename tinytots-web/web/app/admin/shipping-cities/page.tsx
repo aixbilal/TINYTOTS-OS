@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
+import { AdminPageHeader, AdminCard, AdminButton, AdminAlert, adminInputClass } from "@/components/admin/ui";
 
 interface City {
   id: number;
@@ -89,22 +90,26 @@ export default function AdminShippingCitiesPage() {
   }
 
   if (loading) {
-    return <div className="max-w-2xl mx-auto text-center py-12 text-gray-500">Loading...</div>;
+    return <div className="mx-auto max-w-2xl py-12 text-center font-body-sm text-body-sm text-text-secondary">Loading…</div>;
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Delivery Cities</h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Control which cities allow Cash on Delivery at checkout.
-      </p>
+    <div className="mx-auto max-w-2xl">
+      <AdminPageHeader
+        breadcrumb={["Business", "Delivery cities"]}
+        title="Delivery cities"
+        description="Control which cities allow Cash on Delivery at checkout."
+      />
 
-      {errorMsg && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded">{errorMsg}</div>}
+      {errorMsg && (
+        <div className="mb-4">
+          <AdminAlert tone="danger">{errorMsg}</AdminAlert>
+        </div>
+      )}
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm mb-6">
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">Delivery mode</h2>
+      <AdminCard title="Delivery mode" className="mb-6">
         <div className="flex flex-col gap-3">
-          <label className={`flex items-start gap-3 border rounded-lg px-4 py-3 cursor-pointer ${mode === "list" ? "border-indigo-500 bg-indigo-50" : "border-gray-200"}`}>
+          <label className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 ${mode === "list" ? "border-brand-primary bg-brand-primary/5" : "border-border-default"}`}>
             <input
               type="radio"
               checked={mode === "list"}
@@ -113,13 +118,13 @@ export default function AdminShippingCitiesPage() {
               className="mt-1"
             />
             <div>
-              <p className="text-sm font-medium text-gray-900">Restrict to city list</p>
-              <p className="text-xs text-gray-500">
+              <p className="font-body-sm text-body-sm font-medium text-text-primary">Restrict to city list</p>
+              <p className="font-label-md text-label-md text-text-secondary">
                 Only the cities listed below allow Cash on Delivery. Other cities must pay online.
               </p>
             </div>
           </label>
-          <label className={`flex items-start gap-3 border rounded-lg px-4 py-3 cursor-pointer ${mode === "all_pakistan" ? "border-indigo-500 bg-indigo-50" : "border-gray-200"}`}>
+          <label className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 ${mode === "all_pakistan" ? "border-brand-primary bg-brand-primary/5" : "border-border-default"}`}>
             <input
               type="radio"
               checked={mode === "all_pakistan"}
@@ -128,61 +133,58 @@ export default function AdminShippingCitiesPage() {
               className="mt-1"
             />
             <div>
-              <p className="text-sm font-medium text-gray-900">Allow all of Pakistan</p>
-              <p className="text-xs text-gray-500">
+              <p className="font-body-sm text-body-sm font-medium text-text-primary">Allow all of Pakistan</p>
+              <p className="font-label-md text-label-md text-text-secondary">
                 Cash on Delivery is available everywhere. The city list below is ignored.
               </p>
             </div>
           </label>
         </div>
-      </div>
+      </AdminCard>
 
-      <div className={`bg-white rounded-lg border border-gray-200 p-6 shadow-sm ${mode === "all_pakistan" ? "opacity-50" : ""}`}>
-        <h2 className="text-sm font-semibold text-gray-900 mb-1">City list</h2>
-        <p className="text-xs text-gray-500 mb-4">
+      <AdminCard title="City list" className={mode === "all_pakistan" ? "opacity-50" : ""}>
+        <p className="mb-4 font-label-md text-label-md text-text-secondary">
           {mode === "all_pakistan"
             ? "Not currently used, since COD is allowed everywhere."
             : "Add any city not already in the list below — there's no fixed preset, type the name yourself."}
         </p>
 
-        <form onSubmit={handleAddCity} className="flex gap-3 mb-4">
+        <form onSubmit={handleAddCity} className="mb-4 flex gap-3">
           <input
             type="text"
             value={newCity}
             onChange={(e) => setNewCity(e.target.value)}
             placeholder="e.g. Peshawar, Quetta, Hyderabad..."
             disabled={mode === "all_pakistan"}
-            className="flex-1 border rounded-md px-3 py-2 text-sm disabled:bg-gray-50"
+            className={`flex-1 ${adminInputClass}`}
           />
-          <button
-            type="submit"
-            disabled={addingCity || mode === "all_pakistan"}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {addingCity ? "Adding..." : "+ Add"}
-          </button>
+          <AdminButton type="submit" variant="primary" disabled={addingCity || mode === "all_pakistan"}>
+            {addingCity ? "Adding…" : "Add"}
+          </AdminButton>
         </form>
 
         <div className="flex flex-wrap gap-2">
           {cities.map((c) => (
             <span
               key={c.id}
-              className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 text-sm px-3 py-1.5 rounded-full capitalize"
+              className="inline-flex items-center gap-2 rounded-full bg-surface-secondary px-3 py-1.5 font-body-sm text-body-sm capitalize text-text-secondary"
             >
               {c.name}
               <button
                 onClick={() => handleDelete(c.id)}
                 disabled={mode === "all_pakistan"}
-                className="text-gray-400 hover:text-red-600 disabled:opacity-40"
+                className="text-text-secondary hover:text-red-600 disabled:opacity-40"
                 aria-label={`Remove ${c.name}`}
               >
                 ×
               </button>
             </span>
           ))}
-          {cities.length === 0 && <p className="text-sm text-gray-400">No cities added yet.</p>}
+          {cities.length === 0 && (
+            <p className="font-body-sm text-body-sm text-text-secondary">No cities added yet.</p>
+          )}
         </div>
-      </div>
+      </AdminCard>
     </div>
   );
 }

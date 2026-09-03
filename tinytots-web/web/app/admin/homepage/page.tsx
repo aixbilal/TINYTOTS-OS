@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { adminFetch } from "@/lib/admin-fetch";
 import AspectImageUploader from "@/components/admin/AspectImageUploader";
+import { AdminSubnav } from "@/components/admin/ui";
+import { SUBNAV } from "@/lib/admin-nav";
 import { sanitizeHeroSlides, type HeroSlide } from "@/lib/hero-slides";
 
 interface TrustItem {
@@ -550,6 +552,8 @@ export default function AdminHomepagePage() {
           ))}
         </nav>
       </div>
+
+      <AdminSubnav items={SUBNAV.website} />
 
       {errorMsg && (
         <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 font-body-sm text-body-sm text-red-800">

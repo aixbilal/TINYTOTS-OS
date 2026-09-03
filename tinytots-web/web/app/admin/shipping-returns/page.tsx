@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
+import { AdminPageHeader, AdminButton, AdminAlert, AdminSubnav } from "@/components/admin/ui";
+import { SUBNAV } from "@/lib/admin-nav";
 
 interface TocItem {
   id: string;
@@ -142,34 +144,41 @@ export default function AdminShippingReturnsPage() {
     }
   }
 
-  if (loading) return <div className="p-6 text-sm text-gray-500">Loading...</div>;
-  if (!content) return <div className="p-6 text-sm text-red-600">{errorMsg || "Could not load content."}</div>;
+  if (loading) return <div className="p-6 font-body-sm text-body-sm text-text-secondary">Loading…</div>;
+  if (!content) return <div className="p-6 font-body-sm text-body-sm text-red-600">{errorMsg || "Could not load content."}</div>;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Shipping &amp; Returns Page</h1>
-          <p className="text-sm text-gray-500">
+    <div className="mx-auto max-w-4xl">
+      <AdminPageHeader
+        breadcrumb={["Content", "Website"]}
+        title="Shipping & Returns page"
+        description={
+          <>
             Edit the live bento layout — hero, timeline cards, COD tiers, return steps, and contact CTA.
             Preview:{" "}
             <a href="/shipping-returns" target="_blank" rel="noreferrer" className="underline">
               /shipping-returns
             </a>
-          </p>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="text-sm font-medium px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-60 shrink-0"
-        >
-          {saving ? "Saving..." : "Save Changes"}
-        </button>
-      </div>
+          </>
+        }
+        actions={
+          <AdminButton variant="primary" onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save changes"}
+          </AdminButton>
+        }
+      />
 
-      {errorMsg && <p className="text-sm text-red-700 bg-red-50 px-3 py-2 rounded-md mb-4">{errorMsg}</p>}
+      <AdminSubnav items={SUBNAV.website} />
+
+      {errorMsg && (
+        <div className="mb-4">
+          <AdminAlert tone="danger">{errorMsg}</AdminAlert>
+        </div>
+      )}
       {savedAt && !errorMsg && (
-        <p className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md mb-4">Saved.</p>
+        <div className="mb-4">
+          <AdminAlert tone="success">Saved.</AdminAlert>
+        </div>
       )}
 
       <div className="flex flex-col gap-8">

@@ -4,6 +4,20 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminFetch } from "@/lib/admin-fetch";
 import { helpCategoryLabel } from "@/lib/help-categories";
+import {
+  AdminPageHeader,
+  AdminCard,
+  AdminButton,
+  AdminBadge,
+  AdminTableWrap,
+  AdminTh,
+  AdminTd,
+  AdminEmptyState,
+  AdminAlert,
+  AdminConfirmDialog,
+  AdminSubnav,
+} from "@/components/admin/ui";
+import { SUBNAV } from "@/lib/admin-nav";
 
 interface Article {
   id: number;
@@ -19,6 +33,8 @@ export default function AdminHelpListPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchArticles = async () => {
     setLoading(true);
@@ -43,77 +59,110 @@ export default function AdminHelpListPage() {
     fetchArticles();
   }, []);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this article permanently?")) return;
-    const res = await adminFetch(`/api/admin/help/${id}`, { method: "DELETE" });
-    if (res.ok) setArticles((prev) => prev.filter((a) => a.id !== id));
+  const handleDelete = async () => {
+    if (confirmId == null) return;
+    setDeleting(true);
+    const res = await adminFetch(`/api/admin/help/${confirmId}`, { method: "DELETE" });
+    if (res.ok) setArticles((prev) => prev.filter((a) => a.id !== confirmId));
+    setDeleting(false);
+    setConfirmId(null);
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Help Center</h1>
-          <p className="text-sm text-gray-500">Manage FAQ and support articles</p>
-        </div>
-        <Link
-          href="/admin/help/editor"
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700"
-        >
-          + New Article
-        </Link>
-      </div>
+    <div className="mx-auto max-w-6xl">
+      <AdminPageHeader
+        breadcrumb={["Content", "Help Center"]}
+        title="Help Center"
+        description="FAQ and support articles published to /help."
+        actions={
+          <Link href="/admin/help/editor">
+            <AdminButton variant="primary">
+              <span className="material-symbols-outlined text-[18px]" aria-hidden>add</span>
+              New article
+            </AdminButton>
+          </Link>
+        }
+      />
+
+      <AdminSubnav items={SUBNAV.help} />
 
       {errorMsg && (
-        <p className="mb-4 text-sm text-red-600">{errorMsg}</p>
+        <div className="mb-4">
+          <AdminAlert tone="danger">{errorMsg}</AdminAlert>
+        </div>
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500">Loading...</div>
+        <p className="font-body-sm text-body-sm text-text-secondary">Loading…</p>
       ) : articles.length === 0 ? (
-        <div className="bg-white rounded-lg border border-dashed border-gray-300 p-12 text-center text-gray-500">
-          {errorMsg ? "Could not load articles." : "No articles yet."}
-        </div>
+        <AdminCard>
+          <AdminEmptyState
+            icon="help_center"
+            title={errorMsg ? "Could not load articles" : "No articles yet"}
+            description={errorMsg ? undefined : "Add your first Help Center article."}
+            action={
+              !errorMsg ? (
+                <Link href="/admin/help/editor">
+                  <AdminButton variant="primary">New article</AdminButton>
+                </Link>
+              ) : undefined
+            }
+          />
+        </AdminCard>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-              <tr>
-                <th className="px-6 py-3">Title</th>
-                <th className="px-6 py-3">Category</th>
-                <th className="px-6 py-3">Order</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {articles.map((a) => (
-                <tr key={a.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">{a.title}</td>
-                  <td className="px-6 py-4">{helpCategoryLabel(a.category)}</td>
-                  <td className="px-6 py-4">{a.display_order}</td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${
-                        a.is_published ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                      }`}
+        <AdminTableWrap>
+          <thead>
+            <tr>
+              <AdminTh>Title</AdminTh>
+              <AdminTh>Category</AdminTh>
+              <AdminTh>Order</AdminTh>
+              <AdminTh>Status</AdminTh>
+              <AdminTh className="text-right">Actions</AdminTh>
+            </tr>
+          </thead>
+          <tbody>
+            {articles.map((a) => (
+              <tr key={a.id} className="hover:bg-surface-secondary">
+                <AdminTd className="font-medium text-text-primary">{a.title}</AdminTd>
+                <AdminTd>{helpCategoryLabel(a.category)}</AdminTd>
+                <AdminTd>{a.display_order}</AdminTd>
+                <AdminTd>
+                  <AdminBadge tone={a.is_published ? "success" : "neutral"}>
+                    {a.is_published ? "Published" : "Draft"}
+                  </AdminBadge>
+                </AdminTd>
+                <AdminTd className="text-right">
+                  <span className="inline-flex items-center gap-3">
+                    <Link
+                      href={`/admin/help/editor?id=${a.id}`}
+                      className="font-label-md text-label-md font-medium text-brand-primary hover:underline"
                     >
-                      {a.is_published ? "Published" : "Draft"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right space-x-3">
-                    <Link href={`/admin/help/editor?id=${a.id}`} className="text-xs font-medium text-indigo-600 hover:underline">
                       Edit
                     </Link>
-                    <button onClick={() => handleDelete(a.id)} className="text-xs font-medium text-red-600 hover:underline">
+                    <button
+                      onClick={() => setConfirmId(a.id)}
+                      className="font-label-md text-label-md font-medium text-red-600 hover:underline"
+                    >
                       Delete
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </span>
+                </AdminTd>
+              </tr>
+            ))}
+          </tbody>
+        </AdminTableWrap>
+      )}
+
+      {confirmId != null && (
+        <AdminConfirmDialog
+          title="Delete article"
+          message="This permanently deletes the Help Center article. This cannot be undone."
+          confirmLabel="Delete"
+          danger
+          busy={deleting}
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmId(null)}
+        />
       )}
     </div>
   );

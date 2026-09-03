@@ -1,6 +1,10 @@
 "use client";
 
 import { ReactNode } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useAdminAuth } from "@/lib/admin-auth-context";
+import { can } from "@/lib/admin-permissions";
 
 // ---------------------------------------------------------------------------
 // Lightweight Admin design-system primitives. Tailwind + existing TinyTots
@@ -8,21 +12,30 @@ import { ReactNode } from "react";
 // back office stays visually consistent.
 // ---------------------------------------------------------------------------
 
-/** Page title + optional description + right-aligned actions slot. */
+/** Page title + optional description + right-aligned actions slot.
+ *  `breadcrumb` renders a compact "Content / Website / Homepage" trail above
+ *  the title — keep it to 2–3 segments, last segment = current page. */
 export function AdminPageHeader({
   title,
   description,
   actions,
+  breadcrumb,
   className = "",
 }: {
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
+  breadcrumb?: string[];
   className?: string;
 }) {
   return (
     <div className={`mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between ${className}`}>
       <div className="min-w-0">
+        {breadcrumb && breadcrumb.length > 0 && (
+          <p className="mb-1 font-label-md text-[11px] font-semibold uppercase tracking-wider text-text-secondary/70">
+            {breadcrumb.join(" / ")}
+          </p>
+        )}
         <h1 className="font-headline-lg text-[26px] font-semibold leading-tight text-text-primary sm:text-[30px]">
           {title}
         </h1>
@@ -32,6 +45,77 @@ export function AdminPageHeader({
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
+  );
+}
+
+/** Secondary (in-section) navigation. Sits under AdminPageHeader on pages that
+ *  belong to a multi-page module (Website content, Blog, Help Center, Social
+ *  proof, Digital Signage). Items the current role can't access are hidden;
+ *  when only one item would remain visible the whole bar is hidden. */
+export type AdminSubnavItem = {
+  href: string;
+  label: string;
+  perm?: Parameters<typeof can>[1] | Parameters<typeof can>[1][] | null;
+  /** Opens in a new tab (e.g. the live signage display). */
+  external?: boolean;
+  icon?: string;
+};
+
+export function AdminSubnav({ items, className = "" }: { items: AdminSubnavItem[]; className?: string }) {
+  const pathname = usePathname();
+  const { admin } = useAdminAuth();
+
+  const allowed = (perm: AdminSubnavItem["perm"]) => {
+    if (perm == null) return true;
+    if (!admin) return false;
+    const list = Array.isArray(perm) ? perm : [perm];
+    return list.some((p) => can(admin.role, p));
+  };
+
+  const visible = items.filter((it) => allowed(it.perm));
+  if (visible.length <= 1) return null;
+
+  return (
+    <nav
+      className={`mb-6 flex flex-wrap items-center gap-1 border-b border-border-default ${className}`}
+      aria-label="Section"
+    >
+      {visible.map((it) => {
+        const active =
+          !it.external &&
+          (pathname === it.href || pathname?.startsWith(it.href + "/"));
+        const cls = `-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2 font-body-sm text-body-sm font-medium transition-colors ${
+          active
+            ? "border-brand-primary text-text-primary"
+            : "border-transparent text-text-secondary hover:border-border-default hover:text-text-primary"
+        }`;
+        if (it.external) {
+          return (
+            <a key={it.href} href={it.href} target="_blank" rel="noreferrer" className={cls}>
+              {it.icon && (
+                <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                  {it.icon}
+                </span>
+              )}
+              {it.label}
+              <span className="material-symbols-outlined text-[16px]" aria-hidden>
+                open_in_new
+              </span>
+            </a>
+          );
+        }
+        return (
+          <Link key={it.href} href={it.href} aria-current={active ? "page" : undefined} className={cls}>
+            {it.icon && (
+              <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                {it.icon}
+              </span>
+            )}
+            {it.label}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -239,6 +323,68 @@ export function AdminAlert({ children, tone = "info" }: { children: ReactNode; t
   }[tone];
   return (
     <div className={`rounded-md border px-3.5 py-2.5 font-body-sm text-body-sm ${t}`} role="status">
+      {children}
+    </div>
+  );
+}
+
+// --- Form primitives -----------------------------------------------------
+// Shared input styling so every Admin form has the same field rhythm,
+// focus ring, label and help-text treatment.
+
+export const adminInputClass =
+  "w-full rounded-md border border-border-default bg-surface-elevated px-3 py-2 font-body-sm text-body-sm text-text-primary placeholder:text-text-secondary/60 focus:outline-none focus:ring-2 focus:ring-brand-primary/40 disabled:cursor-not-allowed disabled:opacity-60";
+
+/** Label + optional help text wrapper for a single form control. */
+export function AdminField({
+  label,
+  hint,
+  htmlFor,
+  children,
+  className = "",
+}: {
+  label: ReactNode;
+  hint?: ReactNode;
+  htmlFor?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`flex flex-col gap-1.5 ${className}`}>
+      <label htmlFor={htmlFor} className="font-label-md text-label-md font-medium text-text-primary">
+        {label}
+      </label>
+      {hint && <p className="-mt-0.5 font-label-md text-label-md text-text-secondary">{hint}</p>}
+      {children}
+    </div>
+  );
+}
+
+/** Sticky-feel save row: primary action + transient "Saved" confirmation. */
+export function AdminSaveBar({
+  onSave,
+  saving,
+  saved,
+  label = "Save changes",
+  children,
+}: {
+  onSave: () => void;
+  saving?: boolean;
+  saved?: boolean;
+  label?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-t border-border-default pt-4">
+      <AdminButton variant="primary" onClick={onSave} disabled={saving}>
+        {saving ? "Saving…" : label}
+      </AdminButton>
+      {saved && (
+        <span className="inline-flex items-center gap-1 font-label-md text-label-md font-medium text-green-700">
+          <span className="material-symbols-outlined text-[16px]" aria-hidden>check_circle</span>
+          Saved
+        </span>
+      )}
       {children}
     </div>
   );

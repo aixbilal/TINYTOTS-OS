@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth-context";
 import { can } from "@/lib/admin-permissions";
 import { supabase } from "@/lib/supabase";
+import { PRIMARY_NAV, ACCOUNT_NAV, type NavGroup, type NavLeaf, type PermSpec } from "@/lib/admin-nav";
 
 // Maps each admin route prefix to the permission required to view it.
 // This is a client-side guard, not a substitute for the requireAdmin checks
@@ -31,6 +32,7 @@ const ROUTE_PERMISSIONS: { prefix: string; permission: Parameters<typeof can>[1]
   { prefix: "/admin/settings", permission: "canManageSettings" },
   { prefix: "/admin/homepage", permission: "canManageSettings" },
   { prefix: "/admin/campaigns", permission: "canManageSettings" },
+  { prefix: "/admin/signage", permission: "canManageSettings" },
   { prefix: "/admin/site-content", permission: "canManageSettings" },
   { prefix: "/admin/testimonials", permission: "canManageSettings" },
   { prefix: "/admin/ugc-posts", permission: "canManageSettings" },
@@ -47,70 +49,18 @@ function getRequiredPermission(pathname: string) {
   return match?.permission;
 }
 
-// --- Grouped navigation -----------------------------------------------------
-// Route + permission pairs are unchanged from the flat list; only the visual
-// grouping is new. `perm: null` = visible to any active team member.
-type NavItem = { href: string; label: string; icon: string; perm: Parameters<typeof can>[1] | null };
-type NavGroup = { label: string | null; items: NavItem[] };
+// --- Permission helpers ----------------------------------------------------
 
-const NAV_GROUPS: NavGroup[] = [
-  { label: null, items: [{ href: "/admin", label: "Dashboard", icon: "dashboard", perm: null }] },
-  {
-    label: "Operations",
-    items: [
-      { href: "/admin/orders", label: "Orders", icon: "receipt_long", perm: "canManageOrders" },
-      { href: "/admin/reports", label: "Reports", icon: "bar_chart", perm: "canManageOrders" },
-      { href: "/admin/complaints", label: "Complaints", icon: "support_agent", perm: "canHandleComplaints" },
-    ],
-  },
-  {
-    label: "Catalog",
-    items: [
-      { href: "/admin/products", label: "Products", icon: "inventory_2", perm: "canManageInventory" },
-      { href: "/admin/categories", label: "Categories", icon: "category", perm: "canManageInventory" },
-    ],
-  },
-  {
-    label: "Promotions",
-    items: [
-      { href: "/admin/discounts", label: "Discounts", icon: "percent", perm: "canManageDiscounts" },
-      { href: "/admin/coupons", label: "Coupons", icon: "confirmation_number", perm: "canManageCoupons" },
-      { href: "/admin/referrals", label: "Referrals", icon: "group_add", perm: "canManageReferrals" },
-      { href: "/admin/vouchers", label: "Vouchers", icon: "card_giftcard", perm: "canManageReferrals" },
-    ],
-  },
-  {
-    label: "Content",
-    items: [
-      { href: "/admin/homepage", label: "Homepage", icon: "home", perm: "canManageSettings" },
-      { href: "/admin/blog", label: "Blog", icon: "article", perm: "canManageBlog" },
-      { href: "/admin/blog-content", label: "Blog Page Content", icon: "feed", perm: "canManageBlog" },
-      { href: "/admin/help", label: "Help Center", icon: "help_center", perm: "canManageHelp" },
-      { href: "/admin/help-content", label: "Help Page Content", icon: "quiz", perm: "canManageHelp" },
-      { href: "/admin/about-page", label: "Our Story Page", icon: "auto_stories", perm: "canManagePages" },
-      { href: "/admin/shipping-returns", label: "Shipping & Returns", icon: "local_shipping", perm: "canManagePages" },
-      { href: "/admin/pages", label: "Site Pages", icon: "description", perm: "canManagePages" },
-      { href: "/admin/testimonials", label: "Testimonials", icon: "reviews", perm: "canManageSettings" },
-      { href: "/admin/ugc-posts", label: "Instagram / UGC Feed", icon: "photo_library", perm: "canManageSettings" },
-    ],
-  },
-  {
-    label: "Store experience",
-    items: [
-      { href: "/admin/campaigns", label: "Campaigns", icon: "campaign", perm: "canManageSettings" },
-      { href: "/admin/site-content", label: "Signage Libraries", icon: "collections", perm: "canManageSettings" },
-      { href: "/admin/shipping-cities", label: "Delivery Cities", icon: "pin_drop", perm: "canManageSettings" },
-    ],
-  },
-  {
-    label: "Administration",
-    items: [
-      { href: "/admin/team", label: "Team", icon: "groups", perm: "canManageTeam" },
-      { href: "/admin/settings", label: "Settings", icon: "settings", perm: "canManageSettings" },
-    ],
-  },
-  { label: "Account", items: [{ href: "/admin/account", label: "My Account", icon: "person", perm: null }] },
-];
+function permAllowed(perm: PermSpec, role: Parameters<typeof can>[0]) {
+  if (perm == null) return true;
+  const list = Array.isArray(perm) ? perm : [perm];
+  return list.some((p) => can(role, p));
+}
+
+function isChildActive(pathname: string, href: string) {
+  if (href === "/admin") return pathname === "/admin";
+  return pathname === href || pathname.startsWith(href + "/");
+}
 
 function AdminShell({ children }: { children: React.ReactNode }) {
   const { admin, loading, signOut } = useAdminAuth();
@@ -118,6 +68,10 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const isLoginPage = pathname === "/admin/login";
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Manual accordion override — the group the user explicitly opened *in
+  // addition to* the active one. The active group is always expanded and is
+  // derived from the route, so it never needs to live in state.
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   // Close the mobile drawer whenever the route changes.
   useEffect(() => {
@@ -148,13 +102,29 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     };
   }, [loading, admin, isLoginPage, router, signOut]);
 
+  // Only groups (and children) the current role can access.
   const visibleGroups = useMemo(() => {
-    if (!admin) return [];
-    return NAV_GROUPS.map((g) => ({
+    if (!admin) return [] as NavGroup[];
+    return PRIMARY_NAV.map((g) => ({
       ...g,
-      items: g.items.filter((it) => it.perm === null || can(admin.role, it.perm)),
+      items: g.items.filter((it) => permAllowed(it.perm, admin.role)),
     })).filter((g) => g.items.length > 0);
   }, [admin]);
+
+  // Which group contains the current route.
+  const activeGroupKey = useMemo(() => {
+    const p = pathname || "";
+    // Prefer the most specific child match across all groups.
+    let best: { key: string; len: number } | null = null;
+    for (const g of visibleGroups) {
+      for (const it of g.items) {
+        if (isChildActive(p, it.href) && (!best || it.href.length > best.len)) {
+          best = { key: g.key, len: it.href.length };
+        }
+      }
+    }
+    return best?.key ?? null;
+  }, [pathname, visibleGroups]);
 
   if (isLoginPage) return <>{children}</>;
 
@@ -174,24 +144,75 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const requiredPermission = getRequiredPermission(pathname || "");
   const accessDenied = requiredPermission && !can(admin.role, requiredPermission);
 
-  const NavLink = ({ item }: { item: NavItem }) => {
-    const active = pathname === item.href || (item.href !== "/admin" && pathname?.startsWith(item.href + "/")) ||
-      (item.href !== "/admin" && pathname === item.href);
+  const ChildLink = ({ item, nested }: { item: NavLeaf; nested?: boolean }) => {
+    const active = isChildActive(pathname || "", item.href);
     return (
       <Link
         href={item.href}
         aria-current={active ? "page" : undefined}
-        className={`flex items-center gap-2.5 rounded-md px-3 py-2 font-body-sm text-body-sm transition-colors ${
+        className={`flex items-center gap-2.5 rounded-md py-2 font-body-sm text-body-sm transition-colors ${
+          nested ? "pl-9 pr-3" : "px-3"
+        } ${
           active
             ? "bg-brand-primary text-white"
             : "text-text-secondary hover:bg-surface-secondary hover:text-text-primary"
         }`}
       >
-        <span className={`material-symbols-outlined text-[19px] ${active ? "text-white" : "text-text-secondary"}`} aria-hidden>
+        <span
+          className={`material-symbols-outlined text-[19px] ${active ? "text-white" : "text-text-secondary"}`}
+          aria-hidden
+        >
           {item.icon}
         </span>
         <span className="truncate">{item.label}</span>
       </Link>
+    );
+  };
+
+  const GroupBlock = ({ group }: { group: NavGroup }) => {
+    // Single-destination group (Dashboard) → plain link, no accordion.
+    if (group.items.length === 1 && group.items[0].href === group.href) {
+      return <ChildLink item={{ ...group.items[0], label: group.label, icon: group.icon }} />;
+    }
+    const groupActive = activeGroupKey === group.key;
+    // Active group is always open; the user can additionally open one other.
+    const expanded = groupActive || openKey === group.key;
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => {
+            if (groupActive) return; // active group stays open
+            setOpenKey(openKey === group.key ? null : group.key);
+          }}
+          aria-expanded={expanded}
+          className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 font-body-sm text-body-sm font-medium transition-colors ${
+            groupActive && !expanded
+              ? "bg-surface-secondary text-text-primary"
+              : "text-text-secondary hover:bg-surface-secondary hover:text-text-primary"
+          }`}
+        >
+          <span className="material-symbols-outlined text-[19px] text-text-secondary" aria-hidden>
+            {group.icon}
+          </span>
+          <span className="flex-1 truncate text-left">{group.label}</span>
+          <span
+            className={`material-symbols-outlined text-[18px] text-text-secondary transition-transform ${
+              expanded ? "rotate-180" : ""
+            }`}
+            aria-hidden
+          >
+            expand_more
+          </span>
+        </button>
+        {expanded && (
+          <div className="mt-0.5 space-y-0.5">
+            {group.items.map((it) => (
+              <ChildLink key={it.href} item={it} nested />
+            ))}
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -209,27 +230,31 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           <span className="material-symbols-outlined text-[22px]" aria-hidden>close</span>
         </button>
       </div>
-      <nav className="flex-1 space-y-4 overflow-y-auto px-1 pb-2">
-        {visibleGroups.map((g, gi) => (
-          <div key={gi}>
-            {g.label && (
-              <p className="px-3 pb-1 font-label-md text-[11px] font-semibold uppercase tracking-wider text-text-secondary/70">
-                {g.label}
-              </p>
-            )}
-            <div className="space-y-0.5">
-              {g.items.map((it) => (
-                <NavLink key={it.href} item={it} />
-              ))}
-            </div>
-          </div>
+      <nav className="flex-1 space-y-1 overflow-y-auto px-1 pb-2">
+        {visibleGroups.map((g) => (
+          <GroupBlock key={g.key} group={g} />
         ))}
       </nav>
       <div className="mt-2 border-t border-border-default px-3 pt-3">
-        <p className="truncate font-body-sm text-body-sm text-text-primary">{admin.name}</p>
-        <p className="mb-2 font-label-md text-label-md capitalize text-text-secondary">
-          {admin.role.replace("_", " ")}
-        </p>
+        <Link
+          href={ACCOUNT_NAV.href}
+          aria-current={isChildActive(pathname || "", ACCOUNT_NAV.href) ? "page" : undefined}
+          className={`mb-1 flex items-center gap-2.5 rounded-md px-2 py-2 transition-colors ${
+            isChildActive(pathname || "", ACCOUNT_NAV.href)
+              ? "bg-surface-secondary"
+              : "hover:bg-surface-secondary"
+          }`}
+        >
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-primary/10 font-label-md text-label-md font-semibold uppercase text-brand-primary">
+            {admin.name?.[0] || "?"}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate font-body-sm text-body-sm text-text-primary">{admin.name}</span>
+            <span className="block truncate font-label-md text-label-md capitalize text-text-secondary">
+              {admin.role.replace("_", " ")}
+            </span>
+          </span>
+        </Link>
         <button
           onClick={signOut}
           className="flex w-full items-center gap-2 rounded-md px-3 py-2 font-body-sm text-body-sm text-red-700 hover:bg-red-50"

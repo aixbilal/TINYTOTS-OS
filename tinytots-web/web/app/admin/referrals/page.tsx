@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { adminFetch } from "@/lib/admin-fetch"; // ⚠️ confirm this path is correct
+import { adminFetch } from "@/lib/admin-fetch";
+import { AdminPageHeader } from "@/components/admin/ui";
 
 interface CustomerLite {
   id: number;
@@ -98,13 +99,12 @@ export default function AdminReferralsPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-10">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Referrals & Vouchers</h1>
-        <p className="text-sm text-gray-500">
-          Track customer referrals and manage reward vouchers
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl space-y-10">
+      <AdminPageHeader
+        breadcrumb={["Marketing", "Referrals"]}
+        title="Referrals"
+        description="Track customer referrals and manage reward vouchers."
+      />
 
       {errorMsg && (
         <div className="p-3 bg-red-50 text-red-700 text-sm rounded">{errorMsg}</div>

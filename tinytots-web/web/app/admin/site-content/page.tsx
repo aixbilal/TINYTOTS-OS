@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
+import { AdminPageHeader, AdminCard, AdminAlert, AdminSubnav } from "@/components/admin/ui";
+import { SUBNAV } from "@/lib/admin-nav";
 
 const ICON_OPTIONS = [
   "shield_check",
@@ -20,7 +22,7 @@ const ICON_OPTIONS = [
   "checkroom",
 ];
 const inputClass =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900";
+  "w-full rounded-md border border-border-default bg-surface-elevated px-3 py-2 font-body-sm text-body-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/40";
 
 type Tab = "trust" | "features" | "stats" | "badges";
 
@@ -145,20 +147,21 @@ export default function AdminSiteContentPage() {
   }
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: "trust", label: "Trust items (campaigns)" },
+    { id: "trust", label: "Trust points" },
     { id: "features", label: "Feature icons" },
-    { id: "stats", label: "Stats" },
+    { id: "stats", label: "Statistics" },
     { id: "badges", label: "Badges" },
   ];
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Signage Libraries</h1>
-        <p className="text-sm text-gray-500">
-          Maintain reusable pools here, then select items inside each campaign (or product badges).
-        </p>
-      </div>
+    <div className="mx-auto flex max-w-5xl flex-col gap-6">
+      <AdminPageHeader
+        breadcrumb={["Store experience", "Digital Signage"]}
+        title="Content library"
+        description="Reusable pieces used by Digital Signage campaigns — maintain the pools here, then select items inside each campaign (or as product badges)."
+      />
+
+      <AdminSubnav items={SUBNAV.signage} className="!mb-0" />
 
       <div className="flex flex-wrap gap-2">
         {tabs.map((item) => (
@@ -166,8 +169,10 @@ export default function AdminSiteContentPage() {
             key={item.id}
             type="button"
             onClick={() => setTab(item.id)}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              tab === item.id ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            className={`rounded-md px-3 py-1.5 font-body-sm text-body-sm font-medium transition-colors ${
+              tab === item.id
+                ? "bg-brand-primary text-white"
+                : "bg-surface-secondary text-text-secondary hover:text-text-primary"
             }`}
           >
             {item.label}
@@ -175,20 +180,28 @@ export default function AdminSiteContentPage() {
         ))}
       </div>
 
-      <section className="rounded-lg border border-gray-200 p-5">
-        {message && <p className="mb-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{message}</p>}
-        {error && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      <AdminCard>
+        {message && (
+          <div className="mb-3">
+            <AdminAlert tone="success">{message}</AdminAlert>
+          </div>
+        )}
+        {error && (
+          <div className="mb-3">
+            <AdminAlert tone="danger">{error}</AdminAlert>
+          </div>
+        )}
         {loading ? (
-          <p className="text-sm text-gray-500">Loading libraries...</p>
+          <p className="font-body-sm text-body-sm text-text-secondary">Loading library…</p>
         ) : tab === "trust" ? (
           <>
-            <p className="mb-4 text-sm text-gray-500">
+            <p className="mb-4 text-sm text-text-secondary">
               Used only by campaign pages and in-store signage — not the trust strip shown site-wide
               on customer pages (that one is a separate, fixed four-item strip).
             </p>
             <div className="mb-4 flex flex-col gap-2">
               {trustItems.map((item, index) => (
-                <div key={item.id} className="flex items-center gap-2 rounded-md border border-gray-200 p-2">
+                <div key={item.id} className="flex items-center gap-2 rounded-md border border-border-default p-2">
                   <select
                     value={item.icon}
                     onChange={(event) => {
@@ -227,7 +240,7 @@ export default function AdminSiteContentPage() {
                     placeholder="Description"
                     className={`${inputClass} flex-1`}
                   />
-                  <label className="flex shrink-0 items-center gap-1 text-xs text-gray-600">
+                  <label className="flex shrink-0 items-center gap-1 text-xs text-text-secondary">
                     <input
                       type="checkbox"
                       checked={item.is_active}
@@ -307,17 +320,17 @@ export default function AdminSiteContentPage() {
                 await load();
                 flash("Trust item added.");
               }}
-              className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700"
+              className="rounded-md bg-surface-secondary px-3 py-1.5 font-body-sm text-body-sm font-medium text-text-primary"
             >
               + Add trust item
             </button>
           </>
         ) : tab === "features" ? (
           <>
-            <p className="mb-3 text-xs text-gray-500">Campaigns pick exactly 3 of these for the hero feature strip.</p>
+            <p className="mb-3 text-xs text-text-secondary">Campaigns pick exactly 3 of these for the hero feature strip.</p>
             <div className="mb-4 flex flex-col gap-2">
               {featureItems.map((item, index) => (
-                <div key={item.id} className="flex items-center gap-2 rounded-md border border-gray-200 p-2">
+                <div key={item.id} className="flex items-center gap-2 rounded-md border border-border-default p-2">
                   <select
                     value={item.icon}
                     onChange={(event) => {
@@ -344,7 +357,7 @@ export default function AdminSiteContentPage() {
                     placeholder="Label"
                     className={`${inputClass} flex-1`}
                   />
-                  <label className="flex shrink-0 items-center gap-1 text-xs text-gray-600">
+                  <label className="flex shrink-0 items-center gap-1 text-xs text-text-secondary">
                     <input
                       type="checkbox"
                       checked={item.is_active}
@@ -424,17 +437,17 @@ export default function AdminSiteContentPage() {
                 await load();
                 flash("Feature item added.");
               }}
-              className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700"
+              className="rounded-md bg-surface-secondary px-3 py-1.5 font-body-sm text-body-sm font-medium text-text-primary"
             >
               + Add feature item
             </button>
           </>
         ) : tab === "stats" ? (
           <>
-            <p className="mb-3 text-xs text-gray-500">Campaigns pick exactly 3 of these for the hero stats column.</p>
+            <p className="mb-3 text-xs text-text-secondary">Campaigns pick exactly 3 of these for the hero stats column.</p>
             <div className="mb-4 flex flex-col gap-2">
               {statItems.map((item, index) => (
-                <div key={item.id} className="flex items-center gap-2 rounded-md border border-gray-200 p-2">
+                <div key={item.id} className="flex items-center gap-2 rounded-md border border-border-default p-2">
                   <select
                     value={item.icon}
                     onChange={(event) => {
@@ -473,7 +486,7 @@ export default function AdminSiteContentPage() {
                     placeholder="Happy Parents"
                     className={`${inputClass} flex-1`}
                   />
-                  <label className="flex shrink-0 items-center gap-1 text-xs text-gray-600">
+                  <label className="flex shrink-0 items-center gap-1 text-xs text-text-secondary">
                     <input
                       type="checkbox"
                       checked={item.is_active}
@@ -550,19 +563,19 @@ export default function AdminSiteContentPage() {
                 await load();
                 flash("Stat item added.");
               }}
-              className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700"
+              className="rounded-md bg-surface-secondary px-3 py-1.5 font-body-sm text-body-sm font-medium text-text-primary"
             >
               + Add stat item
             </button>
           </>
         ) : (
           <>
-            <p className="mb-3 text-xs text-gray-500">
+            <p className="mb-3 text-xs text-text-secondary">
               Suggestion pool for product card badges. Products store free text, so custom labels are also allowed.
             </p>
             <div className="mb-4 flex flex-col gap-2">
               {badgeItems.map((item, index) => (
-                <div key={item.id} className="flex items-center gap-2 rounded-md border border-gray-200 p-2">
+                <div key={item.id} className="flex items-center gap-2 rounded-md border border-border-default p-2">
                   <input
                     value={item.label}
                     onChange={(event) => {
@@ -575,7 +588,7 @@ export default function AdminSiteContentPage() {
                     placeholder="Badge label"
                     className={`${inputClass} flex-1`}
                   />
-                  <label className="flex shrink-0 items-center gap-1 text-xs text-gray-600">
+                  <label className="flex shrink-0 items-center gap-1 text-xs text-text-secondary">
                     <input
                       type="checkbox"
                       checked={item.is_active}
@@ -652,13 +665,13 @@ export default function AdminSiteContentPage() {
                 await load();
                 flash("Badge item added.");
               }}
-              className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700"
+              className="rounded-md bg-surface-secondary px-3 py-1.5 font-body-sm text-body-sm font-medium text-text-primary"
             >
               + Add badge item
             </button>
           </>
         )}
-      </section>
+      </AdminCard>
     </div>
   );
 }

@@ -7,6 +7,8 @@ import CampaignBannerEditor from "@/components/admin/CampaignBannerEditor";
 import CampaignPaletteEditor from "@/components/admin/CampaignPaletteEditor";
 import CampaignQrEditor from "@/components/admin/CampaignQrEditor";
 import SignageBadgePicker from "@/components/admin/SignageBadgePicker";
+import { AdminPageHeader, AdminButton, AdminAlert, AdminSubnav } from "@/components/admin/ui";
+import { SUBNAV } from "@/lib/admin-nav";
 import {
   DEFAULT_BANNER_CROP,
   DEFAULT_BANNER_FOCAL_POINT,
@@ -498,7 +500,25 @@ function HeroOverlayPlacementEditor({
 }
 
 const inputClass =
-  "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900";
+  "w-full rounded-md border border-border-default bg-surface-elevated px-3 py-2 font-body-sm text-body-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/40";
+
+// Order the campaign editor's jump-nav follows — mirrors the intended
+// build workflow. Ids match the `id="camp-sec-*"` on each editor <section>.
+const CAMPAIGN_EDITOR_SECTIONS: { id: string; label: string }[] = [
+  { id: "basics", label: "Basics" },
+  { id: "banner", label: "Banner" },
+  { id: "features", label: "Feature icons" },
+  { id: "stats", label: "Statistics" },
+  { id: "featured", label: "Featured" },
+  { id: "trust", label: "Trust strip" },
+  { id: "testimonials", label: "Testimonials" },
+  { id: "cta", label: "CTA" },
+  { id: "theme", label: "Theme" },
+  { id: "social", label: "Social" },
+  { id: "footer", label: "Footer / QR" },
+  { id: "schedule", label: "Scheduling" },
+  { id: "preview", label: "Preview" },
+];
 
 const SOCIAL_PLATFORMS: CampaignSocialLink["platform"][] = [
   "instagram",
@@ -679,8 +699,22 @@ function CampaignEditor({
 
   return (
     <div className="flex flex-col gap-8">
+      {/* Section jump-nav — the editor is long; this keeps the workflow order
+          (basics → banner/layout → featured → trust/stats → theme → footer/QR
+          → scheduling → preview) reachable without a long scroll. */}
+      <nav className="sticky top-0 z-10 -mx-1 flex gap-1.5 overflow-x-auto rounded-md border border-border-default bg-surface-canvas/95 px-2 py-2 backdrop-blur">
+        {CAMPAIGN_EDITOR_SECTIONS.map((s) => (
+          <a
+            key={s.id}
+            href={`#camp-sec-${s.id}`}
+            className="shrink-0 rounded-full border border-border-default bg-surface-elevated px-3 py-1 font-label-md text-label-md text-text-secondary hover:border-brand-primary hover:text-text-primary"
+          >
+            {s.label}
+          </a>
+        ))}
+      </nav>
       {/* Basics */}
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-basics" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-4">Campaign Basics</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Campaign name (internal)">
@@ -772,7 +806,7 @@ function CampaignEditor({
         </div>
       </section>
 
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-schedule" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <div className="mb-4">
           <h2 className="text-base font-semibold text-gray-900">Schedule</h2>
           <p className="text-xs text-gray-500">
@@ -892,7 +926,7 @@ function CampaignEditor({
         })()}
       </section>
 
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-theme" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <div className="mb-4">
           <h2 className="text-base font-semibold text-gray-900">Campaign Theme</h2>
           <p className="text-xs text-gray-500">
@@ -907,7 +941,7 @@ function CampaignEditor({
       </section>
 
       {/* Preview */}
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-preview" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">Campaign Preview</h2>
         <p className="text-xs text-gray-500 mb-4">
           Preview this campaign without changing the live signage.
@@ -926,7 +960,7 @@ function CampaignEditor({
       </section>
 
       {/* CTA */}
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-cta" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-4">CTA Button</h2>
         <div className="grid grid-cols-3 gap-4 items-end">
           <Field label="Button text">
@@ -943,7 +977,7 @@ function CampaignEditor({
       </section>
 
       {/* Hero Banner */}
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-banner" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">Hero Banner</h2>
         <p className="text-xs text-gray-500 mb-4">
           Upload visual artwork only: child, product, environment, lighting and background. Collection copy, CTA,
@@ -986,7 +1020,7 @@ function CampaignEditor({
       />
 
       {/* Feature list */}
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-features" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">Hero Feature Icons</h2>
         <p className="text-xs text-gray-500 mb-4">
           Select exactly 3 from the library. Order follows selection below (use arrows to reorder).
@@ -1049,7 +1083,7 @@ function CampaignEditor({
       </section>
 
       {/* Statistics */}
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-stats" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">Hero Statistics</h2>
         <p className="text-xs text-gray-500 mb-4">
           Select exactly 3 from the library. Order follows selection below (use arrows to reorder).
@@ -1114,7 +1148,7 @@ function CampaignEditor({
       </section>
 
       {/* Featured Collection */}
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-featured" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-4">Featured Collection</h2>
         <div className="grid grid-cols-2 gap-4 mb-4">
           <Field label="Section heading">
@@ -1180,7 +1214,7 @@ function CampaignEditor({
         />
       </section>
 
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-trust" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">Campaign Trust Strip</h2>
         <p className="text-xs text-gray-500 mb-4">
           Select the trust points owned by this campaign. Their order follows the list below.
@@ -1216,7 +1250,7 @@ function CampaignEditor({
         </div>
       </section>
 
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-testimonials" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">Campaign Testimonials</h2>
         <p className="text-xs text-gray-500 mb-4">
           Only selected published testimonials are returned when this campaign is active.
@@ -1255,7 +1289,7 @@ function CampaignEditor({
         </div>
       </section>
 
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-social" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <h2 className="text-base font-semibold text-gray-900 mb-1">Campaign Social Links</h2>
         <p className="text-xs text-gray-500 mb-4">
           These links travel with this campaign and replace the old shared signage configuration.
@@ -1310,7 +1344,7 @@ function CampaignEditor({
         </div>
       </section>
 
-      <section className="border border-gray-200 rounded-lg p-5">
+      <section id="camp-sec-footer" className="scroll-mt-24 border border-gray-200 rounded-lg p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-gray-900">Campaign Footer</h2>
@@ -1700,27 +1734,34 @@ export default function AdminCampaignsPage() {
     }
   }
 
-  if (loading) return <div className="p-6 text-sm text-gray-500">Loading campaigns...</div>;
+  if (loading) return <div className="p-6 font-body-sm text-body-sm text-text-secondary">Loading campaigns…</div>;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Campaign Management</h1>
-          <p className="text-sm text-gray-500">
-            Multi-campaign rotation on /signage — queue order, duration, and optional calendar schedules.
-          </p>
-        </div>
-        <button
-          onClick={createCampaign}
-          className="text-sm font-medium px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-800"
-        >
-          + New Campaign
-        </button>
-      </div>
+    <div className="mx-auto max-w-7xl">
+      <AdminPageHeader
+        breadcrumb={["Store experience", "Digital Signage"]}
+        title="Campaigns"
+        description="Multi-campaign rotation on /signage — queue order, duration, and optional calendar schedules."
+        actions={
+          <AdminButton variant="primary" onClick={createCampaign}>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden>add</span>
+            New campaign
+          </AdminButton>
+        }
+      />
 
-      {errorMsg && <p className="text-sm text-red-700 bg-red-50 px-3 py-2 rounded-md mb-4">{errorMsg}</p>}
-      {message && <p className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded-md mb-4">{message}</p>}
+      <AdminSubnav items={SUBNAV.signage} />
+
+      {errorMsg && (
+        <div className="mb-4">
+          <AdminAlert tone="danger">{errorMsg}</AdminAlert>
+        </div>
+      )}
+      {message && (
+        <div className="mb-4">
+          <AdminAlert tone="success">{message}</AdminAlert>
+        </div>
+      )}
 
       <section className="mb-6 rounded-lg border border-gray-200 p-5">
         <div className="mb-3 flex items-start justify-between gap-4">

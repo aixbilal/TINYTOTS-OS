@@ -3,6 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { adminFetch } from "@/lib/admin-fetch";
+import {
+  AdminPageHeader,
+  AdminCard,
+  AdminButton,
+  AdminAlert,
+  AdminSubnav,
+  adminInputClass,
+} from "@/components/admin/ui";
+import { SUBNAV } from "@/lib/admin-nav";
 
 interface Testimonial {
   id: number;
@@ -15,8 +24,7 @@ interface Testimonial {
 }
 
 const EMPTY_FORM = { customer_name: "", rating: 5, quote: "", is_published: true, sort_order: 0 };
-const inputClass =
-  "border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900";
+const inputClass = adminInputClass;
 
 /* ------------------------------------------------------------------
  * Photo upload — only usable once the testimonial has a real id (i.e.
@@ -210,16 +218,22 @@ export default function AdminTestimonialsPage() {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Testimonials</h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Shown on the homepage and rotate automatically on the /signage testimonial carousel.
-      </p>
+    <div className="mx-auto max-w-3xl">
+      <AdminPageHeader
+        breadcrumb={["Content", "Social proof"]}
+        title="Testimonials"
+        description="Shown on the homepage and rotated automatically on the /signage testimonial carousel. Only published testimonials appear publicly."
+      />
 
-      {errorMsg && <p className="text-sm text-red-700 bg-red-50 px-3 py-2 rounded-md mb-4">{errorMsg}</p>}
+      <AdminSubnav items={SUBNAV.socialProof} />
 
-      <div className="border border-gray-200 rounded-lg p-5 mb-8">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Add a testimonial</h2>
+      {errorMsg && (
+        <div className="mb-4">
+          <AdminAlert tone="danger">{errorMsg}</AdminAlert>
+        </div>
+      )}
+
+      <AdminCard title="Add a testimonial" className="mb-8">
         <div className="flex flex-col gap-3">
           <input
             value={form.customer_name}
@@ -248,25 +262,26 @@ export default function AdminTestimonialsPage() {
               ))}
             </select>
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="font-label-md text-label-md text-text-secondary">
             A photo can be added right after creating the testimonial, from the list below.
           </p>
-          <button
+          <AdminButton
+            variant="primary"
             onClick={handleAdd}
             disabled={saving || !form.customer_name.trim() || !form.quote.trim()}
-            className="self-start text-sm font-medium px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50"
+            className="self-start"
           >
-            {saving ? "Adding..." : "Add testimonial"}
-          </button>
+            {saving ? "Adding…" : "Add testimonial"}
+          </AdminButton>
         </div>
-      </div>
+      </AdminCard>
 
       {loading ? (
-        <p className="text-sm text-gray-500">Loading...</p>
+        <p className="font-body-sm text-body-sm text-text-secondary">Loading…</p>
       ) : (
         <div className="flex flex-col gap-3">
           {items.map((item, i) => (
-            <div key={item.id} className="border border-gray-200 rounded-lg p-4 flex items-start gap-4">
+            <div key={item.id} className="flex items-start gap-4 rounded-lg border border-border-default bg-surface-elevated p-4">
               <PhotoUpload
                 testimonialId={item.id}
                 value={item.customer_image_url}

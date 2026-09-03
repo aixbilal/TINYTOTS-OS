@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
+import { AdminPageHeader, AdminButton } from "@/components/admin/ui";
 
 interface Coupon {
   id: string;
@@ -150,19 +151,18 @@ export default function AdminCouponsPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Coupons & Discounts</h1>
-          <p className="text-sm text-gray-500">Manage promo codes and active promotions</p>
-        </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
-        >
-          + Create Coupon
-        </button>
-      </div>
+    <div className="mx-auto max-w-7xl">
+      <AdminPageHeader
+        breadcrumb={["Marketing", "Coupons"]}
+        title="Coupons"
+        description="Promo codes and active promotions."
+        actions={
+          <AdminButton variant="primary" onClick={() => setIsModalOpen(true)}>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden>add</span>
+            Create coupon
+          </AdminButton>
+        }
+      />
 
       {loading ? (
         <div className="text-center py-12 text-gray-500">Loading coupons...</div>

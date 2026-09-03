@@ -3,6 +3,15 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { adminFetch } from "@/lib/admin-fetch";
+import {
+  AdminPageHeader,
+  AdminCard,
+  AdminButton,
+  AdminAlert,
+  AdminSubnav,
+  adminInputClass,
+} from "@/components/admin/ui";
+import { SUBNAV } from "@/lib/admin-nav";
 
 interface UgcPost {
   id: number;
@@ -80,26 +89,31 @@ export default function AdminUgcPostsPage() {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Shoppable Instagram / UGC Feed</h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Manually curated customer photos shown near the footer. Paste an image URL for each post — this
-        doesn't connect to Instagram automatically, so add photos as you collect them (e.g. from tagged posts).
-      </p>
+    <div className="mx-auto max-w-3xl">
+      <AdminPageHeader
+        breadcrumb={["Content", "Social proof"]}
+        title="Instagram & UGC"
+        description="Manually curated customer photos shown near the footer. Paste an image URL for each post — this doesn't connect to Instagram automatically, so add photos as you collect them (e.g. from tagged posts)."
+      />
 
-      {errorMsg && <p className="text-sm text-red-700 bg-red-50 px-3 py-2 rounded-md mb-4">{errorMsg}</p>}
+      <AdminSubnav items={SUBNAV.socialProof} />
 
-      <div className="border border-gray-200 rounded-lg p-5 mb-8">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Add a post</h2>
+      {errorMsg && (
+        <div className="mb-4">
+          <AdminAlert tone="danger">{errorMsg}</AdminAlert>
+        </div>
+      )}
+
+      <AdminCard title="Add a post" className="mb-8">
         <div className="flex flex-col gap-3">
           <input
             value={form.image_url}
             onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))}
             placeholder="Image URL"
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className={adminInputClass}
           />
           {form.image_url && (
-            <div className="w-20 h-20 relative rounded-md overflow-hidden border border-gray-200">
+            <div className="relative h-20 w-20 overflow-hidden rounded-md border border-border-default">
               <Image src={form.image_url} alt="" fill className="object-cover" unoptimized />
             </div>
           )}
@@ -107,58 +121,66 @@ export default function AdminUgcPostsPage() {
             value={form.caption}
             onChange={(e) => setForm((f) => ({ ...f, caption: e.target.value }))}
             placeholder="Caption (optional)"
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className={adminInputClass}
           />
           <div className="flex gap-3">
             <input
               value={form.instagram_handle}
               onChange={(e) => setForm((f) => ({ ...f, instagram_handle: e.target.value }))}
               placeholder="@handle (optional)"
-              className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className={`flex-1 ${adminInputClass}`}
             />
             <input
               value={form.link}
               onChange={(e) => setForm((f) => ({ ...f, link: e.target.value }))}
               placeholder="Link to Instagram post (optional)"
-              className="flex-[2] border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className={`flex-[2] ${adminInputClass}`}
             />
           </div>
-          <button
+          <AdminButton
+            variant="primary"
             onClick={handleAdd}
             disabled={saving || !form.image_url.trim()}
-            className="self-start text-sm font-medium px-4 py-2 rounded-md bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50"
+            className="self-start"
           >
-            {saving ? "Adding..." : "Add post"}
-          </button>
+            {saving ? "Adding…" : "Add post"}
+          </AdminButton>
         </div>
-      </div>
+      </AdminCard>
 
       {loading ? (
-        <p className="text-sm text-gray-500">Loading...</p>
+        <p className="font-body-sm text-body-sm text-text-secondary">Loading…</p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {items.map((item) => (
-            <div key={item.id} className="border border-gray-200 rounded-lg overflow-hidden">
-              <div className="w-full aspect-square relative bg-gray-100">
+            <div key={item.id} className="overflow-hidden rounded-lg border border-border-default bg-surface-elevated">
+              <div className="relative aspect-square w-full bg-surface-secondary">
                 <Image src={item.image_url} alt="" fill className="object-cover" unoptimized />
               </div>
-              <div className="p-2 flex flex-col gap-1">
-                {item.instagram_handle && <p className="text-xs text-gray-600 truncate">{item.instagram_handle}</p>}
+              <div className="flex flex-col gap-1 p-2">
+                {item.instagram_handle && (
+                  <p className="truncate font-label-md text-label-md text-text-secondary">{item.instagram_handle}</p>
+                )}
                 <button
                   onClick={() => togglePublished(item)}
-                  className={`text-xs font-medium px-2 py-1 rounded-md ${
-                    item.is_published ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+                  className={`rounded-md px-2 py-1 font-label-md text-label-md font-medium ${
+                    item.is_published ? "bg-green-100 text-green-800" : "bg-surface-secondary text-text-secondary"
                   }`}
                 >
                   {item.is_published ? "Published" : "Hidden"}
                 </button>
-                <button onClick={() => remove(item.id)} className="text-xs font-medium text-red-600 hover:text-red-800">
+                <button
+                  onClick={() => remove(item.id)}
+                  className="font-label-md text-label-md font-medium text-red-600 hover:text-red-800"
+                >
                   Delete
                 </button>
               </div>
             </div>
           ))}
-          {items.length === 0 && <p className="text-sm text-gray-500 col-span-full">No posts yet.</p>}
+          {items.length === 0 && (
+            <p className="col-span-full font-body-sm text-body-sm text-text-secondary">No posts yet.</p>
+          )}
         </div>
       )}
     </div>

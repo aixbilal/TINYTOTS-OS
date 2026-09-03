@@ -4,6 +4,14 @@ import { useState } from "react";
 import { useAdminAuth } from "@/lib/admin-auth-context";
 import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
 import AdminMfaSettings from "@/components/admin/AdminMfaSettings";
+import {
+  AdminPageHeader,
+  AdminCard,
+  AdminButton,
+  AdminAlert,
+  AdminField,
+  adminInputClass,
+} from "@/components/admin/ui";
 
 export default function AdminAccountPage() {
   const { admin, session } = useAdminAuth();
@@ -66,87 +74,73 @@ export default function AdminAccountPage() {
     setSaving(false);
   }
 
-  const inputClass = "border rounded-md px-3 py-2 text-sm w-full";
+  const detail = (label: string, value: string) => (
+    <div>
+      <p className="mb-1 font-label-md text-label-md uppercase tracking-wide text-text-secondary">{label}</p>
+      <p className="font-body-sm text-body-sm text-text-primary">{value}</p>
+    </div>
+  );
 
   return (
-    <div className="max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">My Account</h1>
+    <div className="mx-auto max-w-lg">
+      <AdminPageHeader breadcrumb={["Account"]} title="My account" />
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm mb-6">
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">Your details</h2>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="text-xs text-gray-400 uppercase mb-1">Name</p>
-            <p className="text-gray-900">{admin.name}</p>
+      <div className="space-y-6">
+        <AdminCard title="Your details">
+          <div className="grid grid-cols-2 gap-4">
+            {detail("Name", admin.name)}
+            {detail("Email", admin.email)}
+            {detail("Role", admin.role.replace("_", " "))}
+            {detail("Status", admin.is_active ? "Active" : "Inactive")}
           </div>
-          <div>
-            <p className="text-xs text-gray-400 uppercase mb-1">Email</p>
-            <p className="text-gray-900">{admin.email}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-400 uppercase mb-1">Role</p>
-            <p className="text-gray-900 capitalize">{admin.role.replace("_", " ")}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-400 uppercase mb-1">Status</p>
-            <p className="text-gray-900">{admin.is_active ? "Active" : "Inactive"}</p>
-          </div>
-        </div>
-        <p className="text-xs text-gray-400 mt-4">
-          To change your name, email, or role, contact an administrator.
-        </p>
+          <p className="mt-4 font-label-md text-label-md text-text-secondary">
+            To change your name, email, or role, contact an administrator.
+          </p>
+        </AdminCard>
+
+        <AdminCard title="Change password">
+          <p className="mb-4 font-label-md text-label-md text-text-secondary">{PASSWORD_HINT}</p>
+          <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
+            <AdminField label="Current password">
+              <input
+                type="password"
+                placeholder="Current password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+                className={adminInputClass}
+              />
+            </AdminField>
+            <AdminField label="New password">
+              <input
+                type="password"
+                placeholder="New password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+                className={adminInputClass}
+              />
+            </AdminField>
+            <AdminField label="Confirm new password">
+              <input
+                type="password"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+                className={adminInputClass}
+              />
+            </AdminField>
+            {error && <AdminAlert tone="danger">{error}</AdminAlert>}
+            {success && <AdminAlert tone="success">Password updated successfully.</AdminAlert>}
+            <AdminButton type="submit" variant="primary" disabled={saving} className="self-start">
+              {saving ? "Saving…" : "Update password"}
+            </AdminButton>
+          </form>
+        </AdminCard>
+
+        <AdminMfaSettings />
       </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm mb-6">
-        <h2 className="text-sm font-semibold text-gray-900 mb-3">Change password</h2>
-        <p className="text-xs text-gray-500 mb-3">{PASSWORD_HINT}</p>
-        <form onSubmit={handleChangePassword} className="flex flex-col gap-3">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Current password</label>
-            <input
-              type="password"
-              placeholder="Current password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              autoComplete="current-password"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">New password</label>
-            <input
-              type="password"
-              placeholder="New password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              autoComplete="new-password"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Confirm new password</label>
-            <input
-              type="password"
-              placeholder="Confirm new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              autoComplete="new-password"
-              className={inputClass}
-            />
-          </div>
-          {error && <p className="text-xs text-red-600">{error}</p>}
-          {success && <p className="text-xs text-green-600">Password updated successfully.</p>}
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 self-start"
-          >
-            {saving ? "Saving..." : "Update password"}
-          </button>
-        </form>
-      </div>
-
-      <AdminMfaSettings />
     </div>
   );
 }

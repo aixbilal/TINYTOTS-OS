@@ -4,6 +4,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
 import RelatedProductPicker from "@/components/admin/RelatedProductPicker";
 import AspectImageUploader from "@/components/admin/AspectImageUploader";
+import { AdminPageHeader, AdminAlert } from "@/components/admin/ui";
 
 interface Category {
   id: number;
@@ -252,16 +253,19 @@ export default function AdminCategoriesPage() {
   }, [products, search]);
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Categories</h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Manage the categories available when adding or editing products, and assign
-        products to a category directly from here. Lower "Order" values show first.
-        These are also the Collections shown on the customer-facing /collections page.
-      </p>
+    <div className="mx-auto max-w-5xl">
+      <AdminPageHeader
+        breadcrumb={["Catalog", "Categories"]}
+        title="Categories"
+        description={
+          'Categories available when adding or editing products; assign products to a category from here. Lower "Order" values show first. These are also the Collections shown on the customer-facing /collections page.'
+        }
+      />
 
       {errorMsg && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded">{errorMsg}</div>
+        <div className="mb-4">
+          <AdminAlert tone="danger">{errorMsg}</AdminAlert>
+        </div>
       )}
 
       <form onSubmit={handleAdd} className="flex gap-3 mb-6">

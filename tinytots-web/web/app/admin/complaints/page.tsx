@@ -3,6 +3,7 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
+import { AdminPageHeader } from "@/components/admin/ui";
 
 interface Complaint {
   id: number;
@@ -79,11 +80,12 @@ export default function AdminComplaintsPage() {
     filter === "all" ? complaints : complaints.filter((c) => c.status === filter);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Complaints</h1>
-        <p className="text-sm text-gray-500">Customer complaints and issue reports</p>
-      </div>
+    <div className="mx-auto max-w-7xl">
+      <AdminPageHeader
+        breadcrumb={["Orders", "Complaints"]}
+        title="Complaints"
+        description="Customer complaints and issue reports."
+      />
 
       <div className="flex gap-2 mb-4">
         {(["all", "open", "in_progress", "resolved"] as const).map((f) => (

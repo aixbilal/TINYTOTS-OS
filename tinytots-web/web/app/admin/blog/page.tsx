@@ -3,6 +3,20 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminFetch } from "@/lib/admin-fetch";
+import {
+  AdminPageHeader,
+  AdminCard,
+  AdminButton,
+  AdminBadge,
+  AdminTableWrap,
+  AdminTh,
+  AdminTd,
+  AdminEmptyState,
+  AdminAlert,
+  AdminConfirmDialog,
+  AdminSubnav,
+} from "@/components/admin/ui";
+import { SUBNAV } from "@/lib/admin-nav";
 
 interface Post {
   id: number;
@@ -19,6 +33,8 @@ export default function AdminBlogListPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -43,79 +59,112 @@ export default function AdminBlogListPage() {
     fetchPosts();
   }, []);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this post permanently?")) return;
-    const res = await adminFetch(`/api/admin/blog/${id}`, { method: "DELETE" });
-    if (res.ok) setPosts((prev) => prev.filter((p) => p.id !== id));
+  const handleDelete = async () => {
+    if (confirmId == null) return;
+    setDeleting(true);
+    const res = await adminFetch(`/api/admin/blog/${confirmId}`, { method: "DELETE" });
+    if (res.ok) setPosts((prev) => prev.filter((p) => p.id !== confirmId));
+    setDeleting(false);
+    setConfirmId(null);
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Blog Posts</h1>
-          <p className="text-sm text-gray-500">Manage articles and updates</p>
-        </div>
-        <Link
-          href="/admin/blog/editor"
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700"
-        >
-          + New Post
-        </Link>
-      </div>
+    <div className="mx-auto max-w-6xl">
+      <AdminPageHeader
+        breadcrumb={["Content", "Blog"]}
+        title="Blog"
+        description="Articles and updates published to /blog."
+        actions={
+          <Link href="/admin/blog/editor">
+            <AdminButton variant="primary">
+              <span className="material-symbols-outlined text-[18px]" aria-hidden>add</span>
+              New post
+            </AdminButton>
+          </Link>
+        }
+      />
+
+      <AdminSubnav items={SUBNAV.blog} />
 
       {errorMsg && (
-        <p className="mb-4 text-sm text-red-600">{errorMsg}</p>
+        <div className="mb-4">
+          <AdminAlert tone="danger">{errorMsg}</AdminAlert>
+        </div>
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500">Loading...</div>
+        <p className="font-body-sm text-body-sm text-text-secondary">Loading…</p>
       ) : posts.length === 0 ? (
-        <div className="bg-white rounded-lg border border-dashed border-gray-300 p-12 text-center text-gray-500">
-          {errorMsg ? "Could not load posts." : "No posts yet."}
-        </div>
+        <AdminCard>
+          <AdminEmptyState
+            icon="article"
+            title={errorMsg ? "Could not load posts" : "No posts yet"}
+            description={errorMsg ? undefined : "Create your first article to publish it to the blog."}
+            action={
+              !errorMsg ? (
+                <Link href="/admin/blog/editor">
+                  <AdminButton variant="primary">New post</AdminButton>
+                </Link>
+              ) : undefined
+            }
+          />
+        </AdminCard>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-              <tr>
-                <th className="px-6 py-3">Title</th>
-                <th className="px-6 py-3">Category</th>
-                <th className="px-6 py-3">Slug</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Created</th>
-                <th className="px-6 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {posts.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">{p.title}</td>
-                  <td className="px-6 py-4">{p.category || "—"}</td>
-                  <td className="px-6 py-4 font-mono text-xs text-gray-500">{p.slug}</td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs rounded-full font-semibold ${
-                        p.is_published ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                      }`}
+        <AdminTableWrap>
+          <thead>
+            <tr>
+              <AdminTh>Title</AdminTh>
+              <AdminTh>Category</AdminTh>
+              <AdminTh>Slug</AdminTh>
+              <AdminTh>Status</AdminTh>
+              <AdminTh>Created</AdminTh>
+              <AdminTh className="text-right">Actions</AdminTh>
+            </tr>
+          </thead>
+          <tbody>
+            {posts.map((p) => (
+              <tr key={p.id} className="hover:bg-surface-secondary">
+                <AdminTd className="font-medium text-text-primary">{p.title}</AdminTd>
+                <AdminTd>{p.category || "—"}</AdminTd>
+                <AdminTd className="font-mono text-label-md text-text-secondary">{p.slug}</AdminTd>
+                <AdminTd>
+                  <AdminBadge tone={p.is_published ? "success" : "neutral"}>
+                    {p.is_published ? "Published" : "Draft"}
+                  </AdminBadge>
+                </AdminTd>
+                <AdminTd>{new Date(p.created_at).toLocaleDateString()}</AdminTd>
+                <AdminTd className="text-right">
+                  <span className="inline-flex items-center gap-3">
+                    <Link
+                      href={`/admin/blog/editor?id=${p.id}`}
+                      className="font-label-md text-label-md font-medium text-brand-primary hover:underline"
                     >
-                      {p.is_published ? "Published" : "Draft"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">{new Date(p.created_at).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 text-right space-x-3">
-                    <Link href={`/admin/blog/editor?id=${p.id}`} className="text-xs font-medium text-indigo-600 hover:underline">
                       Edit
                     </Link>
-                    <button onClick={() => handleDelete(p.id)} className="text-xs font-medium text-red-600 hover:underline">
+                    <button
+                      onClick={() => setConfirmId(p.id)}
+                      className="font-label-md text-label-md font-medium text-red-600 hover:underline"
+                    >
                       Delete
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </span>
+                </AdminTd>
+              </tr>
+            ))}
+          </tbody>
+        </AdminTableWrap>
+      )}
+
+      {confirmId != null && (
+        <AdminConfirmDialog
+          title="Delete post"
+          message="This permanently deletes the article. This cannot be undone."
+          confirmLabel="Delete"
+          danger
+          busy={deleting}
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmId(null)}
+        />
       )}
     </div>
   );
