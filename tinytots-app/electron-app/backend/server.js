@@ -845,14 +845,14 @@ app.post("/api/products", async (req, res) => {
     }
 
     const cleanSku = sku.trim().toUpperCase();
-    
+
     // 2. Check if base SKU exists
     const { data: existing, error: existingErr } = await supabase
       .from("products")
       .select("id")
       .eq("sku", cleanSku)
       .maybeSingle();
-      
+
     if (existingErr) throw existingErr;
     if (existing) {
       return res.status(409).json({
@@ -861,11 +861,24 @@ app.post("/api/products", async (req, res) => {
       });
     }
 
+    // 2b. Normalize category to an existing categories.name when there's a
+    // case-insensitive match, so a product typed as "shirts" on the POS still
+    // lines up with the "Shirts" collection on the website / admin. If there's
+    // no match we keep what was typed (POS staff must not be blocked mid-sale).
+    let normalizedCategory = category;
+    if (category && category.trim()) {
+      const { data: cats } = await supabase.from("categories").select("name");
+      const hit = (cats || []).find(
+        (c) => c.name.toLowerCase() === category.trim().toLowerCase()
+      );
+      if (hit) normalizedCategory = hit.name;
+    }
+
     // 3. Insert Product safely
     const { data: product, error: prodErr } = await supabase
       .from("products")
       .insert([{
-        name, brand, category, sku: cleanSku, hsn_code,
+        name, brand, category: normalizedCategory, sku: cleanSku, hsn_code,
         unit: unit || "Pcs", description, image_url, status: "active",
         cost_price: Number(cost_price) || 0,
         selling_price: Number(selling_price) || 0,
