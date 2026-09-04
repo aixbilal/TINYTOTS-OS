@@ -1,0 +1,7 @@
+{
+  "name": "esbuild-wasm",
+  "version": "0.0.0-tinytots-local-stub",
+  "description": "Project-owned throwing stub that satisfies the module name 'esbuild-wasm' for OpenNext's Cloudflare server-bundle esbuild pass. See index.js.",
+  "main": "index.js",
+  "license": "UNLICENSED"
+}

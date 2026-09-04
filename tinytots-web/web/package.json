@@ -48,6 +48,7 @@
     "@types/sanitize-html": "^2.16.1",
     "cross-env": "^10.1.0",
     "esbuild": "^0.28.1",
+    "esbuild-wasm": "file:vendor/esbuild-wasm-stub",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "serwist": "^9.5.12",
@@ -57,5 +58,8 @@
     "webpack": "^5.109.2",
     "wrangler": "^4.129.0"
   },
-  "description": "This is a Next.js project."
+  "description": "This is a Next.js project.",
+  "overrides": {
+    "esbuild-wasm": "file:vendor/esbuild-wasm-stub"
+  }
 }
