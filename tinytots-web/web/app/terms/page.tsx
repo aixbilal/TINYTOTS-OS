@@ -13,8 +13,9 @@ export const metadata = pageMetadata({
   path: "/terms",
 });
 
-// Static-generate — legal content, edited rarely via admin CMS.
-export const revalidate = 3600;
+// Dynamic — served live from Supabase per request. Keeps the service-role key
+// out of the build (K.2-B secret boundary); OpenNext static cache is read-only.
+export const dynamic = "force-dynamic";
 
 export default async function TermsPage() {
   const { data: page } = await supabaseAdmin

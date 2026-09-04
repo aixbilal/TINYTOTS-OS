@@ -10,8 +10,9 @@ export const metadata = pageMetadata({
   path: "/help",
 });
 
-// Static-generate — policy content, edited rarely via admin CMS.
-export const revalidate = 3600;
+// Dynamic — served live from Supabase per request. Keeps the service-role key
+// out of the build (K.2-B secret boundary); OpenNext static cache is read-only.
+export const dynamic = "force-dynamic";
 
 const DEFAULT_CONTENT: HelpPageContent = {
   hero_image_url: "",

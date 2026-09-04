@@ -12,9 +12,10 @@ import { jsonLdScriptString } from "@/lib/json-ld";
 import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
-// Static-generate known help article slugs at build time, ISR-revalidate
-// hourly — same pattern as blog/products/collections.
-export const revalidate = 3600;
+// Dynamic — served live from Supabase per request. Keeps the service-role key
+// out of the build (K.2-B secret boundary); OpenNext static cache is read-only.
+// generateStaticParams still runs but degrades to [] without a real key.
+export const dynamic = "force-dynamic";
 
 export async function generateStaticParams() {
   const { data } = await supabaseAdmin

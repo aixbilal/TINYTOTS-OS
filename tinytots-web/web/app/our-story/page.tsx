@@ -11,9 +11,10 @@ export const metadata = pageMetadata({
   path: "/our-story",
 });
 
-// Static-generate — pure marketing content, no per-user data. ISR-revalidate
-// hourly since it changes rarely (admin-edited CMS content).
-export const revalidate = 3600;
+// Dynamic — served live from Supabase per request. Removes the build-time
+// Supabase fetch (K.2-B); OpenNext static cache is read-only so ISR would
+// otherwise freeze this at build.
+export const dynamic = "force-dynamic";
 
 const DEFAULTS = {
   hero_image_url: "",
