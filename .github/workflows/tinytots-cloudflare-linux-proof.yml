@@ -1,0 +1,222 @@
+# TinyTots K.2-A — clean Linux build proof.
+#
+# Proves that the committed source of tinytots-web/web builds on a stock
+# Ubuntu runner with no Windows-specific node_modules patching and no symlink
+# workaround, and that the resulting Cloudflare Worker bundle stays near the
+# size measured in K.1.
+#
+# This workflow NEVER deploys. Every wrangler invocation is --dry-run, it
+# never authenticates to Cloudflare, and it uses only sentinel environment
+# values that are unmistakably fake. No repository secrets are read.
+name: TinyTots Cloudflare Linux Build Proof
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - work-7-pages-final3
+    paths:
+      - "tinytots-web/web/**"
+      - ".github/workflows/tinytots-cloudflare-linux-proof.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tinytots-linux-proof-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # --- Sentinel build-time values. NOT SECRETS. ---
+  # lib/supabase*.ts throw at module scope when these are absent, which would
+  # abort route collection. 127.0.0.1:54321 is the Supabase local-dev address:
+  # it refuses instantly, so the generateStaticParams/generateMetadata calls
+  # fall through their `{ data: null, error }` paths without stalling the
+  # build. Consequence: this job proves the source COMPILES and BUNDLES on
+  # Linux; it does not prerender real storefront content.
+  NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-sentinel-anon-key-not-a-real-credential"
+  SUPABASE_SERVICE_ROLE_KEY: "ci-sentinel-service-role-key-not-a-real-credential"
+  NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3001"
+  NEXT_TELEMETRY_DISABLED: "1"
+  WRANGLER_SEND_METRICS: "false"
+  # Hard Cloudflare Workers Paid script limit, gzipped.
+  CF_GZIP_LIMIT_KIB: "10240"
+  # Bundle size recorded in K.1, for drift detection only.
+  K1_GZIP_BASELINE_KIB: "3057.92"
+
+jobs:
+  linux-build-proof:
+    name: Clean Ubuntu build (no deploy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: tinytots-web/web
+
+    steps:
+      - name: Checkout the exact triggering commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Record runner and commit identity
+        run: |
+          echo "SHA under test : ${GITHUB_SHA}"
+          echo "Ref            : ${GITHUB_REF}"
+          echo "Runner OS      : $(. /etc/os-release && echo "$PRETTY_NAME")"
+          echo "Kernel         : $(uname -srm)"
+
+      - name: Prove the tree carries no Windows workarounds
+        run: |
+          set -uo pipefail
+          fail=0
+
+          # A committed node_modules would mean the build depends on a
+          # pre-patched dependency tree rather than on npm ci.
+          if git ls-files -- . | grep -q '^node_modules/'; then
+            echo "::error::node_modules is committed under tinytots-web/web"
+            fail=1
+          fi
+
+          # Mode 120000 == symlink. A symlink workaround is the K.0 Windows
+          # failure mode; it must not be needed here.
+          if git ls-files -s -- . | awk '$1 == "120000"' | grep -q .; then
+            echo "::error::committed symlinks under tinytots-web/web:"
+            git ls-files -s -- . | awk '$1 == "120000" { print $4 }'
+            fail=1
+          fi
+
+          # patch-package / pnpm patches would signal dependency surgery.
+          if [ -d patches ]; then
+            echo "::error::a patches/ directory is present"
+            fail=1
+          fi
+          if grep -qE '"(postinstall|prepare)"[[:space:]]*:' package.json; then
+            echo "::error::package.json defines an install hook"
+            fail=1
+          fi
+
+          if [ "$fail" -eq 0 ]; then
+            echo "OK: no committed node_modules, no symlinks, no patches, no install hooks"
+          fi
+          exit "$fail"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: tinytots-web/web/package-lock.json
+
+      - name: npm ci
+        run: |
+          node -v
+          npm -v
+          npm ci
+
+      - name: Type check (npx tsc --noEmit)
+        run: npx tsc --noEmit
+
+      - name: Canonical Next build (npm run build)
+        run: npm run build
+
+      - name: Verify the Serwist/PWA service worker survived the build
+        run: |
+          set -euo pipefail
+          # app/serwist/[path]/route.ts emits the worker as a route output
+          # rather than a public/ file, so accept either shape.
+          if find .next -path '*serwist*' -print -quit | grep -q .; then
+            echo "OK: Serwist route output present"
+            find .next -path '*serwist*' -type f | head -20
+          elif [ -f public/sw.js ]; then
+            echo "OK: public/sw.js emitted"
+            ls -l public/sw.js
+          else
+            echo "::error::no Serwist/PWA service worker output found after next build"
+            exit 1
+          fi
+
+      - name: OpenNext Cloudflare build (npm run build:cf)
+        run: npm run build:cf
+
+      - name: Verify the OpenNext worker artifacts exist
+        run: |
+          set -euo pipefail
+          test -f .open-next/worker.js || { echo "::error::.open-next/worker.js missing"; exit 1; }
+          test -d .open-next/assets || { echo "::error::.open-next/assets missing"; exit 1; }
+          echo "worker.js raw size: $(du -h .open-next/worker.js | cut -f1)"
+          echo "assets dir size   : $(du -sh .open-next/assets | cut -f1)"
+
+      - name: Wrangler dry-run bundle-size check (no Cloudflare auth)
+        id: bundle
+        run: |
+          set -euo pipefail
+          # --dry-run builds and measures the upload locally. It contacts no
+          # Cloudflare API and needs no token or account id.
+          npx wrangler deploy --dry-run --outdir=.wrangler-dryrun 2>&1 | tee wrangler-dryrun.log
+
+          # Wrangler prints e.g. "Total Upload: 9876.54 KiB / gzip: 3057.92 KiB"
+          gzip_kib="$(grep -oE 'gzip:[[:space:]]*[0-9.]+[[:space:]]*KiB' wrangler-dryrun.log | tail -1 | grep -oE '[0-9.]+' || true)"
+
+          if [ -z "$gzip_kib" ]; then
+            # Fall back to measuring the emitted bundle ourselves.
+            gzip_kib="$(find .wrangler-dryrun -type f -exec cat {} + | gzip -9 -c | wc -c | awk '{ printf "%.2f", $1 / 1024 }')"
+            echo "::warning::could not parse wrangler's gzip line; measured the dry-run output directly"
+          fi
+
+          echo "gzip_kib=${gzip_kib}" >> "$GITHUB_OUTPUT"
+          echo "Worker bundle gzip: ${gzip_kib} KiB (K.1 baseline ${K1_GZIP_BASELINE_KIB} KiB, Paid limit ${CF_GZIP_LIMIT_KIB} KiB)"
+
+          awk -v got="$gzip_kib" -v limit="$CF_GZIP_LIMIT_KIB" -v base="$K1_GZIP_BASELINE_KIB" '
+            BEGIN {
+              if (got > limit) {
+                printf "::error::worker bundle %.2f KiB gzip exceeds the Cloudflare limit of %s KiB\n", got, limit
+                exit 1
+              }
+              drift = (got - base) / base * 100
+              if (drift > 10 || drift < -10) {
+                printf "::warning::worker bundle %.2f KiB gzip drifted %+.1f%% from the K.1 baseline of %s KiB\n", got, drift, base
+              } else {
+                printf "within 10%% of the K.1 baseline (%+.1f%%)\n", drift
+              }
+            }'
+
+      - name: Assert no Cloudflare credentials were ever available
+        if: always()
+        run: |
+          set -uo pipefail
+          fail=0
+          for var in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID CF_API_TOKEN CF_ACCOUNT_ID CLOUDFLARE_API_KEY CLOUDFLARE_EMAIL; do
+            if [ -n "${!var:-}" ]; then
+              echo "::error::${var} is set in this job; a deploy would have been possible"
+              fail=1
+            fi
+          done
+          # wrangler writes an OAuth config here once a login happens.
+          if [ -e "${HOME}/.config/.wrangler/config/default.toml" ]; then
+            echo "::error::a wrangler OAuth config exists; this job authenticated to Cloudflare"
+            fail=1
+          fi
+          if [ "$fail" -eq 0 ]; then
+            echo "OK: no Cloudflare credentials present and no wrangler login occurred"
+          fi
+          exit "$fail"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## TinyTots K.2-A — clean Linux build proof"
+            echo ""
+            echo "| Item | Value |"
+            echo "| --- | --- |"
+            echo "| SHA tested | \`${GITHUB_SHA}\` |"
+            echo "| Runner | \`$(. /etc/os-release && echo "$PRETTY_NAME")\` |"
+            echo "| Node | \`$(node -v)\` / npm \`$(npm -v)\` |"
+            echo "| Worker bundle (gzip) | ${{ steps.bundle.outputs.gzip_kib || 'not measured' }} KiB |"
+            echo "| K.1 baseline (gzip) | ${K1_GZIP_BASELINE_KIB} KiB |"
+            echo "| Cloudflare deployment | none — dry-run only |"
+            echo "| Secrets used | none — sentinel values only |"
+          } >> "$GITHUB_STEP_SUMMARY"
