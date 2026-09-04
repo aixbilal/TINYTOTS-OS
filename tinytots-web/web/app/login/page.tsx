@@ -50,13 +50,18 @@ export default function LoginPage() {
     }
 
     setSubmitting(true);
+    // TEMPORARY DIAGNOSTIC — remove once the login-latency root cause is
+    // found. Timings only; never logs email/password or any response data.
+    const t0 = performance.now();
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
       });
+      const t1 = performance.now();
       const data = await res.json().catch(() => ({}));
+      const t2 = performance.now();
 
       if (!res.ok) {
         setServerError(
@@ -67,6 +72,12 @@ export default function LoginPage() {
         setSubmitting(false);
         return;
       }
+
+      console.log("[login-client-timing]", {
+        fetchMs: Math.round(t1 - t0),
+        parseMs: Math.round(t2 - t1),
+        beforeNavigationMs: Math.round(performance.now() - t0),
+      });
 
       router.push("/account");
       router.refresh();
