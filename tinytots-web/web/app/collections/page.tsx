@@ -4,8 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { pageMetadata } from "@/lib/seo";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
-// Static-generate — category list changes rarely (admin-managed).
-export const revalidate = 3600;
+// Cloudflare/OpenNext static-assets incremental cache can't honor `revalidate`
+// (read-only) — render dynamically so admin category changes appear at once.
+export const dynamic = "force-dynamic";
 
 export const metadata = pageMetadata({
   title: "Collections",

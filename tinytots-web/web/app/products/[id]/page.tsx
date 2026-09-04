@@ -14,11 +14,10 @@ import { pageMetadata, breadcrumbJsonLd, NOINDEX_NOFOLLOW, SITE_NAME, orgId } fr
 import Link from "next/link";
 import InternalTrustStrip from "@/components/InternalTrustStrip";
 
-// Static-generate top product IDs at build time, then ISR-revalidate every
-// 60s — same trade-off already used on the homepage (app/page.tsx). Removes
-// the live Supabase round-trip on every request without losing freshness
-// beyond a 60s window.
-export const revalidate = 60;
+// Cloudflare/OpenNext static-assets incremental cache can't honor `revalidate`
+// (read-only). Render dynamically so price / stock / images always reflect
+// Supabase; checkout stays the authoritative price/stock gate regardless.
+export const dynamic = "force-dynamic";
 
 export async function generateStaticParams() {
   const { data } = await supabase

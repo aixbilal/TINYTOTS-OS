@@ -47,6 +47,34 @@ export default async function TermsPage() {
           dangerouslySetInnerHTML={{ __html: safeHtml }}
         />
       )}
+      <section
+        aria-labelledby="product-imagery-note"
+        className="mt-stack-lg border-t border-border-subtle pt-stack-md"
+      >
+        <h2
+          id="product-imagery-note"
+          className="font-headline-md text-headline-md text-text-primary mb-stack-sm"
+        >
+          Product Imagery
+        </h2>
+        <div className="w-full break-words text-text-secondary font-body-md text-body-md [&_p]:mb-4">
+          <p>
+            Product visuals on this website may be AI-generated or digitally enhanced for
+            presentation. We use these images to show style, fit and styling context
+            consistently across the catalogue.
+          </p>
+          <p>
+            Actual products may differ from the images shown — including in colour, fabric
+            texture, print or embroidery placement, trims, packaging and other minor details.
+            Screen and device settings can also affect how colours appear. If a delivered item
+            differs materially from its description, our easy 7-day returns apply (see{" "}
+            <a href="/shipping-returns" className="text-brand-primary hover:underline">
+              Shipping &amp; Returns
+            </a>
+            ).
+          </p>
+        </div>
+      </section>
       <LegalContactCta pageLabel="Terms & Conditions" />
     </LegalPageLayout>
   );

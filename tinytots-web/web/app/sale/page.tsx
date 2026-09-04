@@ -3,8 +3,9 @@ import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import { pageMetadata, NOINDEX_FOLLOW } from "@/lib/seo";
 import ProductCarouselTabs from "@/components/ProductCarouselTabs";
 
-// ISR: sale composition changes when discounts start/end, not on every request.
-export const revalidate = 60;
+// Cloudflare/OpenNext static-assets incremental cache can't honor `revalidate`
+// (read-only) — render dynamically so sale composition tracks live discounts.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const ids = await getSaleProductIds();

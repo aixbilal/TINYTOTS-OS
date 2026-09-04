@@ -13,9 +13,9 @@ export const metadata = pageMetadata({
   path: "/blog",
 });
 
-// Static-generate, ISR-revalidate every 60s — same pattern already used
-// site-wide for content pages.
-export const revalidate = 60;
+// Cloudflare/OpenNext static-assets incremental cache can't honor `revalidate`
+// (read-only) — render dynamically so newly published posts appear immediately.
+export const dynamic = "force-dynamic";
 
 const BLOG_CATEGORIES = [
   "Parenting Tips",

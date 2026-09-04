@@ -9,10 +9,9 @@ import { jsonLdScriptString } from "@/lib/json-ld";
 import { pageMetadata, breadcrumbJsonLd, SITE_NAME, orgId } from "@/lib/seo";
 import BlogSubscribeForm from "@/components/BlogSubscribeForm";
 
-// Static-generate known blog post slugs at build time, ISR-revalidate every
-// 60s — same trade-off as products/collections. This was the single worst
-// route in production (P75 1.94s, 0% cache hit rate).
-export const revalidate = 60;
+// Cloudflare/OpenNext static-assets incremental cache can't honor `revalidate`
+// (read-only) — render dynamically so post edits publish without a redeploy.
+export const dynamic = "force-dynamic";
 
 export async function generateStaticParams() {
   const { data } = await supabaseAdmin

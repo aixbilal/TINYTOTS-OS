@@ -7,9 +7,9 @@ import { jsonLdScriptString } from "@/lib/json-ld";
 import { pageMetadata, breadcrumbJsonLd, NOINDEX_FOLLOW, NOINDEX_NOFOLLOW } from "@/lib/seo";
 import CollectionPageClient from "./CollectionPageClient";
 
-// Same ISR trade-off as the homepage and PDP: pre-render known category
-// slugs at build time, revalidate in the background every 60s.
-export const revalidate = 60;
+// Cloudflare/OpenNext static-assets incremental cache can't honor `revalidate`
+// (read-only) — render dynamically so category product lists stay live.
+export const dynamic = "force-dynamic";
 
 const PRODUCT_SELECT = `
   id, name, category, image_url,

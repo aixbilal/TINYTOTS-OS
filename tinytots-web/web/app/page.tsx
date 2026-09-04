@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
@@ -13,15 +13,17 @@ import { pageMetadata, organizationJsonLd, websiteJsonLd, OG_DEFAULT_IMAGE } fro
 import { jsonLdScriptString } from "@/lib/json-ld";
 import { getStoreContact } from "@/lib/get-store-contact";
 
-// ISR: keep homepage fresh for admin edits without force-dynamic TTFB hit on every request.
-// 60s is a good balance for stock/price/image updates vs PageSpeed LCP.
-export const revalidate = 60;
+// Cloudflare/OpenNext uses the read-only static-assets incremental cache, which
+// silently ignores `revalidate` (no writable store, no background regeneration).
+// Render dynamically so admin edits to homepage content / stock / price appear
+// immediately instead of freezing at the last deploy. See HOSTING-K1 report §12-13.
+export const dynamic = "force-dynamic";
 
 // Pakistan / South Asia traffic: avoid regenerating from US-East (iad1) on STALE misses.
 export const preferredRegion = ["sin1", "bom1", "hnd1"];
 
 // Heavy client islands — code-split so framer-motion / supabase realtime stay off the critical path.
-const TestimonialsCarousel = dynamic(() => import("@/components/TestimonialsCarousel"));
+const TestimonialsCarousel = nextDynamic(() => import("@/components/TestimonialsCarousel"));
 
 const HOME_TITLE = "TinyTots | Kids Clothing in Pakistan";
 const HOME_DESCRIPTION =

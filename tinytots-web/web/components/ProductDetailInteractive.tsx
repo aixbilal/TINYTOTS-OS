@@ -65,6 +65,16 @@ export default function ProductDetailInteractive({
           selectedVariantId={selectedVariantId}
           wishlistButton={<WishlistButton productId={productId} className="w-10 h-10 border border-border-default bg-white/90" />}
         />
+        <p className="mt-stack-sm flex items-start gap-1.5 font-body-sm text-body-sm text-text-secondary">
+          <span className="material-symbols-outlined text-[16px] mt-0.5 shrink-0" aria-hidden="true">
+            info
+          </span>
+          <span>
+            <span className="font-medium text-text-primary">Image note:</span> Product visuals
+            may be AI-generated or digitally enhanced for presentation. Actual colours, textures,
+            print placement and minor details may vary slightly from the images shown.
+          </span>
+        </p>
       </div>
 
       <div className="min-w-0">

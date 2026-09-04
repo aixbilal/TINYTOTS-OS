@@ -29,5 +29,5 @@ public/swe-worker-*.js.map
 # Cloudflare / OpenNext (Batch J hosting-compat evaluation)
 .open-next/
 .wrangler/
-.dev.vars
+.dev.vars*
 cloudflare-env.d.ts
