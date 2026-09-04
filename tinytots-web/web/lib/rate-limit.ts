@@ -60,7 +60,29 @@ export async function rateLimit(
     );
     return { ok: false, retryAfterSec };
   } catch (err) {
-    console.error("[rate-limit] Upstash error — failing closed", err);
+    // TEMPORARY DIAGNOSTIC (safe fields only — never the raw error object,
+    // which may carry request/response details from the Upstash SDK).
+    const e = err as {
+      name?: unknown;
+      message?: unknown;
+      status?: unknown;
+      statusCode?: unknown;
+      cause?: { message?: unknown };
+    };
+    console.error("[rate-limit] Upstash diagnostic", {
+      name: typeof e?.name === "string" ? e.name : undefined,
+      message: typeof e?.message === "string" ? e.message : undefined,
+      status:
+        typeof e?.status === "number"
+          ? e.status
+          : typeof e?.statusCode === "number"
+            ? e.statusCode
+            : undefined,
+      causeMessage:
+        typeof e?.cause?.message === "string" ? e.cause.message : undefined,
+      hasUpstashUrl: Boolean(process.env.UPSTASH_REDIS_REST_URL?.trim()),
+      hasUpstashToken: Boolean(process.env.UPSTASH_REDIS_REST_TOKEN?.trim()),
+    });
     return { ok: false, retryAfterSec: 60 };
   }
 }
