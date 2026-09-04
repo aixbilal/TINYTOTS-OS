@@ -7,6 +7,10 @@
   // are the two flags @opennextjs/cloudflare requires.
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // Dashboard-defined runtime Variables/Secrets are otherwise dropped by
+  // `wrangler deploy` because this file has no `vars` block (none belong in
+  // Git — see K.2-B). keep_vars stops deploys from clearing them.
+  "keep_vars": true,
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
