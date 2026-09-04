@@ -1,7 +1,6 @@
   import type { Metadata } from "next";
   import { unstable_cache } from "next/cache";
   import { Inter, Plus_Jakarta_Sans, Playfair_Display, Geist, JetBrains_Mono } from "next/font/google";
-  import { SpeedInsights } from "@vercel/speed-insights/next";
   import "./globals.css";
   import SiteShell from "@/components/SiteShell";
   import Analytics from "@/components/Analytics";
@@ -150,7 +149,6 @@
             <IconFontGuard />
             <SiteShell announcement={announcement}>{children}</SiteShell>
             <Analytics />
-            <SpeedInsights />
           </SerwistProvider>
         </body>
       </html>
