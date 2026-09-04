@@ -12,6 +12,15 @@ import { withSerwist } from "@serwist/turbopack";
 // be tuned from real violation reports before being enforced.
 const CSP_ENFORCED = "frame-ancestors 'none'; base-uri 'self'; object-src 'none'";
 
+/**
+ * True only for the Cloudflare Workers build (`npm run build:cf`, which sets
+ * TINYTOTS_BUILD_TARGET=cloudflare before delegating to `next build`). Used to
+ * drop Node-only modules that are provably unreachable on workerd but still get
+ * bundled. The canonical Node/Vercel `npm run build` never sets it, so that
+ * output is unaffected.
+ */
+const isCloudflareBuild = process.env.TINYTOTS_BUILD_TARGET === "cloudflare";
+
 const SUPABASE_ORIGIN = "https://vldjscskhsrrzdhhvcht.supabase.co";
 const CSP_REPORT_ONLY = [
   "default-src 'self'",
@@ -50,6 +59,17 @@ const nextConfig: NextConfig = {
       // branch is dead code — alias it to a throwing stub so the Cloudflare/
       // OpenNext esbuild pass doesn't fail resolving an uninstalled package.
       "esbuild-wasm": "./cloudflare-shims/esbuild-wasm-stub.js",
+      // Node-only packages reached only through guarded dynamic imports that
+      // return early on workerd, so they are unreachable there but still
+      // bundled (undici alone is ~1.5 MB across three server chunks). The
+      // Cloudflare build aliases them to throwing stubs; Node/Vercel keeps the
+      // real packages. See cloudflare-shims/{undici,sharp}-stub.js.
+      ...(isCloudflareBuild
+        ? {
+            undici: "./cloudflare-shims/undici-stub.js",
+            sharp: "./cloudflare-shims/sharp-stub.js",
+          }
+        : {}),
     },
   },
   // Do NOT mark isomorphic-dompurify/jsdom as serverExternalPackages —
