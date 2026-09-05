@@ -30,49 +30,53 @@ export type AnnouncementData = {
   style?: string;
 };
 
-function AnnouncementBar({ data }: { data: { enabled: boolean; text: string; link: string; style?: string } | null }) {
-  if (!data?.enabled || !data.text) return null;
+// Factual, existing TinyTots policy — the fallback shown whenever there is no
+// active admin announcement (every internal page, and the homepage before/
+// without one). Not marketing copy, so it never needs to be enabled/disabled.
+const FALLBACK_NOTICE_DESKTOP = "Free shipping across Pakistan · Easy 7-day returns";
+const FALLBACK_NOTICE_MOBILE = "Free shipping Pakistan · 7-day returns";
 
-  const isMarquee = data.style === "marquee";
-
-  const content = isMarquee ? (
-    <div className="overflow-hidden whitespace-nowrap">
-      <div className="marquee-track">
-        <span className="font-label-md text-label-md px-10 py-2 shrink-0">{data.text}</span>
-        <span className="font-label-md text-label-md px-10 py-2 shrink-0" aria-hidden="true">{data.text}</span>
-      </div>
-    </div>
-  ) : (
-    <p className="font-label-md text-label-md text-center py-2 px-4 truncate">{data.text}</p>
+// One restrained, centered top notice bar for the whole storefront (homepage
+// and internal pages alike) — a single message, not a multi-column utility
+// bar. Fixed height regardless of content so swapping text in (e.g. the
+// homepage's admin announcement arriving after its client fetch) never
+// shifts the header below it. `style` values like "marquee" are accepted
+// from admin data but intentionally ignored here: every notice renders as
+// the same static line, never a scrolling ticker.
+function TopNoticeBar({
+  text,
+  mobileText,
+  href,
+}: {
+  text: string;
+  mobileText?: string;
+  href?: string;
+}) {
+  const inner = (
+    <p className="font-label-md text-label-md text-center leading-none truncate">
+      {mobileText && mobileText !== text ? (
+        <>
+          <span className="sm:hidden">{mobileText}</span>
+          <span className="hidden sm:inline">{text}</span>
+        </>
+      ) : (
+        text
+      )}
+    </p>
   );
 
   return (
-    <div className="bg-brand-primary text-white w-full">
-      {data.link ? (
-        <Link href={data.link} className="block hover:opacity-90 transition-opacity">
-          {content}
+    <div className="bg-brand-primary text-white w-full h-8 flex items-center justify-center overflow-hidden px-margin-mobile md:px-margin-desktop">
+      {href ? (
+        <Link
+          href={href}
+          className="max-w-full hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 rounded-sm"
+        >
+          {inner}
         </Link>
       ) : (
-        content
+        inner
       )}
-    </div>
-  );
-}
-
-// Fixed, non-admin-editable Pakistan-policy strip shown on internal pages
-// only - deliberately NOT driven by homepage_content.announcement_* so
-// editing the Homepage's announcement in admin never affects internal
-// pages, and vice versa. Static real business policy, not marketing copy.
-function InternalAnnouncementBar() {
-  return (
-    <div className="bg-brand-primary text-white w-full">
-      <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop flex items-center justify-between gap-4 py-2">
-        <span className="font-label-md text-label-md truncate">Free shipping across Pakistan</span>
-        <span className="font-label-md text-label-md hidden sm:flex items-center gap-4 shrink-0">
-          <span>Easy 7-day returns</span>
-          <Link href="/help" className="hover:underline">Help</Link>
-        </span>
-      </div>
     </div>
   );
 }
@@ -329,9 +333,9 @@ export default function SiteShell({
   }, [announcement]);
   const pathname = usePathname();
 
-  // Homepage-only: the editable announcement is only ever displayed on "/"
-  // (see the pathname === "/" branch below), so only fetch it there. Internal
-  // pages use the static InternalAnnouncementBar and must never call this.
+  // Homepage-only: the admin announcement can only ever replace the fallback
+  // on "/" (see hasActiveAnnouncement below), so only fetch it there. Internal
+  // pages always show the static factual fallback and must never call this.
   useEffect(() => {
     if (pathname !== "/") return;
     let cancelled = false;
@@ -369,6 +373,14 @@ export default function SiteShell({
     return <div className="min-h-screen bg-surface-canvas">{children}</div>;
   }
 
+  // Homepage-only, and only once a non-empty, enabled announcement has
+  // actually loaded — every other case (internal pages, homepage before/
+  // without one) shows the same factual fallback line.
+  const hasActiveAnnouncement = pathname === "/" && !!announcement?.enabled && !!announcement.text.trim();
+  const noticeText = hasActiveAnnouncement ? announcement!.text : FALLBACK_NOTICE_DESKTOP;
+  const noticeMobileText = hasActiveAnnouncement ? announcement!.text : FALLBACK_NOTICE_MOBILE;
+  const noticeHref = hasActiveAnnouncement ? announcement!.link || undefined : undefined;
+
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ paddingTop: headerHeight }}>
       <AuthProvider>
@@ -380,7 +392,7 @@ export default function SiteShell({
               className="fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out"
               style={{ transform: headerHidden || searchOpen ? "translateY(-100%)" : "translateY(0)" }}
             >
-              {pathname === "/" ? <AnnouncementBar data={announcement} /> : <InternalAnnouncementBar />}
+              <TopNoticeBar text={noticeText} mobileText={noticeMobileText} href={noticeHref} />
               <header className="bg-surface-canvas/80 backdrop-blur-md border-b border-border-default">
               {pathname === "/" ? (
                 <HomepageHeader
