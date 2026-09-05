@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     password?: string;
     full_name?: string;
     phone?: string;
+    captchaToken?: string;
   };
   try {
     body = await request.json();
@@ -31,6 +32,8 @@ export async function POST(request: NextRequest) {
   const password = typeof body.password === "string" ? body.password : "";
   const fullName = typeof body.full_name === "string" ? body.full_name.trim() : "";
   const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+  const captchaToken =
+    typeof body.captchaToken === "string" && body.captchaToken ? body.captchaToken : undefined;
 
   if (!fullName) {
     return NextResponse.json({ error: "Please enter your full name." }, { status: 400 });
@@ -79,6 +82,7 @@ export async function POST(request: NextRequest) {
         full_name: fullName,
         phone,
       },
+      ...(captchaToken ? { captchaToken } : {}),
     },
   });
 
@@ -88,6 +92,12 @@ export async function POST(request: NextRequest) {
     if (lower.includes("already") || lower.includes("registered")) {
       return NextResponse.json(
         { error: "Could not create account. Try logging in or use a different email." },
+        { status: 400 }
+      );
+    }
+    if (lower.includes("captcha")) {
+      return NextResponse.json(
+        { error: "Please complete the security check and try again." },
         { status: 400 }
       );
     }

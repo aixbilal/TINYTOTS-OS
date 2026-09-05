@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     return rateLimitResponse(limited.retryAfterSec);
   }
 
-  let body: { email?: string; password?: string };
+  let body: { email?: string; password?: string; captchaToken?: string };
   try {
     body = await request.json();
   } catch {
@@ -25,6 +25,8 @@ export async function POST(request: NextRequest) {
 
   const email = typeof body.email === "string" ? body.email.trim() : "";
   const password = typeof body.password === "string" ? body.password : "";
+  const captchaToken =
+    typeof body.captchaToken === "string" && body.captchaToken ? body.captchaToken : undefined;
 
   if (!email || !password) {
     return NextResponse.json(
@@ -55,11 +57,18 @@ export async function POST(request: NextRequest) {
     }
   );
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+    ...(captchaToken ? { options: { captchaToken } } : {}),
+  });
 
   if (error) {
-    const msg = error.message.toLowerCase().includes("email not confirmed")
+    const lower = error.message.toLowerCase();
+    const msg = lower.includes("email not confirmed")
       ? "Please confirm your email first — check your inbox for the confirmation link."
+      : lower.includes("captcha")
+      ? "Please complete the security check and try again."
       : "Incorrect email or password.";
     return NextResponse.json({ error: msg }, { status: 401 });
   }

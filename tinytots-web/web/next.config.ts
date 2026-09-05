@@ -25,12 +25,12 @@ const SUPABASE_ORIGIN = "https://vldjscskhsrrzdhhvcht.supabase.co";
 const CSP_REPORT_ONLY = [
   "default-src 'self'",
   // 'unsafe-inline' is required for Next.js' inline bootstrap + JSON-LD; no 'unsafe-eval'.
-  "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.googletagmanager.com https://connect.facebook.net",
+  "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.googletagmanager.com https://connect.facebook.net https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   `img-src 'self' data: blob: ${SUPABASE_ORIGIN} https://www.facebook.com https://www.google-analytics.com`,
   "font-src 'self' https://fonts.gstatic.com",
   `connect-src 'self' ${SUPABASE_ORIGIN} wss://vldjscskhsrrzdhhvcht.supabase.co https://*.upstash.io https://vitals.vercel-insights.com https://va.vercel-scripts.com https://www.google-analytics.com https://*.analytics.google.com https://region1.google-analytics.com https://connect.facebook.net https://www.facebook.com`,
-  "frame-src 'self' https://www.facebook.com",
+  "frame-src 'self' https://www.facebook.com https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

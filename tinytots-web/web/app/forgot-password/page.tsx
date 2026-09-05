@@ -4,6 +4,8 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
+import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
+import TurnstileChallenge from "@/components/TurnstileChallenge";
 
 const RESET_NEXT_KEY = "tt_password_reset_next";
 
@@ -16,6 +18,13 @@ function ForgotPasswordForm() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  function resetCaptcha() {
+    setCaptchaToken(null);
+    setTurnstileKey((k) => k + 1);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +37,10 @@ function ForgotPasswordForm() {
     }
     if (!isValidEmail(trimmed)) {
       setFormError(EMAIL_ERROR);
+      return;
+    }
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setFormError("Please complete the security check and try again.");
       return;
     }
 
@@ -45,7 +58,11 @@ function ForgotPasswordForm() {
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmed, redirectTo: resetPath }),
+        body: JSON.stringify({
+          email: trimmed,
+          redirectTo: resetPath,
+          ...(captchaToken ? { captchaToken } : {}),
+        }),
       });
 
       if (res.status === 429) {
@@ -56,6 +73,7 @@ function ForgotPasswordForm() {
             : "Too many requests. Please try again shortly."
         );
         setSubmitting(false);
+        if (TURNSTILE_SITE_KEY) resetCaptcha();
         return;
       }
 
@@ -102,6 +120,16 @@ function ForgotPasswordForm() {
           autoComplete="email"
           className="w-full border rounded-lg px-4 py-3 bg-surface-elevated text-text-primary font-body-md text-body-md border-border-default focus:border-brand-primary focus:outline-none transition-colors"
         />
+
+        {TURNSTILE_SITE_KEY && (
+          <TurnstileChallenge
+            key={turnstileKey}
+            siteKey={TURNSTILE_SITE_KEY}
+            onToken={setCaptchaToken}
+            onExpired={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+          />
+        )}
 
         <button
           type="submit"

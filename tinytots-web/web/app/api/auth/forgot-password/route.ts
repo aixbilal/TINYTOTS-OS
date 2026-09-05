@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
   });
   if (!limited.ok) return rateLimitResponse(limited.retryAfterSec);
 
-  let body: { email?: string; redirectTo?: string };
+  let body: { email?: string; redirectTo?: string; captchaToken?: string };
   try {
     body = await request.json();
   } catch {
@@ -21,6 +21,8 @@ export async function POST(request: NextRequest) {
   }
 
   const email = typeof body.email === "string" ? body.email.trim() : "";
+  const captchaToken =
+    typeof body.captchaToken === "string" && body.captchaToken ? body.captchaToken : undefined;
   if (!email) {
     return NextResponse.json(
       { error: "Please enter your email address." },
@@ -43,7 +45,10 @@ export async function POST(request: NextRequest) {
   );
 
   // Always return success to the client — do not reveal whether the email exists.
-  await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo,
+    ...(captchaToken ? { captchaToken } : {}),
+  });
 
   return NextResponse.json({ success: true });
 }

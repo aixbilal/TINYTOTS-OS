@@ -8,6 +8,8 @@ import { supabase } from "@/lib/supabase";
 import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
 import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
 import { isValidPakPhone, PAK_PHONE_ERROR } from "@/lib/validate-phone";
+import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
+import TurnstileChallenge from "@/components/TurnstileChallenge";
 
 const MAX_LEN = { name: 80, phone: 20, email: 100, password: 72 };
 
@@ -30,6 +32,13 @@ export default function SignupPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [signupComplete, setSignupComplete] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  function resetCaptcha() {
+    setCaptchaToken(null);
+    setTurnstileKey((k) => k + 1);
+  }
 
   function validate() {
     const errs: Record<string, string> = {};
@@ -52,6 +61,10 @@ export default function SignupPage() {
       return;
     }
     if (!validate()) return;
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setServerError("Please complete the security check and try again.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -63,6 +76,7 @@ export default function SignupPage() {
           password,
           full_name: fullName.trim(),
           phone: phone.trim(),
+          ...(captchaToken ? { captchaToken } : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -74,6 +88,7 @@ export default function SignupPage() {
             : "Could not create account. Please try again."
         );
         setSubmitting(false);
+        if (TURNSTILE_SITE_KEY) resetCaptcha();
         return;
       }
 
@@ -81,6 +96,7 @@ export default function SignupPage() {
     } catch {
       setServerError("Network error. Please try again.");
       setSubmitting(false);
+      if (TURNSTILE_SITE_KEY) resetCaptcha();
     }
   }
 
@@ -201,6 +217,16 @@ export default function SignupPage() {
                 </p>
               )}
             </div>
+
+            {TURNSTILE_SITE_KEY && (
+              <TurnstileChallenge
+                key={turnstileKey}
+                siteKey={TURNSTILE_SITE_KEY}
+                onToken={setCaptchaToken}
+                onExpired={() => setCaptchaToken(null)}
+                onError={() => setCaptchaToken(null)}
+              />
+            )}
 
             <button
               type="submit"

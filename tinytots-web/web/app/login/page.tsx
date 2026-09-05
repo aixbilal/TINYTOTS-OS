@@ -6,6 +6,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
+import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
+import TurnstileChallenge from "@/components/TurnstileChallenge";
 
 const BENEFITS = [
   { icon: "shopping_bag", title: "Faster checkout", body: "Save time by securely storing your details." },
@@ -30,6 +32,13 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  function resetCaptcha() {
+    setCaptchaToken(null);
+    setTurnstileKey((k) => k + 1);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,13 +57,21 @@ export default function LoginPage() {
       setServerError(EMAIL_ERROR);
       return;
     }
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setServerError("Please complete the security check and try again.");
+      return;
+    }
 
     setSubmitting(true);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          ...(captchaToken ? { captchaToken } : {}),
+        }),
       });
       const data = await res.json().catch(() => ({}));
 
@@ -65,6 +82,7 @@ export default function LoginPage() {
             : "Incorrect email or password."
         );
         setSubmitting(false);
+        if (TURNSTILE_SITE_KEY) resetCaptcha();
         return;
       }
 
@@ -78,6 +96,7 @@ export default function LoginPage() {
     } catch {
       setServerError("Network error. Please try again.");
       setSubmitting(false);
+      if (TURNSTILE_SITE_KEY) resetCaptcha();
     }
   }
 
@@ -147,6 +166,16 @@ export default function LoginPage() {
                 Forgot password?
               </Link>
             </div>
+
+            {TURNSTILE_SITE_KEY && (
+              <TurnstileChallenge
+                key={turnstileKey}
+                siteKey={TURNSTILE_SITE_KEY}
+                onToken={setCaptchaToken}
+                onExpired={() => setCaptchaToken(null)}
+                onError={() => setCaptchaToken(null)}
+              />
+            )}
 
             <button
               type="submit"
