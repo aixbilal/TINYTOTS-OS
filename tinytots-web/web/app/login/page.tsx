@@ -14,14 +14,6 @@ const BENEFITS = [
   { icon: "sell", title: "Exclusive offers", body: "Be the first to know about new arrivals & special deals." },
 ];
 
-// TEMPORARY DIAGNOSTIC — remove once the post-login navigation latency root
-// cause is found. Timing only; never reads/logs email/password/session/token.
-function loginNavSince(): number | null {
-  if (typeof window === "undefined") return null;
-  const start = window.sessionStorage.getItem("tinytots_login_nav_start");
-  return start ? Date.now() - Number(start) : null;
-}
-
 export default function LoginPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -29,14 +21,7 @@ export default function LoginPage() {
   // Already signed in? Don't show the sign-in form — send them to their account.
   // OAuth returns through /auth/callback (not here), so this can't loop.
   useEffect(() => {
-    if (!loading && user) {
-      // TEMPORARY DIAGNOSTIC
-      console.log("[login-nav-timing]", {
-        stage: "auth-effect-replace-fired",
-        sinceLoginNavStartMs: loginNavSince(),
-      });
-      router.replace("/account");
-    }
+    if (!loading && user) router.replace("/account");
   }, [user, loading, router]);
 
   const [email, setEmail] = useState("");
@@ -65,18 +50,13 @@ export default function LoginPage() {
     }
 
     setSubmitting(true);
-    // TEMPORARY DIAGNOSTIC — remove once the login-latency root cause is
-    // found. Timings only; never logs email/password or any response data.
-    const t0 = performance.now();
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),
       });
-      const t1 = performance.now();
       const data = await res.json().catch(() => ({}));
-      const t2 = performance.now();
 
       if (!res.ok) {
         setServerError(
@@ -87,21 +67,6 @@ export default function LoginPage() {
         setSubmitting(false);
         return;
       }
-
-      console.log("[login-client-timing]", {
-        fetchMs: Math.round(t1 - t0),
-        parseMs: Math.round(t2 - t1),
-        beforeNavigationMs: Math.round(performance.now() - t0),
-      });
-
-      // TEMPORARY DIAGNOSTIC
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem("tinytots_login_nav_start", String(Date.now()));
-      }
-      console.log("[login-nav-timing]", {
-        stage: "hard-navigation-called",
-        sinceLoginNavStartMs: 0,
-      });
 
       // Full document navigation (not router.push): the server login route
       // sets the Supabase auth cookies, but the already-running browser

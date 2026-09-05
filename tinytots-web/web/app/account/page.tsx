@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
@@ -56,15 +56,6 @@ const QUICK_LINKS = [
   { href: "/account/returns", label: "Returns & Exchanges", body: "Start a return", icon: "assignment_return" },
 ];
 
-// TEMPORARY DIAGNOSTIC — remove once the post-login navigation latency root
-// cause is found. Timing only; never reads/logs customer/order/voucher data,
-// ids, or any PII.
-function loginNavSince(): number | null {
-  if (typeof window === "undefined") return null;
-  const start = window.sessionStorage.getItem("tinytots_login_nav_start");
-  return start ? Date.now() - Number(start) : null;
-}
-
 export default function AccountPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
@@ -74,41 +65,6 @@ export default function AccountPage() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // TEMPORARY DIAGNOSTIC
-  const loggedAuthReadyRef = useRef(false);
-  const loggedAccountReadyRef = useRef(false);
-
-  // TEMPORARY DIAGNOSTIC
-  useEffect(() => {
-    console.log("[login-nav-timing]", {
-      stage: "account-mounted",
-      sinceLoginNavStartMs: loginNavSince(),
-    });
-  }, []);
-
-  // TEMPORARY DIAGNOSTIC
-  useEffect(() => {
-    if (!authLoading && !loggedAuthReadyRef.current) {
-      loggedAuthReadyRef.current = true;
-      console.log("[login-nav-timing]", {
-        stage: "account-auth-ready",
-        sinceLoginNavStartMs: loginNavSince(),
-        hasUser: !!user,
-      });
-    }
-  }, [authLoading, user]);
-
-  // TEMPORARY DIAGNOSTIC
-  useEffect(() => {
-    if (!authLoading && user && !dataLoading && !loggedAccountReadyRef.current) {
-      loggedAccountReadyRef.current = true;
-      console.log("[login-nav-timing]", {
-        stage: "account-ready",
-        sinceLoginNavStartMs: loginNavSince(),
-      });
-    }
-  }, [authLoading, user, dataLoading]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -124,25 +80,11 @@ export default function AccountPage() {
       setDataLoading(true);
       setError(null);
 
-      // TEMPORARY DIAGNOSTIC
-      let stageStart = performance.now();
-      console.log("[login-nav-timing]", {
-        stage: "account-customer-start",
-        sinceLoginNavStartMs: loginNavSince(),
-      });
-
       const { data: customerData, error: customerError } = await supabase
         .from("customers")
         .select("id, full_name, email, phone, orders_count, referral_code")
         .eq("auth_user_id", userId)
         .single();
-
-      // TEMPORARY DIAGNOSTIC
-      console.log("[login-nav-timing]", {
-        stage: "account-customer-end",
-        sinceLoginNavStartMs: loginNavSince(),
-        durationMs: Math.round(performance.now() - stageStart),
-      });
 
       if (customerError) {
         setError("Couldn't load your account details.");
@@ -152,51 +94,27 @@ export default function AccountPage() {
 
       setCustomer(customerData);
 
-      // TEMPORARY DIAGNOSTIC
-      stageStart = performance.now();
-      console.log("[login-nav-timing]", {
-        stage: "account-orders-start",
-        sinceLoginNavStartMs: loginNavSince(),
-      });
-
-      const { data: ordersData, error: ordersError } = await supabase
-        .from("orders")
-        .select("id, order_number, status, total, payment_method, created_at")
-        .eq("customer_id", customerData.id)
-        .order("created_at", { ascending: false });
-
-      // TEMPORARY DIAGNOSTIC
-      console.log("[login-nav-timing]", {
-        stage: "account-orders-end",
-        sinceLoginNavStartMs: loginNavSince(),
-        durationMs: Math.round(performance.now() - stageStart),
-      });
+      const [
+        { data: ordersData, error: ordersError },
+        { data: vouchersData },
+      ] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id, order_number, status, total, payment_method, created_at")
+          .eq("customer_id", customerData.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("vouchers")
+          .select("id, amount, is_used, expires_at, source")
+          .eq("customer_id", customerData.id)
+          .order("expires_at", { ascending: true }),
+      ]);
 
       if (ordersError) {
         setError("Couldn't load your order history.");
       } else {
         setOrders(ordersData || []);
       }
-
-      // TEMPORARY DIAGNOSTIC
-      stageStart = performance.now();
-      console.log("[login-nav-timing]", {
-        stage: "account-vouchers-start",
-        sinceLoginNavStartMs: loginNavSince(),
-      });
-
-      const { data: vouchersData } = await supabase
-        .from("vouchers")
-        .select("id, amount, is_used, expires_at, source")
-        .eq("customer_id", customerData.id)
-        .order("expires_at", { ascending: true });
-
-      // TEMPORARY DIAGNOSTIC
-      console.log("[login-nav-timing]", {
-        stage: "account-vouchers-end",
-        sinceLoginNavStartMs: loginNavSince(),
-        durationMs: Math.round(performance.now() - stageStart),
-      });
 
       setVouchers(vouchersData || []);
 
