@@ -167,9 +167,24 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Skip static assets, Next internals, and service-worker artifacts.
-     */
-    "/((?!_next/static|_next/image|favicon.ico|serwist/|sw\\.js|sw\\.js\\.map|workbox-.*|swe-worker-.*|manifest\\.json|offline|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    {
+      /*
+       * Skip static assets, Next internals, and service-worker artifacts.
+       * (Exact same pathname exclusion regex as before.)
+       */
+      source:
+        "/((?!_next/static|_next/image|favicon.ico|serwist/|sw\\.js|sw\\.js\\.map|workbox-.*|swe-worker-.*|manifest\\.json|offline|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+      // Documented Next.js prefetch signals (see "Matching Headers, Cookies,
+      // and Query Strings" in the Middleware matcher config docs). A request
+      // carrying either header is a Link prefetch, not a real navigation —
+      // `missing` excludes it from invoking middleware() at all, so it never
+      // pays the getUser()/customers.phone round trips. Real navigations
+      // carry neither header and are unaffected — middleware() itself, the
+      // phone gate, and admin handling are unchanged.
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
   ],
 };
