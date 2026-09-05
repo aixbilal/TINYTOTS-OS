@@ -88,10 +88,17 @@ export const SETTINGS_META: Record<string, SettingMeta> = {
     help: "Shown on the storefront contact / shipping pages.",
   },
   store_whatsapp: {
-    label: "WhatsApp business number",
+    label: "WhatsApp business number (Pakistan)",
     section: "Store profile",
     type: "tel",
     placeholder: "+923001234567",
+  },
+  store_whatsapp_uae: {
+    label: "WhatsApp business number (UAE)",
+    section: "Store profile",
+    type: "tel",
+    placeholder: "+971501234567",
+    help: "Optional second WhatsApp support line, shown alongside the Pakistan number.",
   },
   store_hours: {
     label: "Business hours",

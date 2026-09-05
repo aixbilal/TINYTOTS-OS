@@ -108,6 +108,9 @@ export default function ContactPage() {
   const waLink = contact?.whatsapp
     ? `https://wa.me/${contact.whatsapp.replace(/[^0-9]/g, "")}`
     : null;
+  const waLinkUae = contact?.whatsappUae
+    ? `https://wa.me/${contact.whatsappUae.replace(/[^0-9]/g, "")}`
+    : null;
 
   if (submitted) {
     return (
@@ -127,14 +130,24 @@ export default function ContactPage() {
   const reachCards = [
     contact?.whatsapp && {
       icon: "chat",
-      label: "WhatsApp",
+      label: "Pakistan WhatsApp Support",
+      ariaLabel: "Chat with TinyTots on WhatsApp — Pakistan",
       body: "Chat with us on WhatsApp for quick support.",
       value: contact.whatsapp,
       href: waLink!,
     },
+    contact?.whatsappUae && {
+      icon: "chat",
+      label: "UAE WhatsApp Support",
+      ariaLabel: "Chat with TinyTots on WhatsApp — UAE",
+      body: "Chat with us on WhatsApp for quick support.",
+      value: contact.whatsappUae,
+      href: waLinkUae!,
+    },
     {
       icon: "mail",
       label: "Email",
+      ariaLabel: "Email TinyTots support",
       body: "Drop us an email and we'll get back to you.",
       value: contact?.email ?? "support@tinytotsofficial.com",
       href: `mailto:${contact?.email ?? "support@tinytotsofficial.com"}`,
@@ -142,6 +155,7 @@ export default function ContactPage() {
     contact?.phone && {
       icon: "call",
       label: "Phone",
+      ariaLabel: "Call TinyTots support",
       body: "Speak with our care team during working hours.",
       value: contact.phone,
       href: `tel:${contact.phone}`,
@@ -149,11 +163,19 @@ export default function ContactPage() {
     {
       icon: "location_on",
       label: "Our Location",
+      ariaLabel: "TinyTots location",
       body: contact?.location ?? "Toba Tek Singh, Punjab, Pakistan",
       value: null,
       href: null,
     },
-  ].filter(Boolean) as { icon: string; label: string; body: string; value: string | null; href: string | null }[];
+  ].filter(Boolean) as {
+    icon: string;
+    label: string;
+    ariaLabel: string;
+    body: string;
+    value: string | null;
+    href: string | null;
+  }[];
 
   // Only established, already-published facts — no invented numbers. Delivery
   // timelines and return-window specifics live on /shipping-returns (admin-
@@ -222,7 +244,11 @@ export default function ContactPage() {
               <p className="font-label-md text-label-md uppercase tracking-wider text-text-primary font-semibold">{c.label}</p>
               <p className="font-body-sm text-body-sm text-text-secondary">{c.body}</p>
               {c.value && c.href && (
-                <a href={c.href} className="mt-1 font-body-sm text-body-sm text-brand-primary hover:underline break-all">
+                <a
+                  href={c.href}
+                  aria-label={c.ariaLabel}
+                  className="mt-1 font-body-sm text-body-sm text-brand-primary hover:underline break-all"
+                >
                   {c.value}
                 </a>
               )}
@@ -346,10 +372,23 @@ export default function ContactPage() {
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Chat with TinyTots on WhatsApp — Pakistan"
               className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand-primary text-white font-button text-button hover:opacity-90 transition-opacity"
             >
               <span className="material-symbols-outlined text-[18px]">chat</span>
-              Contact Us on WhatsApp
+              WhatsApp (Pakistan)
+            </a>
+          )}
+          {waLinkUae && (
+            <a
+              href={waLinkUae}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Chat with TinyTots on WhatsApp — UAE"
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-brand-primary text-brand-primary font-button text-button hover:bg-brand-primary/10 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">chat</span>
+              WhatsApp (UAE)
             </a>
           )}
         </div>

@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 // internal HTTP round-trip. Keep the PUBLIC_KEYS list in sync with that route.
 // (SOCIAL_KEYS are public URLs already rendered on the storefront; they feed
 // Organization.sameAs and are not exposed through the /api/store-contact route.)
-const PUBLIC_KEYS = ["store_phone", "store_whatsapp", "store_hours", "store_email"];
+const PUBLIC_KEYS = ["store_phone", "store_whatsapp", "store_whatsapp_uae", "store_hours", "store_email"];
 const SOCIAL_KEYS = ["store_facebook", "store_instagram", "store_tiktok"];
 
 // Fallback support mailbox — the address the storefront Contact and Shipping &
@@ -16,6 +16,8 @@ const DEFAULT_SUPPORT_EMAIL = "support@tinytotsofficial.com";
 export type StoreContact = {
   phone: string | null;
   whatsapp: string | null;
+  /** Second WhatsApp support line (UAE) — optional, alongside the primary (Pakistan) number. */
+  whatsappUae: string | null;
   hours: string | null;
   email: string;
   location: string;
@@ -39,6 +41,7 @@ export async function getStoreContact(): Promise<StoreContact> {
   return {
     phone: settings.store_phone || null,
     whatsapp: settings.store_whatsapp || null,
+    whatsappUae: settings.store_whatsapp_uae || null,
     hours: settings.store_hours || null,
     email: settings.store_email || DEFAULT_SUPPORT_EMAIL,
     location: "Toba Tek Singh, Punjab, Pakistan",
