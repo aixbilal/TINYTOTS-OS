@@ -382,7 +382,17 @@ export default function SiteShell({
     return () => observer.disconnect();
   }, []);
 
-  const pathname = usePathname();
+  // usePathname()'s app-router context can momentarily disagree with the real
+  // URL on the very first client hydration pass in dev (Fast Refresh/HMR
+  // timing) — that transient wrong value fell through to the storefront-chrome
+  // branch below and briefly wrapped /admin, /signage, /login in it before
+  // self-correcting (dev-only; absent in production builds — see
+  // ADMIN-UX-SIGNAGE-CLOSURE-20260903.md §22). window.location is the
+  // browser's own authoritative URL for the page actually requested, so it
+  // can't disagree with what the server rendered; the hook call is kept so
+  // route changes still trigger a re-render.
+  const routerPathname = usePathname();
+  const pathname = typeof window !== "undefined" ? window.location.pathname : routerPathname;
 
   // Homepage-only: the admin announcement can only ever replace the fallback
   // on "/" (see hasActiveAnnouncement below), so only fetch it there. Internal
