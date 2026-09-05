@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { isValidEmail, EMAIL_ERROR } from "@/lib/validate-email";
+import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
+import TurnstileChallenge from "@/components/TurnstileChallenge";
+
+const CAPTCHA_ERROR = "Please complete the security check and try again.";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -12,11 +16,18 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
   // MFA challenge step (only shown when password login succeeds and a TOTP factor exists)
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [mfaVerifying, setMfaVerifying] = useState(false);
+
+  function resetCaptcha() {
+    setCaptchaToken(null);
+    setTurnstileKey((k) => k + 1);
+  }
 
   async function ensureActiveAdmin(userId: string): Promise<boolean> {
     const { data: adminRow } = await supabase
@@ -56,21 +67,31 @@ export default function AdminLoginPage() {
       return;
     }
 
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setServerError(CAPTCHA_ERROR);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
+        ...(captchaToken ? { options: { captchaToken } } : {}),
       });
 
       if (error || !data.session) {
-        setServerError("Incorrect email or password.");
+        setServerError(
+          error?.message.toLowerCase().includes("captcha") ? CAPTCHA_ERROR : "Incorrect email or password."
+        );
         setSubmitting(false);
+        if (TURNSTILE_SITE_KEY) resetCaptcha();
         return;
       }
 
       if (!(await ensureActiveAdmin(data.session.user.id))) {
         setSubmitting(false);
+        if (TURNSTILE_SITE_KEY) resetCaptcha();
         return;
       }
 
@@ -94,6 +115,7 @@ export default function AdminLoginPage() {
     } catch {
       setServerError("Network error. Please try again.");
       setSubmitting(false);
+      if (TURNSTILE_SITE_KEY) resetCaptcha();
     }
   }
 
@@ -211,6 +233,16 @@ export default function AdminLoginPage() {
             Forgot password?
           </Link>
         </div>
+
+        {TURNSTILE_SITE_KEY && (
+          <TurnstileChallenge
+            key={turnstileKey}
+            siteKey={TURNSTILE_SITE_KEY}
+            onToken={setCaptchaToken}
+            onExpired={() => setCaptchaToken(null)}
+            onError={() => setCaptchaToken(null)}
+          />
+        )}
 
         <button
           type="submit"

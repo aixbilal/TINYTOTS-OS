@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAdminAuth } from "@/lib/admin-auth-context";
+import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
+import TurnstileChallenge from "@/components/TurnstileChallenge";
 
 type TotpFactor = {
   id: string;
@@ -28,6 +30,13 @@ export default function AdminMfaSettings() {
   const [disablePassword, setDisablePassword] = useState("");
   const [disabling, setDisabling] = useState(false);
   const [info, setInfo] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  function resetCaptcha() {
+    setCaptchaToken(null);
+    setTurnstileKey((k) => k + 1);
+  }
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -121,6 +130,10 @@ export default function AdminMfaSettings() {
       setError("Enter your current password to disable 2FA.");
       return;
     }
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError("Please complete the security check and try again.");
+      return;
+    }
     const token = session?.access_token;
     if (!token) {
       setError("Your session expired. Please log in again.");
@@ -134,7 +147,11 @@ export default function AdminMfaSettings() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ currentPassword: disablePassword, factorId }),
+        body: JSON.stringify({
+          currentPassword: disablePassword,
+          factorId,
+          ...(captchaToken ? { captchaToken } : {}),
+        }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -148,6 +165,7 @@ export default function AdminMfaSettings() {
       setError("Network error. Please try again.");
     }
     setDisabling(false);
+    if (TURNSTILE_SITE_KEY) resetCaptcha();
   }
 
   return (
@@ -258,6 +276,15 @@ export default function AdminMfaSettings() {
             autoComplete="current-password"
             className="border rounded-md px-3 py-2 text-sm w-full max-w-sm"
           />
+          {TURNSTILE_SITE_KEY && (
+            <TurnstileChallenge
+              key={turnstileKey}
+              siteKey={TURNSTILE_SITE_KEY}
+              onToken={setCaptchaToken}
+              onExpired={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+            />
+          )}
           {verified.map((f) => (
             <button
               key={f.id}

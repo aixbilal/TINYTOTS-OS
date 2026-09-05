@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
 
-  let body: { currentPassword?: string; factorId?: string };
+  let body: { currentPassword?: string; factorId?: string; captchaToken?: string };
   try {
     body = await request.json();
   } catch {
@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
 
   const currentPassword = String(body.currentPassword || "");
   const factorId = String(body.factorId || "");
+  const captchaToken =
+    typeof body.captchaToken === "string" && body.captchaToken ? body.captchaToken : undefined;
   if (!currentPassword) {
     return NextResponse.json({ error: "Current password is required." }, { status: 400 });
   }
@@ -62,10 +64,17 @@ export async function POST(request: NextRequest) {
   const { error: verifyError } = await verifier.auth.signInWithPassword({
     email: userData.user.email,
     password: currentPassword,
+    ...(captchaToken ? { options: { captchaToken } } : {}),
   });
   await verifier.auth.signOut().catch(() => {});
 
   if (verifyError) {
+    if (verifyError.message.toLowerCase().includes("captcha")) {
+      return NextResponse.json(
+        { error: "Please complete the security check and try again." },
+        { status: 400 }
+      );
+    }
     return NextResponse.json({ error: "Current password is incorrect." }, { status: 403 });
   }
 

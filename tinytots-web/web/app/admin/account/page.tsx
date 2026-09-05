@@ -5,6 +5,8 @@ import { useAdminAuth } from "@/lib/admin-auth-context";
 import { validatePassword } from "@/lib/validate-password";
 import PasswordRequirements from "@/components/auth/PasswordRequirements";
 import AdminMfaSettings from "@/components/admin/AdminMfaSettings";
+import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
+import TurnstileChallenge from "@/components/TurnstileChallenge";
 import {
   AdminPageHeader,
   AdminCard,
@@ -23,6 +25,13 @@ export default function AdminAccountPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  function resetCaptcha() {
+    setCaptchaToken(null);
+    setTurnstileKey((k) => k + 1);
+  }
 
   if (!admin) return null;
 
@@ -48,6 +57,11 @@ export default function AdminAccountPage() {
       return;
     }
 
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError("Please complete the security check and try again.");
+      return;
+    }
+
     const token = session?.access_token;
     if (!token) {
       setError("Your session expired. Please log in again.");
@@ -62,7 +76,12 @@ export default function AdminAccountPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+          ...(captchaToken ? { captchaToken } : {}),
+        }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -77,6 +96,7 @@ export default function AdminAccountPage() {
       setError("Network error. Please try again.");
     }
     setSaving(false);
+    if (TURNSTILE_SITE_KEY) resetCaptcha();
   }
 
   const detail = (label: string, value: string) => (
@@ -149,6 +169,15 @@ export default function AdminAccountPage() {
                 </p>
               )}
             </AdminField>
+            {TURNSTILE_SITE_KEY && (
+              <TurnstileChallenge
+                key={turnstileKey}
+                siteKey={TURNSTILE_SITE_KEY}
+                onToken={setCaptchaToken}
+                onExpired={() => setCaptchaToken(null)}
+                onError={() => setCaptchaToken(null)}
+              />
+            )}
             {error && <AdminAlert tone="danger">{error}</AdminAlert>}
             {success && <AdminAlert tone="success">Password updated successfully.</AdminAlert>}
             <AdminButton type="submit" variant="primary" disabled={saving} className="self-start">

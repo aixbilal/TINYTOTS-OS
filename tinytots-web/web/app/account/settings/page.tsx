@@ -9,6 +9,8 @@ import { validatePassword } from "@/lib/validate-password";
 import PasswordRequirements from "@/components/auth/PasswordRequirements";
 import PasswordVisibilityToggle from "@/components/auth/PasswordVisibilityToggle";
 import FormAlert from "@/components/auth/FormAlert";
+import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
+import TurnstileChallenge from "@/components/TurnstileChallenge";
 
 export default function AccountSettingsPage() {
   const router = useRouter();
@@ -25,6 +27,13 @@ export default function AccountSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
+
+  function resetCaptcha() {
+    setCaptchaToken(null);
+    setTurnstileKey((k) => k + 1);
+  }
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/login");
@@ -59,6 +68,11 @@ export default function AccountSettingsPage() {
       return;
     }
 
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError("Please complete the security check and try again.");
+      return;
+    }
+
     const token = session?.access_token;
     if (!token) {
       setError("Your session expired. Please log in again.");
@@ -73,7 +87,12 @@ export default function AccountSettingsPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+          ...(captchaToken ? { captchaToken } : {}),
+        }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -88,6 +107,7 @@ export default function AccountSettingsPage() {
       setError("Network error. Please try again.");
     }
     setSaving(false);
+    if (TURNSTILE_SITE_KEY) resetCaptcha();
   }
 
   const inputClass =
@@ -198,6 +218,16 @@ export default function AccountSettingsPage() {
               </p>
             )}
           </div>
+
+          {TURNSTILE_SITE_KEY && (
+            <TurnstileChallenge
+              key={turnstileKey}
+              siteKey={TURNSTILE_SITE_KEY}
+              onToken={setCaptchaToken}
+              onExpired={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+            />
+          )}
 
           <FormAlert>{error}</FormAlert>
           {success && (

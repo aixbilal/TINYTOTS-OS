@@ -44,28 +44,33 @@ export default function AddPhonePage() {
     }
 
     setSubmitting(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      router.replace("/login");
-      return;
-    }
-
-    const { error: updateError } = await supabase
-      .from("customers")
-      .update({ phone: phone.trim() })
-      .eq("auth_user_id", session.user.id);
-
-    if (updateError) {
-      if (updateError.message.toLowerCase().includes("duplicate")) {
-        setError("This phone number is already linked to another account.");
-      } else {
-        setError("Something went wrong. Please try again.");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.replace("/login");
+        return;
       }
-      setSubmitting(false);
-      return;
-    }
 
-    router.replace("/account");
+      const { error: updateError } = await supabase
+        .from("customers")
+        .update({ phone: phone.trim() })
+        .eq("auth_user_id", session.user.id);
+
+      if (updateError) {
+        if (updateError.message.toLowerCase().includes("duplicate")) {
+          setError("This phone number is already linked to another account.");
+        } else {
+          setError("Something went wrong. Please try again.");
+        }
+        return;
+      }
+
+      router.replace("/account");
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (checking) {

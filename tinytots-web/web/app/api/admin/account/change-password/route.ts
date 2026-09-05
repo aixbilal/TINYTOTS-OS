@@ -56,7 +56,12 @@ export async function POST(request: NextRequest) {
   });
   if (!userLimited.ok) return rateLimitResponse(userLimited.retryAfterSec);
 
-  let body: { currentPassword?: string; newPassword?: string; confirmPassword?: string };
+  let body: {
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+    captchaToken?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -66,6 +71,8 @@ export async function POST(request: NextRequest) {
   const currentPassword = String(body.currentPassword || "");
   const newPassword = String(body.newPassword || "");
   const confirmPassword = String(body.confirmPassword || "");
+  const captchaToken =
+    typeof body.captchaToken === "string" && body.captchaToken ? body.captchaToken : undefined;
 
   if (!currentPassword) {
     return NextResponse.json({ error: "Current password is required." }, { status: 400 });
@@ -92,11 +99,18 @@ export async function POST(request: NextRequest) {
   const { error: verifyError } = await verifier.auth.signInWithPassword({
     email: userData.user.email,
     password: currentPassword,
+    ...(captchaToken ? { options: { captchaToken } } : {}),
   });
   // Discard the verifier session immediately — we only needed the credential check.
   await verifier.auth.signOut().catch(() => {});
 
   if (verifyError) {
+    if (verifyError.message.toLowerCase().includes("captcha")) {
+      return NextResponse.json(
+        { error: "Please complete the security check and try again." },
+        { status: 400 }
+      );
+    }
     return NextResponse.json({ error: "Current password is incorrect." }, { status: 403 });
   }
 
