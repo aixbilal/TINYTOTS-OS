@@ -99,11 +99,17 @@ export default function LoginPage() {
         window.sessionStorage.setItem("tinytots_login_nav_start", String(Date.now()));
       }
       console.log("[login-nav-timing]", {
-        stage: "router-push-called",
+        stage: "hard-navigation-called",
         sinceLoginNavStartMs: 0,
       });
 
-      router.push("/account");
+      // Full document navigation (not router.push): the server login route
+      // sets the Supabase auth cookies, but the already-running browser
+      // AuthProvider/Supabase client keeps its stale pre-login in-memory
+      // session across an SPA transition. A hard navigation forces it to
+      // initialize fresh and read the newly-set cookie session immediately.
+      // replace() so a successful login doesn't leave /login in Back history.
+      window.location.replace("/account");
     } catch {
       setServerError("Network error. Please try again.");
       setSubmitting(false);
