@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 import AccountSidebar from "@/components/AccountSidebar";
-import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
+import { validatePassword } from "@/lib/validate-password";
+import PasswordRequirements from "@/components/auth/PasswordRequirements";
 
 export default function AccountSettingsPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function AccountSettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPasswordTouched, setNewPasswordTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -96,6 +98,9 @@ export default function AccountSettingsPage() {
 
   if (!user) return null;
 
+  const showMatchError = confirmPassword.length > 0 && newPassword !== confirmPassword;
+  const showMatchSuccess = confirmPassword.length > 0 && newPassword.length > 0 && newPassword === confirmPassword;
+
   return (
     <main className="max-w-container-max mx-auto w-full py-stack-lg flex flex-col md:flex-row gap-gutter">
       <AccountSidebar name={customerName} />
@@ -120,7 +125,6 @@ export default function AccountSettingsPage() {
           className="border border-border-subtle rounded-2xl p-6 bg-surface-elevated flex flex-col gap-4"
         >
           <h2 className="font-headline-md text-headline-md text-text-primary">Change Password</h2>
-          <p className="font-body-sm text-body-sm text-text-secondary -mt-2">{PASSWORD_HINT}</p>
 
           <div>
             <label className="font-body-sm text-body-sm text-text-secondary mb-2 block">
@@ -143,10 +147,11 @@ export default function AccountSettingsPage() {
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder={PASSWORD_HINT}
+              onBlur={() => setNewPasswordTouched(true)}
               autoComplete="new-password"
               className={inputClass}
             />
+            <PasswordRequirements password={newPassword} showErrors={newPasswordTouched} />
           </div>
 
           <div>
@@ -160,6 +165,18 @@ export default function AccountSettingsPage() {
               autoComplete="new-password"
               className={inputClass}
             />
+            {showMatchError && (
+              <p className="font-label-md text-label-md text-red-700 mt-1 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]" aria-hidden="true">error</span>
+                Passwords don&apos;t match.
+              </p>
+            )}
+            {showMatchSuccess && (
+              <p className="font-label-md text-label-md text-green-700 mt-1 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[14px]" aria-hidden="true">check_circle</span>
+                Passwords match
+              </p>
+            )}
           </div>
 
           {error && <p className="font-label-md text-label-md text-red-700">{error}</p>}

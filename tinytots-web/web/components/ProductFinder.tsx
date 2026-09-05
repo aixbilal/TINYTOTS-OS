@@ -41,7 +41,7 @@ function rs(n: number | null) {
   return n == null ? "" : `Rs. ${Math.round(n).toLocaleString("en-PK")}`;
 }
 
-export default function ProductFinder() {
+export default function ProductFinder({ hidden = false }: { hidden?: boolean }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"guided" | "describe">("guided");
   const panelRef = useRef<HTMLDivElement>(null);
@@ -230,9 +230,11 @@ export default function ProductFinder() {
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className={`fixed right-4 z-40 inline-flex items-center gap-2 rounded-full bg-brand-primary text-white shadow-lg px-4 py-3 font-button text-button hover:opacity-90 transition-opacity ${
+        aria-hidden={hidden || undefined}
+        tabIndex={hidden ? -1 : undefined}
+        className={`fixed right-4 z-40 inline-flex items-center gap-2 rounded-full bg-brand-primary text-white shadow-lg px-4 py-3 font-button text-button hover:opacity-90 transition-[opacity,transform] duration-200 motion-reduce:transition-none ${
           raisedForCart ? "bottom-28 md:bottom-24" : "bottom-4 md:bottom-6"
-        }`}
+        } ${hidden ? "opacity-0 translate-y-2 pointer-events-none" : "opacity-100 translate-y-0"}`}
       >
         <span className="material-symbols-outlined text-[20px]" aria-hidden="true">auto_awesome</span>
         <span className="hidden sm:inline">Find something for me</span>

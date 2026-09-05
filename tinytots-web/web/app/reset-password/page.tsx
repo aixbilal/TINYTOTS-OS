@@ -4,7 +4,9 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
+import { validatePassword } from "@/lib/validate-password";
+import FormAlert from "@/components/auth/FormAlert";
+import PasswordRequirements from "@/components/auth/PasswordRequirements";
 
 const RESET_NEXT_KEY = "tt_password_reset_next";
 
@@ -28,6 +30,7 @@ function ResetPasswordForm() {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordTouched, setPasswordTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -287,36 +290,54 @@ function ResetPasswordForm() {
             {mfaVerifying ? "Verifying..." : "Verify and continue"}
           </button>
 
-          {serverError && (
-            <p className="font-label-md text-label-md text-red-700 mt-1">{serverError}</p>
-          )}
+          <FormAlert>{serverError}</FormAlert>
         </form>
       </main>
     );
   }
 
+  const showMatchError = confirmPassword.length > 0 && password !== confirmPassword;
+  const showMatchSuccess = confirmPassword.length > 0 && password.length > 0 && password === confirmPassword;
+
   return (
     <main className="max-w-md mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
       <h1 className="font-display-md text-display-md text-text-primary mb-stack-md">Set a new password</h1>
-      <p className="font-body-sm text-body-sm text-text-secondary mb-stack-sm">{PASSWORD_HINT}</p>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
-        <input
-          type="password"
-          placeholder="New password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="new-password"
-          className={inputClass}
-        />
-        <input
-          type="password"
-          placeholder="Confirm new password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          autoComplete="new-password"
-          className={inputClass}
-        />
+        <div>
+          <input
+            type="password"
+            placeholder="New password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onBlur={() => setPasswordTouched(true)}
+            autoComplete="new-password"
+            className={inputClass}
+          />
+          <PasswordRequirements password={password} showErrors={passwordTouched} />
+        </div>
+        <div>
+          <input
+            type="password"
+            placeholder="Confirm new password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            autoComplete="new-password"
+            className={inputClass}
+          />
+          {showMatchError && (
+            <p className="font-label-md text-label-md text-red-700 mt-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">error</span>
+              Passwords don&apos;t match.
+            </p>
+          )}
+          {showMatchSuccess && (
+            <p className="font-label-md text-label-md text-green-700 mt-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">check_circle</span>
+              Passwords match
+            </p>
+          )}
+        </div>
 
         <button
           type="submit"
@@ -326,7 +347,7 @@ function ResetPasswordForm() {
           {submitting ? "Updating..." : "Update password"}
         </button>
 
-        {serverError && <p className="font-label-md text-label-md text-red-700 mt-1">{serverError}</p>}
+        <FormAlert>{serverError}</FormAlert>
       </form>
     </main>
   );

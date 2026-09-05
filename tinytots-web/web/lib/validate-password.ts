@@ -10,3 +10,13 @@ export function validatePassword(password: string): string | null {
 }
 
 export const PASSWORD_HINT = "At least 8 characters.";
+
+// Drives the shared <PasswordRequirements> checklist UI. Kept as a list (not
+// a single boolean) so the visible requirements always match validatePassword
+// exactly — if the real policy ever grows, add the rule here and the check
+// above, nowhere else.
+export type PasswordCheck = { key: string; label: string; test: (password: string) => boolean };
+
+export const PASSWORD_CHECKS: PasswordCheck[] = [
+  { key: "length", label: "At least 8 characters", test: (password) => password.length >= 8 },
+];

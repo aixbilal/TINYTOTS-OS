@@ -3,7 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useState, useEffect, useRef, useId, type ReactNode } from "react";
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
 import CartStickyBar from "@/components/CartStickyBar";
@@ -178,6 +178,38 @@ function MobileMenu({
   );
 }
 
+// Mobile-only footer section (Shop/Help/About) — collapsed by default so the
+// footer doesn't force every link into view at once on a small screen. Plain
+// show/hide, no animation library; button semantics + aria-expanded/controls
+// keep it keyboard- and screen-reader-usable. Desktop keeps the existing
+// always-expanded column layout untouched (this component isn't used there).
+function FooterAccordionSection({ title, children }: { title: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const panelId = `footer-panel-${useId()}`;
+
+  return (
+    <div className="border-b border-border-default">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-controls={panelId}
+        className="w-full min-h-[44px] flex items-center justify-between py-3 font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider"
+      >
+        {title}
+        <span className="material-symbols-outlined text-[20px] text-text-secondary" aria-hidden="true">
+          {open ? "remove" : "add"}
+        </span>
+      </button>
+      {open && (
+        <div id={panelId} className="flex flex-col gap-2.5 pb-4">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NewsletterForm() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -281,6 +313,8 @@ export default function SiteShell({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const headerWrapRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
+  const [finderNearFooter, setFinderNearFooter] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(80);
   const [headerHidden, setHeaderHidden] = useState(false);
   const lastScrollYRef = useRef(0);
@@ -331,6 +365,23 @@ export default function SiteShell({
     ro.observe(el);
     return () => ro.disconnect();
   }, [announcement]);
+
+  // Floating ProductFinder trigger sits fixed bottom-right, so once the
+  // footer scrolls into view it would sit on top of footer nav/newsletter
+  // content. IntersectionObserver (not a scroll listener) toggles a simple
+  // "hide the trigger" flag — el is null on routes with no footer (auth,
+  // admin, signage), so this is a no-op there.
+  useEffect(() => {
+    const el = footerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setFinderNearFooter(entry.isIntersecting),
+      { rootMargin: "0px 0px -80px 0px", threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const pathname = usePathname();
 
   // Homepage-only: the admin announcement can only ever replace the fallback
@@ -360,6 +411,14 @@ export default function SiteShell({
   // customer storefront chrome (announcement bar, storefront header, cart /
   // wishlist, marketing footer, newsletter, UGC feed).
   const isAdmin = pathname === "/admin" || pathname?.startsWith("/admin/");
+  // K.4: /login and /signup are dedicated premium auth experiences (see
+  // components/auth/AuthShell) — no notice bar, storefront header/footer,
+  // cart, wishlist, or product-finder bubble. Exact-match only (not a
+  // startsWith) since the brief scopes chrome suppression to these two
+  // routes specifically, not /account, /forgot-password, /reset-password,
+  // or /auth/callback. Auth provider is still required: both pages call
+  // useAuth()/redirect an already-signed-in visitor.
+  const isAuthRoute = pathname === "/login" || pathname === "/signup";
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -371,6 +430,14 @@ export default function SiteShell({
 
   if (isAdmin) {
     return <div className="min-h-screen bg-surface-canvas">{children}</div>;
+  }
+
+  if (isAuthRoute) {
+    return (
+      <AuthProvider>
+        <div className="min-h-screen bg-surface-canvas">{children}</div>
+      </AuthProvider>
+    );
   }
 
   // Homepage-only, and only once a non-empty, enabled announcement has
@@ -419,7 +486,7 @@ export default function SiteShell({
             <SearchTakeover open={searchOpen} onClose={() => setSearchOpen(false)} />
             {!mobileMenuOpen && <MobileSubNav />}
             <CartStickyBar />
-            <ProductFinder />
+            <ProductFinder hidden={finderNearFooter} />
 
             {/* MAIN CONTENT — no flex-grow (that created a huge empty gap above the footer) */}
             <MainContent>{children}</MainContent>
@@ -427,8 +494,9 @@ export default function SiteShell({
             <div className="mt-auto w-full">
               <UgcFeed />
               {shouldShowFooterFaq(pathname) && <FooterFaq />}
-              <footer className="bg-surface-secondary border-t border-border-default w-full">
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-x-6 gap-y-8 px-margin-mobile md:px-margin-desktop pt-10 md:pt-12 max-w-container-max mx-auto">
+              <footer ref={footerRef} className="bg-surface-secondary border-t border-border-default w-full">
+                {/* Desktop/tablet — unchanged from the pre-K.4.1 layout. */}
+                <div className="hidden md:grid grid-cols-2 md:grid-cols-5 gap-x-6 gap-y-8 px-margin-mobile md:px-margin-desktop pt-10 md:pt-12 max-w-container-max mx-auto">
                   <div className="col-span-2 md:col-span-1 flex flex-col gap-3">
                     <span className="font-headline-lg text-headline-lg text-brand-primary tracking-tight">TinyTots</span>
                     <p className="font-label-md text-label-md text-text-secondary uppercase tracking-wider -mt-2">
@@ -466,7 +534,7 @@ export default function SiteShell({
                     <NewsletterForm />
                   </div>
                 </div>
-                <div className="border-t border-border-default mt-8">
+                <div className="hidden md:block border-t border-border-default mt-8">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-margin-mobile md:px-margin-desktop py-5 max-w-container-max mx-auto">
                     <p className="font-label-md text-label-md text-text-secondary">
                       © {new Date().getFullYear()} TinyTots. All rights reserved.
@@ -475,6 +543,62 @@ export default function SiteShell({
                       <Link href="/terms" className="font-label-md text-label-md text-text-secondary hover:text-brand-primary transition-colors">Terms &amp; Conditions</Link>
                       <Link href="/privacy-policy" className="font-label-md text-label-md text-text-secondary hover:text-brand-primary transition-colors">Privacy Policy</Link>
                     </div>
+                  </div>
+                </div>
+
+                {/* Mobile — compact accordion footer. Same links/newsletter/legal
+                    as desktop, just collapsed by default so the footer doesn't
+                    force several screens of scrolling on a phone. */}
+                <div className="md:hidden px-margin-mobile py-8 max-w-container-max mx-auto">
+                  <div className="flex flex-col gap-0.5 mb-5">
+                    <span className="font-headline-lg text-headline-lg text-brand-primary tracking-tight">TinyTots</span>
+                    <p className="font-label-md text-label-md text-text-secondary uppercase tracking-wider">
+                      Timeless for tiny hearts
+                    </p>
+                  </div>
+
+                  <div className="border-t border-border-default">
+                    <FooterAccordionSection title="Shop">
+                      <Link href="/products?sort=newest" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">New In</Link>
+                      <Link href="/products?gender=girl" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Girls</Link>
+                      <Link href="/products?gender=boy" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Boys</Link>
+                      <Link href="/collections" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Collections</Link>
+                    </FooterAccordionSection>
+                    <FooterAccordionSection title="Help">
+                      <Link href="/help" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Help Center</Link>
+                      <Link href="/track-order" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Track Order</Link>
+                      <Link href="/size-guide" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Size Guide</Link>
+                      <Link href="/shipping-returns" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Shipping &amp; Delivery</Link>
+                      <Link href="/account/returns" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Returns &amp; Exchanges</Link>
+                      <Link href="/help" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">FAQ</Link>
+                    </FooterAccordionSection>
+                    <FooterAccordionSection title="About">
+                      <Link href="/our-story" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Our Story</Link>
+                      <Link href="/blog" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Journal</Link>
+                      <Link href="/contact" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Contact Us</Link>
+                      <Link href="/report-issue" className="font-body-sm text-body-sm text-text-secondary hover:text-brand-primary transition-colors">Report an Issue</Link>
+                    </FooterAccordionSection>
+                  </div>
+
+                  {/* Newsletter stays directly visible — a direct action, not
+                      secondary navigation, so it doesn't belong behind a tap. */}
+                  <div className="flex flex-col gap-3 pt-5">
+                    <h4 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider">Join Our Family</h4>
+                    <p className="font-body-sm text-body-sm text-text-secondary -mt-1">
+                      Sign up for new arrivals, special offers &amp; little inspirations.
+                    </p>
+                    <NewsletterForm />
+                  </div>
+                </div>
+                <div className="md:hidden border-t border-border-default">
+                  <div className="flex flex-col items-center gap-3 px-margin-mobile py-5">
+                    <div className="flex items-center gap-5">
+                      <Link href="/terms" className="font-label-md text-label-md text-text-secondary hover:text-brand-primary transition-colors">Terms &amp; Conditions</Link>
+                      <Link href="/privacy-policy" className="font-label-md text-label-md text-text-secondary hover:text-brand-primary transition-colors">Privacy Policy</Link>
+                    </div>
+                    <p className="font-label-md text-label-md text-text-secondary">
+                      © {new Date().getFullYear()} TinyTots. All rights reserved.
+                    </p>
                   </div>
                 </div>
               </footer>
