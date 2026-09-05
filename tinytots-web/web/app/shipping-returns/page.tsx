@@ -69,6 +69,13 @@ export default async function ShippingReturnsPage() {
     getStoreContact(),
   ]);
 
+  const waLink = storeContact.whatsapp
+    ? `https://wa.me/${storeContact.whatsapp.replace(/[^0-9]/g, "")}`
+    : null;
+  const waLinkUae = storeContact.whatsappUae
+    ? `https://wa.me/${storeContact.whatsappUae.replace(/[^0-9]/g, "")}`
+    : null;
+
   // Array.isArray(...) preserves intentional empty arrays (e.g. cod_tiers: [])
   // instead of falling back to seed data when length === 0.
   // Cast through typeof FALLBACK: spreading the loosely typed Supabase row would
@@ -237,11 +244,29 @@ export default async function ShippingReturnsPage() {
             <p className="font-headline-md text-headline-md text-text-primary">{content.contact_heading}</p>
             <p className="font-body-sm text-body-sm text-text-secondary">{content.contact_body}</p>
             <div className="flex flex-col gap-2 mt-1 font-body-sm text-body-sm text-text-secondary">
-              {storeContact.whatsapp && (
-                <p className="flex items-center gap-2">
+              {waLink && (
+                <a
+                  href={waLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Chat with TinyTots on WhatsApp — Pakistan"
+                  className="flex items-center gap-2 hover:text-brand-primary transition-colors"
+                >
                   <span className="material-symbols-outlined text-brand-primary text-[18px]">chat</span>
-                  WhatsApp: <span className="text-text-primary">{storeContact.whatsapp}</span>
-                </p>
+                  Pakistan WhatsApp: <span className="text-text-primary">{storeContact.whatsapp}</span>
+                </a>
+              )}
+              {waLinkUae && (
+                <a
+                  href={waLinkUae}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Chat with TinyTots on WhatsApp — UAE"
+                  className="flex items-center gap-2 hover:text-brand-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-brand-primary text-[18px]">chat</span>
+                  UAE WhatsApp: <span className="text-text-primary">{storeContact.whatsappUae}</span>
+                </a>
               )}
               {storeContact.phone && (
                 <p className="flex items-center gap-2">

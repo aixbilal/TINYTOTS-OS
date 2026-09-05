@@ -275,10 +275,28 @@ function TrackOrderForm() {
           </p>
           <div className="flex flex-col gap-2 mt-1 font-body-sm text-body-sm text-text-secondary">
             {contact?.whatsapp && (
-              <p className="flex items-center gap-2">
+              <a
+                href={`https://wa.me/${contact.whatsapp.replace(/[^0-9]/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Chat with TinyTots on WhatsApp — Pakistan"
+                className="flex items-center gap-2 hover:text-brand-primary transition-colors"
+              >
                 <span className="material-symbols-outlined text-brand-primary text-[18px]">chat</span>
-                WhatsApp: <span className="text-text-primary">{contact.whatsapp}</span>
-              </p>
+                Pakistan WhatsApp: <span className="text-text-primary">{contact.whatsapp}</span>
+              </a>
+            )}
+            {contact?.whatsappUae && (
+              <a
+                href={`https://wa.me/${contact.whatsappUae.replace(/[^0-9]/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Chat with TinyTots on WhatsApp — UAE"
+                className="flex items-center gap-2 hover:text-brand-primary transition-colors"
+              >
+                <span className="material-symbols-outlined text-brand-primary text-[18px]">chat</span>
+                UAE WhatsApp: <span className="text-text-primary">{contact.whatsappUae}</span>
+              </a>
             )}
             {contact?.phone && (
               <p className="flex items-center gap-2">
