@@ -1,4 +1,7 @@
+"use client";
+
 import Script from "next/script";
+import { usePathname } from "next/navigation";
 
 /**
  * Loads GA4 and/or Meta Pixel only when the corresponding env IDs are set.
@@ -9,8 +12,14 @@ import Script from "next/script";
  * - NEXT_PUBLIC_META_PIXEL_ID      e.g. 123456789012345
  */
 export default function Analytics() {
+  const pathname = usePathname();
+  // Admin is an internal operational tool, not a marketing surface — Meta
+  // Pixel must never initialize or fire there (K.5C). Same route-boundary
+  // check SiteShell uses for the storefront chrome exclusion.
+  const isAdmin = pathname === "/admin" || pathname?.startsWith("/admin/");
+
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
-  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
+  const pixelId = isAdmin ? undefined : process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
 
   if (!gaId && !pixelId) return null;
 
