@@ -51,10 +51,11 @@ export default function AddPhonePage() {
         return;
       }
 
-      const { error: updateError } = await supabase
+      const { data: updatedRows, error: updateError } = await supabase
         .from("customers")
         .update({ phone: phone.trim() })
-        .eq("auth_user_id", session.user.id);
+        .eq("auth_user_id", session.user.id)
+        .select("id");
 
       if (updateError) {
         if (updateError.message.toLowerCase().includes("duplicate")) {
@@ -62,6 +63,15 @@ export default function AddPhonePage() {
         } else {
           setError("Something went wrong. Please try again.");
         }
+        return;
+      }
+
+      // An UPDATE that matches zero rows (e.g. an admin-created auth user with
+      // no corresponding customers row) succeeds with no error — .select()
+      // lets us tell that apart from a real update and avoid redirecting to
+      // /account as if it worked.
+      if (!updatedRows || updatedRows.length === 0) {
+        setError("We couldn't update your account details. Please try again or contact support.");
         return;
       }
 
