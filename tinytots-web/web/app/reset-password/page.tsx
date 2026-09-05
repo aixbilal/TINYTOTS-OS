@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { validatePassword } from "@/lib/validate-password";
 import FormAlert from "@/components/auth/FormAlert";
 import PasswordRequirements from "@/components/auth/PasswordRequirements";
+import PasswordVisibilityToggle from "@/components/auth/PasswordVisibilityToggle";
 
 const RESET_NEXT_KEY = "tt_password_reset_next";
 
@@ -31,6 +32,8 @@ function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordTouched, setPasswordTouched] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -305,26 +308,35 @@ function ResetPasswordForm() {
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-stack-sm">
         <div>
-          <input
-            type="password"
-            placeholder="New password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onBlur={() => setPasswordTouched(true)}
-            autoComplete="new-password"
-            className={inputClass}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="New password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onBlur={() => setPasswordTouched(true)}
+              autoComplete="new-password"
+              className={`${inputClass} pr-11`}
+            />
+            <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword((s) => !s)} />
+          </div>
           <PasswordRequirements password={password} showErrors={passwordTouched} />
         </div>
         <div>
-          <input
-            type="password"
-            placeholder="Confirm new password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            autoComplete="new-password"
-            className={inputClass}
-          />
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+              className={`${inputClass} pr-11`}
+            />
+            <PasswordVisibilityToggle
+              visible={showConfirmPassword}
+              onToggle={() => setShowConfirmPassword((s) => !s)}
+            />
+          </div>
           {showMatchError && (
             <p className="font-label-md text-label-md text-red-700 mt-1 flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px]" aria-hidden="true">error</span>

@@ -10,6 +10,7 @@ import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
 import TurnstileChallenge from "@/components/TurnstileChallenge";
 import AuthShell from "@/components/auth/AuthShell";
 import FormAlert from "@/components/auth/FormAlert";
+import PasswordVisibilityToggle from "@/components/auth/PasswordVisibilityToggle";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -156,10 +157,10 @@ export default function LoginPage() {
 
   return (
     <AuthShell tagline="Curated kidswear for life's little moments.">
-      <h1 className="font-display-md text-display-md text-text-primary mb-2">Welcome back!</h1>
-      <p className="font-body-md text-body-md text-text-secondary mb-stack-md">Sign in to continue to your account.</p>
+      <h1 className="font-display-lg text-display-lg text-text-primary mb-2.5 tracking-tight">Welcome back!</h1>
+      <p className="font-body-md text-body-md text-text-secondary mb-8">Sign in to continue to your account.</p>
 
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         <div>
           <label htmlFor="login-email" className="font-label-md text-label-md text-text-secondary mb-1.5 block">
             Email Address
@@ -197,16 +198,7 @@ export default function LoginPage() {
               aria-describedby={fieldErrors.password ? "login-password-error" : undefined}
               className={`${inputClass(!!fieldErrors.password)} pr-11`}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword((s) => !s)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-brand-primary"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                {showPassword ? "visibility_off" : "visibility"}
-              </span>
-            </button>
+            <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword((s) => !s)} />
           </div>
           {fieldErrors.password && (
             <p id="login-password-error" className="font-label-md text-label-md text-red-700 mt-1">

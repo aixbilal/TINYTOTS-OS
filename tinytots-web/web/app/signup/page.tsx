@@ -12,6 +12,7 @@ import TurnstileChallenge from "@/components/TurnstileChallenge";
 import AuthShell from "@/components/auth/AuthShell";
 import FormAlert from "@/components/auth/FormAlert";
 import PasswordRequirements from "@/components/auth/PasswordRequirements";
+import PasswordVisibilityToggle from "@/components/auth/PasswordVisibilityToggle";
 
 const MAX_LEN = { name: 80, phone: 20, email: 100, password: 72 };
 
@@ -173,10 +174,10 @@ export default function SignupPage() {
 
   return (
     <AuthShell tagline="Curated kidswear for life's little moments.">
-      <h1 className="font-display-md text-display-md text-text-primary mb-2">Create your account</h1>
-      <p className="font-body-md text-body-md text-text-secondary mb-stack-md">Join TinyTots and start your journey with us.</p>
+      <h1 className="font-display-lg text-display-lg text-text-primary mb-2.5 tracking-tight">Create your account</h1>
+      <p className="font-body-md text-body-md text-text-secondary mb-8">Join TinyTots and start your journey with us.</p>
 
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         <div>
           <label htmlFor="signup-name" className="font-label-md text-label-md text-text-secondary mb-1.5 block">
             Full Name
@@ -250,16 +251,7 @@ export default function SignupPage() {
               aria-describedby="signup-password-requirements"
               className={`${inputClass(!!fieldErrors.password)} pr-11`}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword((s) => !s)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-brand-primary"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                {showPassword ? "visibility_off" : "visibility"}
-              </span>
-            </button>
+            <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword((s) => !s)} />
           </div>
           <div id="signup-password-requirements">
             <PasswordRequirements password={password} showErrors={!!touched.password && !!fieldErrors.password} />

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useAdminAuth } from "@/lib/admin-auth-context";
-import { validatePassword, PASSWORD_HINT } from "@/lib/validate-password";
+import { validatePassword } from "@/lib/validate-password";
+import PasswordRequirements from "@/components/auth/PasswordRequirements";
 import AdminMfaSettings from "@/components/admin/AdminMfaSettings";
 import {
   AdminPageHeader,
@@ -18,11 +19,15 @@ export default function AdminAccountPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPasswordTouched, setNewPasswordTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   if (!admin) return null;
+
+  const showMatchError = confirmPassword.length > 0 && newPassword !== confirmPassword;
+  const showMatchSuccess = confirmPassword.length > 0 && newPassword.length > 0 && newPassword === confirmPassword;
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -99,7 +104,6 @@ export default function AdminAccountPage() {
         </AdminCard>
 
         <AdminCard title="Change password">
-          <p className="mb-4 font-label-md text-label-md text-text-secondary">{PASSWORD_HINT}</p>
           <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
             <AdminField label="Current password">
               <input
@@ -117,9 +121,11 @@ export default function AdminAccountPage() {
                 placeholder="New password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
+                onBlur={() => setNewPasswordTouched(true)}
                 autoComplete="new-password"
                 className={adminInputClass}
               />
+              <PasswordRequirements password={newPassword} showErrors={newPasswordTouched} />
             </AdminField>
             <AdminField label="Confirm new password">
               <input
@@ -130,6 +136,18 @@ export default function AdminAccountPage() {
                 autoComplete="new-password"
                 className={adminInputClass}
               />
+              {showMatchError && (
+                <p className="font-label-md text-label-md text-red-700 mt-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]" aria-hidden="true">error</span>
+                  Passwords don&apos;t match.
+                </p>
+              )}
+              {showMatchSuccess && (
+                <p className="font-label-md text-label-md text-green-700 mt-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]" aria-hidden="true">check_circle</span>
+                  Passwords match
+                </p>
+              )}
             </AdminField>
             {error && <AdminAlert tone="danger">{error}</AdminAlert>}
             {success && <AdminAlert tone="success">Password updated successfully.</AdminAlert>}

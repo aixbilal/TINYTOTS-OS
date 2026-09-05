@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 import AccountSidebar from "@/components/AccountSidebar";
 import { validatePassword } from "@/lib/validate-password";
 import PasswordRequirements from "@/components/auth/PasswordRequirements";
+import PasswordVisibilityToggle from "@/components/auth/PasswordVisibilityToggle";
+import FormAlert from "@/components/auth/FormAlert";
 
 export default function AccountSettingsPage() {
   const router = useRouter();
@@ -17,6 +19,9 @@ export default function AccountSettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [newPasswordTouched, setNewPasswordTouched] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -130,27 +135,36 @@ export default function AccountSettingsPage() {
             <label className="font-body-sm text-body-sm text-text-secondary mb-2 block">
               Current password
             </label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              autoComplete="current-password"
-              className={inputClass}
-            />
+            <div className="relative">
+              <input
+                type={showCurrentPassword ? "text" : "password"}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+                className={`${inputClass} pr-11`}
+              />
+              <PasswordVisibilityToggle
+                visible={showCurrentPassword}
+                onToggle={() => setShowCurrentPassword((s) => !s)}
+              />
+            </div>
           </div>
 
           <div>
             <label className="font-body-sm text-body-sm text-text-secondary mb-2 block">
               New password
             </label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              onBlur={() => setNewPasswordTouched(true)}
-              autoComplete="new-password"
-              className={inputClass}
-            />
+            <div className="relative">
+              <input
+                type={showNewPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                onBlur={() => setNewPasswordTouched(true)}
+                autoComplete="new-password"
+                className={`${inputClass} pr-11`}
+              />
+              <PasswordVisibilityToggle visible={showNewPassword} onToggle={() => setShowNewPassword((s) => !s)} />
+            </div>
             <PasswordRequirements password={newPassword} showErrors={newPasswordTouched} />
           </div>
 
@@ -158,13 +172,19 @@ export default function AccountSettingsPage() {
             <label className="font-body-sm text-body-sm text-text-secondary mb-2 block">
               Confirm new password
             </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              autoComplete="new-password"
-              className={inputClass}
-            />
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+                className={`${inputClass} pr-11`}
+              />
+              <PasswordVisibilityToggle
+                visible={showConfirmPassword}
+                onToggle={() => setShowConfirmPassword((s) => !s)}
+              />
+            </div>
             {showMatchError && (
               <p className="font-label-md text-label-md text-red-700 mt-1 flex items-center gap-1">
                 <span className="material-symbols-outlined text-[14px]" aria-hidden="true">error</span>
@@ -179,7 +199,7 @@ export default function AccountSettingsPage() {
             )}
           </div>
 
-          {error && <p className="font-label-md text-label-md text-red-700">{error}</p>}
+          <FormAlert>{error}</FormAlert>
           {success && (
             <p className="font-label-md text-label-md text-green-700">Password updated successfully.</p>
           )}

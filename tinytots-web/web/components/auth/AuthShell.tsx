@@ -21,10 +21,12 @@ export default function AuthShell({
 }) {
   return (
     <div className="min-h-dvh flex flex-col lg:flex-row bg-surface-canvas">
-      <div className="w-full lg:w-[58%] flex flex-col px-margin-mobile md:px-margin-desktop py-8 lg:py-12">
-        <TinyTotsBrand className="mb-8 lg:mb-12" />
+      <div className="w-full lg:w-[58%] flex flex-col px-margin-mobile md:px-margin-desktop py-10 lg:py-14">
+        <TinyTotsBrand className="mb-10 lg:mb-14" />
         <div className="flex-1 flex items-center justify-center lg:justify-start">
-          <div className="w-full max-w-[440px]">{children}</div>
+          <div className="w-full max-w-[460px] rounded-3xl border border-border-subtle bg-surface-elevated shadow-sm px-6 py-8 sm:px-9 sm:py-10">
+            {children}
+          </div>
         </div>
       </div>
 
@@ -38,15 +40,18 @@ export default function AuthShell({
           className="object-cover object-[38%_center]"
         />
         <div
-          className="absolute inset-x-0 bottom-0 h-1/2 pointer-events-none"
-          style={{ background: "linear-gradient(to top, rgba(42,38,33,0.55) 0%, rgba(42,38,33,0) 100%)" }}
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: "linear-gradient(to top, rgba(42,38,33,0.7) 0%, rgba(42,38,33,0.05) 45%, rgba(42,38,33,0) 65%)" }}
         />
-        <div className="absolute bottom-10 left-10 right-10">
-          <p className="font-display-md text-[26px] text-white tracking-tight">TinyTots</p>
-          <p className="font-label-md text-label-md uppercase tracking-wider text-white/85 mt-1">
+        <div className="absolute inset-x-0 top-0 h-1/3 pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(42,38,33,0.35) 0%, rgba(42,38,33,0) 100%)" }} />
+        <div className="absolute bottom-12 left-10 right-10">
+          <p className="font-display-lg text-[34px] text-white tracking-tight leading-[1.1]">TinyTots</p>
+          <p className="font-label-md text-label-md uppercase tracking-[0.18em] text-white/85 mt-2">
             Timeless for Tiny Hearts
           </p>
-          {tagline && <p className="font-body-sm text-body-sm text-white/80 mt-3 max-w-[280px]">{tagline}</p>}
+          {tagline && (
+            <p className="font-body-sm text-body-sm text-white/80 mt-4 max-w-[300px] leading-relaxed">{tagline}</p>
+          )}
         </div>
       </div>
     </div>
