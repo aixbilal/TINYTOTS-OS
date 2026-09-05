@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import nextDynamic from "next/dynamic";
-import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 import Link from "next/link";
@@ -178,12 +177,11 @@ const fetchHomepageContent = async () => {
   return data || HOMEPAGE_DEFAULTS;
 };
 
-// Cross-request cache for ISR regenerations (React cache() only dedupes within one render).
-const getHomepageContentCached = unstable_cache(fetchHomepageContent, ["homepage-content"], {
-  revalidate: 60,
-});
-
-const getHomepageContent = cache(getHomepageContentCached);
+// Per-request dedupe only (generateMetadata() and Home() both call this) —
+// no cross-request persistence, since OpenNext's read-only
+// staticAssetsIncrementalCache can't back a cross-request unstable_cache
+// layer without erroring on write (K.2-C.8).
+const getHomepageContent = cache(fetchHomepageContent);
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getHomepageContent();
@@ -251,21 +249,17 @@ async function getHomepageTestimonials() {
   return data || [];
 }
 
-const getHomepageSections = unstable_cache(
-  async (
-    trendingSelectionType: string | null | undefined,
-    trendingCategory: string | null | undefined,
-    trendingProductIds: number[] | null | undefined
-  ) => {
-    const [trendingProducts, testimonials] = await Promise.all([
-      getProductsForSection(trendingSelectionType, trendingCategory, trendingProductIds),
-      getHomepageTestimonials(),
-    ]);
-    return { trendingProducts, testimonials };
-  },
-  ["homepage-sections"],
-  { revalidate: 60 }
-);
+async function getHomepageSections(
+  trendingSelectionType: string | null | undefined,
+  trendingCategory: string | null | undefined,
+  trendingProductIds: number[] | null | undefined
+) {
+  const [trendingProducts, testimonials] = await Promise.all([
+    getProductsForSection(trendingSelectionType, trendingCategory, trendingProductIds),
+    getHomepageTestimonials(),
+  ]);
+  return { trendingProducts, testimonials };
+}
 
 export default async function Home() {
   const content = await getHomepageContent();

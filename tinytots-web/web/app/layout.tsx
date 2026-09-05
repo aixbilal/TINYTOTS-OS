@@ -1,5 +1,4 @@
   import type { Metadata } from "next";
-  import { unstable_cache } from "next/cache";
   import { Inter, Plus_Jakarta_Sans, Playfair_Display, Geist, JetBrains_Mono } from "next/font/google";
   import "./globals.css";
   import SiteShell from "@/components/SiteShell";
@@ -9,7 +8,6 @@
   import { cn } from "@/lib/utils";
   import { getSiteUrl } from "@/lib/site-url";
   import { OG_DEFAULT_IMAGE, OG_LOCALE, SITE_NAME } from "@/lib/seo";
-  import { supabaseAnon as supabase } from "@/lib/supabase-anon";
 
   // swap: on slow networks, optional never applies the webfont and layout looks broken.
   const inter = Inter({
@@ -98,31 +96,9 @@
     },
   };
 
-  const getAnnouncementForShell = unstable_cache(
-    async () => {
-      const { data } = await supabase
-        .from("homepage_content")
-        .select(
-          "announcement_enabled, announcement_text, announcement_link, announcement_style"
-        )
-        .eq("id", 1)
-        .maybeSingle();
-      return {
-        enabled: data?.announcement_enabled ?? false,
-        text: data?.announcement_text ?? "",
-        link: data?.announcement_link ?? "",
-        style: data?.announcement_style ?? "static",
-      };
-    },
-    ["site-shell-announcement"],
-    { revalidate: 60 }
-  );
-
-  export default async function RootLayout({
+  export default function RootLayout({
     children,
   }: Readonly<{ children: React.ReactNode }>) {
-    const announcement = await getAnnouncementForShell();
-
     return (
       <html
         lang="en"
@@ -147,7 +123,7 @@
         <body className="bg-surface-canvas font-body-md text-text-primary antialiased min-h-screen">
           <SerwistProvider>
             <IconFontGuard />
-            <SiteShell announcement={announcement}>{children}</SiteShell>
+            <SiteShell>{children}</SiteShell>
             <Analytics />
           </SerwistProvider>
         </body>

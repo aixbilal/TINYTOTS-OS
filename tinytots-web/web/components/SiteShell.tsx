@@ -271,11 +271,8 @@ function MainContent({ children }: { children: ReactNode }) {
 
 export default function SiteShell({
   children,
-  announcement = null,
 }: Readonly<{
   children: React.ReactNode;
-  /** Server-fetched announcement — avoids CLS from client fetch expanding the fixed header. */
-  announcement?: AnnouncementData | null;
 }>) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -283,6 +280,11 @@ export default function SiteShell({
   const [headerHeight, setHeaderHeight] = useState(80);
   const [headerHidden, setHeaderHidden] = useState(false);
   const lastScrollYRef = useRef(0);
+  // Fetched client-side, homepage-only (see effect below) — avoids running the
+  // announcement query on every route via the root layout, which is what
+  // produced read-only-incremental-cache write errors under OpenNext
+  // (K.2-C.8). No prop from RootLayout anymore.
+  const [announcement, setAnnouncement] = useState<AnnouncementData | null>(null);
 
   useEffect(() => {
     if (mobileMenuOpen) setHeaderHidden(false);
@@ -326,6 +328,28 @@ export default function SiteShell({
     return () => ro.disconnect();
   }, [announcement]);
   const pathname = usePathname();
+
+  // Homepage-only: the editable announcement is only ever displayed on "/"
+  // (see the pathname === "/" branch below), so only fetch it there. Internal
+  // pages use the static InternalAnnouncementBar and must never call this.
+  useEffect(() => {
+    if (pathname !== "/") return;
+    let cancelled = false;
+
+    fetch("/api/announcement")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled) setAnnouncement(data);
+      })
+      .catch(() => {
+        if (!cancelled) setAnnouncement(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
   const isSignage = pathname?.startsWith("/signage");
   // The Admin back office ships its own application shell (header, sidebar,
   // auth provider) in app/admin/layout.tsx — it must never render inside the
