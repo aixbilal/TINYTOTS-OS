@@ -198,7 +198,7 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
         {previewUrl ? (
           <img src={previewUrl} alt="Code preview" className="max-h-32" />
         ) : (
-          <p className="type-caption text-[#6b6b73]">Select a variant to preview</p>
+          <p className="type-caption text-text-muted">Select a variant to preview</p>
         )}
         <canvas ref={canvasRef} className="hidden" />
       </div>

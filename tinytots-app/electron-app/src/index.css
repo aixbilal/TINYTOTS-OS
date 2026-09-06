@@ -373,3 +373,12 @@ select {
 .ql-snow.ql-toolbar button.ql-active .ql-fill {
   fill: var(--color-brand);
 }
+
+/* Inside a brand-reconciled surface the rules above already resolve to warm
+   tokens (warm toolbar, charcoal text, taupe icons, olive active). Only the
+   editor writing area is nudged from the warm-neutral elevated tint to a
+   clean white field so it reads as an input. Dark Quill outside `.tt-warm`
+   is untouched. */
+.tt-warm .ql-container.ql-snow {
+  background: var(--color-surface-panel);
+}

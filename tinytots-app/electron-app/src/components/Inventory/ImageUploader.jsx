@@ -194,7 +194,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
             <div
               key={img.id}
               className="relative w-24 h-24 rounded-lg overflow-hidden border-2 group"
-              style={{ borderColor: img.is_primary ? "#f0483e" : "transparent" }}
+              style={{ borderColor: img.is_primary ? "#616845" : "transparent" }}
             >
               <img src={img.url} alt="" className="w-full h-full object-cover" />
               {img.is_primary && (
@@ -244,7 +244,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
       {error && <p className="type-body-sm text-error-text">{error}</p>}
 
       {cropSrc && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 bg-surface-overlay flex items-center justify-center z-[60] p-4">
           <div className="bg-surface-panel border border-border-strong rounded-xl p-4 max-w-lg w-full flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h3 className="font-medium text-text-primary">Crop image</h3>

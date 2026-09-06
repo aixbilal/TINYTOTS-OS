@@ -556,7 +556,7 @@ function FiltersPanel({
   onClose,
 }) {
   return (
-    <div className="absolute right-0 top-11 z-30 w-64 rounded-xl border border-border-strong bg-surface-panel p-4 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.7)]">
+    <div className="absolute right-0 top-11 z-30 w-64 rounded-xl border border-border-strong bg-surface-panel p-4 shadow-[0_16px_40px_-16px_rgba(42,38,33,0.28)]">
       <div className="flex items-center justify-between mb-3">
         <p className="type-section text-text-primary">Filters</p>
         <button onClick={onClose} className="text-text-muted hover:text-text-primary">

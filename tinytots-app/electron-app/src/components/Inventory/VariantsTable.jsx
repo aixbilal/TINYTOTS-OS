@@ -199,7 +199,7 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
                         </button>
                         <button
                           onClick={() => deleteVariant(v.id)}
-                          className="w-full text-left px-3 py-2 type-body-sm text-brand hover:bg-surface-elevated flex items-center gap-1.5"
+                          className="w-full text-left px-3 py-2 type-body-sm text-error-text hover:bg-surface-elevated flex items-center gap-1.5"
                         >
                           <Trash2 size={13} /> Delete
                         </button>

@@ -64,7 +64,7 @@ createRoot(document.getElementById("root")).render(
         path="/inventory"
         element={
           <RequireAuth adminOnly>
-            <AppShell>
+            <AppShell warm>
               <Inventory />
             </AppShell>
           </RequireAuth>
@@ -94,7 +94,7 @@ createRoot(document.getElementById("root")).render(
         path="/low-stock"
         element={
           <RequireAuth adminOnly>
-            <AppShell>
+            <AppShell warm>
               <LowStock />
             </AppShell>
           </RequireAuth>
