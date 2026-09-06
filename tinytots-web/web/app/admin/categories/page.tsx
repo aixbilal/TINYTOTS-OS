@@ -4,7 +4,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
 import RelatedProductPicker from "@/components/admin/RelatedProductPicker";
 import AspectImageUploader from "@/components/admin/AspectImageUploader";
-import { AdminPageHeader, AdminAlert } from "@/components/admin/ui";
+import { AdminPageHeader, AdminAlert, AdminConfirmDialog } from "@/components/admin/ui";
 
 interface Category {
   id: number;
@@ -48,6 +48,8 @@ export default function AdminCategoriesPage() {
   const [search, setSearch] = useState("");
   const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -136,14 +138,18 @@ export default function AdminCategoriesPage() {
     load();
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm("Delete this category?")) return;
-    const res = await adminFetch(`/api/admin/categories/${id}`, { method: "DELETE" });
+  async function handleDelete() {
+    if (confirmDeleteId == null) return;
+    setDeleting(true);
+    const res = await adminFetch(`/api/admin/categories/${confirmDeleteId}`, { method: "DELETE" });
     const data = await res.json();
+    setDeleting(false);
     if (!res.ok) {
       setErrorMsg(data.error || "Failed to delete category");
+      setConfirmDeleteId(null);
       return;
     }
+    setConfirmDeleteId(null);
     load();
   }
 
@@ -354,7 +360,7 @@ export default function AdminCategoriesPage() {
                       >
                         Edit{editingId === c.id ? " ▲" : ""}
                       </button>
-                      <button onClick={() => handleDelete(c.id)} className="text-xs font-medium text-red-600 hover:underline">
+                      <button onClick={() => setConfirmDeleteId(c.id)} className="text-xs font-medium text-red-600 hover:underline">
                         Delete
                       </button>
                     </td>
@@ -531,6 +537,18 @@ export default function AdminCategoriesPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {confirmDeleteId != null && (
+        <AdminConfirmDialog
+          title="Delete category"
+          message="This permanently deletes the category. Products assigned to it keep their category name but lose the collection entry. This cannot be undone."
+          confirmLabel="Delete"
+          danger
+          busy={deleting}
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
       )}
     </div>
   );

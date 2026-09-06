@@ -796,7 +796,10 @@
 }
 
 .qr {
-  width: calc(var(--signage-unit) * 4.4);
+  /* Bumped from 4.4 (Batch H review: "borderline for scanning from typical
+     TV viewing distance"); translate scaled by the same ratio to keep the
+     box aligned with the scanLabel baseline. */
+  width: calc(var(--signage-unit) * 5.2);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -805,7 +808,7 @@
   border-radius: calc(var(--signage-unit) * 0.18);
   color: var(--campaign-footer);
   background: var(--campaign-footer-text);
-  translate: 0 calc(var(--signage-unit) * -1.35);
+  translate: 0 calc(var(--signage-unit) * -1.6);
 }
 
 .qr img {
