@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { Plus, Trash2, Users as UsersIcon } from "lucide-react";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
-import Input from "../components/ui/Input";
+import Input, { Select } from "../components/ui/Input";
 import Dialog from "../components/ui/Dialog";
+import { PageHeader } from "../components/ui/Layout";
 import { LoadingState, EmptyState, ErrorState } from "../components/ui/States";
 import { Table, THead, TBody, TR, TH, TD } from "../components/ui/Table";
 import { apiFetch } from "../services/api";
@@ -151,21 +152,15 @@ export default function Users() {
   }
 
   return (
-    <div className="mx-auto max-w-[1100px] flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="type-heading-lg text-text-primary">Users</h1>
-          <p className="type-body-sm text-text-secondary mt-0.5">
-            Manage employee logins and their roles.
-          </p>
-        </div>
+    <div className="mx-auto max-w-[1100px] flex flex-col gap-5">
+      <PageHeader title="Users" description="Manage employee logins and their roles.">
         <Button onClick={() => setAddOpen(true)}>
           <Plus size={15} /> Add User
         </Button>
-      </div>
+      </PageHeader>
 
       {loadError ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <ErrorState
             title="Couldn't load users"
             description="The local server didn't respond. Check the connection and try again."
@@ -173,11 +168,11 @@ export default function Users() {
           />
         </div>
       ) : users === null ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <LoadingState label="Loading users…" />
         </div>
       ) : users.length === 0 ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <EmptyState
             icon={UsersIcon}
             title="No users yet"
@@ -268,26 +263,18 @@ export default function Users() {
             helperText="At least 4 characters."
             autoComplete="new-password"
           />
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="role"
-              className="type-field-label text-text-secondary"
-            >
-              Role
-            </label>
-            <select
-              id="role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="type-input rounded-lg border border-border-strong bg-surface-elevated px-3 py-2 text-text-primary outline-none focus:border-brand"
-            >
-              {ROLE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            id="role"
+            label="Role"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+          >
+            {ROLE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </Select>
 
           {formError && (
             <p className="type-body-sm text-error-text">{formError}</p>

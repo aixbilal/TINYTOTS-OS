@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
 import {
-  Search,
   RotateCcw,
   FileText,
   ChevronLeft,
@@ -10,6 +9,8 @@ import {
 } from "lucide-react";
 import ReceiptDetailPanel from "../components/receipts/ReceiptDetailPanel";
 import Button from "../components/ui/Button";
+import SearchField from "../components/ui/SearchField";
+import { PageHeader } from "../components/ui/Layout";
 import { LoadingState, EmptyState } from "../components/ui/States";
 import { Table, THead, TBody, TR, TH, TD } from "../components/ui/Table";
 import { apiFetch } from "../services/api";
@@ -69,35 +70,27 @@ export default function OldReceipts() {
   const showingTo = Math.min(page * PAGE_SIZE, total);
 
   const inputCls =
-    "type-input rounded-lg border border-border-strong bg-surface-elevated px-3 py-2 text-text-primary outline-none focus:border-brand";
+    "type-input h-9 rounded-md border border-border-default bg-surface-panel px-3 text-text-primary outline-none transition-[border-color,box-shadow] focus:border-brand focus:ring-2 focus:ring-brand/45";
 
   return (
     <div className="mx-auto max-w-[1600px] flex gap-4">
-      <div className="flex-1 min-w-0 flex flex-col gap-4">
-        <div>
-          <h1 className="type-heading-lg text-text-primary">Receipts</h1>
-          <p className="type-body-sm text-text-secondary mt-0.5">
-            Search, view and reprint past sales receipts.
-          </p>
-        </div>
+      <div className="flex-1 min-w-0 flex flex-col gap-5">
+        <PageHeader
+          title="Receipts"
+          description="Search, view and reprint past sales receipts."
+        />
 
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search
-              size={15}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-            />
-            <input
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search by receipt ID, invoice, customer or cashier…"
-              className={`${inputCls} w-full pl-9`}
-            />
-          </div>
+          <SearchField
+            value={query}
+            onChange={(v) => {
+              setQuery(v);
+              setPage(1);
+            }}
+            placeholder="Search by receipt ID, invoice, customer or cashier…"
+            className="flex-1 min-w-[220px]"
+          />
           <input
             type="date"
             value={from}
@@ -140,11 +133,11 @@ export default function OldReceipts() {
 
         {/* Table */}
         {loading && receipts.length === 0 ? (
-          <div className="rounded-xl border border-border-default bg-surface-panel">
+          <div className="rounded-lg border border-border-default bg-surface-panel">
             <LoadingState label="Loading receipts…" />
           </div>
         ) : receipts.length === 0 ? (
-          <div className="rounded-xl border border-border-default bg-surface-panel">
+          <div className="rounded-lg border border-border-default bg-surface-panel">
             <EmptyState
               icon={FileText}
               title="No receipts found"
@@ -170,9 +163,7 @@ export default function OldReceipts() {
                   <TR
                     key={r.id}
                     onClick={() => setSelectedId(r.id)}
-                    className={`cursor-pointer ${
-                      selectedId === r.id ? "bg-surface-elevated/60" : ""
-                    }`}
+                    selected={selectedId === r.id}
                   >
                     <TD className="font-medium">
                       <span className="inline-flex items-center gap-2">
@@ -236,7 +227,7 @@ export default function OldReceipts() {
                 <button
                   onClick={() => setPage((p) => Math.max(p - 1, 1))}
                   disabled={page === 1}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-border-strong text-text-secondary hover:text-text-primary disabled:opacity-40"
+                  className="w-8 h-8 flex items-center justify-center rounded-md border border-border-default text-text-secondary hover:text-text-primary hover:bg-surface-sunken disabled:opacity-40 transition-colors"
                 >
                   <ChevronLeft size={15} />
                 </button>
@@ -246,7 +237,7 @@ export default function OldReceipts() {
                 <button
                   onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
                   disabled={page >= totalPages}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-border-strong text-text-secondary hover:text-text-primary disabled:opacity-40"
+                  className="w-8 h-8 flex items-center justify-center rounded-md border border-border-default text-text-secondary hover:text-text-primary hover:bg-surface-sunken disabled:opacity-40 transition-colors"
                 >
                   <ChevronRight size={15} />
                 </button>

@@ -63,7 +63,7 @@ export default function CustomerDetail() {
   const orders = data?.recentOrders || [];
 
   return (
-    <div className="mx-auto max-w-[900px] flex flex-col gap-4">
+    <div className="mx-auto max-w-[900px] flex flex-col gap-5">
       <button
         onClick={() => navigate("/customers")}
         className="type-nav inline-flex items-center gap-2 text-text-secondary hover:text-text-primary w-fit"
@@ -72,11 +72,11 @@ export default function CustomerDetail() {
       </button>
 
       {loadError ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <ErrorState onRetry={retry} />
         </div>
       ) : notFound ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <EmptyState
             title="Customer not found"
             description="This customer may have been removed on the online store."
@@ -84,15 +84,15 @@ export default function CustomerDetail() {
           />
         </div>
       ) : data === null ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <LoadingState label="Loading customer…" />
         </div>
       ) : (
         <>
           {/* Identity */}
-          <div className="rounded-xl border border-border-default bg-surface-panel p-6">
+          <div className="rounded-lg border border-border-default bg-surface-panel p-6">
             <div className="flex items-center gap-4">
-              <span className="w-14 h-14 rounded-full bg-brand text-pure-white text-xl font-semibold flex items-center justify-center shrink-0">
+              <span className="w-14 h-14 rounded-full bg-brand text-text-inverse type-heading-sm font-semibold flex items-center justify-center shrink-0">
                 {customer.full_name?.[0]?.toUpperCase() || "?"}
               </span>
               <div className="min-w-0">
@@ -125,7 +125,7 @@ export default function CustomerDetail() {
           <div className="flex flex-col gap-2">
             <h2 className="type-section text-text-primary">Online Orders</h2>
             {orders.length === 0 ? (
-              <div className="rounded-xl border border-border-default bg-surface-panel">
+              <div className="rounded-lg border border-border-default bg-surface-panel">
                 <EmptyState
                   icon={ShoppingBag}
                   title="No online orders"

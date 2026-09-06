@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import Button from "../components/ui/Button";
+import { PageHeader } from "../components/ui/Layout";
 import { EmptyState } from "../components/ui/States";
 import { getSession, clearSession } from "../auth";
 
@@ -21,7 +22,7 @@ export default function Profile() {
   if (!session) {
     return (
       <div className="mx-auto max-w-[720px]">
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <EmptyState
             title="Not signed in"
             description="Your session has ended. Please sign in again."
@@ -41,17 +42,12 @@ export default function Profile() {
   ].filter(([, value]) => value != null && value !== "");
 
   return (
-    <div className="mx-auto max-w-[720px] flex flex-col gap-4">
-      <div>
-        <h1 className="type-heading-lg text-text-primary">Profile</h1>
-        <p className="type-body-sm text-text-secondary mt-0.5">
-          Your current session details.
-        </p>
-      </div>
+    <div className="mx-auto max-w-[720px] flex flex-col gap-5">
+      <PageHeader title="Profile" description="Your current session details." />
 
-      <div className="rounded-xl border border-border-default bg-surface-panel p-6">
+      <div className="rounded-lg border border-border-default bg-surface-panel p-6">
         <div className="flex items-center gap-4">
-          <span className="w-14 h-14 rounded-full bg-brand text-pure-white text-xl font-semibold flex items-center justify-center shrink-0">
+          <span className="w-14 h-14 rounded-full bg-brand text-text-inverse type-heading-sm font-semibold flex items-center justify-center shrink-0">
             {initial}
           </span>
           <div className="min-w-0">
@@ -86,7 +82,7 @@ export default function Profile() {
         </dl>
       </div>
 
-      <div className="rounded-xl border border-border-default bg-surface-panel p-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="rounded-lg border border-border-default bg-surface-panel p-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="type-section text-text-primary">Session</p>
           <p className="type-body-sm text-text-secondary mt-0.5">

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Search, Tags } from "lucide-react";
+import { Tags } from "lucide-react";
 import { LoadingState, EmptyState, ErrorState } from "../components/ui/States";
 import { Table, THead, TBody, TR, TH, TD } from "../components/ui/Table";
+import SearchField from "../components/ui/SearchField";
+import { PageHeader } from "../components/ui/Layout";
 
 /**
  * Read-only operational view of the product categories that actually exist
@@ -69,36 +71,27 @@ export default function Categories() {
   const uncategorised = products.filter((p) => !(p.category || "").trim()).length;
 
   return (
-    <div className="mx-auto max-w-[1100px] flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="type-heading-lg text-text-primary">Categories</h1>
-          <p className="type-body-sm text-text-secondary mt-0.5">
-            Product categories in use across your inventory. Read-only overview.
-          </p>
-        </div>
+    <div className="mx-auto max-w-[1100px] flex flex-col gap-5">
+      <PageHeader
+        title="Categories"
+        description="Product categories in use across your inventory. Read-only overview."
+      >
         {categories.length > 0 && (
-          <div className="relative">
-            <Search
-              size={15}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-            />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search categories…"
-              className="type-input w-56 rounded-lg border border-border-strong bg-surface-elevated pl-9 pr-3 py-2 text-text-primary outline-none placeholder:text-text-muted focus:border-brand"
-            />
-          </div>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Search categories…"
+            className="w-56"
+          />
         )}
-      </div>
+      </PageHeader>
 
       {loading ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <LoadingState label="Loading categories…" />
         </div>
       ) : loadError ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <ErrorState
             title="Couldn't load categories"
             description="The local server didn't respond. Check the connection and try again."
@@ -106,7 +99,7 @@ export default function Categories() {
           />
         </div>
       ) : categories.length === 0 ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <EmptyState
             icon={Tags}
             title="No categories yet"
@@ -128,7 +121,7 @@ export default function Categories() {
           </p>
 
           {filtered.length === 0 ? (
-            <div className="rounded-xl border border-border-default bg-surface-panel">
+            <div className="rounded-lg border border-border-default bg-surface-panel">
               <EmptyState
                 icon={Tags}
                 title="No categories match your search"

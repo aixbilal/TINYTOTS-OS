@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Printer, RefreshCw, Check } from "lucide-react";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
+import { PageHeader } from "../components/ui/Layout";
 import { LoadingState, EmptyState, ErrorState } from "../components/ui/States";
 
 /**
@@ -73,23 +74,20 @@ export default function PrinterSettings() {
   const dirty = selected && selected !== saved;
 
   return (
-    <div className="mx-auto max-w-[720px] flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="type-heading-lg text-text-primary">Printer Settings</h1>
-          <p className="type-body-sm text-text-secondary mt-0.5">
-            Choose which installed printer prints receipts on this machine.
-          </p>
-        </div>
+    <div className="mx-auto max-w-[720px] flex flex-col gap-5">
+      <PageHeader
+        title="Printer Settings"
+        description="Choose which installed printer prints receipts on this machine."
+      >
         <Button variant="secondary" onClick={refresh}>
           <RefreshCw size={14} /> Rescan
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Current selection */}
-      <div className="rounded-xl border border-border-default bg-surface-panel p-5">
+      <div className="rounded-lg border border-border-default bg-surface-panel p-5">
         <div className="flex items-center gap-2.5 mb-3">
-          <span className="w-8 h-8 rounded-lg bg-brand/12 text-brand flex items-center justify-center">
+          <span className="w-8 h-8 rounded-md bg-brand-soft text-brand flex items-center justify-center">
             <Printer size={16} />
           </span>
           <h2 className="type-section text-text-primary">Receipt printer</h2>
@@ -111,7 +109,7 @@ export default function PrinterSettings() {
 
       {/* Installed printers */}
       {loadError ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <ErrorState
             title="Couldn't list printers"
             description="Printer discovery is only available inside the desktop app."
@@ -119,11 +117,11 @@ export default function PrinterSettings() {
           />
         </div>
       ) : printers === null ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <LoadingState label="Scanning for printers…" />
         </div>
       ) : printers.length === 0 ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <EmptyState
             icon={Printer}
             title="No printers found"
@@ -131,7 +129,7 @@ export default function PrinterSettings() {
           />
         </div>
       ) : (
-        <div className="rounded-xl border border-border-default bg-surface-panel divide-y divide-border-default">
+        <div className="rounded-lg border border-border-default bg-surface-panel divide-y divide-border-default">
           {printers.map((p) => {
             const isSelected = selected === p.name;
             return (

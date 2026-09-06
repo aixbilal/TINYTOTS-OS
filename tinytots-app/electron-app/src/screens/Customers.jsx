@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Users as UsersIcon, ChevronRight } from "lucide-react";
+import { Users as UsersIcon, ChevronRight } from "lucide-react";
 import { LoadingState, EmptyState, ErrorState } from "../components/ui/States";
 import { Table, THead, TBody, TR, TH, TD } from "../components/ui/Table";
+import SearchField from "../components/ui/SearchField";
+import { PageHeader } from "../components/ui/Layout";
 
 /**
  * Read-only customer directory. Data comes from the website's canonical
@@ -51,30 +53,23 @@ export default function Customers() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="type-heading-lg text-text-primary">Customers</h1>
-          <p className="type-body-sm text-text-secondary mt-0.5">
-            Customer accounts from the online store. Read-only.
-          </p>
-        </div>
-        <form onSubmit={submitSearch} className="relative">
-          <Search
-            size={15}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-          />
-          <input
+    <div className="mx-auto max-w-[1200px] flex flex-col gap-5">
+      <PageHeader
+        title="Customers"
+        description="Customer accounts from the online store. Read-only."
+      >
+        <form onSubmit={submitSearch}>
+          <SearchField
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={setSearch}
             placeholder="Search name, phone or email…"
-            className="type-input w-72 rounded-lg border border-border-strong bg-surface-elevated pl-9 pr-3 py-2 text-text-primary outline-none placeholder:text-text-muted focus:border-brand"
+            className="w-72"
           />
         </form>
-      </div>
+      </PageHeader>
 
       {loadError ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <ErrorState
             title="Couldn't load customers"
             description="The local server didn't respond. Check the connection and try again."
@@ -82,11 +77,11 @@ export default function Customers() {
           />
         </div>
       ) : customers === null ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <LoadingState label="Loading customers…" />
         </div>
       ) : customers.length === 0 ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <EmptyState
             icon={UsersIcon}
             title={search ? "No customers match your search" : "No customers yet"}
@@ -116,11 +111,7 @@ export default function Customers() {
             </THead>
             <TBody>
               {customers.map((c) => (
-                <TR
-                  key={c.id}
-                  onClick={() => navigate(`/customers/${c.id}`)}
-                  className="cursor-pointer"
-                >
+                <TR key={c.id} onClick={() => navigate(`/customers/${c.id}`)}>
                   <TD className="font-medium">{c.full_name || "—"}</TD>
                   <TD className="text-text-secondary">{c.phone || "—"}</TD>
                   <TD className="text-text-secondary">{c.email || "—"}</TD>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, Download, Printer, FileText, Calendar, User, CreditCard, Banknote, Package } from "lucide-react";
+import Button from "../ui/Button";
 import { apiFetch } from "../../services/api";
 import { receiptConfig } from "../../receipts/receiptConfig";
 
@@ -39,10 +40,10 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
   if (!receiptId) return null;
 
   return (
-    <div className="w-[360px] shrink-0 bg-surface-panel border border-border-default rounded-xl p-5 h-fit sticky top-2">
+    <div className="w-[360px] shrink-0 bg-surface-panel border border-border-default rounded-lg p-5 h-fit sticky top-2">
       <div className="flex items-center justify-between mb-5">
         <h3 className="type-section text-text-primary">Receipt Details</h3>
-        <button onClick={onClose} className="text-text-muted hover:text-text-primary">
+        <button onClick={onClose} className="text-text-muted hover:text-text-primary" aria-label="Close">
           <X size={18} />
         </button>
       </div>
@@ -72,22 +73,15 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
 
           <p className="type-field-label text-text-secondary mb-2">Receipt Preview</p>
           <div className="flex gap-2.5 mb-5">
-            <button
-              onClick={handleDownload}
-              className="flex-1 flex items-center justify-center gap-2 border border-border-strong rounded-lg py-2.5 text-sm text-text-primary hover:bg-surface-elevated"
-            >
+            <Button variant="secondary" onClick={handleDownload} className="flex-1">
               <Download size={15} /> Download PDF
-            </button>
-            <button
-              onClick={handlePrint}
-              disabled={busy}
-              className="flex-1 flex items-center justify-center gap-2 bg-brand text-pure-white rounded-lg py-2.5 text-sm font-medium hover:bg-brand-hover disabled:opacity-50"
-            >
+            </Button>
+            <Button onClick={handlePrint} disabled={busy} loading={busy} className="flex-1">
               <Printer size={15} /> {busy ? "Sending…" : "Print Receipt"}
-            </button>
+            </Button>
           </div>
 
-          <div className="border border-border-default rounded-xl p-4 bg-pure-white font-mono type-mono type-caption text-[#1a1a1a]">
+          <div className="border border-border-default rounded-lg p-4 bg-pure-white font-mono type-mono type-caption text-[#1a1a1a]">
             <p className="text-center font-display type-body-lg mb-0.5">{receiptConfig.store.name}</p>
             <p className="text-center type-label text-[#666] mb-2">{receiptConfig.store.subtitle}</p>
             <div className="border-t border-dashed border-[#ccc] my-2" />

@@ -1,7 +1,11 @@
 // src/components/EmployeesModal.jsx
 import { useEffect, useState } from "react";
 import { X, Plus, Trash2, User } from "lucide-react";
+import Button from "./ui/Button";
 import { apiFetch } from "../services/api";
+
+const FIELD =
+  "w-full rounded-md border border-border-default bg-surface-panel px-3 py-2 type-input text-text-primary outline-none transition-[border-color,box-shadow] focus:border-brand focus:ring-2 focus:ring-brand/45 placeholder:text-text-muted";
 
 export default function EmployeesModal({ onClose }) {
   const [employees, setEmployees] = useState([]);
@@ -63,7 +67,7 @@ export default function EmployeesModal({ onClose }) {
       setRole("cashier");
       setShowAddForm(false);
       loadEmployees();
-    } catch (err) {
+    } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
     } finally {
       setSaving(false);
@@ -86,17 +90,21 @@ export default function EmployeesModal({ onClose }) {
       } else {
         alert(result.message || "Couldn't remove employee.");
       }
-    } catch (err) {
+    } catch {
       alert("Couldn't reach the server. Check your connection and try again.");
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-surface-overlay flex items-center justify-center z-50 px-4">
-      <div className="bg-surface-panel border border-border-strong rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-surface-overlay tt-anim-fade flex items-center justify-center z-50 px-4">
+      <div className="bg-surface-panel border border-border-strong rounded-xl shadow-lg w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col tt-anim-dialog">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-default">
           <h2 className="type-section text-text-primary">Manage Employees</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
+          <button
+            onClick={onClose}
+            className="text-text-muted hover:text-text-primary rounded-md p-1 hover:bg-surface-elevated transition-colors"
+            aria-label="Close"
+          >
             <X size={18} />
           </button>
         </div>
@@ -105,35 +113,35 @@ export default function EmployeesModal({ onClose }) {
           {loading ? (
             <p className="text-center type-body-sm text-text-secondary py-8">Loading…</p>
           ) : employees.length === 0 ? (
-            <p className="text-center type-body-sm text-text-muted py-8">No employees yet. Add your first one below.</p>
+            <p className="text-center type-body-sm text-text-muted py-8">
+              No employees yet. Add your first one below.
+            </p>
           ) : (
-            <div className="space-y-2 mb-4">
+            <ul className="divide-y divide-border-default mb-4">
               {employees.map((emp) => (
-                <div
-                  key={emp.id}
-                  className="flex items-center justify-between bg-surface-elevated rounded-lg px-4 py-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-brand text-pure-white flex items-center justify-center font-semibold text-sm">
+                <li key={emp.id} className="flex items-center justify-between gap-3 py-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-brand text-text-inverse flex items-center justify-center font-semibold type-body-sm shrink-0">
                       {emp.name?.[0]?.toUpperCase() || <User size={15} />}
                     </div>
-                    <div>
-                      <p className="type-body-sm font-medium text-text-primary">{emp.name}</p>
-                      <p className="type-caption text-text-muted">
+                    <div className="min-w-0">
+                      <p className="type-body-sm font-medium text-text-primary truncate">{emp.name}</p>
+                      <p className="type-caption text-text-muted truncate">
                         @{emp.username} · <span className="capitalize">{emp.role}</span>
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => handleDelete(emp.id, emp.name, emp.username)}
-                    className="text-text-muted hover:text-brand"
+                    className="text-text-muted hover:text-error-text shrink-0 p-1 transition-colors"
                     title="Remove employee"
+                    aria-label={`Remove ${emp.name}`}
                   >
                     <Trash2 size={16} />
                   </button>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
 
           {showAddForm ? (
@@ -142,26 +150,22 @@ export default function EmployeesModal({ onClose }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Full name"
-                className="border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand"
+                className={FIELD}
               />
               <input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Username"
-                className="border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand"
+                className={FIELD}
               />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className="border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand"
+                className={FIELD}
               />
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand"
-              >
+              <select value={role} onChange={(e) => setRole(e.target.value)} className={FIELD}>
                 <option value="cashier">Cashier</option>
                 <option value="admin">Admin</option>
               </select>
@@ -169,29 +173,26 @@ export default function EmployeesModal({ onClose }) {
               {error && <p className="type-body-sm text-error-text">{error}</p>}
 
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  className="flex-1"
                   onClick={() => {
                     setShowAddForm(false);
                     setError("");
                   }}
-                  className="flex-1 border border-border-strong rounded-lg py-2 text-sm text-text-primary hover:bg-surface-elevated"
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 bg-brand text-pure-white rounded-lg py-2 text-sm font-medium hover:bg-brand-hover disabled:opacity-50"
-                >
+                </Button>
+                <Button type="submit" className="flex-1" disabled={saving} loading={saving}>
                   {saving ? "Adding…" : "Add Employee"}
-                </button>
+                </Button>
               </div>
             </form>
           ) : (
             <button
               onClick={() => setShowAddForm(true)}
-              className="w-full flex items-center justify-center gap-2 border border-dashed border-border-strong rounded-lg py-2.5 text-sm text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
+              className="w-full flex items-center justify-center gap-2 border border-dashed border-border-strong rounded-md py-2.5 type-body-sm text-text-secondary hover:bg-surface-sunken hover:text-text-primary transition-colors"
             >
               <Plus size={15} /> Add Employee
             </button>
