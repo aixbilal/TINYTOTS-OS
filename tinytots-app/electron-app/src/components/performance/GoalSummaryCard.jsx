@@ -1,19 +1,15 @@
 import { PieChart, Pie, Cell } from "recharts";
+import { ChevronRight } from "lucide-react";
 
 /**
  * Monthly goal ring + figures. `goal` is the real object from
  * /api/performance/summary ({ percent, target, achieved, remaining }).
- * `onViewDetails` is optional.
+ * `onViewDetails` is optional. Warm theme (DESIGN.md §14); `theme` prop kept
+ * for API compatibility but is a no-op.
  */
-// Ring fills are inline SVG attributes; `theme` selects the palette —
-// "dark" for the reference system, "warm" for the TinyTots brand surfaces.
-const RING = {
-  dark: { done: "#f0483e", track: "#26262b" },
-  warm: { done: "#616845", track: "#e7d8c0" },
-};
+const RING = { done: "#616845", track: "#e7d8c0" };
 
-export default function GoalSummaryCard({ goal, onViewDetails, theme = "dark" }) {
-  const ring = RING[theme] || RING.dark;
+export default function GoalSummaryCard({ goal, onViewDetails }) {
   const percent = goal ? Math.min(goal.percent, 100) : 0;
   const ringData = [
     { name: "done", value: percent },
@@ -22,7 +18,7 @@ export default function GoalSummaryCard({ goal, onViewDetails, theme = "dark" })
   const pkr = (v) => `Rs. ${Number(v || 0).toLocaleString("en-PK")}`;
 
   return (
-    <div className="rounded-xl border border-border-default bg-surface-panel p-5 flex flex-col h-full">
+    <div className="rounded-lg border border-border-default bg-surface-panel p-5 flex flex-col h-full">
       <h3 className="type-section text-text-primary mb-4">Goal Summary</h3>
 
       <div className="flex items-center gap-5 mb-4">
@@ -38,8 +34,8 @@ export default function GoalSummaryCard({ goal, onViewDetails, theme = "dark" })
               stroke="none"
               isAnimationActive={false}
             >
-              <Cell fill={ring.done} />
-              <Cell fill={ring.track} />
+              <Cell fill={RING.done} />
+              <Cell fill={RING.track} />
             </Pie>
           </PieChart>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -64,9 +60,9 @@ export default function GoalSummaryCard({ goal, onViewDetails, theme = "dark" })
       {onViewDetails && (
         <button
           onClick={onViewDetails}
-          className="type-btn mt-auto w-full flex items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface-elevated py-2 text-text-primary hover:bg-border-default transition-colors"
+          className="type-caption mt-auto inline-flex items-center gap-0.5 text-brand hover:underline self-start"
         >
-          View Goal Details
+          View goal details <ChevronRight size={13} />
         </button>
       )}
     </div>

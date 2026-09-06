@@ -18,6 +18,8 @@ import CategoryDonut from "../components/performance/CategoryDonut";
 import DailyHeatmap from "../components/performance/DailyHeatmap";
 import InsightCard from "../components/performance/InsightCard";
 import Button from "../components/ui/Button";
+import { Select } from "../components/ui/Input";
+import { PageHeader, KpiGroup } from "../components/ui/Layout";
 import { LoadingState, ErrorState } from "../components/ui/States";
 
 const RANGE_OPTIONS = [
@@ -58,87 +60,49 @@ export default function PerformanceGoals() {
   const rangeLabel = RANGE_OPTIONS.find((r) => r.value === range)?.label;
 
   return (
-    <div className="mx-auto max-w-[1600px] flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="type-heading-lg text-text-primary">
-            Performance <span className="text-brand">&amp;</span> Goals
-          </h1>
-          <p className="type-body-sm text-text-secondary mt-0.5">
-            Track performance, analyse trends and hit your targets.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={range}
-            onChange={(e) => setRange(e.target.value)}
-            className="type-input rounded-lg border border-border-strong bg-surface-elevated px-3 py-2 text-text-primary outline-none focus:border-brand"
-          >
-            {RANGE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <Button
-            onClick={() =>
-              document.getElementById("set-goal-form")?.scrollIntoView({ behavior: "smooth" })
-            }
-          >
-            <Plus size={15} /> Set New Goal
-          </Button>
-        </div>
-      </div>
+    <div className="mx-auto max-w-[1600px] flex flex-col gap-6">
+      <PageHeader
+        title={<>Performance <span className="text-brand">&amp;</span> Goals</>}
+        description="Track performance, analyse trends and hit your targets."
+      >
+        <Select
+          value={range}
+          onChange={(e) => setRange(e.target.value)}
+          className="!py-2 h-9"
+        >
+          {RANGE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </Select>
+        <Button
+          onClick={() =>
+            document.getElementById("set-goal-form")?.scrollIntoView({ behavior: "smooth" })
+          }
+        >
+          <Plus size={15} /> Set New Goal
+        </Button>
+      </PageHeader>
 
       {error ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <ErrorState onRetry={loadSummary} />
         </div>
       ) : loading && !summary ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <LoadingState label="Loading performance data…" />
         </div>
       ) : (
         <>
-          {/* KPI row */}
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-            <KpiCard
-              icon={Banknote}
-              label="Total Sales"
-              value={pkr(kpis?.totalSales)}
-              delta={deltas.totalSales}
-              deltaLabel={`vs previous period`}
-            />
-            <KpiCard
-              icon={ShoppingBag}
-              label="Orders"
-              value={kpis?.orders ?? 0}
-              delta={deltas.orders}
-              deltaLabel="vs previous period"
-            />
-            <KpiCard
-              icon={ShoppingCart}
-              label="Avg Order Value"
-              value={pkr(kpis?.aov)}
-              delta={deltas.aov}
-              deltaLabel="vs previous period"
-            />
-            <KpiCard
-              icon={Package}
-              label="Units Sold"
-              value={kpis?.unitsSold ?? 0}
-              delta={deltas.unitsSold}
-              deltaLabel="vs previous period"
-            />
-            <KpiCard
-              icon={TrendingIcon}
-              label="Gross Profit"
-              value={pkr(kpis?.grossProfit)}
-              delta={deltas.grossProfit}
-              deltaLabel="vs previous period"
-            />
-          </div>
+          {/* KPI row — one hairline-split surface */}
+          <KpiGroup className="grid-cols-2 md:grid-cols-3 xl:grid-cols-5 divide-y md:divide-y-0">
+            <KpiCard icon={Banknote} label="Total Sales" value={pkr(kpis?.totalSales)} delta={deltas.totalSales} deltaLabel="vs previous period" />
+            <KpiCard icon={ShoppingBag} label="Orders" value={kpis?.orders ?? 0} delta={deltas.orders} deltaLabel="vs previous period" />
+            <KpiCard icon={ShoppingCart} label="Avg Order Value" value={pkr(kpis?.aov)} delta={deltas.aov} deltaLabel="vs previous period" />
+            <KpiCard icon={Package} label="Units Sold" value={kpis?.unitsSold ?? 0} delta={deltas.unitsSold} deltaLabel="vs previous period" />
+            <KpiCard icon={TrendingIcon} label="Gross Profit" value={pkr(kpis?.grossProfit)} delta={deltas.grossProfit} deltaLabel="vs previous period" />
+          </KpiGroup>
 
           {/* Sales trend + goal */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -146,10 +110,9 @@ export default function PerformanceGoals() {
               <SalesOverviewChart
                 data={summary?.dailySeries || []}
                 title={`Sales Trend · ${rangeLabel}`}
-                theme="warm"
               />
             </div>
-            <GoalSummaryCard goal={summary?.goal} theme="warm" />
+            <GoalSummaryCard goal={summary?.goal} />
           </div>
 
           {/* Set goal + category + heatmap */}
@@ -157,29 +120,25 @@ export default function PerformanceGoals() {
             <div id="set-goal-form">
               <SetGoalForm onGoalSet={loadSummary} />
             </div>
-            <CategoryDonut data={summary?.categoryBreakdown} title="Sales by Category" theme="warm" />
-            <DailyHeatmap heatmap={summary?.heatmap} theme="warm" />
+            <CategoryDonut data={summary?.categoryBreakdown} title="Sales by Category" />
+            <DailyHeatmap heatmap={summary?.heatmap} />
           </div>
 
           {/* Insights */}
           <div>
             <h3 className="type-section text-text-primary mb-3">Recent Performance Insights</h3>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <InsightCard
                 icon={ArrowUpRight}
-                iconBg="bg-brand/12 text-brand"
-                title={
-                  (deltas.totalSales ?? 0) >= 0 ? "Sales are up" : "Sales are down"
-                }
-                description={`Total sales are ${Math.abs(deltas.totalSales ?? 0).toFixed(
-                  1
-                )}% ${
+                iconBg="bg-brand-soft text-brand"
+                title={(deltas.totalSales ?? 0) >= 0 ? "Sales are up" : "Sales are down"}
+                description={`Total sales are ${Math.abs(deltas.totalSales ?? 0).toFixed(1)}% ${
                   (deltas.totalSales ?? 0) >= 0 ? "higher" : "lower"
                 } than the previous period.`}
               />
               <InsightCard
                 icon={Star}
-                iconBg="bg-warning/12 text-warning-text"
+                iconBg="bg-warning/10 text-warning-text"
                 title="Top category"
                 description={
                   summary?.categoryBreakdown?.length
@@ -189,7 +148,7 @@ export default function PerformanceGoals() {
               />
               <InsightCard
                 icon={Target}
-                iconBg="bg-success/12 text-success-text"
+                iconBg="bg-success/10 text-success-text"
                 title="Goal progress"
                 description={
                   summary?.goal

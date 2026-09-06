@@ -12,6 +12,8 @@ import SalesOverviewChart from "../components/performance/SalesOverviewChart";
 import CategoryDonut from "../components/performance/CategoryDonut";
 import { LoadingState, ErrorState, EmptyState } from "../components/ui/States";
 import { Table, THead, TBody, TR, TH, TD } from "../components/ui/Table";
+import { Select } from "../components/ui/Input";
+import { PageHeader, KpiGroup } from "../components/ui/Layout";
 
 /**
  * Consolidated business report surface. Built entirely from the existing
@@ -73,40 +75,32 @@ export default function Reports() {
   const categoryBreakdown = summary?.categoryBreakdown || [];
 
   return (
-    <div className="mx-auto max-w-[1600px] flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="type-heading-lg text-text-primary">Reports</h1>
-          <p className="type-body-sm text-text-secondary mt-0.5">
-            A consolidated sales and performance review for the selected period.
-          </p>
-        </div>
-        <select
-          value={range}
-          onChange={(e) => changeRange(e.target.value)}
-          className="type-input rounded-lg border border-border-strong bg-surface-elevated px-3 py-2 text-text-primary outline-none focus:border-brand"
-        >
+    <div className="mx-auto max-w-[1600px] flex flex-col gap-6">
+      <PageHeader
+        title="Reports"
+        description="A consolidated sales and performance review for the selected period."
+      >
+        <Select value={range} onChange={(e) => changeRange(e.target.value)} className="!py-2 h-9">
           {RANGE_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
           ))}
-        </select>
-      </div>
+        </Select>
+      </PageHeader>
 
       {error ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <ErrorState onRetry={retry} />
         </div>
       ) : loading && !summary ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <LoadingState label="Loading report…" />
         </div>
       ) : (
         <>
-          {/* KPI summary */}
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+          {/* KPI summary — one hairline-split surface */}
+          <KpiGroup className="grid-cols-2 md:grid-cols-3 xl:grid-cols-5 divide-y md:divide-y-0">
             <KpiCard
               icon={Banknote}
               label="Total Sales"
@@ -142,7 +136,7 @@ export default function Reports() {
               delta={deltas.grossProfit}
               deltaLabel="vs previous period"
             />
-          </div>
+          </KpiGroup>
 
           {/* Sales trend + goal progress */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -150,22 +144,16 @@ export default function Reports() {
               <SalesOverviewChart
                 data={summary?.dailySeries || []}
                 title={`Sales Trend · ${rangeLabel}`}
-                theme="warm"
               />
             </div>
-            <div className="rounded-xl border border-border-default bg-surface-panel p-5">
-              <div className="flex items-center gap-2.5 mb-4">
-                <span className="w-8 h-8 rounded-lg bg-brand/12 text-brand flex items-center justify-center">
-                  <Target size={16} />
-                </span>
-                <h3 className="type-section text-text-primary">Goal Progress</h3>
-              </div>
+            <div className="rounded-lg border border-border-default bg-surface-panel p-5">
+              <h3 className="type-section text-text-primary mb-4">Goal Progress</h3>
               {summary?.goal ? (
                 <div className="space-y-3">
                   <p className="type-stat text-text-primary">
                     {summary.goal.percent}%
                   </p>
-                  <div className="h-2.5 bg-surface-elevated rounded-full overflow-hidden">
+                  <div className="h-2.5 bg-surface-secondary rounded-full overflow-hidden">
                     <div
                       className="h-full bg-brand rounded-full"
                       style={{
@@ -201,17 +189,13 @@ export default function Reports() {
 
           {/* Category breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <CategoryDonut
-              data={categoryBreakdown}
-              title="Sales by Category"
-              theme="warm"
-            />
+            <CategoryDonut data={categoryBreakdown} title="Sales by Category" />
             <div className="lg:col-span-2 flex flex-col gap-2">
               <h3 className="type-section text-text-primary">
                 Category Breakdown · {rangeLabel}
               </h3>
               {categoryBreakdown.length === 0 ? (
-                <div className="rounded-xl border border-border-default bg-surface-panel">
+                <div className="rounded-lg border border-border-default bg-surface-panel">
                   <EmptyState
                     title="No category data for this period"
                     description="Category performance appears once sales are recorded."

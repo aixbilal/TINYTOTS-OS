@@ -21,6 +21,7 @@ import SalesOverviewChart from "../components/performance/SalesOverviewChart";
 import GoalSummaryCard from "../components/performance/GoalSummaryCard";
 import CategoryDonut from "../components/performance/CategoryDonut";
 import { EmptyState } from "../components/ui/States";
+import { PageHeader, Section, KpiGroup, KpiTile } from "../components/ui/Layout";
 
 function timeGreeting() {
   const hour = new Date().getHours();
@@ -149,40 +150,37 @@ export default function Dashboard() {
   ].filter((a) => a.show);
 
   return (
-    <div className="mx-auto max-w-[1600px] flex flex-col gap-5">
-      {/* Greeting */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="type-body-sm text-text-secondary">{timeGreeting()}</p>
-          <h1 className="type-heading-lg text-text-primary mt-0.5">
-            {session?.name || "Retailer"} <span aria-hidden>👋</span>
-          </h1>
-          <p className="type-body-sm text-text-secondary mt-1">
-            Here&apos;s what&apos;s happening with your store today.
-          </p>
-        </div>
-        <span className="inline-flex items-center gap-2 rounded-lg border border-border-default bg-surface-panel px-3 py-1.5 type-body-sm text-text-secondary">
-          {dateLabel}
-        </span>
-      </div>
+    <div className="mx-auto max-w-[1600px] flex flex-col gap-7">
+      <PageHeader title={
+        <>
+          <span className="block type-body-sm font-normal text-text-secondary mb-0.5">
+            {timeGreeting()}
+          </span>
+          {session?.name || "Retailer"} <span aria-hidden>👋</span>
+        </>
+      } description="Here's what's happening with your store today.">
+        <span className="type-body-sm text-text-muted">{dateLabel}</span>
+      </PageHeader>
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+      {/* KPI row — one surface, hairline-split tiles */}
+      <KpiGroup className="grid-cols-2 md:grid-cols-3 xl:grid-cols-5 divide-y md:divide-y-0">
         {kpis.map((k) => (
-          <Stat
+          <KpiTile
             key={k.label}
-            {...k}
-            error={summaryError}
+            label={k.label}
+            icon={k.icon}
+            value={k.value ?? (summaryError ? "—" : "")}
+            onClick={k.onClick}
             loading={!summary && !summaryError}
           />
         ))}
-      </div>
+      </KpiGroup>
 
       {/* Sales overview + goal */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           {perfError ? (
-            <div className="rounded-xl border border-border-default bg-surface-panel p-5 h-full">
+            <div className="rounded-lg border border-border-default bg-surface-panel p-5 h-full">
               <h3 className="type-section text-text-primary mb-2">Sales Overview</h3>
               <EmptyState
                 title="Sales trend unavailable"
@@ -190,33 +188,30 @@ export default function Dashboard() {
               />
             </div>
           ) : (
-            <SalesOverviewChart data={perf?.dailySeries || []} theme="warm" />
+            <SalesOverviewChart data={perf?.dailySeries || []} />
           )}
         </div>
         <GoalSummaryCard
           goal={perf?.goal}
           onViewDetails={isAdmin ? () => navigate("/performance") : undefined}
-          theme="warm"
         />
       </div>
 
       {/* Low stock + categories + activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-7">
         <LowStockPanel items={lowStock} onViewAll={() => navigate("/low-stock")} />
         {perfError ? (
-          <div className="rounded-xl border border-border-default bg-surface-panel p-5">
-            <h3 className="type-section text-text-primary mb-2">Top Selling Categories</h3>
+          <Section title="Top Selling Categories">
             <EmptyState title="Unavailable" description="Category data couldn't be loaded." />
-          </div>
+          </Section>
         ) : (
-          <CategoryDonut data={perf?.categoryBreakdown} theme="warm" />
+          <CategoryDonut data={perf?.categoryBreakdown} bare title={null} />
         )}
         <ActivityPanel items={activity} />
       </div>
 
-      {/* Quick actions */}
-      <div className="rounded-xl border border-border-default bg-surface-panel p-4">
-        <p className="type-section text-text-primary mb-3">Quick Actions</p>
+      {/* Quick actions — open section, borderless tiles */}
+      <Section title="Quick Actions" divide>
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
           {quickActions.map((a) => {
             const Icon = a.icon;
@@ -224,69 +219,44 @@ export default function Dashboard() {
               <button
                 key={a.label}
                 onClick={() => navigate(a.to)}
-                className="flex items-center gap-3 rounded-lg border border-border-default bg-surface-elevated/50 px-3 py-2.5 text-left hover:bg-surface-elevated hover:border-border-strong transition-colors"
+                className="flex items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-surface-elevated transition-colors"
               >
-                <span className="w-8 h-8 rounded-lg bg-brand/12 text-brand flex items-center justify-center shrink-0">
+                <span className="w-8 h-8 rounded-md bg-brand-soft text-brand flex items-center justify-center shrink-0">
                   <Icon size={16} />
                 </span>
                 <span className="min-w-0">
                   <span className="block type-body-sm font-medium text-text-primary truncate">
                     {a.label}
                   </span>
-                  <span className="block type-caption text-text-muted truncate">
-                    {a.hint}
-                  </span>
+                  <span className="block type-caption text-text-muted truncate">{a.hint}</span>
                 </span>
               </button>
             );
           })}
         </div>
-      </div>
+      </Section>
     </div>
-  );
-}
-
-function Stat({ label, icon: Icon, value, onClick, loading, error }) {
-  const display = value ?? (error ? "—" : null);
-  const Comp = onClick ? "button" : "div";
-  return (
-    <Comp
-      onClick={onClick}
-      className={`rounded-xl border border-border-default bg-surface-panel p-4 text-left ${
-        onClick ? "hover:border-border-strong transition-colors" : ""
-      }`}
-    >
-      <div className="flex items-center gap-2.5 mb-3">
-        <span className="w-8 h-8 rounded-lg bg-surface-elevated border border-border-default flex items-center justify-center text-text-secondary">
-          <Icon size={16} />
-        </span>
-        <p className="type-body-sm text-text-secondary">{label}</p>
-      </div>
-      {loading ? (
-        <span className="block h-6 w-24 rounded bg-surface-elevated animate-pulse" />
-      ) : (
-        <p className="type-stat text-text-primary">{display}</p>
-      )}
-    </Comp>
   );
 }
 
 function LowStockPanel({ items, onViewAll }) {
   return (
-    <div className="rounded-xl border border-border-default bg-surface-panel p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="type-section text-text-primary">Low Stock Items</h3>
+    <Section
+      title="Low Stock Items"
+      divide
+      action={
         <button
           onClick={onViewAll}
           className="type-caption text-brand hover:underline inline-flex items-center gap-0.5"
         >
-          View All <ChevronRight size={12} />
+          View all <ChevronRight size={12} />
         </button>
-      </div>
+      }
+    >
       {items === null ? (
         <div className="space-y-2">
           {[0, 1, 2].map((i) => (
-            <span key={i} className="block h-10 rounded-lg bg-surface-elevated animate-pulse" />
+            <span key={i} className="block h-10 rounded-md bg-surface-elevated animate-pulse" />
           ))}
         </div>
       ) : items.length === 0 ? (
@@ -297,16 +267,14 @@ function LowStockPanel({ items, onViewAll }) {
           className="py-8"
         />
       ) : (
-        <ul className="divide-y divide-border-default -mt-1">
+        <ul className="divide-y divide-border-default">
           {items.slice(0, 5).map((it) => (
             <li key={it.variantId} className="flex items-center gap-3 py-2.5">
-              <span className="w-9 h-9 rounded-lg bg-surface-elevated border border-border-default flex items-center justify-center text-text-muted shrink-0">
+              <span className="w-9 h-9 rounded-md bg-surface-elevated flex items-center justify-center text-text-muted shrink-0">
                 <Package size={15} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="type-body-sm font-medium text-text-primary truncate">
-                  {it.name}
-                </p>
+                <p className="type-body-sm font-medium text-text-primary truncate">{it.name}</p>
                 <p className="type-caption text-text-muted truncate">
                   {[it.size, it.color].filter(Boolean).join(" / ") || it.publicCode || "—"}
                 </p>
@@ -322,18 +290,17 @@ function LowStockPanel({ items, onViewAll }) {
           ))}
         </ul>
       )}
-    </div>
+    </Section>
   );
 }
 
 function ActivityPanel({ items }) {
   return (
-    <div className="rounded-xl border border-border-default bg-surface-panel p-5">
-      <h3 className="type-section text-text-primary mb-3">Recent Activity</h3>
+    <Section title="Recent Activity" divide>
       {items === null ? (
         <div className="space-y-2">
           {[0, 1, 2, 3].map((i) => (
-            <span key={i} className="block h-9 rounded-lg bg-surface-elevated animate-pulse" />
+            <span key={i} className="block h-9 rounded-md bg-surface-elevated animate-pulse" />
           ))}
         </div>
       ) : items.length === 0 ? (
@@ -344,20 +311,18 @@ function ActivityPanel({ items }) {
           className="py-8"
         />
       ) : (
-        <ul className="space-y-1 -mt-0.5">
+        <ul className="divide-y divide-border-default">
           {items.map((n) => {
             const Icon = ACTIVITY_ICONS[n.category] || Activity;
             return (
-              <li key={n.id} className="flex items-start gap-3 py-1.5">
-                <span className="w-8 h-8 rounded-lg bg-surface-elevated border border-border-default flex items-center justify-center text-text-secondary shrink-0">
+              <li key={n.id} className="flex items-start gap-3 py-2.5">
+                <span className="w-8 h-8 rounded-md bg-surface-elevated flex items-center justify-center text-text-secondary shrink-0">
                   <Icon size={14} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="type-body-sm text-text-primary truncate">{n.title}</p>
                   {n.description && (
-                    <p className="type-caption text-text-muted truncate">
-                      {n.description}
-                    </p>
+                    <p className="type-caption text-text-muted truncate">{n.description}</p>
                   )}
                 </div>
               </li>
@@ -365,6 +330,6 @@ function ActivityPanel({ items }) {
           })}
         </ul>
       )}
-    </div>
+    </Section>
   );
 }

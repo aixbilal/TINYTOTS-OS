@@ -38,15 +38,15 @@ export default function Header() {
 
   return (
     <>
-      <header className="h-14 shrink-0 border-b border-border-default bg-surface-app flex items-center justify-end gap-2 px-4 md:px-6">
+      <header className="h-14 shrink-0 border-b border-border-default bg-surface-app flex items-center justify-end gap-1 px-4 md:px-6">
         <NotificationBell />
 
         <div className="relative" ref={profileRef}>
           <button
             onClick={() => setProfileOpen((v) => !v)}
-            className="flex items-center gap-2 rounded-lg pl-1 pr-2 py-1 hover:bg-surface-elevated transition-colors"
+            className="flex items-center gap-2 rounded-md pl-1 pr-2 py-1 hover:bg-surface-elevated transition-colors"
           >
-            <span className="w-8 h-8 rounded-full bg-brand text-pure-white text-[13px] font-semibold flex items-center justify-center">
+            <span className="w-8 h-8 rounded-full bg-brand text-pure-white type-label font-semibold flex items-center justify-center">
               {initial}
             </span>
             <span className="hidden sm:block text-left leading-tight">
@@ -61,7 +61,7 @@ export default function Header() {
           </button>
 
           {profileOpen && (
-            <div className="absolute right-0 top-12 z-[60] w-56 bg-surface-panel border border-border-strong rounded-xl shadow-[0_16px_48px_-12px_rgba(0,0,0,0.7)] overflow-hidden">
+            <div className="absolute right-0 top-12 z-[60] w-56 bg-surface-panel border border-border-strong rounded-lg shadow-md overflow-hidden tt-anim-pop">
               <div className="px-4 py-3 border-b border-border-default">
                 <p className="type-body-sm font-medium text-text-primary">
                   {session?.name}
@@ -85,9 +85,9 @@ export default function Header() {
 
               <button
                 onClick={handleLogout}
-                className="type-body-sm w-full text-left px-4 py-2.5 text-brand hover:bg-surface-elevated inline-flex items-center gap-2"
+                className="type-body-sm w-full text-left px-4 py-2.5 text-text-primary hover:bg-surface-elevated inline-flex items-center gap-2 border-t border-border-default"
               >
-                <LogOut size={14} /> Log Out
+                <LogOut size={14} className="text-text-muted" /> Log Out
               </button>
             </div>
           )}

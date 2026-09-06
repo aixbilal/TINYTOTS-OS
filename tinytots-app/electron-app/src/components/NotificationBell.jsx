@@ -18,10 +18,10 @@ const CATEGORY_ICONS = {
 };
 
 const PRIORITY_STYLES = {
-  critical: { icon: XCircle, color: "text-error-text", bg: "bg-error/12" },
-  warning: { icon: AlertTriangle, color: "text-warning-text", bg: "bg-warning/12" },
-  success: { icon: CheckCircle2, color: "text-success-text", bg: "bg-success/12" },
-  info: { icon: Info, color: "text-info-text", bg: "bg-info/12" },
+  critical: { icon: XCircle, color: "text-error-text", bg: "bg-error/10" },
+  warning: { icon: AlertTriangle, color: "text-warning-text", bg: "bg-warning/10" },
+  success: { icon: CheckCircle2, color: "text-success-text", bg: "bg-success/10" },
+  info: { icon: Info, color: "text-info-text", bg: "bg-info/10" },
 };
 
 const POLL_INTERVAL_MS = 15000;
@@ -160,7 +160,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-    <div className="absolute right-0 top-9 z-[60] w-96 max-h-[32rem] bg-surface-panel border border-border-strong rounded-xl shadow-[0_16px_40px_-16px_rgba(42,38,33,0.28)] flex flex-col overflow-hidden">
+    <div className="absolute right-0 top-9 z-[60] w-96 max-h-[32rem] bg-surface-panel border border-border-strong rounded-lg shadow-md flex flex-col overflow-hidden tt-anim-pop">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border-default">
             <h3 className="type-body-sm font-semibold text-text-primary">Notifications</h3>
             <div className="flex items-center gap-3 text-xs">
@@ -232,7 +232,7 @@ export default function NotificationBell() {
               onClick={() => setOpen(false)}
               className="text-center type-caption text-text-secondary hover:text-text-primary py-2.5 border-t border-border-default"
             >
-              View all notifications
+              Close
             </button>
           )}
         </div>
