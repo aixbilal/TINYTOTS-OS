@@ -36,8 +36,8 @@ export default function SearchProductModal({ onClose, onPick }) {
   }, [query]);
 
   return (
-    <div className="fixed inset-0 bg-surface-overlay flex items-start justify-center pt-24 z-50 px-4">
-      <div className="bg-surface-panel border border-border-strong rounded-2xl w-full max-w-lg max-h-[70vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-surface-overlay tt-anim-fade flex items-start justify-center pt-24 z-50 px-4">
+      <div className="bg-surface-panel border border-border-strong rounded-xl shadow-lg w-full max-w-lg max-h-[70vh] overflow-hidden flex flex-col tt-anim-dialog">
         <div className="flex items-center gap-3 p-4 border-b border-border-default">
           <Search size={18} className="text-text-muted" />
           <input
@@ -45,7 +45,7 @@ export default function SearchProductModal({ onClose, onPick }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by product name or SKU…"
-            className="flex-1 outline-none bg-transparent text-sm text-text-primary placeholder:text-text-muted"
+            className="flex-1 outline-none bg-transparent type-input text-text-primary placeholder:text-text-muted"
           />
           <button onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X size={18} />
@@ -67,9 +67,9 @@ export default function SearchProductModal({ onClose, onPick }) {
                 onClose();
               }}
               disabled={p.stock <= 0}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-elevated text-left border-b border-border-default last:border-0 disabled:opacity-40"
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-sunken text-left border-b border-border-default last:border-0 disabled:opacity-40 transition-colors"
             >
-              <div className="w-10 h-10 rounded-lg bg-surface-elevated flex-shrink-0 overflow-hidden">
+              <div className="w-10 h-10 rounded-md bg-surface-elevated flex-shrink-0 overflow-hidden">
                 {p.image_url && <img src={p.image_url} alt="" className="w-full h-full object-cover" />}
               </div>
               <div className="flex-1 min-w-0">

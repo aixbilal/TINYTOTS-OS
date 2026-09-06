@@ -320,8 +320,8 @@ export default function POS() {
     <div className="flex flex-col gap-3 h-full min-h-0">
       <ScannerListener products={products} onScan={addToCart} />
 
-      {/* Session / status bar */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border-default bg-surface-panel px-4 py-3 shrink-0">
+      {/* Session / status strip — quiet, priority-6 chrome */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border-default pb-3 shrink-0">
         <SessionField label="Cashier">
           <input
             value={cashier}
@@ -357,11 +357,11 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Main workspace: product grid (left) / cart + checkout (right) */}
-      <div className="flex flex-col lg:flex-row gap-3 flex-1 min-h-0">
-        {/* LEFT — product workspace */}
+      {/* Main workspace: product workspace (left) / cart + checkout (right) */}
+      <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
+        {/* LEFT — product workspace, open on the canvas */}
         <div className="flex flex-1 min-w-0 flex-col gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-border-default bg-surface-panel px-3 py-2.5 shrink-0">
+          <div className="flex items-center gap-2 rounded-md border border-border-default bg-surface-sunken px-3 h-11 shrink-0 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/40 transition-[border-color,box-shadow]">
             <ScanBarcode size={18} className="text-text-muted shrink-0" />
             <input
               ref={searchRef}
@@ -384,15 +384,17 @@ export default function POS() {
             </Button>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-border-default bg-surface-panel p-3">
-            <div className="flex items-center justify-between mb-2 px-1">
-              <p className="type-caption text-text-secondary">
-                {filteredProducts.length} product{filteredProducts.length === 1 ? "" : "s"}
-                {query ? ` matching “${query}”` : ""}
-              </p>
-              <p className="type-caption text-text-muted">Scanner active</p>
-            </div>
+          <div className="flex items-center justify-between px-0.5 shrink-0">
+            <p className="type-caption text-text-secondary">
+              {filteredProducts.length} product{filteredProducts.length === 1 ? "" : "s"}
+              {query ? ` matching “${query}”` : ""}
+            </p>
+            <p className="type-caption text-text-muted inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-success" /> Scanner active
+            </p>
+          </div>
 
+          <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
             {products.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-text-secondary">
                 <PackageX size={26} className="text-text-muted" />
@@ -406,7 +408,7 @@ export default function POS() {
                 <p className="type-body-sm">No products match “{query}”.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5">
+              <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2">
                 {filteredProducts.map((p) => (
                   <ProductTile key={p.variant_id} product={p} onAdd={addToCart} />
                 ))}
@@ -415,17 +417,17 @@ export default function POS() {
           </div>
         </div>
 
-        {/* RIGHT — cart + checkout. The item list scrolls internally while the
-            payment/summary/checkout footer stays pinned; on a viewport too
-            short for even header+footer, the whole panel scrolls as a unit
-            rather than clipping the checkout button. */}
-        <div className="w-full lg:w-[380px] shrink-0 flex flex-col rounded-xl border border-border-default bg-surface-panel overflow-y-auto lg:overflow-visible lg:min-h-0">
+        {/* RIGHT — cart + checkout. The one genuinely elevated surface. The item
+            list scrolls internally while the payment/summary/checkout footer
+            stays pinned; on a viewport too short for even header+footer, the
+            whole panel scrolls as a unit rather than clipping the checkout. */}
+        <div className="w-full lg:w-[380px] shrink-0 flex flex-col rounded-xl border border-border-default bg-surface-panel shadow-sm overflow-y-auto lg:overflow-visible lg:min-h-0">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border-default shrink-0">
             <h2 className="type-section text-text-primary">Cart ({cart.length})</h2>
             {cart.length > 0 && (
               <button
                 onClick={() => setCart([])}
-                className="type-caption text-error-text hover:underline inline-flex items-center gap-1.5"
+                className="type-caption text-text-muted hover:text-error-text inline-flex items-center gap-1.5 transition-colors"
               >
                 <Trash2 size={13} /> Clear
               </button>
@@ -445,8 +447,11 @@ export default function POS() {
             ) : (
               <div className="divide-y divide-border-default">
                 {cart.map((item) => (
-                  <div key={item.variant_id} className="flex items-center gap-2.5 px-3 py-2.5">
-                    <div className="w-9 h-9 rounded-lg bg-surface-elevated border border-border-default flex-shrink-0 overflow-hidden">
+                  <div
+                    key={item.variant_id}
+                    className="group flex items-center gap-2.5 px-3 py-2.5 hover:bg-surface-sunken transition-colors"
+                  >
+                    <div className="w-9 h-9 rounded-md bg-surface-elevated flex-shrink-0 overflow-hidden">
                       {item.image_url && (
                         <img src={item.image_url} alt="" className="w-full h-full object-cover" />
                       )}
@@ -460,15 +465,15 @@ export default function POS() {
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => changeQty(item.variant_id, -1)}
-                        className="w-6 h-6 rounded-md border border-border-strong flex items-center justify-center hover:bg-surface-elevated text-text-secondary"
+                        className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-surface-elevated text-text-secondary transition-colors"
                         aria-label="Decrease quantity"
                       >
                         <Minus size={12} />
                       </button>
-                      <span className="w-5 text-center type-body-sm text-text-primary">{item.qty}</span>
+                      <span className="w-5 text-center type-body-sm text-text-primary tabular-nums">{item.qty}</span>
                       <button
                         onClick={() => changeQty(item.variant_id, 1)}
-                        className="w-6 h-6 rounded-md border border-border-strong flex items-center justify-center hover:bg-surface-elevated text-text-secondary"
+                        className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-surface-elevated text-text-secondary transition-colors"
                         aria-label="Increase quantity"
                       >
                         <Plus size={12} />
@@ -484,7 +489,7 @@ export default function POS() {
                     </div>
                     <button
                       onClick={() => removeFromCart(item.variant_id)}
-                      className="text-text-muted hover:text-error-text shrink-0"
+                      className="text-text-muted hover:text-error-text shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                       aria-label="Remove item"
                     >
                       <X size={15} />
@@ -500,7 +505,7 @@ export default function POS() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Add a note to this sale (optional)…"
-              className="type-body-sm w-full bg-surface-elevated border border-border-default rounded-lg px-2.5 py-1.5 text-text-primary outline-none placeholder:text-text-muted focus:border-brand"
+              className="type-body-sm w-full bg-surface-sunken border border-border-default rounded-md px-2.5 py-1.5 text-text-primary outline-none placeholder:text-text-muted focus:border-brand"
             />
 
             <div>
@@ -513,10 +518,10 @@ export default function POS() {
                     <button
                       key={m.key}
                       onClick={() => setPaymentMethod(m.key)}
-                      className={`flex flex-col items-center gap-1 py-2 rounded-lg border type-label transition-colors ${
+                      className={`flex flex-col items-center gap-1 py-2 rounded-md border type-label transition-colors ${
                         active
-                          ? "bg-brand border-brand text-pure-white"
-                          : "border-border-strong text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
+                          ? "bg-brand border-brand text-text-inverse"
+                          : "border-border-default text-text-secondary hover:bg-surface-sunken hover:text-text-primary"
                       }`}
                     >
                       <Icon size={14} />
@@ -537,12 +542,12 @@ export default function POS() {
                     min={0}
                     value={discount}
                     onChange={(e) => setDiscount(e.target.value)}
-                    className="w-14 border border-border-strong bg-surface-elevated rounded px-1.5 py-1 text-right type-body-sm text-text-primary outline-none focus:border-brand"
+                    className="w-14 border border-border-default bg-surface-sunken rounded px-1.5 py-1 text-right type-body-sm text-text-primary outline-none focus:border-brand"
                   />
                   <select
                     value={discountType}
                     onChange={(e) => setDiscountType(e.target.value)}
-                    className="border border-border-strong bg-surface-elevated rounded px-1 py-1 type-body-sm text-text-primary outline-none"
+                    className="border border-border-default bg-surface-sunken rounded px-1 py-1 type-body-sm text-text-primary outline-none"
                   >
                     <option value="flat">Rs.</option>
                     <option value="percent">%</option>
@@ -555,12 +560,13 @@ export default function POS() {
 
             <div className="border-t border-border-default pt-2.5 flex items-center justify-between">
               <span className="type-card-title text-text-primary">Total</span>
-              <span className="type-stat text-brand">{formatPKR(total)}</span>
+              <span className="type-stat text-brand tabular-nums">{formatPKR(total)}</span>
             </div>
 
             <Button
               onClick={checkout}
               disabled={processing || cart.length === 0}
+              loading={processing}
               size="lg"
               className="w-full"
             >
@@ -589,7 +595,7 @@ export default function POS() {
           )}
           <div className="space-y-2 max-h-[50vh] overflow-y-auto">
             {failedSales.map((s) => (
-              <div key={s.client_sale_id} className="border border-error/30 bg-error/10 rounded-lg p-3 type-body-sm">
+              <div key={s.client_sale_id} className="border border-error/30 bg-error/10 rounded-md p-3 type-body-sm">
                 <p className="font-medium text-error-text">{s.offlineReceiptNumber} — Rs. {s.total}</p>
                 <p className="text-error-text/80 type-caption mt-1">{s.failReason}</p>
                 <div className="flex gap-3 mt-2">
@@ -627,9 +633,9 @@ function ProductTile({ product, onAdd }) {
     <button
       onClick={() => onAdd(product)}
       disabled={out}
-      className="group flex flex-col rounded-lg border border-border-default bg-surface-elevated/40 p-2 text-left transition-colors hover:border-border-strong hover:bg-surface-elevated disabled:opacity-45 disabled:cursor-not-allowed"
+      className="group flex flex-col rounded-md p-2 text-left transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-45 disabled:cursor-not-allowed"
     >
-      <div className="aspect-square w-full rounded-md bg-surface-elevated border border-border-default overflow-hidden mb-2">
+      <div className="aspect-square w-full rounded-md bg-surface-elevated overflow-hidden mb-2">
         {product.image_url ? (
           <img src={product.image_url} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -638,13 +644,13 @@ function ProductTile({ product, onAdd }) {
           </span>
         )}
       </div>
-      <p className="type-body-sm font-medium text-text-primary leading-tight line-clamp-2">
+      <p className="type-caption font-medium text-text-primary leading-tight line-clamp-2">
         {product.name}
       </p>
-      <p className="type-caption text-text-muted truncate mt-0.5">
+      <p className="type-tiny text-text-muted truncate mt-0.5">
         {[product.size, product.color].filter(Boolean).join(" / ") || product.sku}
       </p>
-      <div className="mt-1.5 flex items-center justify-between gap-1">
+      <div className="mt-1 flex items-center justify-between gap-1">
         <span className="type-body-sm font-semibold text-text-primary">
           {formatPKR(product.price)}
         </span>
@@ -663,8 +669,8 @@ function ProductTile({ product, onAdd }) {
 function SaleSuccess({ data, onNewSale, onPrintAgain }) {
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-surface-overlay" onClick={onNewSale} />
-      <div className="relative w-full max-w-sm rounded-2xl bg-surface-panel border border-border-strong p-6 text-center shadow-[0_16px_40px_-16px_rgba(42,38,33,0.28)]">
+      <div className="absolute inset-0 bg-surface-overlay tt-anim-fade" onClick={onNewSale} />
+      <div className="relative w-full max-w-sm rounded-xl bg-surface-panel border border-border-strong p-6 text-center shadow-lg tt-anim-dialog">
         <div className="w-14 h-14 rounded-full bg-success/12 text-success-text flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 size={30} />
         </div>
@@ -677,7 +683,7 @@ function SaleSuccess({ data, onNewSale, onPrintAgain }) {
             : "The sale is recorded and the receipt printed."}
         </p>
 
-        <div className="mt-4 rounded-lg border border-border-default bg-surface-elevated/50 px-4 py-3 text-left space-y-1">
+        <div className="mt-4 rounded-md border border-border-default bg-surface-sunken px-4 py-3 text-left space-y-1">
           <Row label="Receipt No." value={data.receiptNumber} />
           <Row label="Total Paid" value={formatPKR(data.total)} />
         </div>
