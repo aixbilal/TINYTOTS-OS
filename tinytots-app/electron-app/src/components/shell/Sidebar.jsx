@@ -39,7 +39,7 @@ export default function Sidebar() {
   const initial = session?.name?.[0]?.toUpperCase() || "?";
 
   return (
-    <aside className="w-56 shrink-0 bg-surface-sidebar border-r border-border-default flex flex-col h-screen">
+    <aside className="tt-sidebar w-56 shrink-0 bg-surface-sidebar border-r border-border-default flex flex-col h-screen">
       {/* Brand */}
       <div className="px-5 h-14 flex items-center gap-2.5 border-b border-border-default">
         <span className="w-7 h-7 rounded-lg bg-brand/15 text-brand flex items-center justify-center shrink-0">

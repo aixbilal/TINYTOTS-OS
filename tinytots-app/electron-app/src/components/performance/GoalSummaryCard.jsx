@@ -5,7 +5,15 @@ import { PieChart, Pie, Cell } from "recharts";
  * /api/performance/summary ({ percent, target, achieved, remaining }).
  * `onViewDetails` is optional.
  */
-export default function GoalSummaryCard({ goal, onViewDetails }) {
+// Ring fills are inline SVG attributes; `theme` selects the palette —
+// "dark" for the reference system, "warm" for the TinyTots brand surfaces.
+const RING = {
+  dark: { done: "#f0483e", track: "#26262b" },
+  warm: { done: "#616845", track: "#e7d8c0" },
+};
+
+export default function GoalSummaryCard({ goal, onViewDetails, theme = "dark" }) {
+  const ring = RING[theme] || RING.dark;
   const percent = goal ? Math.min(goal.percent, 100) : 0;
   const ringData = [
     { name: "done", value: percent },
@@ -30,8 +38,8 @@ export default function GoalSummaryCard({ goal, onViewDetails }) {
               stroke="none"
               isAnimationActive={false}
             >
-              <Cell fill="#f0483e" />
-              <Cell fill="#26262b" />
+              <Cell fill={ring.done} />
+              <Cell fill={ring.track} />
             </Pie>
           </PieChart>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -56,7 +64,7 @@ export default function GoalSummaryCard({ goal, onViewDetails }) {
       {onViewDetails && (
         <button
           onClick={onViewDetails}
-          className="type-btn mt-auto w-full flex items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface-elevated py-2 text-text-primary hover:bg-[#26262c] transition-colors"
+          className="type-btn mt-auto w-full flex items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface-elevated py-2 text-text-primary hover:bg-border-default transition-colors"
         >
           View Goal Details
         </button>

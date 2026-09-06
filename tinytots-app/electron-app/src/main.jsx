@@ -40,7 +40,7 @@ createRoot(document.getElementById("root")).render(
         path="/dashboard"
         element={
           <RequireAuth>
-            <AppShell>
+            <AppShell warm>
               <Dashboard />
             </AppShell>
           </RequireAuth>

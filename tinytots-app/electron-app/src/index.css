@@ -209,6 +209,67 @@
   --type-tracking-caption: 0.01em;
 }
 
+/* ============================================================
+   R1 BRAND RECONCILIATION — scoped warm TinyTots palette
+   Source of truth: tinytots-web/web/app/globals.css (approved
+   website brand tokens, user-approved 2026-08-13).
+
+   These scopes remap the SHARED semantic tokens onto the approved
+   warm palette WITHOUT touching the global @theme dark defaults,
+   so unmigrated R2–R4 screens (POS / Inventory / Receipts …) keep
+   the existing dark system until their own controlled passes.
+
+   `.tt-warm`    — warm ivory workspace + white elevated cards +
+                   olive primary + charcoal type + warm borders.
+                   Applied by AppShell to the R1 workspace column
+                   (Header + Dashboard) only, via the `warm` prop.
+   `.tt-sidebar` — the one persistent dark surface: warm near-black
+                   navigation with an olive active identity.
+   ============================================================ */
+.tt-warm {
+  /* Surfaces */
+  --color-surface-app: #f6f1e8;       /* Warm Ivory — workspace canvas */
+  --color-surface-panel: #ffffff;     /* Elevated White — cards / tables / dialogs */
+  --color-surface-elevated: #f6f1e8;  /* Warm Ivory — chips / row hover / skeletons */
+  --color-surface-overlay: rgba(42, 38, 33, 0.55); /* Near Black scrim */
+
+  /* Text */
+  --color-text-primary: #4a4f44;      /* Deep Charcoal */
+  --color-text-secondary: #675949;    /* Warm Taupe */
+  --color-text-muted: #bab2a6;        /* Muted Taupe */
+  --color-text-inverse: #f6f1e8;
+
+  /* Borders */
+  --color-border-default: #d2c7b4;    /* Warm Stone */
+  --color-border-strong: #bab2a6;     /* Muted Taupe */
+
+  /* Brand — Olive primary, restrained Terracotta reserved for accents */
+  --color-brand: #616845;
+  --color-brand-hover: #53593b;       /* tonal darken of the approved olive */
+  --color-brand-active: #474c33;
+  --color-brand-soft: #edeadd;
+
+  /* Operational status — retuned for legibility on light surfaces,
+     kept small; tinted fills still resolve from the base hues. */
+  --color-error: #b91c1c;
+  --color-error-text: #b91c1c;
+  --color-success-text: #3f6b3a;
+  --color-warning-text: #8a5a1c;
+  --color-info-text: #3b5b8a;
+}
+
+.tt-sidebar {
+  --color-surface-sidebar: #2a2621;   /* Near Black — warm dark navigation */
+  --color-surface-elevated: #3a352f;  /* active / hover navigation row */
+  --color-border-default: #3a352f;    /* warm hairline dividers */
+
+  --color-text-primary: #f6f1e8;      /* Warm Ivory */
+  --color-text-secondary: #beb4a4;
+  --color-text-muted: #8c8375;
+
+  --color-brand: #616845;             /* Olive — active indicator + icon */
+}
+
 html,
 body {
   background-color: var(--color-surface-app);

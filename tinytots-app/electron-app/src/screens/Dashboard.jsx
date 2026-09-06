@@ -190,12 +190,13 @@ export default function Dashboard() {
               />
             </div>
           ) : (
-            <SalesOverviewChart data={perf?.dailySeries || []} />
+            <SalesOverviewChart data={perf?.dailySeries || []} theme="warm" />
           )}
         </div>
         <GoalSummaryCard
           goal={perf?.goal}
           onViewDetails={isAdmin ? () => navigate("/performance") : undefined}
+          theme="warm"
         />
       </div>
 
@@ -208,7 +209,7 @@ export default function Dashboard() {
             <EmptyState title="Unavailable" description="Category data couldn't be loaded." />
           </div>
         ) : (
-          <CategoryDonut data={perf?.categoryBreakdown} />
+          <CategoryDonut data={perf?.categoryBreakdown} theme="warm" />
         )}
         <ActivityPanel items={activity} />
       </div>

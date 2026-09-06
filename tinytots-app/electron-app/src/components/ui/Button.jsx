@@ -2,15 +2,17 @@
 import { Loader2 } from "lucide-react";
 
 /**
- * Shared button primitive. Reference-driven dark system: a filled coral-red
- * primary reserved for the dominant action on a view, a quiet elevated
- * secondary, a borderless ghost, and a red danger for destructive confirms.
+ * Shared button primitive. A filled primary reserved for the dominant action
+ * on a view (olive on brand-reconciled surfaces, coral on the dark reference
+ * system), a quiet elevated secondary, a borderless ghost, and a red danger
+ * for destructive confirms. All colours resolve from semantic tokens so the
+ * button adapts to whichever palette scope contains it.
  */
 const VARIANTS = {
   primary:
     "bg-brand text-pure-white hover:bg-brand-hover active:bg-brand-active disabled:hover:bg-brand",
   secondary:
-    "bg-surface-elevated text-text-primary border border-border-strong hover:bg-[#26262c] disabled:hover:bg-surface-elevated",
+    "bg-surface-elevated text-text-primary border border-border-strong hover:bg-border-default disabled:hover:bg-surface-elevated",
   ghost:
     "bg-transparent text-text-secondary hover:bg-surface-elevated hover:text-text-primary disabled:hover:bg-transparent",
   danger:

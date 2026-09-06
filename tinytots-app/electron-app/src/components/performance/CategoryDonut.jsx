@@ -1,14 +1,20 @@
 import { PieChart, Pie, Cell } from "recharts";
 import { EmptyState } from "../ui/States";
 
-// Coral-led categorical ramp on the dark surface.
-const COLORS = ["#f0483e", "#f0a13c", "#e8e8ea", "#8a8a93", "#5a5a63"];
+// Categorical ramp (inline SVG fills). "dark" is the coral-led reference
+// ramp; "warm" is a tonal olive → terracotta → warm-neutral ramp built from
+// the approved TinyTots palette.
+const RAMP = {
+  dark: ["#f0483e", "#f0a13c", "#e8e8ea", "#8a8a93", "#5a5a63"],
+  warm: ["#616845", "#8f5030", "#a89a82", "#c9bca3", "#8c6b4f"],
+};
 
 /**
  * Category share donut. `data` is the real breakdown
  * ([{ name, value }] as percentages) from /api/performance/summary.
  */
-export default function CategoryDonut({ data, title = "Top Selling Categories" }) {
+export default function CategoryDonut({ data, title = "Top Selling Categories", theme = "dark" }) {
+  const COLORS = RAMP[theme] || RAMP.dark;
   const hasData = Array.isArray(data) && data.length > 0;
 
   return (
