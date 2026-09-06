@@ -2,7 +2,7 @@
 
 **Branch:** `electron-redesign-2026-09-06`
 **Starting SHA:** `67356d1` — _test(electron): final UI regression, evidence and design freeze_
-**Final SHA:** `dbb7bf3` — _fix(electron): truthful notifications and owner-acceptance polish report_
+**Final SHA:** `02247aa` — branch tip of `electron-redesign-2026-09-06` after this pass
 **Date:** 2026-09-06
 **Scope:** owner acceptance polish — _not_ a redesign. Functional freeze in force.
 
@@ -249,7 +249,7 @@ Schema changed — **NO.** Migrations applied — **NO.** Production touched —
 | `ba1083d` | style(electron): refine borderless hierarchy and semantic dashboard |
 | `5cc93d5` | style(electron): calm POS, receipts and printer settings |
 | `de2045e` | feat(electron): simplify nav, personalize profile, redesign login |
-| _this_ | fix(electron): truthful notifications; DESIGN.md §18; owner-polish report |
+| `02247aa` | fix(electron): truthful notifications; DESIGN.md §18; owner-polish report |
 
 Pushed to `electron-redesign-2026-09-06` (no force, no merge from main).
 
