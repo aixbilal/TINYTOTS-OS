@@ -18,10 +18,10 @@ const CATEGORY_ICONS = {
 };
 
 const PRIORITY_STYLES = {
-  critical: { icon: XCircle, color: "text-red-600", bg: "bg-red-50" },
-  warning: { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
-  success: { icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
-  info: { icon: Info, color: "text-blue-600", bg: "bg-blue-50" },
+  critical: { icon: XCircle, color: "text-error-text", bg: "bg-error/12" },
+  warning: { icon: AlertTriangle, color: "text-warning-text", bg: "bg-warning/12" },
+  success: { icon: CheckCircle2, color: "text-success-text", bg: "bg-success/12" },
+  info: { icon: Info, color: "text-info-text", bg: "bg-info/12" },
 };
 
 const POLL_INTERVAL_MS = 15000;
@@ -149,25 +149,25 @@ export default function NotificationBell() {
     <div className="relative z-50" ref={panelRef}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="relative text-ink-900 hover:text-maroon-700"
+        className="relative text-text-secondary hover:text-text-primary"
       >
         <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 bg-maroon-700 text-cream-50 type-label font-semibold rounded-full w-4 h-4 flex items-center justify-center">
+          <span className="absolute -top-1.5 -right-1.5 bg-brand text-pure-white type-label font-semibold rounded-full w-4 h-4 flex items-center justify-center">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-    <div className="absolute right-0 top-9 z-[60] w-96 max-h-[32rem] bg-white border border-gold-300/40 rounded-2xl shadow-lg flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gold-300/30">
-            <h3 className="font-medium text-ink-900">Notifications</h3>
+    <div className="absolute right-0 top-9 z-[60] w-96 max-h-[32rem] bg-surface-panel border border-border-strong rounded-xl shadow-[0_16px_48px_-12px_rgba(0,0,0,0.7)] flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border-default">
+            <h3 className="type-body-sm font-semibold text-text-primary">Notifications</h3>
             <div className="flex items-center gap-3 text-xs">
-              <button onClick={markAllAsRead} className="text-ink-700 hover:text-maroon-700 inline-flex items-center gap-1">
+              <button onClick={markAllAsRead} className="text-text-secondary hover:text-text-primary inline-flex items-center gap-1">
                 <Check size={13} /> Mark all read
               </button>
-              <button onClick={clearAll} className="text-ink-700 hover:text-maroon-700 inline-flex items-center gap-1">
+              <button onClick={clearAll} className="text-text-secondary hover:text-text-primary inline-flex items-center gap-1">
                 <X size={13} /> Clear all
               </button>
             </div>
@@ -176,9 +176,9 @@ export default function NotificationBell() {
           <div className="overflow-y-auto flex-1">
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-14 text-center px-6">
-                <CheckCircle2 size={28} className="text-ink-700/30 mb-3" />
-                <p className="text-sm font-medium text-ink-900">You're all caught up!</p>
-                <p className="text-xs text-ink-700/60 mt-1">No new notifications at the moment.</p>
+                <CheckCircle2 size={28} className="text-text-muted mb-3" />
+                <p className="type-body-sm font-medium text-text-primary">You're all caught up!</p>
+                <p className="type-caption text-text-muted mt-1">No new notifications at the moment.</p>
               </div>
             ) : (
               notifications.map((n) => {
@@ -190,8 +190,8 @@ export default function NotificationBell() {
                   <div
                     key={n.id}
                     onClick={() => !n.read && markAsRead(n.id)}
-                    className={`px-4 py-3 border-b border-cream-100 last:border-0 cursor-pointer hover:bg-cream-100 ${
-                      n.read ? "" : "bg-cream-50"
+                    className={`px-4 py-3 border-b border-border-default last:border-0 cursor-pointer hover:bg-surface-elevated ${
+                      n.read ? "" : "bg-surface-elevated/50"
                     }`}
                   >
                     <div className="flex gap-3">
@@ -201,19 +201,19 @@ export default function NotificationBell() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <PriorityIcon size={12} className={style.color} />
-                          <p className="text-sm font-medium text-ink-900 truncate">{n.title}</p>
-                          {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-maroon-700 flex-shrink-0" />}
+                          <p className="type-body-sm font-medium text-text-primary truncate">{n.title}</p>
+                          {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0" />}
                         </div>
-                        <p className="text-xs text-ink-700 mt-0.5">{n.description}</p>
+                        <p className="type-caption text-text-secondary mt-0.5">{n.description}</p>
                         <div className="flex items-center justify-between mt-1.5">
-                          <span className="text-[11px] text-ink-700/50">{timeAgo(n.created_at)}</span>
+                          <span className="type-tiny text-text-muted">{timeAgo(n.created_at)}</span>
                           {n.action_label && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleAction(n);
                               }}
-                              className="text-[11px] font-medium text-maroon-700 hover:underline"
+                              className="type-tiny font-medium text-brand hover:underline"
                             >
                               {n.action_label}
                             </button>
@@ -230,7 +230,7 @@ export default function NotificationBell() {
           {notifications.length > 0 && (
             <button
               onClick={() => setOpen(false)}
-              className="text-center text-xs text-ink-700 hover:text-maroon-700 py-2.5 border-t border-gold-300/30"
+              className="text-center type-caption text-text-secondary hover:text-text-primary py-2.5 border-t border-border-default"
             >
               View all notifications
             </button>
