@@ -28,6 +28,7 @@ import { createClient } from "@supabase/supabase-js";
 import multer from "multer";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { writeReceiptPdf } from "./lib/receiptPdf.js";
+import { generateProductDescription } from "./lib/ai/productDescription.js";
 
 dotenv.config();
 
@@ -862,6 +863,47 @@ app.get("/api/inventory", async (req, res) => {
   } catch (err) {
     console.error("Inventory fetch error:", err);
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ----------------------------------------------------
+// AI PRODUCT DESCRIPTION (Groq primary -> one Gemini fallback)
+// ----------------------------------------------------
+// Server-side only: provider keys live in backend/.env (GROQ_API_KEY,
+// GEMINI_PRODUCT_DESCRIPTION_API_KEY) and never reach the renderer. The
+// mutating /api middleware already enforces X-POS-Token on this POST.
+// Lightweight in-process limiter — this is a single local terminal, not a
+// public API, so no Redis/Upstash.
+const AI_DESC_WINDOW_MS = 60_000;
+const AI_DESC_MAX_PER_WINDOW = 6;
+let aiDescHits = [];
+
+app.post("/api/products/generate-description", async (req, res) => {
+  const now = Date.now();
+  aiDescHits = aiDescHits.filter((t) => now - t < AI_DESC_WINDOW_MS);
+  if (aiDescHits.length >= AI_DESC_MAX_PER_WINDOW) {
+    return res.status(429).json({
+      success: false,
+      message: "Too many description requests. Wait a moment and try again.",
+    });
+  }
+  aiDescHits.push(now);
+
+  try {
+    const result = await generateProductDescription(req.body || {});
+    if (!result.ok) {
+      return res
+        .status(result.status || 502)
+        .json({ success: false, message: result.message });
+    }
+    return res.json({ success: true, description: result.description });
+  } catch (err) {
+    console.error("POST /api/products/generate-description error:", err.message);
+    return res.status(502).json({
+      success: false,
+      message:
+        "Description generation is temporarily unavailable. You can write the description manually.",
+    });
   }
 });
 

@@ -1,9 +1,17 @@
 import { useMemo, useState, useEffect } from "react";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Sparkles } from "lucide-react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import ImageUploader from "./ImageUploader";
 import { apiFetch } from "../../services/api";
+
+/** True when the ReactQuill HTML carries real text, not just empty markup. */
+function hasRealText(html) {
+  return !!String(html || "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .trim();
+}
 
 function TagInput({ label, placeholder, values, onChange }) {
   const [draft, setDraft] = useState("");
@@ -77,6 +85,10 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
   );
   const [colors, setColors] = useState([]);
   const [sizes, setSizes] = useState([]);
+  // AI description assistant
+  const [highlights, setHighlights] = useState([]);
+  const [genLoading, setGenLoading] = useState(false);
+  const [genNote, setGenNote] = useState("");
   // Per-variant stock overrides, keyed as "color__size" — lets the admin
   // adjust one specific combo's stock without changing the default for others.
   const [stockOverrides, setStockOverrides] = useState({});
@@ -130,6 +142,50 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
 
   function setStockFor(key, value) {
     setStockOverrides((prev) => ({ ...prev, [key]: value }));
+  }
+
+  const canGenerate = !!form.name.trim() && !!form.category.trim();
+
+  async function generateDescription() {
+    if (!canGenerate || genLoading) return;
+    if (hasRealText(form.description)) {
+      const ok = window.confirm(
+        "Replace the current description with an AI-generated draft? Your current text will be lost."
+      );
+      if (!ok) return;
+    }
+    setGenLoading(true);
+    setGenNote("");
+    try {
+      const res = await apiFetch("/api/products/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          brand: form.brand.trim(),
+          category: form.category.trim(),
+          colors,
+          sizes,
+          highlights,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success || !data.description) {
+        setGenNote(
+          data.message ||
+            "Description generation is temporarily unavailable. You can write it manually."
+        );
+        return;
+      }
+      setForm((f) => ({ ...f, description: data.description }));
+      setGenNote("Draft inserted — edit it before saving.");
+    } catch {
+      setGenNote(
+        "Couldn't reach the server for description generation. You can write it manually."
+      );
+    } finally {
+      setGenLoading(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -240,7 +296,39 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
           )}
 
           <div>
-            <label className="block type-body-sm text-text-secondary mb-1.5">Description</label>
+            <div className="flex items-center justify-between mb-1.5 gap-3">
+              <label className="block type-body-sm text-text-secondary">Description</label>
+              <button
+                type="button"
+                onClick={generateDescription}
+                disabled={!canGenerate || genLoading}
+                title={
+                  canGenerate
+                    ? "Draft a description from the product name, category and details"
+                    : "Add a product name and category first"
+                }
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-brand text-brand text-xs font-medium hover:bg-brand/10 disabled:opacity-45 disabled:cursor-not-allowed"
+              >
+                <Sparkles size={13} />
+                {genLoading ? "Generating…" : "Generate description"}
+              </button>
+            </div>
+            <input
+              value={highlights.join(", ")}
+              onChange={(e) =>
+                setHighlights(
+                  e.target.value
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                )
+              }
+              placeholder="Optional details for the assistant — e.g. elasticated waist, ribbed cuffs"
+              className="w-full mb-2 border border-border-strong bg-surface-elevated rounded-lg px-3 py-1.5 text-xs text-text-primary outline-none focus:border-brand placeholder:text-text-muted"
+            />
+            {genNote && (
+              <p className="type-caption text-text-secondary mb-2">{genNote}</p>
+            )}
             <ReactQuill
               theme="snow"
               value={form.description}

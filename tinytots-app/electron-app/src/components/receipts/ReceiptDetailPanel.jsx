@@ -112,10 +112,12 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
               <span>Subtotal</span>
               <span>Rs. {receipt.subtotal.toLocaleString("en-PK")}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Discount</span>
-              <span>- Rs. {receipt.discount.toLocaleString("en-PK")}</span>
-            </div>
+            {Math.abs(Number(receipt.discount) || 0) >= 0.005 && (
+              <div className="flex justify-between">
+                <span>Discount</span>
+                <span>- Rs. {Number(receipt.discount).toLocaleString("en-PK")}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span>Tax</span>
               <span>Rs. {receipt.tax.toLocaleString("en-PK")}</span>

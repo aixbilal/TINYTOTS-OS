@@ -15,7 +15,14 @@ export const RECEIPT_PAGE_WIDTH_PT = 204;
 export const RECEIPT_MARGIN_X_PT = 10;
 
 function money(value) {
-  return Number(value || 0).toFixed(2);
+  const n = Number(value || 0);
+  // Collapse tiny float noise and negative zero so nothing ever prints as "-0.00".
+  return (Math.abs(n) < 0.005 ? 0 : n).toFixed(2);
+}
+
+/** A discount worth showing on the receipt (ignores 0 and float noise). */
+function hasDiscount(value) {
+  return Math.abs(Number(value || 0)) >= 0.005;
 }
 
 function normalizeSale(sale) {
@@ -113,7 +120,9 @@ export async function buildReceiptPdfBytes(rawSale) {
   divider();
 
   row("Subtotal", money(sale.subtotal), 8);
-  row("Discount", `-${money(sale.discount)}`, 8);
+  if (hasDiscount(sale.discount)) {
+    row("Discount", `-${money(sale.discount)}`, 8);
+  }
   row("Tax", money(sale.tax), 8);
 
   divider(1.2);
