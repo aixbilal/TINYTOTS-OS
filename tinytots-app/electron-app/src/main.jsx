@@ -26,6 +26,10 @@ import LowStock from "./screens/LowStock";
 
 import PerformanceGoals from "./screens/PerformanceGoals";
 import OldReceipts from "./screens/OldReceipts";
+import Categories from "./screens/Categories.jsx";
+import Reports from "./screens/Reports.jsx";
+import Users from "./screens/Users.jsx";
+import Profile from "./screens/Profile.jsx";
 
 import RequireAuth from "./components/RequireAuth.jsx";
 import AppShell from "./components/shell/AppShell.jsx";
@@ -96,6 +100,48 @@ createRoot(document.getElementById("root")).render(
           <RequireAuth adminOnly>
             <AppShell warm>
               <LowStock />
+            </AppShell>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/categories"
+        element={
+          <RequireAuth adminOnly>
+            <AppShell warm>
+              <Categories />
+            </AppShell>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <RequireAuth adminOnly>
+            <AppShell warm>
+              <Reports />
+            </AppShell>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <RequireAuth adminOnly>
+            <AppShell warm>
+              <Users />
+            </AppShell>
+          </RequireAuth>
+        }
+      />
+
+      {/* Profile — available to any logged-in user */}
+      <Route
+        path="/profile"
+        element={
+          <RequireAuth>
+            <AppShell warm>
+              <Profile />
             </AppShell>
           </RequireAuth>
         }

@@ -4,25 +4,32 @@ import {
   LayoutDashboard,
   ShoppingCart,
   Package,
+  Tags,
   AlertTriangle,
   TrendingUp,
+  FileBarChart,
   ScrollText,
+  Users,
   LogOut,
+  User,
   Shirt,
 } from "lucide-react";
 import { getSession, clearSession } from "../../auth";
 
 // Mirrors the route/role gating already defined in main.jsx's <RequireAuth adminOnly>.
 // Only routes that actually exist in the app are listed — the reference sheets
-// show more nav entries (Products, Orders, Customers, Reports, Settings …) but
-// those screens don't exist yet, so they are deliberately omitted here.
+// show more nav entries (Customers, Settings, Audit Logs …) but those screens
+// don't exist yet, so they are deliberately omitted here.
 const NAV_ITEMS = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard, adminOnly: false },
   { label: "POS", to: "/pos", icon: ShoppingCart, adminOnly: false },
   { label: "Inventory", to: "/inventory", icon: Package, adminOnly: true },
+  { label: "Categories", to: "/categories", icon: Tags, adminOnly: true },
   { label: "Low Stock", to: "/low-stock", icon: AlertTriangle, adminOnly: true },
   { label: "Performance", to: "/performance", icon: TrendingUp, adminOnly: true },
+  { label: "Reports", to: "/reports", icon: FileBarChart, adminOnly: true },
   { label: "Receipts", to: "/receipts", icon: ScrollText, adminOnly: true },
+  { label: "Users", to: "/users", icon: Users, adminOnly: true },
 ];
 
 export default function Sidebar() {
@@ -84,9 +91,18 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* User + logout */}
+      {/* User + profile + logout */}
       <div className="border-t border-border-default p-3">
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            `flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors ${
+              isActive
+                ? "bg-surface-elevated"
+                : "hover:bg-surface-elevated/60"
+            }`
+          }
+        >
           <span className="w-8 h-8 rounded-full bg-brand text-pure-white text-[13px] font-semibold flex items-center justify-center shrink-0">
             {initial}
           </span>
@@ -98,7 +114,20 @@ export default function Sidebar() {
               {session?.role || "—"}
             </p>
           </div>
-        </div>
+        </NavLink>
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            `type-nav mt-1 w-full flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
+              isActive
+                ? "bg-surface-elevated text-text-primary"
+                : "text-text-secondary hover:bg-surface-elevated/60 hover:text-text-primary"
+            }`
+          }
+        >
+          <User size={17} strokeWidth={1.9} />
+          Profile
+        </NavLink>
         <button
           onClick={handleLogout}
           className="type-nav mt-1 w-full flex items-center gap-3 rounded-lg px-3 py-2 text-text-secondary hover:bg-surface-elevated/60 hover:text-text-primary transition-colors"
