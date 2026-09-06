@@ -338,6 +338,61 @@ select {
   box-shadow: inset 2px 0 0 0 var(--color-brand);
 }
 
+/* ============================================================
+   Sign-in "Flip Text" — one restrained character flip when the
+   supporting line rotates. Adapted from the Vengeance UI flip-text
+   grammar into the warm system: slow, elegant, never chaotic.
+   ============================================================ */
+.tt-flip-line {
+  perspective: 500px;
+}
+.tt-flip-char {
+  display: inline-block;
+  transform-origin: 50% 100%;
+  white-space: pre;
+  animation: tt-flip-char 460ms var(--ease-emphasized) both;
+}
+@keyframes tt-flip-char {
+  from { opacity: 0; transform: rotateX(-88deg) translateY(3px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ============================================================
+   Splash "Image Scatter" — a small set of warm TinyTots tiles
+   settling into a loose arrangement, then handing off to Sign-in.
+   Rotation lives on the (static) slot; only the tile animates, so
+   the resting composition is correct even under reduced motion.
+   ============================================================ */
+@keyframes tt-scatter-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.tt-scatter-tile {
+  animation: tt-scatter-in 600ms var(--ease-emphasized) both;
+  animation-delay: var(--sd, 0ms);
+}
+@keyframes tt-splash-out {
+  to { opacity: 0; transform: scale(1.04); }
+}
+.tt-splash-leaving {
+  animation: tt-splash-out 400ms var(--ease-standard) both;
+}
+@keyframes tt-signin-morph {
+  from { opacity: 0; transform: scale(0.985); filter: blur(3px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+.tt-signin-enter {
+  animation: tt-signin-morph 520ms var(--ease-emphasized) both;
+}
+@keyframes tt-splash-bar {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+.tt-splash-bar {
+  transform-origin: left;
+  animation: tt-splash-bar 1500ms var(--ease-standard) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

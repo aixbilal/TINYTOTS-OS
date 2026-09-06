@@ -2,12 +2,13 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Bell, AlertTriangle, CheckCircle2, Info, XCircle,
+  Bell, CheckCircle2, Info,
   Package, ShoppingBag, Users as UsersIcon, Server, Target,
   X, Check,
 } from "lucide-react";
 import { getSession } from "../auth";
 import { apiFetch } from "../services/api";
+import { timeAgo } from "../lib/time";
 
 const CATEGORY_ICONS = {
   inventory: Package,
@@ -17,11 +18,12 @@ const CATEGORY_ICONS = {
   goal: Target,
 };
 
+// Low-saturation semantic icon well per priority (colour + tint only).
 const PRIORITY_STYLES = {
-  critical: { icon: XCircle, color: "text-error-text", bg: "bg-error/10" },
-  warning: { icon: AlertTriangle, color: "text-warning-text", bg: "bg-warning/10" },
-  success: { icon: CheckCircle2, color: "text-success-text", bg: "bg-success/10" },
-  info: { icon: Info, color: "text-info-text", bg: "bg-info/10" },
+  critical: { color: "text-error-text", bg: "bg-error/12" },
+  warning: { color: "text-warning-text", bg: "bg-warning/14" },
+  success: { color: "text-success-text", bg: "bg-success/12" },
+  info: { color: "text-info-text", bg: "bg-info/12" },
 };
 
 const POLL_INTERVAL_MS = 15000;
@@ -38,32 +40,6 @@ const ACTION_ROUTES = {
   view_product: "/inventory",
   view_performance: "/performance",
 };
-
-function timeAgo(dateStr) {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMin = Math.round((now - date) / 60000);
-
-  if (Number.isNaN(diffMin)) return "";
-  if (diffMin < 1) return "Just now";
-  if (diffMin < 60) return `${diffMin} min ago`;
-
-  const diffHr = Math.floor(diffMin / 60);
-  if (date.toDateString() === now.toDateString()) {
-    return `${diffHr} hr ago`;
-  }
-
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-
-  const sameYear = date.getFullYear() === now.getFullYear();
-  return date.toLocaleDateString([], {
-    day: "numeric",
-    month: "short",
-    ...(sameYear ? {} : { year: "numeric" }),
-  });
-}
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
@@ -167,26 +143,32 @@ export default function NotificationBell() {
     <div className="relative z-50" ref={panelRef}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="relative text-text-secondary hover:text-text-primary"
+        className="relative text-text-secondary hover:text-text-primary transition-colors"
         aria-label="Notifications"
       >
         <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 bg-brand text-pure-white type-label font-semibold rounded-full w-4 h-4 flex items-center justify-center">
+          <span className="absolute -top-1.5 -right-1.5 bg-brand text-pure-white type-label font-semibold rounded-full min-w-4 h-4 px-1 flex items-center justify-center">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-9 z-[60] w-96 max-h-[32rem] bg-surface-panel border border-border-strong rounded-lg shadow-md flex flex-col overflow-hidden tt-anim-pop">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border-default">
-            <h3 className="type-body-sm font-semibold text-text-primary">Notifications</h3>
-            <div className="flex items-center gap-3 text-xs">
-              <button onClick={markAllAsRead} className="text-text-secondary hover:text-text-primary inline-flex items-center gap-1">
+        <div className="absolute right-0 top-9 z-[60] w-[380px] max-h-[34rem] bg-surface-panel border border-border-default rounded-xl shadow-lg flex flex-col overflow-hidden tt-anim-pop">
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-border-default">
+            <h3 className="type-card-title text-text-primary">Notifications</h3>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={markAllAsRead}
+                className="type-caption text-text-secondary hover:text-brand inline-flex items-center gap-1 transition-colors"
+              >
                 <Check size={13} /> Mark all read
               </button>
-              <button onClick={clearAll} className="text-text-secondary hover:text-text-primary inline-flex items-center gap-1">
+              <button
+                onClick={clearAll}
+                className="type-caption text-text-secondary hover:text-brand inline-flex items-center gap-1 transition-colors"
+              >
                 <X size={13} /> Clear all
               </button>
             </div>
@@ -194,61 +176,86 @@ export default function NotificationBell() {
 
           <div className="overflow-y-auto flex-1">
             {notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-14 text-center px-6">
-                <CheckCircle2 size={26} className="text-text-muted mb-3" />
+              <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+                <span className="w-11 h-11 rounded-full bg-success/12 text-success-text flex items-center justify-center mb-3">
+                  <CheckCircle2 size={20} />
+                </span>
                 <p className="type-body-sm font-medium text-text-primary">You&apos;re all caught up</p>
                 <p className="type-caption text-text-muted mt-1">New notifications will show up here.</p>
               </div>
             ) : (
               groups.map((group) => (
                 <div key={group.key}>
-                  <p className="px-4 pt-3 pb-1 type-label uppercase tracking-wide text-text-muted">
+                  <p className="sticky top-0 z-10 px-4 pt-3.5 pb-1.5 type-tiny font-semibold uppercase tracking-[0.08em] text-text-muted bg-surface-panel">
                     {group.label}
                   </p>
-                  {group.items.map((n) => {
-                    const CategoryIcon = CATEGORY_ICONS[n.category] || Info;
-                    const style = PRIORITY_STYLES[n.priority] || PRIORITY_STYLES.info;
-                    const PriorityIcon = style.icon;
-                    const hasAction = n.action_label && ACTION_ROUTES[n.action_type];
+                  <div className="divide-y divide-border-default/40">
+                    {group.items.map((n) => {
+                      const CategoryIcon = CATEGORY_ICONS[n.category] || Info;
+                      const style = PRIORITY_STYLES[n.priority] || PRIORITY_STYLES.info;
+                      const hasAction = n.action_label && ACTION_ROUTES[n.action_type];
 
-                    return (
-                      <div
-                        key={n.id}
-                        onClick={() => !n.read && markAsRead(n.id)}
-                        className={`px-4 py-3 cursor-pointer hover:bg-surface-elevated/70 transition-colors ${
-                          n.read ? "" : "bg-surface-elevated/40"
-                        }`}
-                      >
-                        <div className="flex gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${style.bg}`}>
-                            <CategoryIcon size={15} className={style.color} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <PriorityIcon size={12} className={style.color} />
-                              <p className="type-body-sm font-medium text-text-primary truncate">{n.title}</p>
-                              {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0" />}
+                      return (
+                        <div
+                          key={n.id}
+                          onClick={() => !n.read && markAsRead(n.id)}
+                          className={`relative px-4 py-3 transition-colors ${
+                            n.read
+                              ? "hover:bg-surface-elevated/50"
+                              : "bg-brand/[0.045] cursor-pointer hover:bg-brand/[0.07]"
+                          }`}
+                        >
+                          {!n.read && (
+                            <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-brand" />
+                          )}
+                          <div className="flex gap-3">
+                            <div
+                              className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${style.bg}`}
+                            >
+                              <CategoryIcon size={16} strokeWidth={1.9} className={style.color} />
                             </div>
-                            <p className="type-caption text-text-secondary mt-0.5">{n.description}</p>
-                            <div className="flex items-center justify-between mt-1.5">
-                              <span className="type-tiny text-text-muted">{timeAgo(n.created_at)}</span>
-                              {hasAction && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleAction(n);
-                                  }}
-                                  className="type-tiny font-medium text-brand hover:underline"
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <p
+                                  className={`type-body-sm truncate ${
+                                    n.read
+                                      ? "font-medium text-text-secondary"
+                                      : "font-semibold text-text-primary"
+                                  }`}
                                 >
-                                  {n.action_label}
-                                </button>
+                                  {n.title}
+                                </p>
+                                {!n.read && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-brand flex-shrink-0" />
+                                )}
+                              </div>
+                              {n.description && (
+                                <p className="type-caption text-text-secondary mt-0.5 line-clamp-2">
+                                  {n.description}
+                                </p>
                               )}
+                              <div className="flex items-center justify-between gap-3 mt-1.5">
+                                <span className="type-tiny text-text-muted tabular-nums">
+                                  {timeAgo(n.created_at)}
+                                </span>
+                                {hasAction && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAction(n);
+                                    }}
+                                    className="type-tiny font-semibold text-brand hover:underline"
+                                  >
+                                    {n.action_label}
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               ))
             )}
