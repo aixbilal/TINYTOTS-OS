@@ -47,7 +47,7 @@ createRoot(document.getElementById("root")).render(
         path="/dashboard"
         element={
           <RequireAuth>
-            <AppShell warm>
+            <AppShell>
               <Dashboard />
             </AppShell>
           </RequireAuth>
@@ -59,7 +59,7 @@ createRoot(document.getElementById("root")).render(
         path="/pos"
         element={
           <RequireAuth>
-            <AppShell dense warm>
+            <AppShell dense>
               <POS />
             </AppShell>
           </RequireAuth>
@@ -71,7 +71,7 @@ createRoot(document.getElementById("root")).render(
         path="/inventory"
         element={
           <RequireAuth adminOnly>
-            <AppShell warm>
+            <AppShell>
               <Inventory />
             </AppShell>
           </RequireAuth>
@@ -81,7 +81,7 @@ createRoot(document.getElementById("root")).render(
         path="/performance"
         element={
           <RequireAuth adminOnly>
-            <AppShell warm>
+            <AppShell>
               <PerformanceGoals />
             </AppShell>
           </RequireAuth>
@@ -91,7 +91,7 @@ createRoot(document.getElementById("root")).render(
         path="/receipts"
         element={
           <RequireAuth adminOnly>
-            <AppShell warm>
+            <AppShell>
               <OldReceipts />
             </AppShell>
           </RequireAuth>
@@ -101,7 +101,7 @@ createRoot(document.getElementById("root")).render(
         path="/low-stock"
         element={
           <RequireAuth adminOnly>
-            <AppShell warm>
+            <AppShell>
               <LowStock />
             </AppShell>
           </RequireAuth>
@@ -111,7 +111,7 @@ createRoot(document.getElementById("root")).render(
         path="/categories"
         element={
           <RequireAuth adminOnly>
-            <AppShell warm>
+            <AppShell>
               <Categories />
             </AppShell>
           </RequireAuth>
@@ -121,7 +121,7 @@ createRoot(document.getElementById("root")).render(
         path="/reports"
         element={
           <RequireAuth adminOnly>
-            <AppShell warm>
+            <AppShell>
               <Reports />
             </AppShell>
           </RequireAuth>
@@ -131,7 +131,7 @@ createRoot(document.getElementById("root")).render(
         path="/users"
         element={
           <RequireAuth adminOnly>
-            <AppShell warm>
+            <AppShell>
               <Users />
             </AppShell>
           </RequireAuth>
@@ -142,7 +142,7 @@ createRoot(document.getElementById("root")).render(
         path="/customers"
         element={
           <RequireAuth adminOnly>
-            <AppShell warm>
+            <AppShell>
               <Customers />
             </AppShell>
           </RequireAuth>
@@ -152,7 +152,7 @@ createRoot(document.getElementById("root")).render(
         path="/customers/:id"
         element={
           <RequireAuth adminOnly>
-            <AppShell warm>
+            <AppShell>
               <CustomerDetail />
             </AppShell>
           </RequireAuth>
@@ -162,7 +162,7 @@ createRoot(document.getElementById("root")).render(
         path="/settings/printer"
         element={
           <RequireAuth adminOnly>
-            <AppShell warm>
+            <AppShell>
               <PrinterSettings />
             </AppShell>
           </RequireAuth>
@@ -174,7 +174,7 @@ createRoot(document.getElementById("root")).render(
         path="/profile"
         element={
           <RequireAuth>
-            <AppShell warm>
+            <AppShell>
               <Profile />
             </AppShell>
           </RequireAuth>

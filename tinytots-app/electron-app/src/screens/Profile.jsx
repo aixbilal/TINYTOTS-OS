@@ -47,7 +47,7 @@ export default function Profile() {
 
       <div className="rounded-lg border border-border-default bg-surface-panel p-6">
         <div className="flex items-center gap-4">
-          <span className="w-14 h-14 rounded-full bg-brand text-text-inverse type-heading-sm font-semibold flex items-center justify-center shrink-0">
+          <span className="w-14 h-14 rounded-full bg-brand text-pure-white type-heading-sm font-semibold flex items-center justify-center shrink-0">
             {initial}
           </span>
           <div className="min-w-0">

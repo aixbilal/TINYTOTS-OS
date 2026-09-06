@@ -80,22 +80,20 @@ export default function Login() {
   }
 
   return (
-    <div className="tt-warm min-h-screen flex items-center justify-center bg-surface-app px-4">
-      <div className="relative w-full max-w-sm rounded-2xl border border-border-default bg-surface-panel p-8">
+    <div className="min-h-screen flex items-center justify-center bg-surface-app px-4">
+      <div className="relative w-full max-w-sm rounded-xl border border-border-default bg-surface-panel p-8">
         <div className="flex flex-col items-center text-center mb-6">
-          <span className="w-11 h-11 rounded-xl bg-brand/15 text-brand flex items-center justify-center mb-3">
+          <span className="w-11 h-11 rounded-lg bg-brand-soft text-brand flex items-center justify-center mb-3">
             <Shirt size={22} strokeWidth={2} />
           </span>
-          <h1 className="type-heading-sm text-text-primary">
-            Welcome back
-          </h1>
+          <h1 className="type-heading-sm text-text-primary">Welcome back</h1>
           <p className="type-body-sm text-text-secondary mt-1">
             Sign in to your TinyTots OS account
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <label className="flex items-center gap-2.5 rounded-lg border border-border-strong bg-surface-elevated px-3 py-2.5 focus-within:border-brand">
+          <label className="flex items-center gap-2.5 rounded-md border border-border-default bg-surface-panel px-3 py-2.5 transition-[border-color,box-shadow] focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/45">
             <User size={16} className="text-text-muted shrink-0" />
             <input
               value={username}
@@ -106,7 +104,7 @@ export default function Login() {
             />
           </label>
 
-          <label className="flex items-center gap-2.5 rounded-lg border border-border-strong bg-surface-elevated px-3 py-2.5 focus-within:border-brand">
+          <label className="flex items-center gap-2.5 rounded-md border border-border-default bg-surface-panel px-3 py-2.5 transition-[border-color,box-shadow] focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/45">
             <Lock size={16} className="text-text-muted shrink-0" />
             <input
               type="password"
@@ -122,7 +120,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="type-btn mt-1 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand text-pure-white py-2.5 hover:bg-brand-hover disabled:opacity-50 transition-colors"
+            className="type-btn mt-1 w-full inline-flex items-center justify-center gap-2 rounded-md bg-brand text-pure-white py-2.5 shadow-sm hover:bg-brand-hover active:bg-brand-active active:translate-y-px disabled:opacity-50 transition-[background-color,transform]"
           >
             {loading && <Loader2 size={15} className="animate-spin" />}
             {loading ? "Signing in…" : "Sign in"}

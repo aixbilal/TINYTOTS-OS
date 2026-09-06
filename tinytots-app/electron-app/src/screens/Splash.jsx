@@ -17,15 +17,15 @@ export default function Splash() {
 
   return (
     <div
-      className={`tt-warm h-screen w-screen flex items-center justify-center bg-surface-app transition-opacity duration-300 ${
+      className={`h-screen w-screen flex items-center justify-center bg-surface-app transition-opacity duration-300 ${
         leaving ? "opacity-0" : "opacity-100"
       }`}
     >
       <div className="flex flex-col items-center text-center">
-        <span className="w-14 h-14 rounded-2xl bg-brand/15 text-brand flex items-center justify-center mb-4">
+        <span className="w-14 h-14 rounded-xl bg-brand-soft text-brand flex items-center justify-center mb-4">
           <Shirt size={28} strokeWidth={2} />
         </span>
-        <p className="text-[26px] font-bold tracking-tight text-text-primary">
+        <p className="type-heading-md text-text-primary">
           TinyTots<span className="text-brand"> OS</span>
         </p>
         <p className="type-caption text-text-muted mt-1 tracking-[0.18em] uppercase">

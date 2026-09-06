@@ -185,7 +185,7 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
             onClick={() => setCodeType(val)}
             className={`flex items-center justify-center gap-2 py-2.5 rounded-md type-body-sm font-medium transition-colors ${
               codeType === val
-                ? "bg-brand text-text-inverse"
+                ? "bg-brand text-pure-white"
                 : "border border-border-default text-text-secondary hover:text-text-primary hover:bg-surface-sunken"
             }`}
           >

@@ -329,7 +329,7 @@ export default function Inventory() {
           <Button variant="secondary" onClick={() => setFiltersOpen((o) => !o)}>
             <SlidersHorizontal size={14} /> Filters
             {activeFilterCount > 0 && (
-              <span className="ml-0.5 rounded-full bg-brand text-text-inverse type-tiny px-1.5 leading-4">
+              <span className="ml-0.5 rounded-full bg-brand text-pure-white type-tiny px-1.5 leading-4">
                 {activeFilterCount}
               </span>
             )}

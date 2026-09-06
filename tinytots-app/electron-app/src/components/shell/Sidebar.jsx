@@ -98,7 +98,7 @@ export default function Sidebar() {
             }`
           }
         >
-          <span className="w-8 h-8 rounded-full bg-brand text-text-inverse type-label font-semibold flex items-center justify-center shrink-0">
+          <span className="w-8 h-8 rounded-full bg-brand text-pure-white type-label font-semibold flex items-center justify-center shrink-0">
             {initial}
           </span>
           <div className="min-w-0">

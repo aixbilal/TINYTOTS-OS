@@ -40,9 +40,7 @@ export function TR({ className = "", selected = false, onClick, children, ...res
     <tr
       onClick={onClick}
       className={`transition-colors ${onClick ? "cursor-pointer" : ""} ${
-        selected
-          ? "bg-brand-soft/60 shadow-[inset_2px_0_0_0_var(--color-brand)]"
-          : "hover:bg-surface-sunken"
+        selected ? "tt-row-selected" : "hover:bg-surface-sunken"
       } ${className}`}
       {...rest}
     >

@@ -32,7 +32,7 @@
   --color-text-primary: #4a4f44;      /* Deep Charcoal */
   --color-text-secondary: #675949;    /* Warm Taupe */
   --color-text-muted: #bab2a6;        /* Muted Taupe */
-  --color-text-inverse: #f6f1e8;      /* on brand fills + inverse sidebar */
+  --color-text-inverse: #f6f1e8;      /* text/icons on the inverse sidebar (brand fills use pure-white) */
 
   /* --- Borders --- */
   --color-border-default: #d2c7b4;    /* Warm Stone — hairline dividers, input borders */
@@ -250,25 +250,6 @@
   --color-brand-soft: #343a26;
 }
 
-/* Transitional alias — every route currently wraps content in `.tt-warm`
-   (AppShell `warm` prop). Warm is now the default, so this scope only needs
-   to re-assert it as a harmless no-op until the prop is removed in the
-   token-consolidation phase. Kept explicit for clarity. */
-.tt-warm {
-  --color-surface-app: #f6f1e8;
-  --color-surface-panel: #ffffff;
-  --color-surface-elevated: #efe8db;
-  --color-text-primary: #4a4f44;
-  --color-text-secondary: #675949;
-  --color-text-muted: #bab2a6;
-  --color-border-default: #d2c7b4;
-  --color-border-strong: #bab2a6;
-  --color-brand: #616845;
-  --color-brand-hover: #53593b;
-  --color-brand-active: #474c33;
-  --color-brand-soft: #edeadd;
-}
-
 html,
 body {
   background-color: var(--color-surface-app);
@@ -349,6 +330,12 @@ select {
 /* Content settling in after a load */
 .tt-anim-enter {
   animation: tt-fade-rise var(--duration-normal) var(--ease-standard);
+}
+
+/* Selected data-table row: olive left rule + faint brand tint (DESIGN.md §11). */
+.tt-row-selected {
+  background: color-mix(in srgb, var(--color-brand-soft) 60%, transparent);
+  box-shadow: inset 2px 0 0 0 var(--color-brand);
 }
 
 @media (prefers-reduced-motion: reduce) {

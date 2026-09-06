@@ -76,7 +76,11 @@ more — the only inverse surface is the sidebar (§2.3).
 | `--color-text-primary` | `#4A4F44` | Primary text, headings, metric values |
 | `--color-text-secondary` | `#675949` | Secondary text, labels, supporting copy |
 | `--color-text-muted` | `#BAB2A6` | Captions, placeholders, disabled, de-emphasis |
-| `--color-text-inverse` | `#F6F1E8` | Text on brand fills and on the inverse sidebar |
+| `--color-text-inverse` | `#F6F1E8` | Text/icons on the inverse sidebar |
+
+Light text on a filled **brand or danger button/badge/avatar** uses
+`--color-pure-white` (§2.6) — it clears AA on the olive at small sizes where the
+warmer `text-inverse` is borderline.
 
 ### 2.3 Borders & the inverse sidebar
 

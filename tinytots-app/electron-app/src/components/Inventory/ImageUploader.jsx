@@ -200,7 +200,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
             >
               <img src={img.url} alt="" className="w-full h-full object-cover" />
               {img.is_primary && (
-                <span className="absolute top-1 left-1 bg-brand text-text-inverse type-tiny px-1.5 py-0.5 rounded">
+                <span className="absolute top-1 left-1 bg-brand text-pure-white type-tiny px-1.5 py-0.5 rounded">
                   Primary
                 </span>
               )}

@@ -121,7 +121,7 @@ export default function EmployeesModal({ onClose }) {
               {employees.map((emp) => (
                 <li key={emp.id} className="flex items-center justify-between gap-3 py-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-brand text-text-inverse flex items-center justify-center font-semibold type-body-sm shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-brand text-pure-white flex items-center justify-center font-semibold type-body-sm shrink-0">
                       {emp.name?.[0]?.toUpperCase() || <User size={15} />}
                     </div>
                     <div className="min-w-0">

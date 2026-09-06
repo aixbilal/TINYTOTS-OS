@@ -520,7 +520,7 @@ export default function POS() {
                       onClick={() => setPaymentMethod(m.key)}
                       className={`flex flex-col items-center gap-1 py-2 rounded-md border type-label transition-colors ${
                         active
-                          ? "bg-brand border-brand text-text-inverse"
+                          ? "bg-brand border-brand text-pure-white"
                           : "border-border-default text-text-secondary hover:bg-surface-sunken hover:text-text-primary"
                       }`}
                     >
