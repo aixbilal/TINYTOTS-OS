@@ -19,11 +19,6 @@
   const API_HEALTH_URL = "http://127.0.0.1:3000/api/health";
   const API_PORT = "3000";
 
-  // Historical hardcoded receipt printer. Kept only as the fallback for
-  // installs that have never opened Printer Settings — the real, per-machine
-  // choice now lives in userData/printer-config.json (see resolvePrinterName).
-  const LEGACY_PRINTER_NAME = "POS-80C";
-
   let mainWindow = null;
   /** @type {import('node:child_process').ChildProcess | null} */
   let backendProcess = null;
@@ -262,18 +257,35 @@
   }
 
   /**
-   * Resolve the receipt printer to use:
-   *  - a non-empty saved preference wins
-   *  - if the operator explicitly saved an empty preference, return "" so
-   *    callers can raise a clear "pick a printer" error instead of guessing
-   *  - if no config file exists at all, fall back to the legacy hardcoded
-   *    name so existing installs keep printing until an admin visits Settings
+   * Resolve the receipt printer to use. There is deliberately NO fallback:
+   *  - a non-empty saved receiptPrinter → return that exact name
+   *  - no config file / empty / invalid config → return ""
+   * Callers must treat "" as "not configured" and surface a clear error
+   * rather than guessing a printer.
    */
   function resolvePrinterName() {
-    if (!fs.existsSync(PRINTER_CONFIG_PATH)) return LEGACY_PRINTER_NAME;
-    const saved = (readPrinterConfig().receiptPrinter || "").trim();
-    return saved;
+    return (readPrinterConfig().receiptPrinter || "").trim();
   }
+
+  /**
+   * True when `name` matches an installed Windows printer. Best-effort:
+   * if discovery itself fails we don't block printing on it.
+   */
+  async function isPrinterInstalled(name) {
+    if (!name) return false;
+    try {
+      const printers = await getPrinters();
+      return (printers || []).some((p) => p.name === name);
+    } catch (err) {
+      console.error("Printer availability check failed:", err);
+      return true;
+    }
+  }
+
+  const NO_PRINTER_ERROR =
+    "No receipt printer is configured. Open Printer Settings and select your receipt printer.";
+  const PRINTER_UNAVAILABLE_ERROR =
+    "The configured receipt printer is not available. Open Printer Settings and select an installed printer.";
 
   /* =======================================================
     MAIN WINDOW
@@ -369,11 +381,10 @@
     try {
       const printerName = resolvePrinterName();
       if (!printerName) {
-        return {
-          success: false,
-          error:
-            "No receipt printer is configured. Open Printer Settings and select your receipt printer.",
-        };
+        return { success: false, error: NO_PRINTER_ERROR };
+      }
+      if (!(await isPrinterInstalled(printerName))) {
+        return { success: false, error: PRINTER_UNAVAILABLE_ERROR };
       }
 
       // Standard ESC/POS "kick drawer pin 2" command.
@@ -402,11 +413,10 @@
     try {
       const printerName = resolvePrinterName();
       if (!printerName) {
-        return {
-          success: false,
-          error:
-            "No receipt printer is configured. Open Printer Settings and select your receipt printer.",
-        };
+        return { success: false, error: NO_PRINTER_ERROR };
+      }
+      if (!(await isPrinterInstalled(printerName))) {
+        return { success: false, error: PRINTER_UNAVAILABLE_ERROR };
       }
 
       const pdfPath = await generateReceiptPDF(sale);
@@ -443,12 +453,7 @@
   ipcMain.handle("printer:getPreference", async () => {
     try {
       const saved = (readPrinterConfig().receiptPrinter || "").trim();
-      return {
-        success: true,
-        receiptPrinter: saved || null,
-        usingLegacyFallback:
-          !fs.existsSync(PRINTER_CONFIG_PATH) ? LEGACY_PRINTER_NAME : null,
-      };
+      return { success: true, receiptPrinter: saved || null };
     } catch (err) {
       console.error("printer:getPreference error:", err);
       return { success: false, error: err.message, receiptPrinter: null };

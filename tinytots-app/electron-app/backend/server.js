@@ -124,22 +124,20 @@ if (!fs.existsSync(RECEIPT_FOLDER)) {
 // Machine-local receipt-printer preference. Written by the Electron main
 // process (Printer Settings screen) into userData/printer-config.json and
 // read here so backend-side prints (receipt reprint) use the same printer
-// the operator selected. Falls back to the historical hardcoded name so
-// existing installs keep working until an admin picks a printer.
+// the operator selected. There is NO fallback: if nothing is configured
+// the caller must surface a clear error instead of guessing a printer.
 const PRINTER_CONFIG_PATH = path.join(DATA_ROOT, "printer-config.json");
-const LEGACY_RECEIPT_PRINTER = "POS-80C";
 
 function resolveReceiptPrinter() {
   try {
     if (fs.existsSync(PRINTER_CONFIG_PATH)) {
       const cfg = JSON.parse(fs.readFileSync(PRINTER_CONFIG_PATH, "utf-8"));
-      const name = (cfg?.receiptPrinter || "").trim();
-      if (name) return name;
+      return (cfg?.receiptPrinter || "").trim();
     }
   } catch (err) {
     console.error("Failed to read printer-config.json:", err.message);
   }
-  return LEGACY_RECEIPT_PRINTER;
+  return "";
 }
 
 // ----------------------------------------------------
@@ -1435,28 +1433,23 @@ app.get("/api/printers", async (req, res) => {
   try {
     console.log("Attempting to fetch system printers...");
 
+    // Real installed printers only — never fabricate entries. An empty
+    // list is a valid answer (no printers installed).
     const printers = await getPrinters();
 
-    if (!printers || printers.length === 0) {
-      return res.json({
-        success: true,
-        printers: [{ name: "EML-200L (2inch)", isDefault: true }]
-      });
-    }
-
     res.json({
       success: true,
-      printers: printers.map((p) => ({ name: p.name, isDefault: !!p.isDefault })),
+      printers: (printers || []).map((p) => ({
+        name: p.name,
+        isDefault: !!p.isDefault,
+      })),
     });
   } catch (err) {
-    console.error("Printer list error caught, using hardcoded fallback:", err);
-
-    res.json({
-      success: true,
-      printers: [
-        { name: "EML-200L (2inch)", isDefault: true },
-        { name: "POS-80C", isDefault: false }
-      ]
+    console.error("Printer list error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Couldn't read the installed printers on this machine.",
+      printers: [],
     });
   }
 });
@@ -1729,6 +1722,29 @@ app.get("/api/receipts/:id", async (req, res) => {
 app.post("/api/receipts/:id/reprint", async (req, res) => {
   try {
     const { id } = req.params;
+
+    const printerName = resolveReceiptPrinter();
+    if (!printerName) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "No receipt printer is configured. Open Printer Settings and select your receipt printer.",
+      });
+    }
+    let installedNames = null;
+    try {
+      installedNames = (await getPrinters()).map((p) => p.name);
+    } catch {
+      installedNames = null; // discovery failed — don't block on availability
+    }
+    if (installedNames && !installedNames.includes(printerName)) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "The configured receipt printer is not available. Open Printer Settings and select an installed printer.",
+      });
+    }
+
     const { data: sale, error } = await supabase.from("sales").select("*").eq("id", id).single();
     if (error) throw error;
 
@@ -1737,7 +1753,7 @@ app.post("/api/receipts/:id/reprint", async (req, res) => {
       // Fall back to regenerating it on demand instead of failing
       await generateReceiptPDF(sale.id);
     }
-    await print(pdfPath, { printer: resolveReceiptPrinter(), scale: "noscale" });
+    await print(pdfPath, { printer: printerName, scale: "noscale" });
     res.json({ success: true });
   } catch (err) {
     console.error("POST /api/receipts/:id/reprint error:", err);

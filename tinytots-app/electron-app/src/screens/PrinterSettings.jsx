@@ -15,7 +15,6 @@ export default function PrinterSettings() {
   const [printers, setPrinters] = useState(null); // null = loading
   const [loadError, setLoadError] = useState(false);
   const [saved, setSaved] = useState(null); // configured printer name | null
-  const [legacyFallback, setLegacyFallback] = useState(null);
   const [selected, setSelected] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -39,7 +38,6 @@ export default function PrinterSettings() {
         }
         if (prefRes?.success) {
           setSaved(prefRes.receiptPrinter || null);
-          setLegacyFallback(prefRes.usingLegacyFallback || null);
           setSelected(prefRes.receiptPrinter || "");
         }
       })
@@ -64,7 +62,6 @@ export default function PrinterSettings() {
       const res = await bridge.setReceiptPrinter(selected);
       if (res?.success) {
         setSaved(res.receiptPrinter || null);
-        setLegacyFallback(null);
         setSavedFlash(true);
         setTimeout(() => setSavedFlash(false), 2500);
       }
@@ -73,7 +70,6 @@ export default function PrinterSettings() {
     }
   }
 
-  const effectivePrinter = saved || legacyFallback;
   const dirty = selected && selected !== saved;
 
   return (
@@ -98,23 +94,16 @@ export default function PrinterSettings() {
           </span>
           <h2 className="type-section text-text-primary">Receipt printer</h2>
         </div>
-        {effectivePrinter ? (
+        {saved ? (
           <p className="type-body-sm text-text-primary">
-            {effectivePrinter}
-            {!saved && legacyFallback && (
-              <Badge variant="warning" className="ml-2">
-                legacy default — not yet confirmed
-              </Badge>
-            )}
-            {saved && (
-              <Badge variant="success" className="ml-2">
-                configured
-              </Badge>
-            )}
+            {saved}
+            <Badge variant="success" className="ml-2">
+              configured
+            </Badge>
           </p>
         ) : (
           <p className="type-body-sm text-error-text">
-            No receipt printer configured. Select one below — printing is
+            No receipt printer selected. Choose one below — receipt printing is
             disabled until you do.
           </p>
         )}
