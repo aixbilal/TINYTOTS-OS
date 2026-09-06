@@ -80,14 +80,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-app px-4">
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(600px circle at 50% 30%, rgba(240,72,62,0.10), transparent 70%)",
-        }}
-      />
+    <div className="tt-warm min-h-screen flex items-center justify-center bg-surface-app px-4">
       <div className="relative w-full max-w-sm rounded-2xl border border-border-default bg-surface-panel p-8">
         <div className="flex flex-col items-center text-center mb-6">
           <span className="w-11 h-11 rounded-xl bg-brand/15 text-brand flex items-center justify-center mb-3">

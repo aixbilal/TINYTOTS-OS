@@ -146,9 +146,10 @@ export default function PerformanceGoals() {
               <SalesOverviewChart
                 data={summary?.dailySeries || []}
                 title={`Sales Trend · ${rangeLabel}`}
+                theme="warm"
               />
             </div>
-            <GoalSummaryCard goal={summary?.goal} />
+            <GoalSummaryCard goal={summary?.goal} theme="warm" />
           </div>
 
           {/* Set goal + category + heatmap */}
@@ -156,8 +157,8 @@ export default function PerformanceGoals() {
             <div id="set-goal-form">
               <SetGoalForm onGoalSet={loadSummary} />
             </div>
-            <CategoryDonut data={summary?.categoryBreakdown} title="Sales by Category" />
-            <DailyHeatmap heatmap={summary?.heatmap} />
+            <CategoryDonut data={summary?.categoryBreakdown} title="Sales by Category" theme="warm" />
+            <DailyHeatmap heatmap={summary?.heatmap} theme="warm" />
           </div>
 
           {/* Insights */}

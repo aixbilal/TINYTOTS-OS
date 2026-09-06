@@ -17,7 +17,7 @@ export default function Splash() {
 
   return (
     <div
-      className={`h-screen w-screen flex items-center justify-center bg-surface-app transition-opacity duration-300 ${
+      className={`tt-warm h-screen w-screen flex items-center justify-center bg-surface-app transition-opacity duration-300 ${
         leaving ? "opacity-0" : "opacity-100"
       }`}
     >
@@ -32,7 +32,7 @@ export default function Splash() {
           Manage · Sell · Grow
         </p>
 
-        <div className="mt-6 h-0.5 w-40 rounded-full bg-surface-elevated overflow-hidden">
+        <div className="mt-6 h-0.5 w-40 rounded-full bg-border-default overflow-hidden">
           <div className="h-full w-1/3 rounded-full bg-brand animate-[loadbar_1.1s_ease-in-out_infinite]" />
         </div>
 

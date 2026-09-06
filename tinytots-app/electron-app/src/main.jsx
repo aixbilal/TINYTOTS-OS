@@ -74,7 +74,7 @@ createRoot(document.getElementById("root")).render(
         path="/performance"
         element={
           <RequireAuth adminOnly>
-            <AppShell>
+            <AppShell warm>
               <PerformanceGoals />
             </AppShell>
           </RequireAuth>
@@ -84,7 +84,7 @@ createRoot(document.getElementById("root")).render(
         path="/receipts"
         element={
           <RequireAuth adminOnly>
-            <AppShell>
+            <AppShell warm>
               <OldReceipts />
             </AppShell>
           </RequireAuth>

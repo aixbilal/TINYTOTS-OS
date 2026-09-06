@@ -2,19 +2,24 @@ import { Fragment } from "react";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+// Intensity ramp (inline styles, so it can't ride the CSS token cascade).
+// "dark" is the original elevated-surface -> coral ramp; "warm" is a tonal
+// Soft Sand -> Olive ramp built from the approved TinyTots palette.
+const RAMP = {
+  dark: { zero: "#1c1c20", from: [28, 28, 32], to: [240, 72, 62], bar: "linear-gradient(to right, #1c1c20, #f0483e)" },
+  warm: { zero: "#e7d8c0", from: [231, 216, 192], to: [97, 104, 69], bar: "linear-gradient(to right, #e7d8c0, #616845)" },
+};
 
-function cellColor(value, max) {
+function cellColor(value, max, ramp) {
   if (value === null || value === undefined) return "transparent";
-  if (max === 0) return "#1c1c20";
+  if (max === 0) return ramp.zero;
   const t = Math.min(value / max, 1);
-  // interpolate elevated surface (#1c1c20) -> brand coral (#f0483e)
-  const from = [28, 28, 32];
-  const to = [240, 72, 62];
-  const rgb = from.map((c, i) => Math.round(c + (to[i] - c) * t));
+  const rgb = ramp.from.map((c, i) => Math.round(c + (ramp.to[i] - c) * t));
   return `rgb(${rgb.join(",")})`;
 }
 
-export default function DailyHeatmap({ heatmap }) {
+export default function DailyHeatmap({ heatmap, theme = "dark" }) {
+  const ramp = RAMP[theme] || RAMP.dark;
   const rows = heatmap?.length ? heatmap : [];
   const max = Math.max(1, ...rows.flat().filter((v) => v !== null));
 
@@ -34,7 +39,7 @@ export default function DailyHeatmap({ heatmap }) {
              <div
              key={`${wi}-${di}`}
              className="h-9 rounded-md hover:scale-110 hover:shadow-sm transition-transform duration-150 cursor-default"
-             style={{ backgroundColor: cellColor(val, max) }}
+             style={{ backgroundColor: cellColor(val, max, ramp) }}
              title={val !== null && val !== undefined ? `Rs. ${Math.round(val).toLocaleString("en-PK")}` : ""}
            />
             ))}
@@ -44,7 +49,7 @@ export default function DailyHeatmap({ heatmap }) {
 
       <div className="flex items-center justify-between mt-4 type-caption text-text-muted">
         <span>Low Sales</span>
-        <div className="flex-1 mx-3 h-2 rounded-full" style={{ background: "linear-gradient(to right, #1c1c20, #f0483e)" }} />
+        <div className="flex-1 mx-3 h-2 rounded-full" style={{ background: ramp.bar }} />
         <span>High Sales</span>
       </div>
     </div>

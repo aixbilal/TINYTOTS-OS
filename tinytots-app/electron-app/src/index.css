@@ -304,6 +304,28 @@ select {
   color-scheme: dark;
 }
 
+/* ------------------------------------------------------------------
+   Brand-reconciled surfaces (`.tt-warm`): keep native pickers, text
+   selection and scrollbars on the warm system so nothing renders as a
+   stranded dark control. All scoped + additive — dark defaults above
+   are untouched for any non-warm context. */
+.tt-warm input[type="date"],
+.tt-warm input[type="datetime-local"],
+.tt-warm input[type="month"],
+.tt-warm input[type="time"],
+.tt-warm select {
+  color-scheme: light;
+}
+.tt-warm ::selection {
+  background: rgba(97, 104, 69, 0.22); /* olive */
+}
+.tt-warm ::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+}
+.tt-warm ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
 /* Rendered rich-text (product descriptions) — the editor emits bare HTML;
    give it readable rhythm on the dark surface without pulling in a plugin. */
 .rte-content p {
