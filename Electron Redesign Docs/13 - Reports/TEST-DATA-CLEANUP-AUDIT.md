@@ -209,7 +209,7 @@ Any cleanup run must pair every transactional delete with the corresponding stoc
 
 ---
 
-## 11. Verdict
+## 11. Verdict (original audit, 2026-09-06 — before any action)
 
 - **Data deleted:** NONE
 - **Stock modified:** NO
@@ -218,3 +218,70 @@ Any cleanup run must pair every transactional delete with the corresponding stoc
 - **Public fake catalog content:** none (both test products `is_active = false`, RLS-hidden)
 - **Fake operational accounts with security implications:** **YES — 3 active admin-role QA accounts in `admin_users`.** Recommend owner deactivate (`is_active = false`) before client handoff; full deletion can follow. This is the only finding at blocker severity.
 - **Cleanup execution:** DEFERRED FOR OWNER APPROVAL (§79).
+
+---
+
+## 12. Post-closure cleanup — EXECUTED 2026-09-06
+
+Owner-approved: deactivate the 3 QA admin accounts, then remove **only** rows
+classified CONFIRMED TEST/SEEDED where relational + stock safety is fully
+provable. Probable / review / unknown / real rows left untouched. The 3 QA
+admin rows were **deactivated, not deleted** (rows + `auth.users` links kept).
+
+### QA admin accounts (during final closure, `is_active = false` — NOT deleted)
+
+| id | name | now |
+|---|---|---|
+| `0ce244ea-…08d5596170d2` | Blog Entry | `is_active = false` |
+| `b2be54b6-…d29f1d0683d1` | Hero UI Verify | `is_active = false` |
+| `15988771-…1cb1a7d5bac1` | QA E2E (temp) | `is_active = false` |
+
+`Bilal` (admin) and `Afshan` (`inventory_only`) remain **active**. ≥1 active admin.
+
+### Rows DELETED this run (atomic, single transaction)
+
+| Table | Rows deleted | Count | Cascade / effect |
+|---|---|---:|---|
+| `discounts` | ids 1, 2, 3, 4 | 4 | inactive, expired, no coupon/order references, no FK children |
+| `products` | id **136** (`ZZ_QA_TEST_K5C_DO_NOT_SAVE`) | 1 | `is_active=false`; 0 `sale_items` / 0 `order_items` / 0 `product_location_tags`; its 1 `variant` + 1 `product_images` row cascade-deleted. Its `stock=1` was fabricated QA data on a fake product (Class A — no real aggregate affected). |
+| `customers` | ids 28, 30, 33, 34, 35, 36, 37, 38, 40, 42, 43, 44, 45, 52 | 14 | synthetic `@tinytots.local` / `@example.com`; `orders_count=0`; no orders / complaints / reviews / addresses / wishlist / referrals; 13 welcome `vouchers` cascade-deleted |
+
+`variants` total 314 → 313 (product 136's variant). `customers` 23 → 9. `discounts` 4 → 0. `products` 82 → 81 (website-visible catalog **unchanged** — 136 was never public).
+
+### Rows RECLASSIFIED to OWNER REVIEW (were "confirmed" in the closure summary, held back on re-validation)
+
+| Row(s) | Reason held back |
+|---|---|
+| `customers` 39, 41, 53 | `auth_user_id` is **shared with a preserved QA admin account** (Hero UI Verify / Blog Entry / QA E2E (temp)). Deleting risks entangling with the "keep the QA admins and their auth.users links" directive. |
+| `products` 131 (`TEST PRODUCT - DO NOT SHIP`) | Pinned by **1 `sale_items` + 3 `order_items`** rows (RESTRICT FK on `variants`). Only removable if those transactions are removed first. |
+| `orders` 5, 6, 7, 35, 36, 37 (+ `order_items`) | Class **C** — stock deduction from `deduct_stock_order_item` is **still present** (`status='new'`, `stock_restored=false`). Reversal is calculable but **not provable** that `variants.stock` hasn't been manually recounted since (weeks elapsed). §8: uncertain → owner review. |
+| `sales` 105, 108 (+ `sale_items`) | Class **C** — `sale_items → deduct_stock` deduction still present, no POS restore path. Same non-provability. §8: owner review. |
+| `customers` 19, 20, 21; `orders` 16, 17; `sales` 104, 106, 107 | Already "probable / owner-review" in the original audit — untouched. |
+
+### Stock
+
+- Stock corrections **required**: none for the deleted set.
+- Stock corrections **performed**: **NONE**.
+- `variants.stock` of every real product: **unchanged**. `negative_stock_variants = 0`. Aggregate stock internally consistent.
+- The held-back transactional test data (orders 5/6/7/35/36/37, sales 105/108) still carries its original stock deductions — a **separate** owner-approved pass must pair each delete with a `status → cancelled` restore (orders) or a proven manual `+qty` (sales).
+
+### Post-cleanup verification (read-only)
+
+| Check | Result |
+|---|---|
+| Deleted customers / product / discounts gone | YES (0 remain) |
+| Review rows still present (customers 19/20/21/39/41/53, product 131, orders ×8, sales ×5) | YES |
+| Bilal active / Afshan active / 3 QA admins inactive | YES |
+| Real catalog (81 products / 313 variants), real customers (9), real orders (8), real sales (5) | intact |
+| Tiny Tots — Toba Tek Singh location | present, once |
+| `product_location_tags` schema | intact (0 rows) |
+| FK breakage | none |
+| Negative stock | none |
+| Website-visible catalog missing a legitimate product | no (deleted product was `is_active=false`) |
+
+### Known residue (minor, non-blocking)
+
+- 6 orphaned `auth.users` rows for deleted test customers (28, 30, 43 have standalone auth ids; the other deleted customers had `auth_user_id = null`). Non-routable `@tinytots.local` / `@example.com` addresses — cannot authenticate to anything meaningful. Left in place to avoid touching the `auth` schema in this scoped pass; safe to remove in a future auth-cleanup step.
+- Product 136's image file remains in the `product-images` Storage bucket (only the DB row cascaded). Orphaned, unreferenced.
+
+**Probable / owner-review / unknown / real data deleted this run: NONE.**

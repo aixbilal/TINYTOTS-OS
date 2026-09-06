@@ -47,22 +47,24 @@ Companion documents:
 | **Website deployment source → production** | The entire website redesign + post-launch hardening lives on `electron-redesign-2026-09-06`. `main` is **121 web commits behind** (`main` HEAD `a9e1587 "Web Redesign Start"`; last web commit `92d028a`). `HEAD..main` web commits = **0** — the Electron branch is a strict superset. No `vercel.json`/`.vercel` in the repo, so the deployed branch is set in the Vercel dashboard (not visible here). **Decision required:** confirm Vercel already builds `electron-redesign-2026-09-06`, OR merge `electron-redesign-2026-09-06 → main` (established release process + explicit approval). **No merge performed.** |
 | **QA admin accounts — full deletion** | 3 accounts deactivated, not deleted (your stated preference). Deleting the rows + their `auth.users` entries can follow separately. |
 | **`Afshan` (`inventory_only`)** | Kept active for handoff. Confirm real staff member or deactivate. |
-| **Remaining test-data cleanup** | See counts below; still **REPORT-ONLY**, not approved. |
+| **Remaining test-data cleanup** | Partial cleanup executed 2026-09-06 (see below). Transactional test data (orders/sales with live stock effect), product 131, and 3 auth-entangled customers were **held back** for a separate approved pass. |
 | **`/stores` SEO** | `app/stores/page.tsx` still sets `robots: NOINDEX_FOLLOW` with a "remove once populated" comment. Now that a verified location is live, decide whether to allow indexing at cutover. |
-| **Migration version reconciliation** | Live migrations carry MCP-assigned timestamps, not the committed filenames (all idempotent). Reconcile `supabase_migrations` history with the repo at deploy time. |
+| **Migration version reconciliation** | **DONE 2026-09-06** — see "Migration history reconciliation" below. Live `supabase_migrations` history now matches the committed filenames for all 4 store migrations. |
 
-### Remaining confirmed test-data cleanup candidates (from `TEST-DATA-CLEANUP-AUDIT.md` — NOT executed)
+### Test-data cleanup — status after the 2026-09-06 partial pass
 
-| Table | Confirmed test rows | Owner-review rows |
+Full detail in `Electron Redesign Docs/13 - Reports/TEST-DATA-CLEANUP-AUDIT.md` §12.
+
+| Table | Deleted this run | Still to review (needs a separate approved pass) |
 |---|---|---|
-| `admin_users` | 0 remaining (3 handled) | 1 (`Afshan`) |
-| `customers` | 17 (`@tinytots.local` / `@example.com`, `orders_count=0`) | 3 (id 21 "TEST"; id 19/20 team accts with orders) |
-| `orders` / `order_items` | 5 / 5 (dev guest checkouts, status "new") | 2 (team-account orders 16/17) |
-| `sales` / `sale_items` | 2 / 2 (`cashier="Test"`) | 3 (real staff names — financial ledger, default KEEP) |
-| `products` / `variants` | 2 / 2 (`is_active=false`, RLS-hidden) | 0 |
-| `discounts` | 4 (all inactive, expired) | 0 |
+| `discounts` | **4** (ids 1–4, inactive/expired) | 0 |
+| `products` / `variants` | **1 / 1** (product 136, `is_active=false`, no txn refs) | product **131** — pinned by 1 `sale_items` + 3 `order_items` |
+| `customers` | **14** (synthetic, `orders_count=0`, no refs; welcome vouchers cascaded) | **6** — ids 39/41/53 (auth shared with preserved QA admins), 19/20 (team accts w/ orders), 21 ("TEST" / real gmail) |
+| `orders` / `order_items` | **0** | **8 orders** — 5/6/7/35/36/37 (confirmed test, **Class C stock effect present**), 16/17 (team) |
+| `sales` / `sale_items` | **0** | **5 sales** — 105/108 (confirmed test, Class C), 104/106/107 (real staff names, default KEEP) |
+| `admin_users` | 0 (3 deactivated during closure, not deleted) | `Afshan` — confirm real staff |
 
-**Nothing deleted this run.** Any cleanup must pair each transactional delete with the matching stock correction (prefer `status → cancelled` to reuse `restore_stock_on_cancel`).
+**Stock corrections performed: NONE** — nothing deleted had a real stock effect (product 136's stock was fabricated QA data). The held-back transactional test data still carries its original deductions; a future pass must pair each delete with a `status → cancelled` restore (orders) or a proven manual `+qty` (sales 105/108).
 
 ---
 
@@ -78,6 +80,41 @@ Companion documents:
 8. **Optional:** allow `/stores` indexing (drop `NOINDEX_FOLLOW`); decide QA admin deletion; decide test-data cleanup.
 9. **Hand client credentials + operational notes** through a secure channel.
 10. **Client acceptance.**
+
+---
+
+## Migration history reconciliation (2026-09-06, post-closure housekeeping)
+
+The 4 store migrations were originally applied via the Supabase MCP, which
+assigned its own version numbers. The CLI `supabase migration repair` path was
+not usable in this environment (no CLI auth token, no DB password available, and
+secrets must not be requested). The equivalent ledger-only correction was applied
+instead — a single atomic `UPDATE` on `supabase_migrations.schema_migrations`
+that rewrote only the `version` column (`name`, `statements`, `created_by`,
+`idempotency_key` preserved). **No migration SQL was re-executed; no schema object
+was touched.**
+
+| Live version (before) | Committed version (after) | Name |
+|---|---|---|
+| `20260906165540` | `20260906060000` | `location_inventory_foundation` |
+| `20260906165552` | `20260906070000` | `branch_aware_order_location_columns` |
+| `20260906165616` | `20260906080000` | `seed_first_verified_location` |
+| `20260906165632` | `20260906140000` | `product_location_tags` |
+
+Post-repair (read-only): 0 `2026090616xxxxxx` rows remain; all 4 committed
+versions present in history; `locations` / `variant_location_stock` /
+`product_location_tags` / `orders.location_id` / `sales.location_id` all still
+present; `locations` still exactly one row (Toba Tek Singh); `variants.stock`
+unchanged (`integer null=YES def=0`); 11 stock-related triggers unchanged; no
+schema object duplicated.
+
+**Future replay risk for these 4: NONE** — `supabase db push` will now see them as
+applied.
+
+**Still unreconciled (pre-existing, out of scope):** `20260903120000_web_pricing_global_settings.sql`
+and `20260906130000_pos_sales_customer_id.sql` exist as local files but are **not**
+in remote history and are **not applied**. A future `db push` would attempt them —
+decide whether to apply or drop these before the first post-cutover deploy.
 
 ---
 
