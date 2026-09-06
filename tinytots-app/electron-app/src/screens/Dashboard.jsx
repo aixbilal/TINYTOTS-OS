@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Banknote,
@@ -17,18 +17,12 @@ import {
   Boxes,
 } from "lucide-react";
 import { getSession } from "../auth";
+import { getGreeting } from "../lib/greetings";
 import SalesOverviewChart from "../components/performance/SalesOverviewChart";
 import GoalSummaryCard from "../components/performance/GoalSummaryCard";
 import CategoryDonut from "../components/performance/CategoryDonut";
 import { EmptyState } from "../components/ui/States";
-import { PageHeader, Section, KpiGroup, KpiTile } from "../components/ui/Layout";
-
-function timeGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning,";
-  if (hour < 17) return "Good afternoon,";
-  return "Good evening,";
-}
+import { PageHeader, Section, KpiRow, KpiTile } from "../components/ui/Layout";
 
 const ACTIVITY_ICONS = {
   inventory: Package,
@@ -96,12 +90,22 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const dateLabel = new Date().toLocaleDateString(undefined, {
+  const now = new Date();
+  const dateLabel = now.toLocaleDateString(undefined, {
     weekday: "short",
     day: "numeric",
     month: "short",
     year: "numeric",
   });
+
+  // Deterministic per user / day / time band — computed once so it never
+  // flickers between re-renders (see src/lib/greetings.js).
+  const greeting = useMemo(
+    () => getGreeting(session),
+    // session identity is stable for the life of this screen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   const orders = summary?.transactionsToday ?? 0;
   const aov = orders > 0 ? summary.totalSalesToday / orders : 0;
@@ -110,27 +114,32 @@ export default function Dashboard() {
     {
       label: "Total Sales",
       icon: Banknote,
+      tone: "sales",
       value: summary ? pkr(summary.totalSalesToday) : null,
     },
     {
       label: "Orders",
       icon: ShoppingBag,
+      tone: "orders",
       value: summary ? String(summary.transactionsToday) : null,
     },
     {
       label: "Avg Order Value",
       icon: ShoppingCart,
+      tone: "info",
       value: summary ? pkr(aov) : null,
     },
     {
       label: "Low Stock Items",
       icon: AlertTriangle,
+      tone: "warning",
       value: summary ? String(summary.lowStockCount) : null,
       onClick: isAdmin ? () => navigate("/low-stock") : undefined,
     },
     {
       label: "Goal Progress",
       icon: Target,
+      tone: "goal",
       value: summary
         ? summary.goalProgressPct != null
           ? `${summary.goalProgressPct}%`
@@ -151,30 +160,27 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-[1600px] flex flex-col gap-7">
-      <PageHeader title={
-        <>
-          <span className="block type-body-sm font-normal text-text-secondary mb-0.5">
-            {timeGreeting()}
-          </span>
-          {session?.name || "Retailer"} <span aria-hidden>👋</span>
-        </>
-      } description="Here's what's happening with your store today.">
+      <PageHeader
+        title={greeting}
+        description="Here's what's happening with your store today."
+      >
         <span className="type-body-sm text-text-muted">{dateLabel}</span>
       </PageHeader>
 
-      {/* KPI row — one surface, hairline-split tiles */}
-      <KpiGroup className="grid-cols-2 md:grid-cols-3 xl:grid-cols-5 divide-y md:divide-y-0">
+      {/* KPI row — borderless semantic tiles on the canvas (§26) */}
+      <KpiRow className="grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
         {kpis.map((k) => (
           <KpiTile
             key={k.label}
             label={k.label}
             icon={k.icon}
+            tone={k.tone}
             value={k.value ?? (summaryError ? "—" : "")}
             onClick={k.onClick}
             loading={!summary && !summaryError}
           />
         ))}
-      </KpiGroup>
+      </KpiRow>
 
       {/* Sales overview + goal */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
