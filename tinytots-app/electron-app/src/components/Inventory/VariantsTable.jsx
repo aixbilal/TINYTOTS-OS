@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MoreVertical, Trash2, Check, X, Plus } from "lucide-react";
+import Button from "../ui/Button";
 import { apiFetch } from "../../services/api";
 
 const COLOR_SWATCH = {
@@ -55,23 +56,20 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
   }
 
   const editInput =
-    "w-16 border border-border-strong bg-surface-elevated rounded px-1.5 py-0.5 text-text-primary outline-none focus:border-brand";
+    "w-16 border border-border-default bg-surface-panel rounded px-1.5 py-0.5 text-text-primary outline-none focus:border-brand";
 
   return (
     <div>
       <div className="flex justify-end mb-3">
-        <button
-          onClick={() => setAddOpen(true)}
-          className="type-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-strong text-text-secondary hover:text-text-primary hover:bg-surface-elevated"
-        >
+        <Button variant="secondary" size="sm" onClick={() => setAddOpen(true)}>
           <Plus size={14} /> Add Variant
-        </button>
+        </Button>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border-default">
         <table className="w-full type-table">
           <thead>
-            <tr className="type-table-head bg-surface-elevated/60 text-text-secondary text-left">
+            <tr className="type-table-head bg-surface-sunken text-text-secondary text-left">
               <th className="p-3 w-10">
                 <input type="checkbox" checked={allSelected} onChange={(e) => onSelectAll(e.target.checked)} />
               </th>
@@ -92,7 +90,7 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
               const lowStock = v.stock <= 5;
               const hasDiscount = Number(v.discount_percent) > 0;
               return (
-                <tr key={v.id} className="hover:bg-surface-elevated/50">
+                <tr key={v.id} className="hover:bg-surface-sunken transition-colors">
                   <td className="p-3">
                     <input
                       type="checkbox"
@@ -187,7 +185,7 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
                     )}
 
                     {openMenuId === v.id && (
-                      <div className="absolute right-3 top-9 bg-surface-panel shadow-lg rounded-lg border border-border-strong z-10 w-44 overflow-hidden">
+                      <div className="absolute right-3 top-9 bg-surface-panel shadow-md rounded-lg border border-border-strong z-10 w-44 overflow-hidden tt-anim-pop">
                         <button
                           onClick={() => {
                             startEdit(v);
@@ -279,14 +277,14 @@ function AddVariantModal({ productId, onClose, onAdded }) {
   }
 
   const inputCls =
-    "w-full border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 type-body-sm text-text-primary outline-none focus:border-brand";
+    "w-full border border-border-default bg-surface-panel rounded-md px-3 py-2 type-body-sm text-text-primary outline-none transition-[border-color,box-shadow] focus:border-brand focus:ring-2 focus:ring-brand/45";
 
   return (
-    <div className="fixed inset-0 bg-surface-overlay flex items-center justify-center z-50 p-4">
-      <form onSubmit={handleSubmit} className="bg-surface-panel border border-border-strong rounded-2xl w-full max-w-md p-6 space-y-3">
+    <div className="fixed inset-0 bg-surface-overlay tt-anim-fade flex items-center justify-center z-50 p-4">
+      <form onSubmit={handleSubmit} className="bg-surface-panel border border-border-strong rounded-xl shadow-lg w-full max-w-md p-6 space-y-3 tt-anim-dialog">
         <div className="flex items-center justify-between mb-2">
           <h3 className="type-section text-text-primary">Add Variant(s)</h3>
-          <button type="button" onClick={onClose} className="text-text-secondary hover:text-text-primary">
+          <button type="button" onClick={onClose} className="text-text-secondary hover:text-text-primary" aria-label="Close">
             <X size={18} />
           </button>
         </div>
@@ -324,16 +322,12 @@ function AddVariantModal({ productId, onClose, onAdded }) {
         </div>
         {error && <p className="type-body-sm text-error-text">{error}</p>}
         <div className="flex justify-end gap-3 pt-1">
-          <button type="button" onClick={onClose} className="type-btn px-4 py-2 rounded-lg text-text-secondary hover:bg-surface-elevated">
+          <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="type-btn px-5 py-2 rounded-lg bg-brand text-pure-white hover:bg-brand-hover disabled:opacity-60"
-          >
+          </Button>
+          <Button type="submit" disabled={saving} loading={saving}>
             {saving ? "Adding…" : "Add Variant(s)"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

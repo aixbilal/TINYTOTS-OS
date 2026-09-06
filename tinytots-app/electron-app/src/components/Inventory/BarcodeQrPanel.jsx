@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Printer, Download, QrCode, Barcode as BarcodeIcon } from "lucide-react";
 import { generateQrPreview, generateBarcodePreview } from "../../utils/codeGenerators";
+import Button from "../ui/Button";
 import { apiFetch } from "../../services/api";
 
 const LABEL_PRESETS = [
@@ -125,10 +126,10 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
 
   const fieldLabel = "type-field-label text-text-secondary mb-2";
   const selectCls =
-    "w-full border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 type-body-sm text-text-primary outline-none";
+    "w-full border border-border-default bg-surface-panel rounded-md px-3 py-2 type-body-sm text-text-primary outline-none transition-[border-color,box-shadow] focus:border-brand focus:ring-2 focus:ring-brand/45";
 
   return (
-    <div className="rounded-xl border border-border-default bg-surface-panel p-5 sticky top-2">
+    <div className="rounded-lg border border-border-default bg-surface-panel p-5 sticky top-2">
       <h3 className="type-section text-text-primary mb-1">Generate Barcode / QR</h3>
       <p className="type-body-sm text-text-secondary mb-4">
         Select variants to generate Barcode or QR codes for easy tagging.
@@ -163,7 +164,7 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
                 onChange={(e) =>
                   setQuantities((q) => ({ ...q, [id]: parseInt(e.target.value, 10) || 0 }))
                 }
-                className="w-14 border border-border-strong bg-surface-elevated rounded px-1 py-0.5 text-right text-text-primary outline-none"
+                className="w-14 border border-border-default bg-surface-panel rounded px-1 py-0.5 text-right text-text-primary outline-none focus:border-brand"
               />
             </div>
           );
@@ -182,10 +183,10 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
           <button
             key={val}
             onClick={() => setCodeType(val)}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-lg type-body-sm font-medium transition-colors ${
+            className={`flex items-center justify-center gap-2 py-2.5 rounded-md type-body-sm font-medium transition-colors ${
               codeType === val
-                ? "bg-brand text-pure-white"
-                : "border border-border-strong text-text-secondary hover:text-text-primary hover:bg-surface-elevated"
+                ? "bg-brand text-text-inverse"
+                : "border border-border-default text-text-secondary hover:text-text-primary hover:bg-surface-sunken"
             }`}
           >
             <Icon size={16} /> {label}
@@ -194,7 +195,7 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
       </div>
 
       <p className={fieldLabel}>Preview</p>
-      <div className="border border-border-default rounded-xl h-40 flex items-center justify-center mb-4 bg-pure-white">
+      <div className="border border-border-default rounded-lg h-40 flex items-center justify-center mb-4 bg-pure-white">
         {previewUrl ? (
           <img src={previewUrl} alt="Code preview" className="max-h-32" />
         ) : (
@@ -228,27 +229,31 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
         ))}
       </select>
 
-      <button
+      <Button
         onClick={() => handlePrint(false)}
         disabled={busy || !printerName}
-        className="w-full flex items-center justify-center gap-2 bg-brand text-pure-white type-btn py-2.5 rounded-lg mb-2 hover:bg-brand-hover disabled:opacity-50"
+        loading={busy}
+        size="lg"
+        className="w-full mb-2"
       >
         <Printer size={16} />
         {busy ? "Sending…" : `Print ${codeType === "qr" ? "QR Codes" : "Barcodes"}`}
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="secondary"
         onClick={() => handlePrint(true)}
         disabled={busy}
-        className="w-full flex items-center justify-center gap-2 border border-border-strong text-text-primary type-btn py-2.5 rounded-lg hover:bg-surface-elevated disabled:opacity-50"
+        size="lg"
+        className="w-full"
       >
         <Download size={16} /> Download PDF
-      </button>
+      </Button>
 
       {message && <p className="type-caption text-text-secondary mt-3 text-center">{message}</p>}
 
       {!printers.length && (
         <p className="type-caption text-warning-text mt-3">
-          No printers detected. Make sure the EML-200L (2inch) driver is installed and the printer is powered on.
+          No label printer detected. Make sure your label printer's driver is installed and the printer is powered on.
         </p>
       )}
     </div>

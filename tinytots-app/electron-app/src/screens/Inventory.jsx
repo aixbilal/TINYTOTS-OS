@@ -5,7 +5,6 @@ import {
   Camera,
   Pencil,
   Plus,
-  Search,
   SlidersHorizontal,
   LayoutGrid,
   List as ListIcon,
@@ -19,6 +18,9 @@ import ProductFormModal from "../components/Inventory/ProductFormModal";
 import ImageUploader from "../components/Inventory/ImageUploader";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
+import SearchField from "../components/ui/SearchField";
+import { PageHeader } from "../components/ui/Layout";
+import { Table, THead, TBody, TR, TH, TD } from "../components/ui/Table";
 import { LoadingState, EmptyState } from "../components/ui/States";
 import { apiFetch } from "../services/api";
 
@@ -149,7 +151,7 @@ export default function Inventory() {
   // ---------------------------------------------------------------- DETAIL VIEW
   if (view === "detail" && selectedProduct) {
     return (
-      <div className="mx-auto max-w-[1600px] flex flex-col gap-4">
+      <div className="mx-auto max-w-[1600px] flex flex-col gap-5">
         <button
           onClick={() => setView("browse")}
           className="type-nav inline-flex items-center gap-2 text-text-secondary hover:text-text-primary w-fit"
@@ -174,16 +176,16 @@ export default function Inventory() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <div className="xl:col-span-2 space-y-4">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+          <div className="xl:col-span-2 space-y-5">
             {/* Product info */}
-            <div className="rounded-xl border border-border-default bg-surface-panel p-5">
+            <div className="rounded-lg border border-border-default bg-surface-panel p-5">
               <h2 className="type-section text-text-primary mb-4">Product Information</h2>
               <div className="flex gap-5">
                 <button
                   type="button"
                   onClick={() => setPhotosOpen(true)}
-                  className="w-28 h-28 rounded-xl bg-surface-elevated border border-border-default flex flex-col items-center justify-center flex-shrink-0 overflow-hidden hover:border-border-strong transition-colors"
+                  className="w-28 h-28 rounded-lg bg-surface-elevated flex flex-col items-center justify-center flex-shrink-0 overflow-hidden hover:brightness-95 transition-[filter]"
                 >
                   {selectedProduct.image_url ? (
                     <img
@@ -227,7 +229,7 @@ export default function Inventory() {
             </div>
 
             {/* Variants / stock */}
-            <div className="rounded-xl border border-border-default bg-surface-panel p-5">
+            <div className="rounded-lg border border-border-default bg-surface-panel p-5">
               <div className="flex items-center gap-5 mb-4 type-nav border-b border-border-default">
                 <button
                   onClick={() => setTab("variants")}
@@ -285,8 +287,8 @@ export default function Inventory() {
         )}
 
         {photosOpen && (
-          <div className="fixed inset-0 bg-surface-overlay flex items-center justify-center z-50 p-4">
-            <div className="bg-surface-panel border border-border-strong rounded-2xl w-full max-w-md p-6">
+          <div className="fixed inset-0 bg-surface-overlay tt-anim-fade flex items-center justify-center z-50 p-4">
+            <div className="bg-surface-panel border border-border-strong rounded-xl shadow-lg w-full max-w-md p-6 tt-anim-dialog">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="type-section text-text-primary">
                   Photos — {selectedProduct.name}
@@ -315,75 +317,58 @@ export default function Inventory() {
 
   // ---------------------------------------------------------------- BROWSE VIEW
   return (
-    <div className="mx-auto max-w-[1600px] flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="type-heading-lg text-text-primary">Inventory</h1>
-          <p className="type-body-sm text-text-secondary mt-0.5">
-            Manage your products and stock.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search
-              size={15}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-            />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search products…"
-              className="type-input w-56 rounded-lg border border-border-strong bg-surface-elevated pl-9 pr-3 py-2 text-text-primary outline-none placeholder:text-text-muted focus:border-brand"
-            />
-          </div>
-          <div className="relative">
-            <Button
-              variant="secondary"
-              onClick={() => setFiltersOpen((o) => !o)}
-            >
-              <SlidersHorizontal size={14} /> Filters
-              {activeFilterCount > 0 && (
-                <span className="ml-0.5 rounded-full bg-brand text-pure-white text-[10px] px-1.5 leading-4">
-                  {activeFilterCount}
-                </span>
-              )}
-            </Button>
-            {filtersOpen && (
-              <FiltersPanel
-                categories={categories}
-                categoryFilter={categoryFilter}
-                setCategoryFilter={setCategoryFilter}
-                statusFilter={statusFilter}
-                setStatusFilter={setStatusFilter}
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-                onClear={() => {
-                  setCategoryFilter("all");
-                  setStatusFilter("all");
-                  setSortBy("name");
-                }}
-                onClose={() => setFiltersOpen(false)}
-              />
+    <div className="mx-auto max-w-[1600px] flex flex-col gap-5">
+      <PageHeader title="Inventory" description="Manage your products and stock.">
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          placeholder="Search products…"
+          className="w-56"
+        />
+        <div className="relative">
+          <Button variant="secondary" onClick={() => setFiltersOpen((o) => !o)}>
+            <SlidersHorizontal size={14} /> Filters
+            {activeFilterCount > 0 && (
+              <span className="ml-0.5 rounded-full bg-brand text-text-inverse type-tiny px-1.5 leading-4">
+                {activeFilterCount}
+              </span>
             )}
-          </div>
-          <Button onClick={() => setModal("create")}>
-            <Plus size={15} /> Add Product
           </Button>
+          {filtersOpen && (
+            <FiltersPanel
+              categories={categories}
+              categoryFilter={categoryFilter}
+              setCategoryFilter={setCategoryFilter}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              onClear={() => {
+                setCategoryFilter("all");
+                setStatusFilter("all");
+                setSortBy("name");
+              }}
+              onClose={() => setFiltersOpen(false)}
+            />
+          )}
         </div>
-      </div>
+        <Button onClick={() => setModal("create")}>
+          <Plus size={15} /> Add Product
+        </Button>
+      </PageHeader>
 
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <p className="type-body-sm text-text-secondary">
           {loading ? "Loading…" : `${filteredProducts.length} of ${products.length} products`}
         </p>
-        <div className="flex items-center rounded-lg border border-border-strong overflow-hidden">
+        <div className="flex items-center rounded-md border border-border-default overflow-hidden">
           <button
             onClick={() => setLayout("grid")}
-            className={`px-2.5 py-1.5 ${
+            className={`px-2.5 py-1.5 transition-colors ${
               layout === "grid"
                 ? "bg-surface-elevated text-text-primary"
-                : "text-text-muted hover:text-text-primary"
+                : "text-text-muted hover:text-text-primary hover:bg-surface-sunken"
             }`}
             aria-label="Grid view"
           >
@@ -391,10 +376,10 @@ export default function Inventory() {
           </button>
           <button
             onClick={() => setLayout("list")}
-            className={`px-2.5 py-1.5 border-l border-border-strong ${
+            className={`px-2.5 py-1.5 border-l border-border-default transition-colors ${
               layout === "list"
                 ? "bg-surface-elevated text-text-primary"
-                : "text-text-muted hover:text-text-primary"
+                : "text-text-muted hover:text-text-primary hover:bg-surface-sunken"
             }`}
             aria-label="List view"
           >
@@ -406,7 +391,7 @@ export default function Inventory() {
       {loading ? (
         <LoadingState label="Loading inventory…" />
       ) : loadError ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <EmptyState
             title="Couldn't load inventory"
             description="The local server didn't respond. Check the connection and try again."
@@ -414,7 +399,7 @@ export default function Inventory() {
           />
         </div>
       ) : filteredProducts.length === 0 ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <EmptyState
             icon={Package}
             title={products.length === 0 ? "No products yet" : "No products match your filters"}
@@ -437,70 +422,56 @@ export default function Inventory() {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-border-default bg-surface-panel overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-surface-elevated/60">
-              <tr className="type-table-head text-text-secondary text-left">
-                <th className="px-4 py-2.5">Product</th>
-                <th className="px-4 py-2.5">SKU</th>
-                <th className="px-4 py-2.5">Category</th>
-                <th className="px-4 py-2.5 text-right">Stock</th>
-                <th className="px-4 py-2.5">Status</th>
-                <th className="px-4 py-2.5 text-right">Price</th>
-                <th className="px-4 py-2.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-default">
-              {filteredProducts.map((p) => {
-                const st = stockStatus(p.total_stock ?? 0);
-                return (
-                  <tr
-                    key={p.id}
-                    onClick={() => openDetail(p.id)}
-                    className="cursor-pointer transition-colors hover:bg-surface-elevated/50"
-                  >
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-lg bg-surface-elevated border border-border-default overflow-hidden flex items-center justify-center text-text-muted shrink-0">
-                          {p.image_url ? (
-                            <img src={p.image_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <Package size={14} />
-                          )}
-                        </span>
-                        <span className="type-table font-medium text-text-primary">{p.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5 type-mono type-caption text-text-secondary">
-                      {p.sku}
-                    </td>
-                    <td className="px-4 py-2.5 type-table text-text-secondary">
-                      {p.category || "—"}
-                    </td>
-                    <td className="px-4 py-2.5 type-table text-right text-text-primary">
-                      {p.total_stock ?? 0}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <Badge variant={st.variant}>{st.label}</Badge>
-                    </td>
-                    <td className="px-4 py-2.5 type-table text-right text-text-primary">
-                      {priceLabel(p.variants)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => openDetail(p.id)}
-                        className="text-text-muted hover:text-text-primary p-1"
-                        aria-label="Edit product"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <THead>
+            <TR>
+              <TH>Product</TH>
+              <TH>SKU</TH>
+              <TH>Category</TH>
+              <TH align="right">Stock</TH>
+              <TH>Status</TH>
+              <TH align="right">Price</TH>
+              <TH align="right">Actions</TH>
+            </TR>
+          </THead>
+          <TBody>
+            {filteredProducts.map((p) => {
+              const st = stockStatus(p.total_stock ?? 0);
+              return (
+                <TR key={p.id} onClick={() => openDetail(p.id)}>
+                  <TD>
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-md bg-surface-elevated overflow-hidden flex items-center justify-center text-text-muted shrink-0">
+                        {p.image_url ? (
+                          <img src={p.image_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Package size={14} />
+                        )}
+                      </span>
+                      <span className="font-medium">{p.name}</span>
+                    </div>
+                  </TD>
+                  <TD className="type-mono text-text-secondary">{p.sku}</TD>
+                  <TD className="text-text-secondary">{p.category || "—"}</TD>
+                  <TD align="right" className="tabular-nums">{p.total_stock ?? 0}</TD>
+                  <TD>
+                    <Badge variant={st.variant}>{st.label}</Badge>
+                  </TD>
+                  <TD align="right" className="tabular-nums">{priceLabel(p.variants)}</TD>
+                  <TD align="right" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => openDetail(p.id)}
+                      className="text-text-muted hover:text-text-primary p-1"
+                      aria-label="Edit product"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                  </TD>
+                </TR>
+              );
+            })}
+          </TBody>
+        </Table>
       )}
 
       {modal && (
@@ -520,9 +491,9 @@ function ProductGridCard({ product, onOpen }) {
   return (
     <button
       onClick={onOpen}
-      className="group flex flex-col rounded-xl border border-border-default bg-surface-panel p-3 text-left transition-colors hover:border-border-strong"
+      className="group flex flex-col rounded-lg p-2.5 text-left transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
     >
-      <div className="aspect-square w-full rounded-lg bg-surface-elevated border border-border-default overflow-hidden mb-2.5 flex items-center justify-center text-text-muted">
+      <div className="aspect-square w-full rounded-md bg-surface-elevated overflow-hidden mb-2.5 flex items-center justify-center text-text-muted">
         {product.image_url ? (
           <img src={product.image_url} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -556,10 +527,10 @@ function FiltersPanel({
   onClose,
 }) {
   return (
-    <div className="absolute right-0 top-11 z-30 w-64 rounded-xl border border-border-strong bg-surface-panel p-4 shadow-[0_16px_40px_-16px_rgba(42,38,33,0.28)]">
+    <div className="absolute right-0 top-11 z-30 w-64 rounded-lg border border-border-strong bg-surface-panel p-4 shadow-md tt-anim-pop">
       <div className="flex items-center justify-between mb-3">
         <p className="type-section text-text-primary">Filters</p>
-        <button onClick={onClose} className="text-text-muted hover:text-text-primary">
+        <button onClick={onClose} className="text-text-muted hover:text-text-primary" aria-label="Close filters">
           <X size={15} />
         </button>
       </div>
@@ -568,7 +539,7 @@ function FiltersPanel({
       <select
         value={categoryFilter}
         onChange={(e) => setCategoryFilter(e.target.value)}
-        className="type-input mt-1 mb-3 w-full rounded-lg border border-border-strong bg-surface-elevated px-2.5 py-1.5 text-text-primary outline-none"
+        className="type-input mt-1 mb-3 w-full rounded-md border border-border-default bg-surface-panel px-2.5 py-1.5 text-text-primary outline-none focus:border-brand"
       >
         <option value="all">All categories</option>
         {categories.map((c) => (
@@ -589,10 +560,10 @@ function FiltersPanel({
           <button
             key={val}
             onClick={() => setStatusFilter(val)}
-            className={`type-caption rounded-md border px-2 py-1.5 ${
+            className={`type-caption rounded-md border px-2 py-1.5 transition-colors ${
               statusFilter === val
-                ? "border-brand bg-brand/12 text-text-primary"
-                : "border-border-strong text-text-secondary hover:text-text-primary"
+                ? "border-brand bg-brand-soft text-text-primary"
+                : "border-border-default text-text-secondary hover:text-text-primary hover:bg-surface-sunken"
             }`}
           >
             {label}
@@ -604,7 +575,7 @@ function FiltersPanel({
       <select
         value={sortBy}
         onChange={(e) => setSortBy(e.target.value)}
-        className="type-input mt-1 mb-3 w-full rounded-lg border border-border-strong bg-surface-elevated px-2.5 py-1.5 text-text-primary outline-none"
+        className="type-input mt-1 mb-3 w-full rounded-md border border-border-default bg-surface-panel px-2.5 py-1.5 text-text-primary outline-none focus:border-brand"
       >
         <option value="name">Name (A–Z)</option>
         <option value="stock-asc">Stock (low → high)</option>
@@ -668,7 +639,7 @@ function StockOverview({ variants }) {
           <span className="w-20 type-body-sm text-text-primary flex-shrink-0 capitalize">
             {color}
           </span>
-          <div className="flex-1 h-2.5 bg-surface-elevated rounded-full overflow-hidden">
+          <div className="flex-1 h-2.5 bg-surface-secondary rounded-full overflow-hidden">
             <div
               className="h-full bg-brand rounded-full"
               style={{ width: `${(stock / max) * 100}%` }}

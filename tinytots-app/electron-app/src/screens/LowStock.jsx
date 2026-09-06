@@ -5,6 +5,7 @@ import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import { LoadingState, EmptyState, ErrorState } from "../components/ui/States";
 import { Table, THead, TBody, TR, TH, TD } from "../components/ui/Table";
+import { PageHeader } from "../components/ui/Layout";
 
 export default function LowStock() {
   const navigate = useNavigate();
@@ -32,31 +33,28 @@ export default function LowStock() {
   }, [load]);
 
   return (
-    <div className="mx-auto max-w-[1200px] flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="type-heading-lg text-text-primary">Low Stock</h1>
-          <p className="type-body-sm text-text-secondary mt-0.5">
-            Items at or below the reorder threshold — restock these soon.
-          </p>
-        </div>
+    <div className="mx-auto max-w-[1200px] flex flex-col gap-5">
+      <PageHeader
+        title="Low Stock"
+        description="Items at or below the reorder threshold — restock these soon."
+      >
         {items?.length > 0 && (
           <Button variant="secondary" onClick={() => navigate("/inventory")}>
             Go to Inventory
           </Button>
         )}
-      </div>
+      </PageHeader>
 
       {loadError ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <ErrorState onRetry={retry} />
         </div>
       ) : items === null ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <LoadingState label="Loading low stock items…" />
         </div>
       ) : items.length === 0 ? (
-        <div className="rounded-xl border border-border-default bg-surface-panel">
+        <div className="rounded-lg border border-border-default bg-surface-panel">
           <EmptyState
             icon={PackageCheck}
             title="Stock looks healthy"

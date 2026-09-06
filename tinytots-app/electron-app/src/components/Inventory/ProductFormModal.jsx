@@ -3,6 +3,7 @@ import { X, Plus, Sparkles } from "lucide-react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import ImageUploader from "./ImageUploader";
+import Button from "../ui/Button";
 import { apiFetch } from "../../services/api";
 
 /** True when the ReactQuill HTML carries real text, not just empty markup. */
@@ -11,6 +12,19 @@ function hasRealText(html) {
     .replace(/<[^>]*>/g, "")
     .replace(/&nbsp;/gi, " ")
     .trim();
+}
+
+const FIELD =
+  "w-full rounded-md border border-border-default bg-surface-panel px-3 py-2 type-input text-text-primary outline-none transition-[border-color,box-shadow] focus:border-brand focus:ring-2 focus:ring-brand/45 disabled:opacity-60 placeholder:text-text-muted";
+
+/** A quiet titled group inside the form (DESIGN.md §54). */
+function Group({ title, children, className = "" }) {
+  return (
+    <section className={className}>
+      <h3 className="type-label uppercase tracking-wide text-text-muted mb-3">{title}</h3>
+      {children}
+    </section>
+  );
 }
 
 function TagInput({ label, placeholder, values, onChange }) {
@@ -26,8 +40,8 @@ function TagInput({ label, placeholder, values, onChange }) {
 
   return (
     <div>
-      <label className="block type-body-sm text-text-secondary mb-1.5">{label}</label>
-      <div className="flex flex-wrap gap-1.5 p-2 border border-border-strong rounded-lg min-h-[42px]">
+      <label className="block type-field-label text-text-secondary mb-1.5">{label}</label>
+      <div className="flex flex-wrap gap-1.5 p-2 border border-border-default rounded-md min-h-[42px] bg-surface-panel focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/45 transition-[border-color,box-shadow]">
         {values.map((v) => (
           <span
             key={v}
@@ -38,6 +52,7 @@ function TagInput({ label, placeholder, values, onChange }) {
               type="button"
               onClick={() => onChange(values.filter((x) => x !== v))}
               className="text-text-muted hover:text-text-primary"
+              aria-label={`Remove ${v}`}
             >
               <X size={12} />
             </button>
@@ -54,7 +69,7 @@ function TagInput({ label, placeholder, values, onChange }) {
           }}
           onBlur={commit}
           placeholder={values.length ? "" : placeholder}
-          className="flex-1 min-w-[80px] text-sm outline-none bg-transparent text-text-primary"
+          className="flex-1 min-w-[80px] type-input outline-none bg-transparent text-text-primary placeholder:text-text-muted"
         />
       </div>
       <p className="type-caption text-text-muted mt-1">Press Enter or comma to add</p>
@@ -240,20 +255,15 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
 
   if (showPhotosStep) {
     return (
-      <div className="fixed inset-0 bg-surface-overlay flex items-center justify-center z-50 p-4">
-        <div className="bg-surface-panel border border-border-strong rounded-2xl w-full max-w-md p-6">
-          <h2 className="type-heading-sm text-text-primary mb-1">Product Created!</h2>
+      <div className="fixed inset-0 bg-surface-overlay tt-anim-fade flex items-center justify-center z-50 p-4">
+        <div className="bg-surface-panel border border-border-strong rounded-xl shadow-lg w-full max-w-md p-6 tt-anim-dialog">
+          <h2 className="type-heading-sm text-text-primary mb-1">Product created</h2>
           <p className="type-body-sm text-text-secondary mb-4">Add photos now, or skip and add them later.</p>
 
           <ImageUploader productId={createdProductId} images={images} onImagesChange={setImages} />
 
           <div className="flex justify-end pt-5">
-            <button
-              onClick={onClose}
-              className="px-5 py-2 rounded-lg bg-brand text-pure-white font-medium hover:bg-brand-hover"
-            >
-              Done
-            </button>
+            <Button onClick={onClose}>Done</Button>
           </div>
         </div>
       </div>
@@ -261,43 +271,48 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
   }
 
   return (
-    <div className="fixed inset-0 bg-surface-overlay flex items-center justify-center z-50 p-4">
-      <div className="bg-surface-panel border border-border-strong rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+    <div className="fixed inset-0 bg-surface-overlay tt-anim-fade flex items-center justify-center z-50 p-4">
+      <div className="bg-surface-panel border border-border-strong rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 tt-anim-dialog">
         <div className="flex items-center justify-between mb-5">
           <h2 className="type-heading-sm text-text-primary">
             {mode === "create" ? "Add New Product" : "Edit Product"}
           </h2>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
-            <X size={20} />
+          <button
+            onClick={onClose}
+            className="text-text-muted hover:text-text-primary rounded-md p-1 hover:bg-surface-elevated transition-colors"
+            aria-label="Close"
+          >
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <LabeledInput label="Product Name" required {...field("name")} />
-            <LabeledInput label="Brand" {...field("brand")} />
-            <LabeledInput label="Category" {...field("category")} placeholder="Shirts, Pants…" />
-            <LabeledInput
-              label="Base SKU"
-              required
-              disabled={mode === "edit"}
-              {...field("sku")}
-              placeholder="EGSHIRT"
-            />
-            <LabeledInput label="HSN Code" {...field("hsn_code")} />
-            <LabeledInput label="Unit" {...field("unit")} />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Group title="Identity">
+            <div className="grid grid-cols-2 gap-4">
+              <LabeledInput label="Product Name" required {...field("name")} />
+              <LabeledInput label="Brand" {...field("brand")} />
+              <LabeledInput label="Category" {...field("category")} placeholder="Shirts, Pants…" />
+              <LabeledInput
+                label="Base SKU"
+                required
+                disabled={mode === "edit"}
+                {...field("sku")}
+                placeholder="EGSHIRT"
+              />
+              <LabeledInput label="HSN Code" {...field("hsn_code")} />
+              <LabeledInput label="Unit" {...field("unit")} />
+            </div>
+          </Group>
 
           {mode === "edit" && (
-            <div>
-              <label className="block type-body-sm text-text-secondary mb-1.5">Photos</label>
+            <Group title="Photos">
               <ImageUploader productId={initialProduct.id} images={images} onImagesChange={setImages} />
-            </div>
+            </Group>
           )}
 
-          <div>
+          <Group title="Description">
             <div className="flex items-center justify-between mb-1.5 gap-3">
-              <label className="block type-body-sm text-text-secondary">Description</label>
+              <label className="block type-field-label text-text-secondary">Description</label>
               <button
                 type="button"
                 onClick={generateDescription}
@@ -307,7 +322,7 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
                     ? "Draft a description from the product name, category and details"
                     : "Add a product name and category first"
                 }
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-brand text-brand text-xs font-medium hover:bg-brand/10 disabled:opacity-45 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border-default text-text-secondary type-caption font-medium hover:border-brand hover:text-brand disabled:opacity-45 disabled:cursor-not-allowed transition-colors"
               >
                 <Sparkles size={13} />
                 {genLoading ? "Generating…" : "Generate description"}
@@ -324,11 +339,9 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
                 )
               }
               placeholder="Optional details for the assistant — e.g. elasticated waist, ribbed cuffs"
-              className="w-full mb-2 border border-border-strong bg-surface-elevated rounded-lg px-3 py-1.5 text-xs text-text-primary outline-none focus:border-brand placeholder:text-text-muted"
+              className={`${FIELD} mb-2 !py-1.5 type-caption`}
             />
-            {genNote && (
-              <p className="type-caption text-text-secondary mb-2">{genNote}</p>
-            )}
+            {genNote && <p className="type-caption text-text-secondary mb-2">{genNote}</p>}
             <ReactQuill
               theme="snow"
               value={form.description}
@@ -360,40 +373,31 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
                 },
               }}
             />
-          </div>
+          </Group>
 
-          <div className="grid grid-cols-3 gap-4">
-            <LabeledInput
-              label="Cost Price (Rs)"
-              type="number"
-              required
-              {...field("cost_price")}
-            />
-            <LabeledInput
-              label="Selling Price (Rs)"
-              type="number"
-              required
-              {...field("selling_price")}
-            />
-            <LabeledInput
-              label="Discount (%)"
-              type="number"
-              min="0"
-              max="100"
-              placeholder="0"
-              {...field("discount_percent")}
-            />
-          </div>
-
-          {discountedPreviewPrice !== null && (
-            <p className="type-body-sm text-brand bg-brand/10 rounded-lg px-3 py-2">
-              With a {form.discount_percent}% discount, each variant will sell at{" "}
-              <strong>Rs. {discountedPreviewPrice}</strong> instead of Rs. {form.selling_price}.
-            </p>
-          )}
+          <Group title="Pricing">
+            <div className="grid grid-cols-3 gap-4">
+              <LabeledInput label="Cost Price (Rs)" type="number" required {...field("cost_price")} />
+              <LabeledInput label="Selling Price (Rs)" type="number" required {...field("selling_price")} />
+              <LabeledInput
+                label="Discount (%)"
+                type="number"
+                min="0"
+                max="100"
+                placeholder="0"
+                {...field("discount_percent")}
+              />
+            </div>
+            {discountedPreviewPrice !== null && (
+              <p className="type-body-sm text-brand bg-brand-soft rounded-md px-3 py-2 mt-3">
+                With a {form.discount_percent}% discount, each variant will sell at{" "}
+                <strong>Rs. {discountedPreviewPrice}</strong> instead of Rs. {form.selling_price}.
+              </p>
+            )}
+          </Group>
 
           {mode === "create" && (
-            <>
+            <Group title="Variants">
               <LabeledInput
                 label="Initial Stock (default for all variants)"
                 type="number"
@@ -401,30 +405,30 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
                 {...field("initialStock")}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 mt-4">
                 <TagInput label="Colors" placeholder="Maroon, Black…" values={colors} onChange={setColors} />
                 <TagInput label="Sizes" placeholder="S, M, L, XL…" values={sizes} onChange={setSizes} />
               </div>
 
               {variantCombos.length > 0 && (
-                <div>
-                  <p className="type-body-sm text-brand bg-brand/10 rounded-lg px-3 py-2 mb-2">
+                <div className="mt-4">
+                  <p className="type-body-sm text-brand bg-brand-soft rounded-md px-3 py-2 mb-2">
                     This will generate <strong>{variantCombos.length}</strong> variants
                     ({colors.length} colors × {sizes.length} sizes). Adjust stock per
                     variant below if any combo needs a different starting count.
                   </p>
-                  <div className="border border-border-strong rounded-lg max-h-56 overflow-y-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-surface-elevated sticky top-0">
+                  <div className="border border-border-default rounded-md max-h-56 overflow-y-auto">
+                    <table className="w-full type-table">
+                      <thead className="bg-surface-sunken sticky top-0">
                         <tr>
-                          <th className="text-left px-3 py-2 font-medium text-text-secondary">Color</th>
-                          <th className="text-left px-3 py-2 font-medium text-text-secondary">Size</th>
-                          <th className="text-left px-3 py-2 font-medium text-text-secondary">Stock</th>
+                          <th className="text-left px-3 py-2 type-table-head text-text-secondary">Color</th>
+                          <th className="text-left px-3 py-2 type-table-head text-text-secondary">Size</th>
+                          <th className="text-left px-3 py-2 type-table-head text-text-secondary">Stock</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-border-default">
                         {variantCombos.map(({ key, color, size }) => (
-                          <tr key={key} className="border-t border-border-default">
+                          <tr key={key}>
                             <td className="px-3 py-1.5">{color}</td>
                             <td className="px-3 py-1.5">{size}</td>
                             <td className="px-3 py-1.5">
@@ -432,7 +436,7 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
                                 type="number"
                                 value={stockFor(key)}
                                 onChange={(e) => setStockFor(key, e.target.value)}
-                                className="w-20 border border-border-strong bg-surface-elevated rounded px-2 py-1 text-sm text-text-primary"
+                                className="w-20 border border-border-default bg-surface-panel rounded px-2 py-1 type-table text-text-primary outline-none focus:border-brand"
                               />
                             </td>
                           </tr>
@@ -442,27 +446,19 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
                   </div>
                 </div>
               )}
-            </>
+            </Group>
           )}
 
           {error && <p className="type-body-sm text-error-text">{error}</p>}
 
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg text-text-secondary hover:bg-surface-elevated"
-            >
+          <div className="flex justify-end gap-3 border-t border-border-default -mx-6 px-6 pt-4">
+            <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-5 py-2 rounded-lg bg-brand text-pure-white font-medium hover:bg-brand-hover disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
-            >
+            </Button>
+            <Button type="submit" disabled={saving} loading={saving}>
               <Plus size={16} />
               {saving ? "Saving…" : mode === "create" ? "Create Product" : "Save Changes"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -473,13 +469,13 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
 function LabeledInput({ label, required, ...props }) {
   return (
     <div>
-      <label className="block type-body-sm text-text-secondary mb-1.5">
+      <label className="block type-field-label text-text-secondary mb-1.5">
         {label} {required && <span className="text-brand">*</span>}
       </label>
       <input
         {...props}
         required={required}
-        className="w-full border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand disabled:opacity-60"
+        className="w-full rounded-md border border-border-default bg-surface-panel px-3 py-2 type-input text-text-primary outline-none transition-[border-color,box-shadow] focus:border-brand focus:ring-2 focus:ring-brand/45 disabled:opacity-60 placeholder:text-text-muted"
       />
     </div>
   );

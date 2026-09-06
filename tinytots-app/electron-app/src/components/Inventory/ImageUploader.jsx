@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
+import Button from "../ui/Button";
 import { apiFetch } from "../../services/api";
 const MAX_DIMENSION = 1600; // px — cuts upload size/time drastically vs. a raw phone/camera photo
 
@@ -193,12 +194,13 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
           .map((img) => (
             <div
               key={img.id}
-              className="relative w-24 h-24 rounded-lg overflow-hidden border-2 group"
-              style={{ borderColor: img.is_primary ? "#616845" : "transparent" }}
+              className={`relative w-24 h-24 rounded-md overflow-hidden group ring-2 ring-inset ${
+                img.is_primary ? "ring-brand" : "ring-transparent"
+              }`}
             >
               <img src={img.url} alt="" className="w-full h-full object-cover" />
               {img.is_primary && (
-                <span className="absolute top-1 left-1 bg-brand text-pure-white text-[9px] px-1.5 py-0.5 rounded">
+                <span className="absolute top-1 left-1 bg-brand text-text-inverse type-tiny px-1.5 py-0.5 rounded">
                   Primary
                 </span>
               )}
@@ -227,7 +229,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="w-24 h-24 rounded-lg border-2 border-dashed border-border-strong flex items-center justify-center text-xs text-text-secondary hover:border-brand hover:text-brand transition text-center px-2"
+          className="w-24 h-24 rounded-md border border-dashed border-border-strong flex items-center justify-center type-caption text-text-secondary hover:border-brand hover:text-brand hover:bg-surface-sunken transition-colors text-center px-2"
         >
           + Add photos
         </button>
@@ -244,42 +246,38 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
       {error && <p className="type-body-sm text-error-text">{error}</p>}
 
       {cropSrc && (
-        <div className="fixed inset-0 bg-surface-overlay flex items-center justify-center z-[60] p-4">
-          <div className="bg-surface-panel border border-border-strong rounded-xl p-4 max-w-lg w-full flex flex-col gap-4">
+        <div className="fixed inset-0 bg-surface-overlay tt-anim-fade flex items-center justify-center z-[60] p-4">
+          <div className="bg-surface-panel border border-border-strong rounded-xl shadow-lg p-5 max-w-lg w-full flex flex-col gap-4 tt-anim-dialog">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium text-text-primary">Crop image</h3>
+              <h3 className="type-card-title text-text-primary">Crop image</h3>
               {queue.length > 0 && (
-                <span className="text-xs text-text-muted">{queue.length} more queued</span>
+                <span className="type-caption text-text-muted">{queue.length} more queued</span>
               )}
             </div>
             <ReactCrop crop={crop} onChange={(c) => setCrop(c)} onComplete={(c) => setCompletedCrop(c)} aspect={1}>
               <img ref={imgRef} src={cropSrc} onLoad={onImageLoad} alt="Crop preview" className="max-h-[50vh]" />
             </ReactCrop>
             <div className="flex justify-between gap-2">
-              <button
-                type="button"
-                onClick={skipCurrent}
-                className="px-4 py-2 rounded-lg border border-border-strong text-sm text-text-primary hover:bg-surface-elevated"
-              >
+              <Button type="button" variant="ghost" onClick={skipCurrent}>
                 {queue.length > 0 ? "Skip" : "Cancel"}
-              </button>
+              </Button>
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   disabled={uploading}
                   onClick={() => uploadCroppedImage(false)}
-                  className="px-4 py-2 rounded-lg border border-border-strong text-sm text-text-primary hover:bg-surface-elevated disabled:opacity-50"
                 >
-                  {uploading ? "Uploading..." : "Add as gallery image"}
-                </button>
-                <button
+                  {uploading ? "Uploading…" : "Add as gallery image"}
+                </Button>
+                <Button
                   type="button"
                   disabled={uploading}
+                  loading={uploading}
                   onClick={() => uploadCroppedImage(true)}
-                  className="px-4 py-2 rounded-lg bg-brand text-pure-white text-sm hover:bg-brand-hover disabled:opacity-50"
                 >
-                  {uploading ? "Uploading..." : "Set as primary"}
-                </button>
+                  {uploading ? "Uploading…" : "Set as primary"}
+                </Button>
               </div>
             </div>
           </div>
