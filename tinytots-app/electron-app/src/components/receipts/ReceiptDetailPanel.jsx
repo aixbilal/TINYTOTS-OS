@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { X, Download, Printer, FileText, Calendar, User, CreditCard, Banknote, Package } from "lucide-react";
 import { apiFetch } from "../../services/api";
+import { receiptConfig } from "../../receipts/receiptConfig";
 
 export default function ReceiptDetailPanel({ receiptId, onClose }) {
   const [receipt, setReceipt] = useState(null);
@@ -38,16 +39,16 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
   if (!receiptId) return null;
 
   return (
-    <div className="w-[380px] bg-cream-50 border border-gold-300/40 rounded-2xl p-6 h-fit sticky top-7 hover:shadow-md transition-shadow duration-200">
+    <div className="w-[360px] shrink-0 bg-surface-panel border border-border-default rounded-xl p-5 h-fit sticky top-2">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="type-section text-ink-900">Receipt Details</h3>
-        <button onClick={onClose} className="text-ink-700 hover:text-ink-900">
+        <h3 className="type-section text-text-primary">Receipt Details</h3>
+        <button onClick={onClose} className="text-text-muted hover:text-text-primary">
           <X size={18} />
         </button>
       </div>
 
       {!receipt ? (
-        <p className="text-sm text-ink-700">Loading…</p>
+        <p className="type-body-sm text-text-secondary">Loading…</p>
       ) : (
         <>
           <div className="space-y-3 mb-5 text-sm">
@@ -69,31 +70,31 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
             <DetailRow icon={Package} label="Total Items" value={receipt.items.length} />
           </div>
 
-          <p className="text-sm font-medium text-ink-900 mb-2">Receipt Preview</p>
+          <p className="type-field-label text-text-secondary mb-2">Receipt Preview</p>
           <div className="flex gap-2.5 mb-5">
             <button
               onClick={handleDownload}
-              className="flex-1 flex items-center justify-center gap-2 border border-gold-300/50 rounded-lg py-2.5 text-sm text-ink-900 hover:bg-cream-100"
+              className="flex-1 flex items-center justify-center gap-2 border border-border-strong rounded-lg py-2.5 text-sm text-text-primary hover:bg-surface-elevated"
             >
               <Download size={15} /> Download PDF
             </button>
             <button
               onClick={handlePrint}
               disabled={busy}
-              className="flex-1 flex items-center justify-center gap-2 bg-maroon-700 text-cream-50 rounded-lg py-2.5 text-sm font-medium hover:bg-maroon-800 disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 bg-brand text-pure-white rounded-lg py-2.5 text-sm font-medium hover:bg-brand-hover disabled:opacity-50"
             >
               <Printer size={15} /> {busy ? "Sending…" : "Print Receipt"}
             </button>
           </div>
 
-          <div className="border border-gold-300/40 rounded-xl p-4 bg-white font-mono type-mono type-caption text-ink-900">
-            <p className="text-center font-display type-body-lg mb-0.5">RETAIL EDGE</p>
-            <p className="text-center type-label text-ink-700 mb-2">ELEVATE EVERY SALE</p>
-            <div className="border-t border-dashed border-ink-700/30 my-2" />
+          <div className="border border-border-default rounded-xl p-4 bg-pure-white font-mono type-mono type-caption text-[#1a1a1a]">
+            <p className="text-center font-display type-body-lg mb-0.5">{receiptConfig.store.name}</p>
+            <p className="text-center type-label text-[#666] mb-2">{receiptConfig.store.subtitle}</p>
+            <div className="border-t border-dashed border-[#ccc] my-2" />
             <p>Receipt ID : {receipt.receiptId}</p>
             <p>Date : {new Date(receipt.dateTime).toLocaleString("en-GB")}</p>
             <p>Cashier : {receipt.cashier}</p>
-            <div className="border-t border-dashed border-ink-700/30 my-2" />
+            <div className="border-t border-dashed border-[#ccc] my-2" />
             <div className="flex justify-between font-medium mb-1">
               <span>Item</span>
               <span>Total</span>
@@ -106,7 +107,7 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
                 <span>Rs. {it.total.toLocaleString("en-PK")}</span>
               </div>
             ))}
-            <div className="border-t border-dashed border-ink-700/30 my-2" />
+            <div className="border-t border-dashed border-[#ccc] my-2" />
             <div className="flex justify-between">
               <span>Subtotal</span>
               <span>Rs. {receipt.subtotal.toLocaleString("en-PK")}</span>
@@ -119,15 +120,15 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
               <span>Tax</span>
               <span>Rs. {receipt.tax.toLocaleString("en-PK")}</span>
             </div>
-            <div className="border-t border-dashed border-ink-700/30 my-2" />
+            <div className="border-t border-dashed border-[#ccc] my-2" />
             <div className="flex justify-between type-body-lg font-bold">
               <span>Total</span>
               <span>Rs. {receipt.total.toLocaleString("en-PK")}</span>
             </div>
-            <p className="text-center mt-3 type-label text-ink-700">Thank you for shopping with us!<br />Visit again!</p>
+            <p className="text-center mt-3 type-label text-[#666]">Thank you for shopping with us!<br />Visit again!</p>
           </div>
 
-          {message && <p className="text-xs text-ink-700 mt-3 text-center">{message}</p>}
+          {message && <p className="type-caption text-text-secondary mt-3 text-center">{message}</p>}
         </>
       )}
     </div>
@@ -137,10 +138,10 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
 function DetailRow({ icon: Icon, label, value }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="flex items-center gap-2 text-ink-700">
+      <span className="flex items-center gap-2 text-text-secondary">
         <Icon size={14} /> {label}
       </span>
-      <span className="text-ink-900 font-medium">{value}</span>
+      <span className="text-text-primary font-medium">{value}</span>
     </div>
   );
 }

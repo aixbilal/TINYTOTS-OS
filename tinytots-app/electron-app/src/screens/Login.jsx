@@ -1,10 +1,9 @@
 // src/screens/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, User } from "lucide-react";
+import { Lock, User, Shirt, Loader2 } from "lucide-react";
 import { saveSession } from "../auth";
 import { apiFetch } from "../services/api";
-import loginBg from "../assets/login-bg.png";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -55,7 +54,7 @@ export default function Login() {
       }
 
       setError(result.message || "Invalid username or password.");
-    } catch (err) {
+    } catch {
       // ---- No internet reached the server — fall back to offline login ----
       if (!window.electron?.offlineLogin) {
         setError("Can't reach the server, and offline login isn't available in this build.");
@@ -81,66 +80,65 @@ export default function Login() {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{
-        backgroundImage: `url(${loginBg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center bg-surface-app px-4">
       <div
-        className="w-full max-w-md rounded-3xl p-10 border border-white/40 shadow-2xl backdrop-blur-xl transition-transform duration-300 ease-out hover:scale-110 cursor-default"
+        className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(160deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.12) 100%)",
-          boxShadow:
-            "0 8px 32px rgba(70,10,20,0.25), inset 0 1px 1px rgba(255,255,255,0.5)",
+            "radial-gradient(600px circle at 50% 30%, rgba(240,72,62,0.10), transparent 70%)",
         }}
-      >
-        <h1 className="font-display type-display-l text-maroon-800 text-center mb-2">
-          Tiny Tots
-        </h1>
-        <p className="type-body text-ink-700/80 text-center mb-8">Sign in to continue</p>
+      />
+      <div className="relative w-full max-w-sm rounded-2xl border border-border-default bg-surface-panel p-8">
+        <div className="flex flex-col items-center text-center mb-6">
+          <span className="w-11 h-11 rounded-xl bg-brand/15 text-brand flex items-center justify-center mb-3">
+            <Shirt size={22} strokeWidth={2} />
+          </span>
+          <h1 className="type-heading-sm text-text-primary">
+            Welcome back
+          </h1>
+          <p className="type-body-sm text-text-secondary mt-1">
+            Sign in to your TinyTots OS account
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <div className="flex items-center gap-3 border border-white/50 rounded-xl px-4 py-3.5 bg-white/20 backdrop-blur-sm">
-            <User size={18} className="text-ink-800/70" />
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <label className="flex items-center gap-2.5 rounded-lg border border-border-strong bg-surface-elevated px-3 py-2.5 focus-within:border-brand">
+            <User size={16} className="text-text-muted shrink-0" />
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Username"
               autoFocus
-              className="type-input w-full bg-transparent outline-none placeholder:text-ink-800/50 text-ink-900"
+              className="type-input w-full bg-transparent outline-none text-text-primary placeholder:text-text-muted"
             />
-          </div>
+          </label>
 
-          <div className="flex items-center gap-3 border border-white/50 rounded-xl px-4 py-3.5 bg-white/20 backdrop-blur-sm">
-            <Lock size={18} className="text-ink-800/70" />
+          <label className="flex items-center gap-2.5 rounded-lg border border-border-strong bg-surface-elevated px-3 py-2.5 focus-within:border-brand">
+            <Lock size={16} className="text-text-muted shrink-0" />
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="type-input w-full bg-transparent outline-none placeholder:text-ink-800/50 text-ink-900"
+              className="type-input w-full bg-transparent outline-none text-text-primary placeholder:text-text-muted"
             />
-          </div>
+          </label>
 
-          {error && <p className="type-caption text-maroon-700">{error}</p>}
+          {error && <p className="type-caption text-error-text">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="type-btn w-full text-cream-50 py-3.5 rounded-xl disabled:opacity-50 transition-opacity"
-            style={{
-              background: "linear-gradient(180deg, #8a1f2d 0%, #6b1420 100%)",
-              boxShadow: "0 4px 14px rgba(90,15,25,0.4)",
-            }}
+            className="type-btn mt-1 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand text-pure-white py-2.5 hover:bg-brand-hover disabled:opacity-50 transition-colors"
           >
-            {loading ? "Signing in…" : "Sign In"}
+            {loading && <Loader2 size={15} className="animate-spin" />}
+            {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
+
+        <p className="type-caption text-text-muted text-center mt-5">
+          TinyTots OS · Retail terminal
+        </p>
       </div>
     </div>
   );

@@ -92,41 +92,41 @@ export default function EmployeesModal({ onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 px-4">
-      <div className="bg-cream-50 rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gold-300/30">
-          <h2 className="type-section text-ink-900">Manage Employees</h2>
-          <button onClick={onClose} className="text-ink-700 hover:text-maroon-700">
+    <div className="fixed inset-0 bg-surface-overlay flex items-center justify-center z-50 px-4">
+      <div className="bg-surface-panel border border-border-strong rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border-default">
+          <h2 className="type-section text-text-primary">Manage Employees</h2>
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X size={18} />
           </button>
         </div>
 
         <div className="overflow-y-auto flex-1 px-5 py-4">
           {loading ? (
-            <p className="text-center text-sm text-ink-700 py-8">Loading…</p>
+            <p className="text-center type-body-sm text-text-secondary py-8">Loading…</p>
           ) : employees.length === 0 ? (
-            <p className="text-center text-sm text-ink-700/60 py-8">No employees yet. Add your first one below.</p>
+            <p className="text-center type-body-sm text-text-muted py-8">No employees yet. Add your first one below.</p>
           ) : (
             <div className="space-y-2 mb-4">
               {employees.map((emp) => (
                 <div
                   key={emp.id}
-                  className="flex items-center justify-between bg-cream-100 rounded-lg px-4 py-3"
+                  className="flex items-center justify-between bg-surface-elevated rounded-lg px-4 py-3"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-maroon-700 text-cream-50 flex items-center justify-center font-semibold text-sm">
+                    <div className="w-9 h-9 rounded-full bg-brand text-pure-white flex items-center justify-center font-semibold text-sm">
                       {emp.name?.[0]?.toUpperCase() || <User size={15} />}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-ink-900">{emp.name}</p>
-                      <p className="text-xs text-ink-700/60">
+                      <p className="type-body-sm font-medium text-text-primary">{emp.name}</p>
+                      <p className="type-caption text-text-muted">
                         @{emp.username} · <span className="capitalize">{emp.role}</span>
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => handleDelete(emp.id, emp.name, emp.username)}
-                    className="text-ink-700/50 hover:text-maroon-700"
+                    className="text-text-muted hover:text-brand"
                     title="Remove employee"
                   >
                     <Trash2 size={16} />
@@ -137,36 +137,36 @@ export default function EmployeesModal({ onClose }) {
           )}
 
           {showAddForm ? (
-            <form onSubmit={handleAdd} className="border-t border-gold-300/30 pt-4 flex flex-col gap-3">
+            <form onSubmit={handleAdd} className="border-t border-border-default pt-4 flex flex-col gap-3">
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Full name"
-                className="border border-gold-300/50 rounded-lg px-3 py-2 text-sm outline-none"
+                className="border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand"
               />
               <input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Username"
-                className="border border-gold-300/50 rounded-lg px-3 py-2 text-sm outline-none"
+                className="border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand"
               />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className="border border-gold-300/50 rounded-lg px-3 py-2 text-sm outline-none"
+                className="border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand"
               />
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="border border-gold-300/50 rounded-lg px-3 py-2 text-sm outline-none"
+                className="border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand"
               >
                 <option value="cashier">Cashier</option>
                 <option value="admin">Admin</option>
               </select>
 
-              {error && <p className="text-sm text-maroon-700">{error}</p>}
+              {error && <p className="type-body-sm text-error-text">{error}</p>}
 
               <div className="flex gap-2">
                 <button
@@ -175,14 +175,14 @@ export default function EmployeesModal({ onClose }) {
                     setShowAddForm(false);
                     setError("");
                   }}
-                  className="flex-1 border border-gold-300/50 rounded-lg py-2 text-sm text-ink-900 hover:bg-cream-100"
+                  className="flex-1 border border-border-strong rounded-lg py-2 text-sm text-text-primary hover:bg-surface-elevated"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 bg-maroon-700 text-cream-50 rounded-lg py-2 text-sm font-medium hover:bg-maroon-800 disabled:opacity-50"
+                  className="flex-1 bg-brand text-pure-white rounded-lg py-2 text-sm font-medium hover:bg-brand-hover disabled:opacity-50"
                 >
                   {saving ? "Adding…" : "Add Employee"}
                 </button>
@@ -191,7 +191,7 @@ export default function EmployeesModal({ onClose }) {
           ) : (
             <button
               onClick={() => setShowAddForm(true)}
-              className="w-full flex items-center justify-center gap-2 border border-dashed border-gold-300/60 rounded-lg py-2.5 text-sm text-ink-900 hover:bg-cream-100"
+              className="w-full flex items-center justify-center gap-2 border border-dashed border-border-strong rounded-lg py-2.5 text-sm text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
             >
               <Plus size={15} /> Add Employee
             </button>

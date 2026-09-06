@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle, PackageCheck } from "lucide-react";
 import Badge from "../components/ui/Badge";
@@ -11,9 +11,7 @@ export default function LowStock() {
   const [items, setItems] = useState(null);
   const [loadError, setLoadError] = useState(false);
 
-  function load() {
-    setItems(null);
-    setLoadError(false);
+  const load = useCallback(() => {
     fetch("http://localhost:3000/api/low-stock")
       .then((r) => r.json())
       .then((data) => {
@@ -21,11 +19,17 @@ export default function LowStock() {
         else setLoadError(true);
       })
       .catch(() => setLoadError(true));
+  }, []);
+
+  function retry() {
+    setItems(null);
+    setLoadError(false);
+    load();
   }
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   return (
     <div className="mx-auto max-w-[1200px] flex flex-col gap-4">
@@ -45,7 +49,7 @@ export default function LowStock() {
 
       {loadError ? (
         <div className="rounded-xl border border-border-default bg-surface-panel">
-          <ErrorState onRetry={load} />
+          <ErrorState onRetry={retry} />
         </div>
       ) : items === null ? (
         <div className="rounded-xl border border-border-default bg-surface-panel">

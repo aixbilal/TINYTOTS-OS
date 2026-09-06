@@ -2,12 +2,7 @@ import { useState } from "react";
 import { Target } from "lucide-react";
 import { apiFetch } from "../../services/api";
 
-const glassCard =
-  "rounded-2xl border border-white/40 backdrop-blur-xl transition-transform duration-300";
-const glassCardStyle = {
-  background: "linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.12) 100%)",
-  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
-};
+const panelCls = "rounded-xl border border-border-default bg-surface-panel";
 
 export default function SetGoalForm({ onGoalSet }) {
   const [goalType, setGoalType] = useState("monthly_sales");
@@ -37,15 +32,15 @@ export default function SetGoalForm({ onGoalSet }) {
   }
 
   return (
-    <div className={`p-6 hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
-      <h3 className="type-section text-ink-900 mb-5">Set New Goal</h3>
+    <div className={`${panelCls} p-5`}>
+      <h3 className="type-section text-text-primary mb-4">Set New Goal</h3>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
-          <label className="text-xs font-medium text-ink-700 mb-1.5 block">Select Goal Type</label>
+          <label className="type-field-label text-text-secondary mb-1.5 block">Select Goal Type</label>
           <select
             value={goalType}
             onChange={(e) => setGoalType(e.target.value)}
-            className="w-full border border-white/40 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 text-sm"
+            className="w-full border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand"
           >
             <option value="monthly_sales">Monthly Sales</option>
             <option value="weekly_sales">Weekly Sales</option>
@@ -54,34 +49,34 @@ export default function SetGoalForm({ onGoalSet }) {
           </select>
         </div>
         <div>
-          <label className="text-xs font-medium text-ink-700 mb-1.5 block">Target Amount</label>
-          <div className="flex items-center border border-white/40 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2">
-            <span className="text-ink-700 text-sm mr-1">Rs.</span>
+          <label className="type-field-label text-text-secondary mb-1.5 block">Target Amount</label>
+          <div className="flex items-center border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 focus-within:border-brand">
+            <span className="text-text-muted text-sm mr-1">Rs.</span>
             <input
               type="number"
               value={targetAmount}
               onChange={(e) => setTargetAmount(e.target.value)}
               placeholder="Enter target amount"
-              className="w-full text-sm outline-none bg-transparent"
+              className="w-full text-sm outline-none bg-transparent text-text-primary"
             />
           </div>
         </div>
       </div>
 
       <div className="mb-5">
-        <label className="text-xs font-medium text-ink-700 mb-1.5 block">Duration</label>
+        <label className="type-field-label text-text-secondary mb-1.5 block">Duration</label>
         <input
           type="month"
           value={month}
           onChange={(e) => setMonth(e.target.value)}
-          className="w-full border border-white/40 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 text-sm"
+          className="w-full border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand"
         />
       </div>
 
       <button
         onClick={handleSetGoal}
         disabled={busy || !targetAmount}
-        className="w-full flex items-center justify-center gap-2 bg-maroon-700 text-cream-50 font-medium py-3 rounded-lg hover:bg-maroon-800 hover:shadow-md disabled:opacity-50 transition-all"
+        className="w-full flex items-center justify-center gap-2 bg-brand text-pure-white type-btn py-2.5 rounded-lg hover:bg-brand-hover disabled:opacity-50 transition-colors"
       >
         <Target size={16} />
         {busy ? "Saving…" : "Set Goal"}
