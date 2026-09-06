@@ -242,29 +242,52 @@ export default function POS() {
       const result = await res.json();
 
       if (!result.success) {
+        // A server-side business rejection (e.g. sold out) — NOT a committed
+        // sale. Surface it and leave the cart intact so nothing is lost.
         alert(result.error || result.message);
         return;
       }
 
-      const sale = buildSale({
-        cart,
-        subtotal: result.subtotal,
-        discount: result.discount,
-        tax: result.tax,
-        total: result.total,
-        receiptNumber: result.receipt_number, cashier, paymentMethod,
-      });
+      // result.success === true: the sale is authoritative on the server from
+      // here on. Nothing below may divert into the offline queue or re-submit
+      // — a buildSale/render/print failure now is a receipt problem only, and
+      // must never be shown to the cashier as a failed transaction.
+      try {
+        const sale = buildSale({
+          cart,
+          subtotal: result.subtotal,
+          discount: result.discount,
+          tax: result.tax,
+          total: result.total,
+          receiptNumber: result.receipt_number, cashier, paymentMethod,
+        });
 
-      const printResult = await printViaElectron(sale);
-      setLastSale({
-        sale,
-        receiptNumber: result.receipt_number,
-        total: result.total ?? total,
-        offline: false,
-        printError: printResult.printed ? null : printResult.error,
-      });
+        // Clear the cart the moment the sale is final, before the (possibly
+        // slow) print call, so there is no window to accidentally resubmit.
+        resetCart();
 
-      resetCart();
+        const printResult = await printViaElectron(sale);
+        setLastSale({
+          sale,
+          receiptNumber: result.receipt_number,
+          total: result.total ?? total,
+          offline: false,
+          printError: printResult.printed ? null : printResult.error,
+        });
+      } catch (postCommitErr) {
+        // buildSale / render threw AFTER a committed sale. The sale exists;
+        // show it as complete with an unresolved receipt and do NOT re-queue.
+        console.error("Post-commit receipt error:", postCommitErr);
+        resetCart();
+        setLastSale({
+          sale: null,
+          receiptNumber: result.receipt_number,
+          total: result.total ?? total,
+          offline: false,
+          printError:
+            "The sale was recorded, but the receipt could not be prepared here. Reprint it from Receipts.",
+        });
+      }
     } catch {
       // Offline fallback (or the network genuinely dropped) — still print
       // locally and queue the sync, reusing the SAME clientSaleId. If the
@@ -673,6 +696,21 @@ function ProductTile({ product, onAdd }) {
 }
 
 function SaleSuccess({ data, onNewSale, onPrintAgain }) {
+  // Local reprint feedback. "Print Again" only re-prints the sale that is
+  // already recorded — it never re-submits the sale.
+  const [reprint, setReprint] = useState({ state: "idle", error: null });
+
+  async function handlePrintAgain() {
+    if (!data.sale) return;
+    setReprint({ state: "printing", error: null });
+    const result = await onPrintAgain();
+    setReprint(
+      result?.printed
+        ? { state: "ok", error: null }
+        : { state: "error", error: result?.error || "Printing failed." }
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-surface-overlay tt-anim-fade" onClick={onNewSale} />
@@ -685,7 +723,9 @@ function SaleSuccess({ data, onNewSale, onPrintAgain }) {
         </h2>
         <p className="type-body-sm text-text-secondary mt-1">
           {data.offline
-            ? "The receipt printed locally and the sale will sync automatically once you're back online."
+            ? "Saved on this device. It will sync to the server automatically once you're back online — do not re-enter this sale."
+            : data.printError
+            ? "The sale is recorded. The receipt did not print — use Print Again or reprint it from Receipts."
             : "The sale is recorded and the receipt printed."}
         </p>
 
@@ -695,17 +735,29 @@ function SaleSuccess({ data, onNewSale, onPrintAgain }) {
         </div>
 
         {data.printError && (
-          <p className="type-caption text-warning-text mt-3">
-            Printing failed: {data.printError}. Use “Print Again” or reprint from Receipts.
-          </p>
+          <p className="type-caption text-warning-text mt-3">{data.printError}</p>
         )}
 
         <div className="mt-5 grid grid-cols-2 gap-2">
-          <Button variant="secondary" onClick={onPrintAgain}>
+          <Button
+            variant="secondary"
+            onClick={handlePrintAgain}
+            disabled={!data.sale || reprint.state === "printing"}
+            loading={reprint.state === "printing"}
+          >
             <PrinterIcon size={14} /> Print Again
           </Button>
           <Button onClick={onNewSale}>New Sale</Button>
         </div>
+
+        {reprint.state === "ok" && (
+          <p className="type-caption text-success-text mt-2">Receipt printed.</p>
+        )}
+        {reprint.state === "error" && (
+          <p className="type-caption text-warning-text mt-2">
+            Still couldn’t print: {reprint.error}. Reprint from Receipts.
+          </p>
+        )}
       </div>
     </div>
   );
