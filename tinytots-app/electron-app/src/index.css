@@ -5,94 +5,109 @@
 @import "./styles/typography.css";
 
 /* ============================================================
-   TinyTots OS — Electron visual system
-   Reference-driven dark operational retail terminal.
-   Source of truth: 17 - Assets/Reference Library/01 - Application
-   Reference Images/Originals/*  (Dashboard / POS / Inventory / CSL sheets)
+   TinyTots OS — Electron design system
+   Direction: "Warm Operational Minimalism".
+   Implementation authority: tinytots-app/electron-app/DESIGN.md
 
-   The legacy cream/maroon/gold token NAMES are kept and remapped onto
-   the dark reference palette so the whole app inherits the new system
-   coherently. New code should prefer the semantic names
-   (surface-*, text-*, border-*, brand-*).
+   The warm TinyTots palette is the CANONICAL default here — set on
+   :root and exposed to Tailwind v4 via @theme. There is no dark
+   default: the sidebar is the single intentional inverse surface and
+   opts in explicitly through `.tt-inverse` (alias `.tt-sidebar`).
+
+   New code should use the semantic names (surface-*, text-*, border-*,
+   brand-*, radius-*, shadow-*) and the type-* scale — never raw hex.
    ============================================================ */
 
 @theme {
-  /* --- Semantic surfaces --- */
-  --color-surface-app: #0a0a0b; /* application background (near-black) */
-  --color-surface-sidebar: #0f0f11; /* persistent left navigation */
-  --color-surface-panel: #151517; /* cards / panels / tables / dialogs */
-  --color-surface-elevated: #1c1c20; /* inputs, chips, row hover, nested */
-  --color-surface-overlay: rgba(0, 0, 0, 0.72); /* dialog scrim */
+  /* --- Semantic surfaces (warm, canonical) --- */
+  --color-surface-app: #f6f1e8;       /* Warm Ivory — application canvas */
+  --color-surface-sidebar: #2a2621;   /* Near Black (warm) — persistent nav */
+  --color-surface-panel: #ffffff;     /* Elevated White — tables, dialogs, popovers, real cards */
+  --color-surface-elevated: #efe8db;  /* Gentle secondary — chips, row hover, skeletons, icon wells */
+  --color-surface-sunken: #f1eadf;    /* Inset wells (search fields on white) */
+  --color-surface-secondary: #e7d8c0; /* Soft Secondary Surface — rare, for a genuinely distinct zone */
+  --color-surface-overlay: rgba(42, 38, 33, 0.55); /* dialog scrim */
 
   /* --- Text --- */
-  --color-text-primary: #f4f4f5;
-  --color-text-secondary: #a1a1aa;
-  --color-text-muted: #6b6b73;
-  --color-text-inverse: #0a0a0b;
+  --color-text-primary: #4a4f44;      /* Deep Charcoal */
+  --color-text-secondary: #675949;    /* Warm Taupe */
+  --color-text-muted: #bab2a6;        /* Muted Taupe */
+  --color-text-inverse: #f6f1e8;      /* on brand fills + inverse sidebar */
 
   /* --- Borders --- */
-  --color-border-default: #27272c;
-  --color-border-strong: #3a3a42;
+  --color-border-default: #d2c7b4;    /* Warm Stone — hairline dividers, input borders */
+  --color-border-strong: #bab2a6;     /* Muted Taupe — control borders, selected outlines */
 
-  /* --- Brand accent (restrained coral-red for actions / active / emphasis) --- */
-  --color-brand: #f0483e;
-  --color-brand-hover: #d93a30;
-  --color-brand-active: #b92e26;
-  --color-brand-soft: #2a1613; /* tinted dark fill behind brand icons */
+  /* --- Brand / action — Olive primary, Terracotta restrained accent --- */
+  --color-brand: #616845;
+  --color-brand-hover: #53593b;
+  --color-brand-active: #474c33;
+  --color-brand-soft: #edeadd;        /* tinted fill behind brand icons / subtle chips */
+  --color-accent: #8f5030;            /* Terracotta — rare secondary accent, never a 2nd primary */
 
-  /* --- Semantic status --- */
-  --color-success: #34c759;
-  --color-success-text: #4ade80;
-  --color-warning: #e0a23c;
-  --color-warning-text: #fbbf5c;
-  --color-error: #f0483e;
-  --color-error-text: #f87171;
-  --color-info: #4a9dff;
-  --color-info-text: #83bbff;
+  /* --- Semantic status (retuned for light surfaces; kept small) --- */
+  --color-success: #3f6b3a;
+  --color-success-text: #3f6b3a;
+  --color-warning: #8a5a1c;
+  --color-warning-text: #8a5a1c;
+  --color-error: #b91c1c;
+  --color-error-text: #b91c1c;
+  --color-info: #3b5b8a;
+  --color-info-text: #3b5b8a;
 
-  /* A genuine white kept available for the few places that must stay white
-     (light text on a filled brand/danger button, print surfaces). */
+  /* Genuine white — light text on filled brand/danger buttons, print surfaces. */
   --color-pure-white: #ffffff;
 
+  /* --- Radius scale (→ rounded-sm / -md / -lg / -xl) --- */
+  --radius-sm: 8px;   /* small controls, chips, table-action buttons */
+  --radius-md: 10px;  /* default: buttons, inputs, selects, small tiles */
+  --radius-lg: 12px;  /* panels, cards, white functional surfaces */
+  --radius-xl: 16px;  /* dialogs, popovers, POS cart column */
+
+  /* --- Shadow scale (warm, single-layer; most surfaces use none) --- */
+  --shadow-sm: 0 1px 2px rgba(42, 38, 33, 0.06);
+  --shadow-md: 0 6px 20px -8px rgba(42, 38, 33, 0.18);
+  --shadow-lg: 0 16px 40px -16px rgba(42, 38, 33, 0.24);
+
+  /* --- Motion (→ ease-standard / ease-emphasized; durations via --duration-* below) --- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+
+  /* Make bare `transition` / `transition-colors` consistent app-wide without
+     scattering durations through JSX (DESIGN.md §9). */
+  --default-transition-duration: 130ms;
+  --default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+
   /* ------------------------------------------------------------------
-     Legacy name remap — every existing utility class across the app
-     (bg-white, bg-cream, text-ink-900, border-gold-300, bg-maroon-700 …)
-     resolves through these so the redesign lands app-wide at once.
+     Legacy name remap — kept only as a safety net for any stray
+     bg-white / text-ink-900 / border-gold-300 / bg-maroon-700 utility.
+     All now resolve onto the warm system. New code must not use these.
      ------------------------------------------------------------------ */
+  --color-white: #ffffff;
+  --color-cream: #f6f1e8;
+  --color-cream-50: #ffffff;
+  --color-cream-100: #efe8db;
 
-  /* `white` is remapped so the many bg-white / border-white/40 glass
-     surfaces become dark panels instead of blinding white. Real white
-     lives on --color-pure-white. */
-  --color-white: #151517;
+  --color-maroon-900: #474c33;
+  --color-maroon-800: #53593b;
+  --color-maroon-700: #616845;
+  --color-maroon-600: #6c7350;
+  --color-maroon-100: #edeadd;
 
-  /* Backgrounds (cream → dark app/panel surfaces) */
-  --color-cream: #0a0a0b;
-  --color-cream-50: #151517;
-  --color-cream-100: #1c1c20;
+  --color-gold-800: #675949;
+  --color-gold-700: #7a6d5b;
+  --color-gold-600: #8a7d6b;
+  --color-gold-500: #9a8d7b;
+  --color-gold-400: #bab2a6;
+  --color-gold-300: #d2c7b4;
+  --color-gold-100: #efe8db;
 
-  /* Maroon (primary brand) → coral-red accent ramp */
-  --color-maroon-900: #b92e26;
-  --color-maroon-800: #d93a30;
-  --color-maroon-700: #f0483e;
-  --color-maroon-600: #f3625a;
-  --color-maroon-100: #2a1613;
-
-  /* Gold / tan (secondary accent) → neutral border / muted accent ramp */
-  --color-gold-800: #9a9aa3;
-  --color-gold-700: #8a8a93;
-  --color-gold-600: #7c7c85;
-  --color-gold-500: #6a6a73;
-  --color-gold-400: #55555d;
-  --color-gold-300: #565660; /* base for border-gold-300/30–60 hairlines */
-  --color-gold-100: #202024;
-
-  /* Ink / charcoal → light text + deep surfaces */
-  --color-ink-900: #f4f4f5;
-  --color-ink-800: #d4d4d8;
-  --color-ink-700: #a1a1aa;
-  --color-ink-400: #6b6b73;
-  --color-charcoal-900: #050506;
-  --color-charcoal-800: #151517;
+  --color-ink-900: #4a4f44;
+  --color-ink-800: #4a4f44;
+  --color-ink-700: #675949;
+  --color-ink-400: #bab2a6;
+  --color-charcoal-900: #2a2621;
+  --color-charcoal-800: #3a352f;
 
   /* Font families */
   --font-display: "Playfair Display", "Georgia", "Times New Roman", serif;
@@ -171,10 +186,15 @@
   --text-tiny--font-weight: 500;
 }
 
-/* CSS custom properties for .type-* utilities (mirror of the scale above,
-   tuned tighter for a dense desktop operational UI). */
+/* CSS custom properties for .type-* utilities + motion durations. */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+
+  /* Motion durations (DESIGN.md §9). Used via the helper classes below and,
+     where a component needs an inline value, `duration-(--duration-fast)`. */
+  --duration-fast: 130ms;
+  --duration-normal: 180ms;
+  --duration-slow: 220ms;
 
   --type-display-xxl-size: 64px;
   --type-display-xl-size: 48px;
@@ -210,64 +230,43 @@
 }
 
 /* ============================================================
-   R1 BRAND RECONCILIATION — scoped warm TinyTots palette
-   Source of truth: tinytots-web/web/app/globals.css (approved
-   website brand tokens, user-approved 2026-08-13).
-
-   These scopes remap the SHARED semantic tokens onto the approved
-   warm palette WITHOUT touching the global @theme dark defaults,
-   so unmigrated R2–R4 screens (POS / Inventory / Receipts …) keep
-   the existing dark system until their own controlled passes.
-
-   `.tt-warm`    — warm ivory workspace + white elevated cards +
-                   olive primary + charcoal type + warm borders.
-                   Applied by AppShell to the R1 workspace column
-                   (Header + Dashboard) only, via the `warm` prop.
-   `.tt-sidebar` — the one persistent dark surface: warm near-black
-                   navigation with an olive active identity.
+   Inverse surface — the sidebar only.
+   `.tt-inverse` is the canonical name; `.tt-sidebar` is kept as an
+   alias for existing markup. Warm near-black nav, olive active identity.
    ============================================================ */
-.tt-warm {
-  /* Surfaces */
-  --color-surface-app: #f6f1e8;       /* Warm Ivory — workspace canvas */
-  --color-surface-panel: #ffffff;     /* Elevated White — cards / tables / dialogs */
-  --color-surface-elevated: #f6f1e8;  /* Warm Ivory — chips / row hover / skeletons */
-  --color-surface-overlay: rgba(42, 38, 33, 0.55); /* Near Black scrim */
-
-  /* Text */
-  --color-text-primary: #4a4f44;      /* Deep Charcoal */
-  --color-text-secondary: #675949;    /* Warm Taupe */
-  --color-text-muted: #bab2a6;        /* Muted Taupe */
-  --color-text-inverse: #f6f1e8;
-
-  /* Borders */
-  --color-border-default: #d2c7b4;    /* Warm Stone */
-  --color-border-strong: #bab2a6;     /* Muted Taupe */
-
-  /* Brand — Olive primary, restrained Terracotta reserved for accents */
-  --color-brand: #616845;
-  --color-brand-hover: #53593b;       /* tonal darken of the approved olive */
-  --color-brand-active: #474c33;
-  --color-brand-soft: #edeadd;
-
-  /* Operational status — retuned for legibility on light surfaces,
-     kept small; tinted fills still resolve from the base hues. */
-  --color-error: #b91c1c;
-  --color-error-text: #b91c1c;
-  --color-success-text: #3f6b3a;
-  --color-warning-text: #8a5a1c;
-  --color-info-text: #3b5b8a;
-}
-
+.tt-inverse,
 .tt-sidebar {
   --color-surface-sidebar: #2a2621;   /* Near Black — warm dark navigation */
   --color-surface-elevated: #3a352f;  /* active / hover navigation row */
+  --color-surface-sunken: #211d19;
   --color-border-default: #3a352f;    /* warm hairline dividers */
+  --color-border-strong: #4a443c;
 
   --color-text-primary: #f6f1e8;      /* Warm Ivory */
   --color-text-secondary: #beb4a4;
   --color-text-muted: #8c8375;
 
-  --color-brand: #616845;             /* Olive — active indicator + icon */
+  --color-brand: #7a8552;             /* Olive lifted for contrast on near-black */
+  --color-brand-soft: #343a26;
+}
+
+/* Transitional alias — every route currently wraps content in `.tt-warm`
+   (AppShell `warm` prop). Warm is now the default, so this scope only needs
+   to re-assert it as a harmless no-op until the prop is removed in the
+   token-consolidation phase. Kept explicit for clarity. */
+.tt-warm {
+  --color-surface-app: #f6f1e8;
+  --color-surface-panel: #ffffff;
+  --color-surface-elevated: #efe8db;
+  --color-text-primary: #4a4f44;
+  --color-text-secondary: #675949;
+  --color-text-muted: #bab2a6;
+  --color-border-default: #d2c7b4;
+  --color-border-strong: #bab2a6;
+  --color-brand: #616845;
+  --color-brand-hover: #53593b;
+  --color-brand-active: #474c33;
+  --color-brand-soft: #edeadd;
 }
 
 html,
@@ -277,57 +276,96 @@ body {
 }
 
 ::selection {
-  background: rgba(240, 72, 62, 0.28);
+  background: rgba(97, 104, 69, 0.22); /* olive */
 }
 
-/* Quiet dark scrollbars to match the terminal aesthetic */
+/* Quiet warm scrollbars */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #303036;
+  background: var(--color-border-strong);
   border-radius: 999px;
   border: 2px solid var(--color-surface-app);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3d3d44;
+  background: var(--color-text-muted);
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* Native controls (date inputs on the Receipts screen, selects) inherit dark */
+/* Native controls (date inputs on Receipts, selects) follow the light system. */
 input[type="date"],
 input[type="datetime-local"],
+input[type="month"],
+input[type="time"],
 select {
+  color-scheme: light;
+}
+
+/* The inverse sidebar keeps its own dark native controls + scrollbar. */
+.tt-inverse ::-webkit-scrollbar-thumb,
+.tt-sidebar ::-webkit-scrollbar-thumb {
+  background: #4a443c;
+}
+.tt-inverse input,
+.tt-inverse select,
+.tt-sidebar input,
+.tt-sidebar select {
   color-scheme: dark;
 }
 
-/* ------------------------------------------------------------------
-   Brand-reconciled surfaces (`.tt-warm`): keep native pickers, text
-   selection and scrollbars on the warm system so nothing renders as a
-   stranded dark control. All scoped + additive — dark defaults above
-   are untouched for any non-warm context. */
-.tt-warm input[type="date"],
-.tt-warm input[type="datetime-local"],
-.tt-warm input[type="month"],
-.tt-warm input[type="time"],
-.tt-warm select {
-  color-scheme: light;
+/* ============================================================
+   Motion helpers (DESIGN.md §9). Purposeful only; all collapse
+   under prefers-reduced-motion below.
+   ============================================================ */
+@keyframes tt-fade-rise {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
 }
-.tt-warm ::selection {
-  background: rgba(97, 104, 69, 0.22); /* olive */
+@keyframes tt-pop-in {
+  from { opacity: 0; transform: translateY(2px) scale(0.985); }
+  to { opacity: 1; transform: none; }
 }
-.tt-warm ::-webkit-scrollbar-thumb {
-  background: var(--color-border-strong);
-}
-.tt-warm ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
+@keyframes tt-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Rendered rich-text (product descriptions) — the editor emits bare HTML;
-   give it readable rhythm on the dark surface without pulling in a plugin. */
+/* Dialog / large surface entrance */
+.tt-anim-dialog {
+  animation: tt-fade-rise var(--duration-slow) var(--ease-emphasized);
+}
+/* Dropdown / popover / menu entrance */
+.tt-anim-pop {
+  animation: tt-pop-in var(--duration-normal) var(--ease-standard);
+}
+/* Scrim / plain fade */
+.tt-anim-fade {
+  animation: tt-fade-in var(--duration-normal) var(--ease-standard);
+}
+/* Content settling in after a load */
+.tt-anim-enter {
+  animation: tt-fade-rise var(--duration-normal) var(--ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   Rendered rich-text (product descriptions) — the editor emits bare
+   HTML; give it readable rhythm on the warm surface.
+   ============================================================ */
 .rte-content p {
   margin: 0.35em 0;
 }
@@ -348,24 +386,28 @@ select {
   margin: 0.5em 0 0.25em;
 }
 .rte-content a {
-  color: var(--color-info-text);
+  color: var(--color-accent);
   text-decoration: underline;
 }
 
-/* react-quill-new ships the light "snow" theme; retint it for the dark modal. */
+/* ============================================================
+   react-quill-new ships the light "snow" theme — retint it onto the
+   warm form system: quiet toolbar, clean white editor surface, taupe
+   icons, olive active (DESIGN.md §15 Rich text).
+   ============================================================ */
 .ql-toolbar.ql-snow,
 .ql-container.ql-snow {
-  border-color: var(--color-border-strong) !important;
+  border-color: var(--color-border-default) !important;
 }
 .ql-toolbar.ql-snow {
-  background: var(--color-surface-elevated);
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
+  background: var(--color-surface-sunken);
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
 }
 .ql-container.ql-snow {
-  background: var(--color-surface-elevated);
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
+  background: var(--color-surface-panel);
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
   color: var(--color-text-primary);
 }
 .ql-editor {
@@ -373,6 +415,7 @@ select {
 }
 .ql-editor.ql-blank::before {
   color: var(--color-text-muted);
+  font-style: normal;
 }
 .ql-snow .ql-stroke {
   stroke: var(--color-text-secondary);
@@ -394,13 +437,4 @@ select {
 .ql-snow.ql-toolbar button:hover .ql-fill,
 .ql-snow.ql-toolbar button.ql-active .ql-fill {
   fill: var(--color-brand);
-}
-
-/* Inside a brand-reconciled surface the rules above already resolve to warm
-   tokens (warm toolbar, charcoal text, taupe icons, olive active). Only the
-   editor writing area is nudged from the warm-neutral elevated tint to a
-   clean white field so it reads as an input. Dark Quill outside `.tt-warm`
-   is untouched. */
-.tt-warm .ql-container.ql-snow {
-  background: var(--color-surface-panel);
 }

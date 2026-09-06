@@ -2,19 +2,19 @@
 import { Loader2, Inbox, AlertTriangle } from "lucide-react";
 import Button from "./Button";
 
-/** Inline loading indicator for a section of a screen. */
+/** Inline loading indicator for a section of a screen (DESIGN.md §11 States). */
 export function LoadingState({ label = "Loading…", className = "" }) {
   return (
     <div
       className={`flex flex-col items-center justify-center gap-3 py-14 text-text-secondary ${className}`}
     >
-      <Loader2 size={26} className="animate-spin text-brand" />
+      <Loader2 size={22} className="animate-spin text-brand" />
       <p className="type-body-sm">{label}</p>
     </div>
   );
 }
 
-/** Shown when a list/section has no data yet. */
+/** Shown when a list/section has no data yet — compact, specific, helpful. */
 export function EmptyState({
   icon: Icon = Inbox,
   title = "Nothing here yet",
@@ -24,10 +24,10 @@ export function EmptyState({
 }) {
   return (
     <div
-      className={`flex flex-col items-center justify-center gap-3 py-14 text-center ${className}`}
+      className={`flex flex-col items-center justify-center gap-3 py-12 text-center tt-anim-enter ${className}`}
     >
-      <div className="w-12 h-12 rounded-xl bg-surface-elevated flex items-center justify-center text-text-muted">
-        <Icon size={22} strokeWidth={1.6} />
+      <div className="w-11 h-11 rounded-lg bg-surface-elevated flex items-center justify-center text-text-muted">
+        <Icon size={20} strokeWidth={1.7} />
       </div>
       <div>
         <p className="type-card-title text-text-primary">{title}</p>
@@ -38,7 +38,7 @@ export function EmptyState({
         )}
       </div>
       {action && (
-        <Button variant="secondary" size="sm" onClick={action.onClick} className="mt-2">
+        <Button variant="secondary" size="sm" onClick={action.onClick} className="mt-1">
           {action.label}
         </Button>
       )}
@@ -46,26 +46,26 @@ export function EmptyState({
   );
 }
 
-/** Shown when a section fails to load. */
+/** Shown when a section fails to load — plain language, retry when valid. */
 export function ErrorState({
   title = "Something went wrong",
-  description = "We couldn't load the data. Please try again.",
+  description = "We couldn't load this right now. Please try again.",
   onRetry,
   className = "",
 }) {
   return (
     <div
-      className={`flex flex-col items-center justify-center gap-3 py-14 text-center ${className}`}
+      className={`flex flex-col items-center justify-center gap-3 py-12 text-center ${className}`}
     >
-      <div className="w-12 h-12 rounded-xl bg-error/12 flex items-center justify-center text-error-text">
-        <AlertTriangle size={22} strokeWidth={1.6} />
+      <div className="w-11 h-11 rounded-lg bg-error/10 flex items-center justify-center text-error-text">
+        <AlertTriangle size={20} strokeWidth={1.7} />
       </div>
       <div>
         <p className="type-card-title text-text-primary">{title}</p>
         <p className="type-body-sm text-text-secondary mt-1 max-w-sm">{description}</p>
       </div>
       {onRetry && (
-        <Button variant="secondary" size="sm" onClick={onRetry} className="mt-2">
+        <Button variant="secondary" size="sm" onClick={onRetry} className="mt-1">
           Try again
         </Button>
       )}

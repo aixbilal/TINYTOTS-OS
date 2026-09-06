@@ -1,21 +1,21 @@
 // src/components/ui/Card.jsx
 
 /**
- * Shared panel surface for the dark operational system: a solid elevated
- * surface with a hairline border and restrained corner radius. No glass,
- * no drop shadow — panels are separated from the app background by tone
- * and border only (see 05-16 Surface System).
+ * Elevated functional surface (DESIGN.md §3, §11). A "card" is *earned* — a
+ * table, a dialog, a chart panel with real chrome, or a form group that must
+ * read as one contained unit. For everything else prefer an open <Section>.
  *
- * The `glass` prop is retained for API compatibility with older callers
- * but is intentionally a no-op now.
+ * White surface, single hairline border, radius-lg, no shadow at rest.
+ * `flush` drops the padding (for a table that draws its own).
+ * `glass` is accepted from older call sites but is a no-op.
  */
-export default function Card({ className = "", style, children, ...rest }) {
-  // `glass` is accepted from older call sites but is a no-op now; keep it off
-  // the DOM node.
+export default function Card({ className = "", flush = false, style, children, ...rest }) {
   delete rest.glass;
   return (
     <div
-      className={`rounded-xl border border-border-default bg-surface-panel p-5 ${className}`}
+      className={`rounded-lg border border-border-default bg-surface-panel ${
+        flush ? "" : "p-5"
+      } ${className}`}
       style={style}
       {...rest}
     >
