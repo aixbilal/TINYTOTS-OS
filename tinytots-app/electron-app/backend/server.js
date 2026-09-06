@@ -22,7 +22,8 @@ import { fileURLToPath } from "url";
 import QRCode from "qrcode";
 import bwipjs from "bwip-js";
 import pdfPrinterPkg from "pdf-to-printer";
-const { getPrinters, print } = pdfPrinterPkg;
+const { print } = pdfPrinterPkg;
+import { execFile } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 import multer from "multer";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
@@ -138,6 +139,38 @@ function resolveReceiptPrinter() {
     console.error("Failed to read printer-config.json:", err.message);
   }
   return "";
+}
+
+// Enumerate installed Windows printers. Uses PowerShell + compact JSON over
+// scalar fields — deliberately NOT pdf-to-printer.getPrinters(), whose
+// text parser throws on drivers whose long PrinterPaperNames list wraps the
+// CIM output (the POS-80C receipt driver triggers exactly this).
+function listSystemPrinters() {
+  return new Promise((resolve, reject) => {
+    execFile(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-Command",
+        "Get-CimInstance Win32_Printer | Select-Object Name,Default | ConvertTo-Json -Compress",
+      ],
+      { windowsHide: true, maxBuffer: 1024 * 1024 },
+      (err, stdout) => {
+        if (err) return reject(err);
+        try {
+          const parsed = JSON.parse((stdout || "").trim() || "[]");
+          const arr = Array.isArray(parsed) ? parsed : [parsed];
+          resolve(
+            arr
+              .filter((p) => p && p.Name)
+              .map((p) => ({ name: p.Name, isDefault: !!p.Default }))
+          );
+        } catch (parseErr) {
+          reject(parseErr);
+        }
+      }
+    );
+  });
 }
 
 // ----------------------------------------------------
@@ -1435,15 +1468,9 @@ app.get("/api/printers", async (req, res) => {
 
     // Real installed printers only — never fabricate entries. An empty
     // list is a valid answer (no printers installed).
-    const printers = await getPrinters();
+    const printers = await listSystemPrinters();
 
-    res.json({
-      success: true,
-      printers: (printers || []).map((p) => ({
-        name: p.name,
-        isDefault: !!p.isDefault,
-      })),
-    });
+    res.json({ success: true, printers });
   } catch (err) {
     console.error("Printer list error:", err);
     res.status(500).json({
@@ -1733,7 +1760,7 @@ app.post("/api/receipts/:id/reprint", async (req, res) => {
     }
     let installedNames = null;
     try {
-      installedNames = (await getPrinters()).map((p) => p.name);
+      installedNames = (await listSystemPrinters()).map((p) => p.name);
     } catch {
       installedNames = null; // discovery failed — don't block on availability
     }

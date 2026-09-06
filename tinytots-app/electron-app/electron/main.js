@@ -10,7 +10,7 @@
 
   import { generateReceiptPDF } from "./generateReceiptPDF.js";
 
-  const { print, getPrinters } = pdfPrinterPkg;
+  const { print } = pdfPrinterPkg;
 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -268,14 +268,63 @@
   }
 
   /**
+   * Enumerate installed Windows printers.
+   *
+   * Primary source is Electron's own webContents.getPrintersAsync(). We do
+   * NOT use pdf-to-printer.getPrinters() here: its line-based parse of
+   * `Get-CimInstance Win32_Printer` output throws on drivers whose long
+   * PrinterPaperNames list wraps the console output (the POS-80C receipt
+   * driver is one). The PowerShell fallback asks for scalar fields as
+   * compact JSON, which can't hit that parsing bug.
+   */
+  async function listInstalledPrinters() {
+    try {
+      const wc = mainWindow?.webContents;
+      if (wc && typeof wc.getPrintersAsync === "function") {
+        const list = await wc.getPrintersAsync();
+        if (Array.isArray(list) && list.length) {
+          return list.map((p) => ({ name: p.name, isDefault: !!p.isDefault }));
+        }
+      }
+    } catch (err) {
+      console.error("getPrintersAsync failed, falling back to PowerShell:", err);
+    }
+    return new Promise((resolve) => {
+      exec(
+        'powershell.exe -NoProfile -Command "Get-CimInstance Win32_Printer | Select-Object Name,Default | ConvertTo-Json -Compress"',
+        { windowsHide: true },
+        (err, stdout) => {
+          if (err) {
+            console.error("PowerShell printer enumeration failed:", err);
+            return resolve([]);
+          }
+          try {
+            const parsed = JSON.parse((stdout || "").trim() || "[]");
+            const arr = Array.isArray(parsed) ? parsed : [parsed];
+            resolve(
+              arr
+                .filter((p) => p && p.Name)
+                .map((p) => ({ name: p.Name, isDefault: !!p.Default }))
+            );
+          } catch (parseErr) {
+            console.error("Could not parse printer list:", parseErr);
+            resolve([]);
+          }
+        }
+      );
+    });
+  }
+
+  /**
    * True when `name` matches an installed Windows printer. Best-effort:
    * if discovery itself fails we don't block printing on it.
    */
   async function isPrinterInstalled(name) {
     if (!name) return false;
     try {
-      const printers = await getPrinters();
-      return (printers || []).some((p) => p.name === name);
+      const printers = await listInstalledPrinters();
+      if (!printers.length) return true; // discovery gave nothing — don't block
+      return printers.some((p) => p.name === name);
     } catch (err) {
       console.error("Printer availability check failed:", err);
       return true;
@@ -436,14 +485,8 @@
   // 2b) RECEIPT PRINTER PREFERENCE + DISCOVERY
   ipcMain.handle("printer:list", async () => {
     try {
-      const printers = await getPrinters();
-      return {
-        success: true,
-        printers: (printers || []).map((p) => ({
-          name: p.name,
-          isDefault: !!p.isDefault,
-        })),
-      };
+      const printers = await listInstalledPrinters();
+      return { success: true, printers };
     } catch (err) {
       console.error("printer:list error:", err);
       return { success: false, error: err.message, printers: [] };
