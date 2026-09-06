@@ -5,6 +5,7 @@ import { normalizeQuillHtml } from "@/lib/html-text";
 import ProductGallery from "./ProductGallery";
 import AddToCart from "./AddToCart";
 import WishlistButton from "./WishlistButton";
+import StoreAvailability from "./products/StoreAvailability";
 
 type Variant = {
   id: number;
@@ -98,6 +99,8 @@ export default function ProductDetailInteractive({
           onVariantChange={setSelectedVariantId}
           imageUrl={images.find((img) => img.is_primary)?.url || images[0]?.url}
         />
+
+        <StoreAvailability variantId={selectedVariantId} />
 
         <div className="mt-8 border-t border-border-default">
           {description && (
