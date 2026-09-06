@@ -1,24 +1,25 @@
-import { useCallback, useEffect, useState } from "react";
-import { Plus, Trash2, Users as UsersIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, Trash2, Users as UsersIcon, ShieldCheck, UserRound } from "lucide-react";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import Input, { Select } from "../components/ui/Input";
 import Dialog from "../components/ui/Dialog";
-import { PageHeader } from "../components/ui/Layout";
+import { PageHeader, KpiRow, KpiTile } from "../components/ui/Layout";
 import { LoadingState, EmptyState, ErrorState } from "../components/ui/States";
 import { Table, THead, TBody, TR, TH, TD } from "../components/ui/Table";
 import { apiFetch } from "../services/api";
 import { getSession } from "../auth";
 
 /**
- * Admin-only user management, built on the existing contracts:
+ * Staff & Access — the single authority for employee logins and roles, built on
+ * the existing contracts:
  *   GET    /api/users
  *   POST   /api/users        { name, username, password, role }
  *   DELETE /api/users/:id
  *
- * The legacy EmployeesModal (opened from the header profile menu) still uses
- * the same endpoints and is intentionally left in place until the final
- * UI consolidation.
+ * The top metrics are derived entirely from the loaded users array — no new API
+ * (owner polish §14). Backend role values (admin / cashier) are unchanged; only
+ * the visible badge is title-cased (§73).
  */
 const ROLE_OPTIONS = [
   { value: "cashier", label: "Cashier" },
@@ -27,6 +28,10 @@ const ROLE_OPTIONS = [
 
 function roleVariant(role) {
   return role === "admin" ? "info" : "neutral";
+}
+
+function initialOf(name) {
+  return name?.trim()?.[0]?.toUpperCase() || "?";
 }
 
 export default function Users() {
@@ -60,6 +65,15 @@ export default function Users() {
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
+
+  const counts = useMemo(() => {
+    const list = users || [];
+    return {
+      total: list.length,
+      admins: list.filter((u) => u.role === "admin").length,
+      cashiers: list.filter((u) => u.role === "cashier").length,
+    };
+  }, [users]);
 
   function retry() {
     setUsers(null);
@@ -151,83 +165,93 @@ export default function Users() {
     }
   }
 
+  const hasUsers = Array.isArray(users) && users.length > 0;
+
   return (
-    <div className="mx-auto max-w-[1100px] flex flex-col gap-5">
-      <PageHeader title="Users" description="Manage employee logins and their roles.">
+    <div className="mx-auto max-w-[1100px] flex flex-col gap-6">
+      <PageHeader
+        title="Staff & Access"
+        description="Manage employee logins and their roles for this store."
+      >
         <Button onClick={() => setAddOpen(true)}>
           <Plus size={15} /> Add User
         </Button>
       </PageHeader>
 
+      {/* Open metrics — derived from the loaded list, borderless semantic tiles */}
+      {hasUsers && (
+        <KpiRow className="grid-cols-3 max-w-lg">
+          <KpiTile label="Total Staff" value={String(counts.total)} icon={UsersIcon} tone="goal" />
+          <KpiTile label="Admins" value={String(counts.admins)} icon={ShieldCheck} tone="info" />
+          <KpiTile label="Cashiers" value={String(counts.cashiers)} icon={UserRound} tone="orders" />
+        </KpiRow>
+      )}
+
       {loadError ? (
-        <div className="rounded-lg border border-border-default bg-surface-panel">
-          <ErrorState
-            title="Couldn't load users"
-            description="The local server didn't respond. Check the connection and try again."
-            onRetry={retry}
-          />
-        </div>
+        <ErrorState
+          title="Couldn't load staff"
+          description="The local server didn't respond. Check the connection and try again."
+          onRetry={retry}
+        />
       ) : users === null ? (
-        <div className="rounded-lg border border-border-default bg-surface-panel">
-          <LoadingState label="Loading users…" />
-        </div>
+        <LoadingState label="Loading staff…" />
       ) : users.length === 0 ? (
-        <div className="rounded-lg border border-border-default bg-surface-panel">
-          <EmptyState
-            icon={UsersIcon}
-            title="No users yet"
-            description="Add your first employee login to get started."
-            action={{ label: "Add User", onClick: () => setAddOpen(true) }}
-          />
-        </div>
+        <EmptyState
+          icon={UsersIcon}
+          title="No staff yet"
+          description="Add your first employee login to get started."
+          action={{ label: "Add User", onClick: () => setAddOpen(true) }}
+        />
       ) : (
-        <>
-          <p className="type-body-sm text-text-secondary">
-            {users.length} user{users.length === 1 ? "" : "s"}
-          </p>
-          <Table>
-            <THead>
-              <TR>
-                <TH>Name</TH>
-                <TH>Username</TH>
-                <TH>Role</TH>
-                <TH>Created</TH>
-                <TH align="right">Actions</TH>
+        <Table bare>
+          <THead>
+            <TR>
+              <TH>Name</TH>
+              <TH>Username</TH>
+              <TH>Role</TH>
+              <TH>Created</TH>
+              <TH align="right">Actions</TH>
+            </TR>
+          </THead>
+          <TBody>
+            {users.map((u) => (
+              <TR key={u.id}>
+                <TD className="font-medium">
+                  <span className="inline-flex items-center gap-2.5">
+                    <span className="w-7 h-7 rounded-full bg-brand text-pure-white type-label font-semibold flex items-center justify-center shrink-0">
+                      {initialOf(u.name)}
+                    </span>
+                    {u.name}
+                  </span>
+                </TD>
+                <TD className="type-mono type-caption text-text-secondary">
+                  @{u.username}
+                </TD>
+                <TD>
+                  <Badge variant={roleVariant(u.role)}>
+                    <span className="capitalize">{u.role}</span>
+                  </Badge>
+                </TD>
+                <TD className="text-text-secondary">
+                  {u.created_at
+                    ? new Date(u.created_at).toLocaleDateString()
+                    : "—"}
+                </TD>
+                <TD align="right">
+                  <button
+                    onClick={() => handleDelete(u)}
+                    disabled={deletingId === u.id}
+                    className="text-text-muted hover:text-error-text p-1 disabled:opacity-40"
+                    title="Remove user"
+                    aria-label={`Remove ${u.name}`}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </TD>
               </TR>
-            </THead>
-            <TBody>
-              {users.map((u) => (
-                <TR key={u.id}>
-                  <TD className="font-medium">{u.name}</TD>
-                  <TD className="type-mono type-caption text-text-secondary">
-                    @{u.username}
-                  </TD>
-                  <TD>
-                    <Badge variant={roleVariant(u.role)}>
-                      <span className="capitalize">{u.role}</span>
-                    </Badge>
-                  </TD>
-                  <TD className="text-text-secondary">
-                    {u.created_at
-                      ? new Date(u.created_at).toLocaleDateString()
-                      : "—"}
-                  </TD>
-                  <TD align="right">
-                    <button
-                      onClick={() => handleDelete(u)}
-                      disabled={deletingId === u.id}
-                      className="text-text-muted hover:text-error-text p-1 disabled:opacity-40"
-                      title="Remove user"
-                      aria-label={`Remove ${u.name}`}
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
-        </>
+            ))}
+          </TBody>
+        </Table>
       )}
 
       <Dialog

@@ -4,33 +4,29 @@ import {
   LayoutDashboard,
   ShoppingCart,
   Package,
-  Tags,
   AlertTriangle,
   TrendingUp,
-  FileBarChart,
   ScrollText,
   Users,
-  Contact,
   Printer,
   LogOut,
   Shirt,
 } from "lucide-react";
 import { getSession, clearSession } from "../../auth";
 
-// Mirrors the route/role gating in main.jsx (<RequireAuth adminOnly>). Only
-// routes that actually exist are listed — no Audit Logs / Sessions / Security /
-// Backup / Import-Export placeholders (DESIGN.md §12).
+// Physical-store V1 primary navigation (owner polish §9). Categories, Reports
+// and Customers are intentionally NOT listed — their routes/code stay live for
+// future work (main.jsx), they're just not primary destinations yet. Only
+// routes that actually exist appear here — no Audit Logs / Sessions / Security
+// / Backup / Import-Export placeholders (DESIGN.md §12).
 const NAV_ITEMS = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard, adminOnly: false },
   { label: "POS", to: "/pos", icon: ShoppingCart, adminOnly: false },
   { label: "Inventory", to: "/inventory", icon: Package, adminOnly: true },
-  { label: "Categories", to: "/categories", icon: Tags, adminOnly: true },
   { label: "Low Stock", to: "/low-stock", icon: AlertTriangle, adminOnly: true },
   { label: "Performance", to: "/performance", icon: TrendingUp, adminOnly: true },
-  { label: "Reports", to: "/reports", icon: FileBarChart, adminOnly: true },
   { label: "Receipts", to: "/receipts", icon: ScrollText, adminOnly: true },
-  { label: "Customers", to: "/customers", icon: Contact, adminOnly: true },
-  { label: "Users", to: "/users", icon: Users, adminOnly: true },
+  { label: "Staff", to: "/users", icon: Users, adminOnly: true },
   { label: "Printer", to: "/settings/printer", icon: Printer, adminOnly: true },
 ];
 
