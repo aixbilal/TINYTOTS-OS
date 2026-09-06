@@ -29,6 +29,12 @@ retail-ready, cohesive** — and unmistakably TinyTots.
 It must **not** feel bordered, boxed, retro, card-inside-card, fragmented, or like
 a generated dashboard.
 
+> **Owner rule (2026-09-06): _Borderless by default. Borders by purpose._**
+> Separate content with whitespace, typography, surface tone, alignment and
+> imagery first. A visible outline is earned by a control, a floating surface, a
+> data table, receipt paper, or a genuinely contained interactive area — not by a
+> KPI, a section heading, a metric, or a dashboard region. Full detail in §18.
+
 Ten working rules:
 
 - premium but not luxury-fashion
@@ -436,11 +442,17 @@ neon. Blocking `alert()`/`confirm()` in POS/forms are functional and stay as-is
   region, no marketing. Nav uses spacing + type; active item = subtle warm
   elevated row + `2px` olive left indicator + olive icon + primary text. Role
   filtering preserved. **Only routes that exist are listed** — no Audit Logs,
-  Sessions, Security, Backup, Import/Export, etc. User area at the bottom keeps
-  name + role + profile link + logout with minimal boxing.
-- **Header** (`h-14`, on `surface-app`): minimal. Notifications + profile menu,
-  and a page action slot when a screen needs one. No giant topbar. The page
-  title lives in the screen, not duplicated in the shell.
+  Sessions, Security, Backup, Import/Export, etc. Physical-store V1 primary
+  destinations (owner polish §18): Dashboard · POS · Inventory · Low Stock ·
+  Performance · Receipts · Staff · Printer, then the profile identity + logout at
+  the bottom. Categories / Reports / Customers are **hidden from nav but keep
+  their routes and code** for future work. User area at the bottom keeps name +
+  role + profile link + logout with minimal boxing.
+- **Header** (`h-14`, on `surface-app`): minimal — **notifications only**. Profile
+  identity lives solely in the sidebar; there is no header profile menu and no
+  "Manage Employees" shortcut (that duplicated the Staff & Access page). No giant
+  topbar. The page title/greeting lives in the screen, not duplicated in the
+  shell. The bar is deliberately quiet.
 - **PageContainer:** the single scroll region. `dense` → `p-4` (POS); default
   `p-5 md:p-7`. Screens don't wrap themselves in another visible container.
 - No horizontal application-level overflow at 1280 / 1366 / 1920 width.
@@ -616,3 +628,82 @@ TinyTots Electron tokens  (:root default = warm; .tt-inverse = sidebar)
 
 The end state is **one intentionally designed TinyTots Electron system** — not a
 dark app with a warm override.
+
+---
+
+## 18. Borderless by default — owner acceptance polish (2026-09-06)
+
+Second-pass owner feedback: the app was cleaner than the old dark/coral language
+but still leaned on **cream canvas + white rectangles + hairline borders** to
+separate everything, so it still read like a generated admin template rather than
+TinyTots. This section records the corrections.
+
+### 18.1 Separation order (reinforces §3)
+
+Reach for the earliest that works: **whitespace → typography → background tone →
+alignment → imagery/icon → divider → border.** A border is for a control, a
+floating surface (dialog/popover/dropdown), a data table's outer edge, receipt
+paper, a selected/focus state, or a genuinely contained interactive area. **Not**
+for a KPI, a dashboard section, a receipt-list, a POS workspace, an analytics
+group, profile information, a printer-state block, or an empty state.
+
+Use **surface tone** to zone a screen: `canvas` → open section → a `surface-panel`
+raise only where useful → `surface-elevated` / soft semantic tint for a distinct
+operational zone. Don't turn every region a different colour — keep rhythm.
+
+### 18.2 Restrained semantic life
+
+Operational screens may carry restrained semantic saturation: a small tinted icon
+well, a soft tinted KPI ground (~6–8% tint + a stronger icon well + neutral
+text), a semantic badge, a selected state, real product imagery. **Not** full
+bright rainbow cards. Directions: sales/success → olive/sage; orders/commerce →
+restrained terracotta (`accent`); average-value/analytics → muted blue-grey
+(`info`); low stock → warm amber (`warning`); goal progress → olive. These are the
+existing semantic tokens — extended centrally in `KpiTile` (`tone` prop) and
+`KpiRow`, not hardcoded per screen.
+
+### 18.3 Images vs icons
+
+Use a **real image** only where the dataset already provides one and it
+identifies a real product/catalog item. Where none exists, use a simple Lucide
+icon in a tinted well. Never fabricate images, add a stock-photo service, or make
+a network fetch just for decoration. **Login is the one brand exception** — it
+uses an approved TinyTots website lifestyle image packaged into the bundle
+(`src/assets/login-brand.webp`, from the site's `brand-story-support.webp`).
+
+### 18.4 Navigation & duplication
+
+- Physical-store V1 sidebar: Dashboard · POS · Inventory · Low Stock ·
+  Performance · Receipts · Staff · Printer. Categories / Reports / Customers are
+  hidden from nav; **routes and code stay live** (still reachable by direct URL).
+- **Performance** is the single primary analytics destination. **Reports** stays
+  dormant until it has genuinely distinct report/export capability.
+- **Staff & Access** (`/users`, sidebar label "Staff") is the single
+  user-management authority. The header profile menu and its "Manage Employees"
+  shortcut are removed; the dead `EmployeesModal` is deleted.
+- **One profile system:** sidebar identity + `/profile` + sidebar logout. No
+  competing header profile.
+
+### 18.5 Time-aware greeting (Dashboard hero)
+
+`src/lib/greetings.js` — ~48 curated short lines across six time bands (late
+night / early morning / morning / afternoon / evening / night). A line is chosen
+**deterministically** from the date + band + username, so it's stable within a
+session/band and only drifts across the day and days; it never flips on
+re-render, and no text is fetched from an AI. The greeting name is a **local,
+per-username preference** (`tinytots:greeting-name:<username>`), editable on the
+Profile screen, "used only for greetings on this device" — it never touches the
+account record. Fallback derives the first meaningful name token from the session
+name; username is used only if there is no name at all.
+
+### 18.6 Notification truthfulness
+
+Action affordances map only to routes the app can actually fulfil:
+`view_receipt` / `view_order` → Receipts, `view_product` → Inventory,
+`view_performance` → Performance. `view_activity` (employee-login) shows with
+**no** action button — there is no activity screen, so no misleading link.
+`retry_sync` / `retry_printer` are gone (no real retry contract; they only did a
+window reload). `timeAgo()` no longer prints "Today &lt;time&gt;" for older days:
+Just now → `N min ago` → `N hr ago` (same day) → Yesterday → a plain date.
+Notifications group into **New / Earlier**; the redundant full-width Close row is
+removed (outside-click / bell toggle / Escape all close the panel).
