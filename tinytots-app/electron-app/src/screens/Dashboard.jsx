@@ -12,7 +12,6 @@ import {
   Target,
 } from "lucide-react";
 import FloralFlourish from "../components/FloralFlourish";
-import Header from "../components/Header";
 import { getSession } from "../auth";
 import loginBg from "../assets/login-bg.png";
 
@@ -136,7 +135,7 @@ export default function Dashboard() {
 
   return (
     <div
-      className="min-h-screen px-10 py-6"
+      className="-mx-6 -my-6 md:-mx-10 md:-my-8 px-10 py-6 min-h-[calc(100vh-88px)]"
       style={{
         backgroundImage: `url(${loginBg})`,
         backgroundSize: "cover",
@@ -145,11 +144,6 @@ export default function Dashboard() {
         backgroundAttachment: "fixed",
       }}
     >
-      {/* Glass header — no menu/drawer */}
-      <div className="mb-8">
-        <Header />
-      </div>
-
       {/* Headline — Playfair editorial welcome only */}
       <div className="relative mb-10">
         <FloralFlourish className="absolute -top-6 right-0 w-96 h-48 pointer-events-none hidden md:block" />

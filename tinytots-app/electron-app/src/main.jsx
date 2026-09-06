@@ -28,6 +28,7 @@ import PerformanceGoals from "./screens/PerformanceGoals";
 import OldReceipts from "./screens/OldReceipts";
 
 import RequireAuth from "./components/RequireAuth.jsx";
+import AppShell from "./components/shell/AppShell.jsx";
 
 createRoot(document.getElementById("root")).render(
   <HashRouter>
@@ -39,7 +40,9 @@ createRoot(document.getElementById("root")).render(
         path="/dashboard"
         element={
           <RequireAuth>
-            <Dashboard />
+            <AppShell>
+              <Dashboard />
+            </AppShell>
           </RequireAuth>
         }
       />
