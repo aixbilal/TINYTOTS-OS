@@ -242,3 +242,73 @@ input[type="datetime-local"],
 select {
   color-scheme: dark;
 }
+
+/* Rendered rich-text (product descriptions) — the editor emits bare HTML;
+   give it readable rhythm on the dark surface without pulling in a plugin. */
+.rte-content p {
+  margin: 0.35em 0;
+}
+.rte-content ul,
+.rte-content ol {
+  margin: 0.35em 0;
+  padding-left: 1.4em;
+}
+.rte-content ul {
+  list-style: disc;
+}
+.rte-content ol {
+  list-style: decimal;
+}
+.rte-content h2,
+.rte-content h3 {
+  font-weight: 700;
+  margin: 0.5em 0 0.25em;
+}
+.rte-content a {
+  color: var(--color-info-text);
+  text-decoration: underline;
+}
+
+/* react-quill-new ships the light "snow" theme; retint it for the dark modal. */
+.ql-toolbar.ql-snow,
+.ql-container.ql-snow {
+  border-color: var(--color-border-strong) !important;
+}
+.ql-toolbar.ql-snow {
+  background: var(--color-surface-elevated);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+.ql-container.ql-snow {
+  background: var(--color-surface-elevated);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  color: var(--color-text-primary);
+}
+.ql-editor {
+  min-height: 120px;
+}
+.ql-editor.ql-blank::before {
+  color: var(--color-text-muted);
+}
+.ql-snow .ql-stroke {
+  stroke: var(--color-text-secondary);
+}
+.ql-snow .ql-fill {
+  fill: var(--color-text-secondary);
+}
+.ql-snow .ql-picker {
+  color: var(--color-text-secondary);
+}
+.ql-snow .ql-picker-options {
+  background: var(--color-surface-panel);
+  border-color: var(--color-border-strong) !important;
+}
+.ql-snow.ql-toolbar button:hover .ql-stroke,
+.ql-snow.ql-toolbar button.ql-active .ql-stroke {
+  stroke: var(--color-brand);
+}
+.ql-snow.ql-toolbar button:hover .ql-fill,
+.ql-snow.ql-toolbar button.ql-active .ql-fill {
+  fill: var(--color-brand);
+}

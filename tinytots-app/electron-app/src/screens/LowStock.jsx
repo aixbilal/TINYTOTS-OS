@@ -1,101 +1,108 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { AlertTriangle, PackageCheck } from "lucide-react";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
+import { LoadingState, EmptyState, ErrorState } from "../components/ui/States";
+import { Table, THead, TBody, TR, TH, TD } from "../components/ui/Table";
 
 export default function LowStock() {
   const navigate = useNavigate();
   const [items, setItems] = useState(null);
   const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    async function loadLowStock() {
-      try {
-        const res = await fetch("http://localhost:3000/api/low-stock");
-        const data = await res.json();
+  function load() {
+    setItems(null);
+    setLoadError(false);
+    fetch("http://localhost:3000/api/low-stock")
+      .then((r) => r.json())
+      .then((data) => {
         if (data.success) setItems(data.items);
         else setLoadError(true);
-      } catch {
-        setLoadError(true);
-      }
-    }
-    loadLowStock();
+      })
+      .catch(() => setLoadError(true));
+  }
+
+  useEffect(() => {
+    load();
   }, []);
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="mb-8">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="inline-flex items-center gap-2 text-sm text-maroon-700 hover:underline mb-4"
-        >
-          <ArrowLeft size={16} />
-          Back to Dashboard
-        </button>
-
-        <h1 className="type-heading-lg text-ink-900">
-          Low Stock Items
-        </h1>
-        <p className="mt-2 text-ink-700 flex items-center gap-2">
-          <span className="inline-block w-6 h-px bg-gold-600" />
-          Items at or below the reorder threshold — restock these soon.
-        </p>
+    <div className="mx-auto max-w-[1200px] flex flex-col gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="type-heading-lg text-text-primary">Low Stock</h1>
+          <p className="type-body-sm text-text-secondary mt-0.5">
+            Items at or below the reorder threshold — restock these soon.
+          </p>
+        </div>
+        {items?.length > 0 && (
+          <Button variant="secondary" onClick={() => navigate("/inventory")}>
+            Go to Inventory
+          </Button>
+        )}
       </div>
 
-      {loadError && (
-        <p className="text-ink-700">Couldn't load low stock items right now.</p>
-      )}
-
-      {!loadError && items === null && (
-        <p className="text-ink-700">Loading…</p>
-      )}
-
-      {!loadError && items?.length === 0 && (
-        <p className="text-ink-700">Nothing is low on stock right now — you're all good.</p>
-      )}
-
-      {!loadError && items?.length > 0 && (
-        <div className="bg-cream-50 border border-gold-300/40 rounded-2xl overflow-hidden">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-gold-300/40 text-xs text-ink-700 uppercase tracking-wide">
-                <th className="px-6 py-4 font-semibold">Item</th>
-                <th className="px-6 py-4 font-semibold">Size / Color</th>
-                <th className="px-6 py-4 font-semibold">Code</th>
-                <th className="px-6 py-4 font-semibold">Stock Left</th>
-                <th className="px-6 py-4 font-semibold">Supplier ID</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr
-                  key={item.variantId}
-                  className="border-b border-gold-300/20 last:border-0 hover:bg-cream-100/60 transition-colors"
-                >
-                  <td className="px-6 py-4 font-medium text-ink-900">{item.name}</td>
-                  <td className="px-6 py-4 text-ink-700">
-                    {[item.size, item.color].filter(Boolean).join(" / ") || "—"}
-                  </td>
-                  <td className="px-6 py-4 text-ink-700">{item.publicCode || "—"}</td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        item.stock <= 0
-                          ? "bg-maroon-100 text-maroon-800"
-                          : "bg-gold-100 text-gold-800"
-                      }`}
-                    >
-                      {item.stock <= 0 && <AlertTriangle size={12} />}
-                      {item.stock <= 0 ? "Out of stock" : `${item.stock} left`}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-ink-700">
-                    {item.supplierId || <span className="text-ink-400 italic">Not set</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {loadError ? (
+        <div className="rounded-xl border border-border-default bg-surface-panel">
+          <ErrorState onRetry={load} />
         </div>
+      ) : items === null ? (
+        <div className="rounded-xl border border-border-default bg-surface-panel">
+          <LoadingState label="Loading low stock items…" />
+        </div>
+      ) : items.length === 0 ? (
+        <div className="rounded-xl border border-border-default bg-surface-panel">
+          <EmptyState
+            icon={PackageCheck}
+            title="Stock looks healthy"
+            description="Nothing is at or below the reorder threshold right now."
+          />
+        </div>
+      ) : (
+        <>
+          <p className="type-body-sm text-text-secondary">
+            {items.length} item{items.length === 1 ? "" : "s"} need attention
+          </p>
+          <Table>
+            <THead>
+              <TR>
+                <TH>Item</TH>
+                <TH>Size / Colour</TH>
+                <TH>Code</TH>
+                <TH align="right">Stock left</TH>
+                <TH>Supplier ID</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {items.map((item) => (
+                <TR key={item.variantId}>
+                  <TD className="font-medium">{item.name}</TD>
+                  <TD className="text-text-secondary capitalize">
+                    {[item.size, item.color].filter(Boolean).join(" / ") || "—"}
+                  </TD>
+                  <TD className="type-mono type-caption text-text-secondary">
+                    {item.publicCode || "—"}
+                  </TD>
+                  <TD align="right">
+                    <Badge variant={item.stock <= 0 ? "error" : "warning"}>
+                      {item.stock <= 0 ? (
+                        <>
+                          <AlertTriangle size={11} /> Out of stock
+                        </>
+                      ) : (
+                        `${item.stock} left`
+                      )}
+                    </Badge>
+                  </TD>
+                  <TD className="text-text-secondary">
+                    {item.supplierId || <span className="text-text-muted italic">Not set</span>}
+                  </TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+        </>
       )}
     </div>
   );

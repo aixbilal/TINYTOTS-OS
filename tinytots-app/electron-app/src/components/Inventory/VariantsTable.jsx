@@ -9,7 +9,7 @@ const COLOR_SWATCH = {
 };
 
 function swatch(color) {
-  return COLOR_SWATCH[(color || "").toLowerCase()] || "#B08D57";
+  return COLOR_SWATCH[(color || "").toLowerCase()] || "#8a8a93";
 }
 
 function publicCode(v) {
@@ -54,22 +54,25 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
     onChanged();
   }
 
+  const editInput =
+    "w-16 border border-border-strong bg-surface-elevated rounded px-1.5 py-0.5 text-text-primary outline-none focus:border-brand";
+
   return (
     <div>
       <div className="flex justify-end mb-3">
         <button
           onClick={() => setAddOpen(true)}
-          className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-maroon-700 text-maroon-700 hover:bg-maroon-50"
+          className="type-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-strong text-text-secondary hover:text-text-primary hover:bg-surface-elevated"
         >
           <Plus size={14} /> Add Variant
         </button>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-lg border border-border-default">
         <table className="w-full type-table">
           <thead>
-            <tr className="type-table-head bg-maroon-700 text-cream-50 text-left">
-              <th className="p-3 rounded-l-lg w-10">
+            <tr className="type-table-head bg-surface-elevated/60 text-text-secondary text-left">
+              <th className="p-3 w-10">
                 <input type="checkbox" checked={allSelected} onChange={(e) => onSelectAll(e.target.checked)} />
               </th>
               <th className="p-3">Color</th>
@@ -80,16 +83,16 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
               <th className="p-3">Discount %</th>
               <th className="p-3">Price (Rs)</th>
               <th className="p-3">Status</th>
-              <th className="p-3 rounded-r-lg w-10"></th>
+              <th className="p-3 w-10"></th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border-default">
             {variants.map((v) => {
               const isEditing = editingId === v.id;
               const lowStock = v.stock <= 5;
               const hasDiscount = Number(v.discount_percent) > 0;
               return (
-                <tr key={v.id} className="border-b border-white/30 hover:bg-white/20">
+                <tr key={v.id} className="hover:bg-surface-elevated/50">
                   <td className="p-3">
                     <input
                       type="checkbox"
@@ -98,28 +101,28 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
                     />
                   </td>
                   <td className="p-3">
-                    <span className="inline-flex items-center gap-2 text-ink-900">
+                    <span className="inline-flex items-center gap-2 text-text-primary capitalize">
                       <span
-                        className="w-3 h-3 rounded-full border border-ink-900/10"
+                        className="w-3 h-3 rounded-full border border-border-strong"
                         style={{ backgroundColor: swatch(v.color) }}
                       />
                       {v.color}
                     </span>
                   </td>
-                  <td className="p-3 text-ink-900">{v.size}</td>
-                  <td className="p-3 font-mono type-mono type-caption text-ink-800">{v.sku}</td>
-                  <td className="p-3 font-mono type-mono type-caption text-maroon-800 font-semibold">{publicCode(v)}</td>
+                  <td className="p-3 text-text-primary">{v.size}</td>
+                  <td className="p-3 type-mono type-caption text-text-secondary">{v.sku}</td>
+                  <td className="p-3 type-mono type-caption text-brand font-semibold">{publicCode(v)}</td>
                   <td className="p-3">
                     {isEditing ? (
                       <input
                         type="number"
                         value={draft.stock}
                         onChange={(e) => setDraft((d) => ({ ...d, stock: e.target.value }))}
-                        className="w-16 border border-gold-400 rounded px-1.5 py-0.5 bg-white/60"
+                        className={editInput}
                         autoFocus
                       />
                     ) : (
-                      <span className={lowStock ? "text-maroon-700 font-semibold" : "text-ink-900"}>
+                      <span className={lowStock ? "text-warning-text font-semibold" : "text-text-primary"}>
                         {v.stock}
                         {lowStock && " ⚠"}
                       </span>
@@ -133,26 +136,26 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
                         max="100"
                         value={draft.discount_percent}
                         onChange={(e) => setDraft((d) => ({ ...d, discount_percent: e.target.value }))}
-                        className="w-16 border border-gold-400 rounded px-1.5 py-0.5 bg-white/60"
+                        className={editInput}
                       />
                     ) : (
-                      <span className={hasDiscount ? "text-green-700 font-semibold" : "text-ink-800/50"}>
+                      <span className={hasDiscount ? "text-success-text font-semibold" : "text-text-muted"}>
                         {v.discount_percent || 0}%
                       </span>
                     )}
                   </td>
-                  <td className="p-3 text-ink-900">
+                  <td className="p-3 text-text-primary">
                     {isEditing ? (
                       <input
                         type="number"
                         value={draft.base_price}
                         onChange={(e) => setDraft((d) => ({ ...d, base_price: e.target.value }))}
-                        className="w-20 border border-gold-400 rounded px-1.5 py-0.5 bg-white/60"
+                        className={`${editInput} w-20`}
                         title="Base price (before discount)"
                       />
                     ) : hasDiscount ? (
                       <span>
-                        <span className="line-through text-ink-800/40 mr-1.5">{v.base_price}</span>
+                        <span className="line-through text-text-muted mr-1.5">{v.base_price}</span>
                         {v.price}
                       </span>
                     ) : (
@@ -160,43 +163,43 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
                     )}
                   </td>
                   <td className="p-3">
-                    <span className="text-xs px-2 py-1 rounded-full bg-white/30 text-ink-800 capitalize">
+                    <span className="type-label px-2 py-0.5 rounded-full bg-surface-elevated text-text-secondary capitalize">
                       {v.status || "active"}
                     </span>
                   </td>
                   <td className="p-3 relative">
                     {isEditing ? (
                       <div className="flex gap-1">
-                        <button onClick={() => saveEdit(v.id)} className="text-green-700 hover:bg-green-50/60 p-1 rounded">
+                        <button onClick={() => saveEdit(v.id)} className="text-success-text hover:bg-surface-elevated p-1 rounded">
                           <Check size={14} />
                         </button>
-                        <button onClick={() => setEditingId(null)} className="text-ink-800 hover:bg-white/30 p-1 rounded">
+                        <button onClick={() => setEditingId(null)} className="text-text-secondary hover:bg-surface-elevated p-1 rounded">
                           <X size={14} />
                         </button>
                       </div>
                     ) : (
                       <button
                         onClick={() => setOpenMenuId(openMenuId === v.id ? null : v.id)}
-                        className="p-1 rounded hover:bg-white/30 text-ink-800"
+                        className="p-1 rounded hover:bg-surface-elevated text-text-secondary"
                       >
                         <MoreVertical size={16} />
                       </button>
                     )}
 
                     {openMenuId === v.id && (
-                      <div className="absolute right-3 top-9 bg-white shadow-lg rounded-lg border border-cream-100 z-10 w-40 overflow-hidden">
+                      <div className="absolute right-3 top-9 bg-surface-panel shadow-lg rounded-lg border border-border-strong z-10 w-44 overflow-hidden">
                         <button
                           onClick={() => {
                             startEdit(v);
                             setOpenMenuId(null);
                           }}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-cream-50"
+                          className="w-full text-left px-3 py-2 type-body-sm text-text-primary hover:bg-surface-elevated"
                         >
                           Edit stock/price/discount
                         </button>
                         <button
                           onClick={() => deleteVariant(v.id)}
-                          className="w-full text-left px-3 py-2 text-sm text-maroon-700 hover:bg-cream-50 flex items-center gap-1.5"
+                          className="w-full text-left px-3 py-2 type-body-sm text-brand hover:bg-surface-elevated flex items-center gap-1.5"
                         >
                           <Trash2 size={13} /> Delete
                         </button>
@@ -210,7 +213,7 @@ export default function VariantsTable({ variants, selectedIds, onToggleSelect, o
         </table>
 
         {variants.length === 0 && (
-          <p className="text-center text-ink-800/60 py-10 text-sm">
+          <p className="text-center text-text-muted py-10 type-body-sm">
             No variants yet. Add a product with colors and sizes to generate them.
           </p>
         )}
@@ -275,58 +278,60 @@ function AddVariantModal({ productId, onClose, onAdded }) {
     }
   }
 
+  const inputCls =
+    "w-full border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 type-body-sm text-text-primary outline-none focus:border-brand";
+
   return (
-    <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
-      <form onSubmit={handleSubmit} className="bg-cream-50 rounded-2xl w-full max-w-md p-6 space-y-3">
+    <div className="fixed inset-0 bg-surface-overlay flex items-center justify-center z-50 p-4">
+      <form onSubmit={handleSubmit} className="bg-surface-panel border border-border-strong rounded-2xl w-full max-w-md p-6 space-y-3">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="type-section text-ink-900">Add Variant(s)</h3>
-          <button type="button" onClick={onClose} className="text-ink-700 hover:text-maroon-700">
+          <h3 className="type-section text-text-primary">Add Variant(s)</h3>
+          <button type="button" onClick={onClose} className="text-text-secondary hover:text-text-primary">
             <X size={18} />
           </button>
         </div>
-        <p className="text-xs text-ink-700/60">
+        <p className="type-caption text-text-muted">
           Adds new color/size combinations to this existing product. Any combo that
           already exists will be rejected — edit that variant directly instead.
         </p>
         <div>
-          <label className="block text-sm text-ink-700 mb-1">Colors (comma-separated)</label>
-          <input value={colors} onChange={(e) => setColors(e.target.value)} placeholder="Maroon, Navy"
-            className="w-full border border-gold-300/50 rounded-lg px-3 py-2 text-sm" />
+          <label className="block type-body-sm text-text-secondary mb-1">Colors (comma-separated)</label>
+          <input value={colors} onChange={(e) => setColors(e.target.value)} placeholder="Maroon, Navy" className={inputCls} />
         </div>
         <div>
-          <label className="block text-sm text-ink-700 mb-1">Sizes (comma-separated)</label>
-          <input value={sizes} onChange={(e) => setSizes(e.target.value)} placeholder="2-3, 4-5"
-            className="w-full border border-gold-300/50 rounded-lg px-3 py-2 text-sm" />
+          <label className="block type-body-sm text-text-secondary mb-1">Sizes (comma-separated)</label>
+          <input value={sizes} onChange={(e) => setSizes(e.target.value)} placeholder="2-3, 4-5" className={inputCls} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm text-ink-700 mb-1">Cost Price</label>
-            <input type="number" value={costPrice} onChange={(e) => setCostPrice(e.target.value)}
-              className="w-full border border-gold-300/50 rounded-lg px-3 py-2 text-sm" required />
+            <label className="block type-body-sm text-text-secondary mb-1">Cost Price</label>
+            <input type="number" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} className={inputCls} required />
           </div>
           <div>
-            <label className="block text-sm text-ink-700 mb-1">Selling Price</label>
-            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)}
-              className="w-full border border-gold-300/50 rounded-lg px-3 py-2 text-sm" required />
+            <label className="block type-body-sm text-text-secondary mb-1">Selling Price</label>
+            <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className={inputCls} required />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm text-ink-700 mb-1">Discount %</label>
-            <input type="number" min="0" max="100" value={discountPercent} onChange={(e) => setDiscountPercent(e.target.value)}
-              className="w-full border border-gold-300/50 rounded-lg px-3 py-2 text-sm" />
+            <label className="block type-body-sm text-text-secondary mb-1">Discount %</label>
+            <input type="number" min="0" max="100" value={discountPercent} onChange={(e) => setDiscountPercent(e.target.value)} className={inputCls} />
           </div>
           <div>
-            <label className="block text-sm text-ink-700 mb-1">Initial Stock</label>
-            <input type="number" value={stock} onChange={(e) => setStock(e.target.value)}
-              className="w-full border border-gold-300/50 rounded-lg px-3 py-2 text-sm" required />
+            <label className="block type-body-sm text-text-secondary mb-1">Initial Stock</label>
+            <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} className={inputCls} required />
           </div>
         </div>
-        {error && <p className="text-sm text-maroon-700">{error}</p>}
+        {error && <p className="type-body-sm text-error-text">{error}</p>}
         <div className="flex justify-end gap-3 pt-1">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-ink-900 hover:bg-cream-100">Cancel</button>
-          <button type="submit" disabled={saving}
-            className="px-5 py-2 rounded-lg bg-maroon-700 text-cream-50 font-medium hover:bg-maroon-800 disabled:opacity-60">
+          <button type="button" onClick={onClose} className="type-btn px-4 py-2 rounded-lg text-text-secondary hover:bg-surface-elevated">
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="type-btn px-5 py-2 rounded-lg bg-brand text-pure-white hover:bg-brand-hover disabled:opacity-60"
+          >
             {saving ? "Adding…" : "Add Variant(s)"}
           </button>
         </div>

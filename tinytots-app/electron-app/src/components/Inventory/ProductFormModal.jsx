@@ -18,18 +18,18 @@ function TagInput({ label, placeholder, values, onChange }) {
 
   return (
     <div>
-      <label className="block text-sm text-ink-700 mb-1.5">{label}</label>
-      <div className="flex flex-wrap gap-1.5 p-2 border border-gold-300/50 rounded-lg min-h-[42px]">
+      <label className="block type-body-sm text-text-secondary mb-1.5">{label}</label>
+      <div className="flex flex-wrap gap-1.5 p-2 border border-border-strong rounded-lg min-h-[42px]">
         {values.map((v) => (
           <span
             key={v}
-            className="inline-flex items-center gap-1 bg-cream-100 text-ink-900 text-xs px-2 py-1 rounded-full"
+            className="inline-flex items-center gap-1 bg-surface-elevated text-text-primary type-caption px-2 py-1 rounded-full"
           >
             {v}
             <button
               type="button"
               onClick={() => onChange(values.filter((x) => x !== v))}
-              className="text-ink-700 hover:text-maroon-700"
+              className="text-text-muted hover:text-text-primary"
             >
               <X size={12} />
             </button>
@@ -46,10 +46,10 @@ function TagInput({ label, placeholder, values, onChange }) {
           }}
           onBlur={commit}
           placeholder={values.length ? "" : placeholder}
-          className="flex-1 min-w-[80px] text-sm outline-none bg-transparent"
+          className="flex-1 min-w-[80px] text-sm outline-none bg-transparent text-text-primary"
         />
       </div>
-      <p className="text-xs text-ink-700/60 mt-1">Press Enter or comma to add</p>
+      <p className="type-caption text-text-muted mt-1">Press Enter or comma to add</p>
     </div>
   );
 }
@@ -184,17 +184,17 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
 
   if (showPhotosStep) {
     return (
-      <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
-        <div className="bg-cream-50 rounded-2xl w-full max-w-md p-7">
-          <h2 className="type-heading-sm text-ink-900 mb-1">Product Created!</h2>
-          <p className="text-sm text-ink-700 mb-4">Add photos now, or skip and add them later.</p>
+      <div className="fixed inset-0 bg-surface-overlay flex items-center justify-center z-50 p-4">
+        <div className="bg-surface-panel border border-border-strong rounded-2xl w-full max-w-md p-6">
+          <h2 className="type-heading-sm text-text-primary mb-1">Product Created!</h2>
+          <p className="type-body-sm text-text-secondary mb-4">Add photos now, or skip and add them later.</p>
 
           <ImageUploader productId={createdProductId} images={images} onImagesChange={setImages} />
 
           <div className="flex justify-end pt-5">
             <button
               onClick={onClose}
-              className="px-5 py-2 rounded-lg bg-maroon-700 text-cream-50 font-medium hover:bg-maroon-800"
+              className="px-5 py-2 rounded-lg bg-brand text-pure-white font-medium hover:bg-brand-hover"
             >
               Done
             </button>
@@ -205,13 +205,13 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
   }
 
   return (
-    <div className="fixed inset-0 bg-ink-900/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-cream-50 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-7">
+    <div className="fixed inset-0 bg-surface-overlay flex items-center justify-center z-50 p-4">
+      <div className="bg-surface-panel border border-border-strong rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="type-heading-sm text-ink-900">
+          <h2 className="type-heading-sm text-text-primary">
             {mode === "create" ? "Add New Product" : "Edit Product"}
           </h2>
-          <button onClick={onClose} className="text-ink-700 hover:text-maroon-700">
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X size={20} />
           </button>
         </div>
@@ -234,13 +234,13 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
 
           {mode === "edit" && (
             <div>
-              <label className="block text-sm text-ink-700 mb-1.5">Photos</label>
+              <label className="block type-body-sm text-text-secondary mb-1.5">Photos</label>
               <ImageUploader productId={initialProduct.id} images={images} onImagesChange={setImages} />
             </div>
           )}
 
           <div>
-            <label className="block text-sm text-ink-700 mb-1.5">Description</label>
+            <label className="block type-body-sm text-text-secondary mb-1.5">Description</label>
             <ReactQuill
               theme="snow"
               value={form.description}
@@ -298,7 +298,7 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
           </div>
 
           {discountedPreviewPrice !== null && (
-            <p className="text-sm text-maroon-700 bg-maroon-100 rounded-lg px-3 py-2">
+            <p className="type-body-sm text-brand bg-brand/10 rounded-lg px-3 py-2">
               With a {form.discount_percent}% discount, each variant will sell at{" "}
               <strong>Rs. {discountedPreviewPrice}</strong> instead of Rs. {form.selling_price}.
             </p>
@@ -320,23 +320,23 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
 
               {variantCombos.length > 0 && (
                 <div>
-                  <p className="text-sm text-maroon-700 bg-maroon-100 rounded-lg px-3 py-2 mb-2">
+                  <p className="type-body-sm text-brand bg-brand/10 rounded-lg px-3 py-2 mb-2">
                     This will generate <strong>{variantCombos.length}</strong> variants
                     ({colors.length} colors × {sizes.length} sizes). Adjust stock per
                     variant below if any combo needs a different starting count.
                   </p>
-                  <div className="border border-gold-300/50 rounded-lg max-h-56 overflow-y-auto">
+                  <div className="border border-border-strong rounded-lg max-h-56 overflow-y-auto">
                     <table className="w-full text-sm">
-                      <thead className="bg-cream-100 sticky top-0">
+                      <thead className="bg-surface-elevated sticky top-0">
                         <tr>
-                          <th className="text-left px-3 py-2 font-medium text-ink-700">Color</th>
-                          <th className="text-left px-3 py-2 font-medium text-ink-700">Size</th>
-                          <th className="text-left px-3 py-2 font-medium text-ink-700">Stock</th>
+                          <th className="text-left px-3 py-2 font-medium text-text-secondary">Color</th>
+                          <th className="text-left px-3 py-2 font-medium text-text-secondary">Size</th>
+                          <th className="text-left px-3 py-2 font-medium text-text-secondary">Stock</th>
                         </tr>
                       </thead>
                       <tbody>
                         {variantCombos.map(({ key, color, size }) => (
-                          <tr key={key} className="border-t border-gold-300/30">
+                          <tr key={key} className="border-t border-border-default">
                             <td className="px-3 py-1.5">{color}</td>
                             <td className="px-3 py-1.5">{size}</td>
                             <td className="px-3 py-1.5">
@@ -344,7 +344,7 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
                                 type="number"
                                 value={stockFor(key)}
                                 onChange={(e) => setStockFor(key, e.target.value)}
-                                className="w-20 border border-gold-300/50 rounded px-2 py-1 text-sm"
+                                className="w-20 border border-border-strong bg-surface-elevated rounded px-2 py-1 text-sm text-text-primary"
                               />
                             </td>
                           </tr>
@@ -357,20 +357,20 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
             </>
           )}
 
-          {error && <p className="text-sm text-maroon-700">{error}</p>}
+          {error && <p className="type-body-sm text-error-text">{error}</p>}
 
           <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-ink-900 hover:bg-cream-100"
+              className="px-4 py-2 rounded-lg text-text-secondary hover:bg-surface-elevated"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2 rounded-lg bg-maroon-700 text-cream-50 font-medium hover:bg-maroon-800 disabled:opacity-60 inline-flex items-center gap-2"
+              className="px-5 py-2 rounded-lg bg-brand text-pure-white font-medium hover:bg-brand-hover disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
             >
               <Plus size={16} />
               {saving ? "Saving…" : mode === "create" ? "Create Product" : "Save Changes"}
@@ -385,13 +385,13 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
 function LabeledInput({ label, required, ...props }) {
   return (
     <div>
-      <label className="block text-sm text-ink-700 mb-1.5">
-        {label} {required && <span className="text-maroon-700">*</span>}
+      <label className="block type-body-sm text-text-secondary mb-1.5">
+        {label} {required && <span className="text-brand">*</span>}
       </label>
       <input
         {...props}
         required={required}
-        className="w-full border border-gold-300/50 rounded-lg px-3 py-2 text-sm outline-none focus:border-maroon-700 disabled:bg-cream-100 disabled:text-ink-700"
+        className="w-full border border-border-strong bg-surface-elevated rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand disabled:opacity-60"
       />
     </div>
   );

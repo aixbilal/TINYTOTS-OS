@@ -194,11 +194,11 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
             <div
               key={img.id}
               className="relative w-24 h-24 rounded-lg overflow-hidden border-2 group"
-              style={{ borderColor: img.is_primary ? "#7A2E2E" : "transparent" }}
+              style={{ borderColor: img.is_primary ? "#f0483e" : "transparent" }}
             >
               <img src={img.url} alt="" className="w-full h-full object-cover" />
               {img.is_primary && (
-                <span className="absolute top-1 left-1 bg-maroon-700 text-cream-50 text-[9px] px-1.5 py-0.5 rounded">
+                <span className="absolute top-1 left-1 bg-brand text-pure-white text-[9px] px-1.5 py-0.5 rounded">
                   Primary
                 </span>
               )}
@@ -207,7 +207,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
                   <button
                     type="button"
                     onClick={() => setPrimary(img.id)}
-                    className="text-white type-label bg-white/20 rounded px-1.5 py-1 hover:bg-white/30"
+                    className="text-pure-white type-label bg-black/40 rounded px-1.5 py-1 hover:bg-black/60"
                   >
                     Primary
                   </button>
@@ -216,7 +216,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
                   type="button"
                   disabled={deletingIds.has(img.id)}
                   onClick={() => deleteImage(img.id)}
-                  className="text-white type-label bg-red-600/80 rounded px-1.5 py-1 hover:bg-red-600 disabled:opacity-50"
+                  className="text-pure-white type-label bg-error/90 rounded px-1.5 py-1 hover:bg-error disabled:opacity-50"
                 >
                   {deletingIds.has(img.id) ? "..." : "Delete"}
                 </button>
@@ -227,7 +227,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="w-24 h-24 rounded-lg border-2 border-dashed border-gold-300/50 flex items-center justify-center text-xs text-ink-700 hover:border-maroon-700 hover:text-maroon-700 transition text-center px-2"
+          className="w-24 h-24 rounded-lg border-2 border-dashed border-border-strong flex items-center justify-center text-xs text-text-secondary hover:border-brand hover:text-brand transition text-center px-2"
         >
           + Add photos
         </button>
@@ -241,26 +241,25 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
         />
       </div>
 
-      {error && <p className="text-sm text-maroon-700">{error}</p>}
+      {error && <p className="type-body-sm text-error-text">{error}</p>}
 
       {cropSrc && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
-          <div className="bg-cream-50 rounded-xl p-4 max-w-lg w-full flex flex-col gap-4">
+          <div className="bg-surface-panel border border-border-strong rounded-xl p-4 max-w-lg w-full flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium text-ink-900">Crop image</h3>
+              <h3 className="font-medium text-text-primary">Crop image</h3>
               {queue.length > 0 && (
-                <span className="text-xs text-ink-700/70">{queue.length} more queued</span>
+                <span className="text-xs text-text-muted">{queue.length} more queued</span>
               )}
             </div>
             <ReactCrop crop={crop} onChange={(c) => setCrop(c)} onComplete={(c) => setCompletedCrop(c)} aspect={1}>
-              {/* eslint-disable-next-line jsx-a11y/alt-text */}
               <img ref={imgRef} src={cropSrc} onLoad={onImageLoad} alt="Crop preview" className="max-h-[50vh]" />
             </ReactCrop>
             <div className="flex justify-between gap-2">
               <button
                 type="button"
                 onClick={skipCurrent}
-                className="px-4 py-2 rounded-lg border border-gold-300/50 text-sm text-ink-900"
+                className="px-4 py-2 rounded-lg border border-border-strong text-sm text-text-primary hover:bg-surface-elevated"
               >
                 {queue.length > 0 ? "Skip" : "Cancel"}
               </button>
@@ -269,7 +268,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
                   type="button"
                   disabled={uploading}
                   onClick={() => uploadCroppedImage(false)}
-                  className="px-4 py-2 rounded-lg border border-gold-300/50 text-sm text-ink-900 disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg border border-border-strong text-sm text-text-primary hover:bg-surface-elevated disabled:opacity-50"
                 >
                   {uploading ? "Uploading..." : "Add as gallery image"}
                 </button>
@@ -277,7 +276,7 @@ export default function ImageUploader({ productId, images, onImagesChange }) {
                   type="button"
                   disabled={uploading}
                   onClick={() => uploadCroppedImage(true)}
-                  className="px-4 py-2 rounded-lg bg-maroon-700 text-cream-50 text-sm disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg bg-brand text-pure-white text-sm hover:bg-brand-hover disabled:opacity-50"
                 >
                   {uploading ? "Uploading..." : "Set as primary"}
                 </button>
