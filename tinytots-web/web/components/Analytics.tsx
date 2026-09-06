@@ -13,12 +13,13 @@ import { usePathname } from "next/navigation";
  */
 export default function Analytics() {
   const pathname = usePathname();
-  // Admin is an internal operational tool, not a marketing surface — Meta
-  // Pixel must never initialize or fire there (K.5C). Same route-boundary
-  // check SiteShell uses for the storefront chrome exclusion.
+  // Admin is an internal operational tool, not a marketing/analytics
+  // surface — neither Meta Pixel (K.5C) nor GA4 may initialize or fire
+  // there. Same route-boundary check SiteShell uses for the storefront
+  // chrome exclusion.
   const isAdmin = pathname === "/admin" || pathname?.startsWith("/admin/");
 
-  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
+  const gaId = isAdmin ? undefined : process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
   const pixelId = isAdmin ? undefined : process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
 
   if (!gaId && !pixelId) return null;
