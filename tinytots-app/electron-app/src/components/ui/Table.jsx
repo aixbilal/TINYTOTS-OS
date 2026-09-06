@@ -7,12 +7,18 @@
  * grid, no zebra, no heavy container, compact padding, numeric columns aligned
  * right, mono identifiers at the call site.
  */
-export function Table({ className = "", stickyHeader = false, children }) {
+/**
+ * `bare` drops the outer border + white ground so the table reads as open rows
+ * directly on the canvas — the owner-preferred treatment for Receipts / Staff
+ * (owner polish §39). The default (bordered) treatment is unchanged so the
+ * approved Inventory / Low Stock tables are untouched.
+ */
+export function Table({ className = "", stickyHeader = false, bare = false, children }) {
   return (
     <div
-      className={`overflow-auto rounded-lg border border-border-default bg-surface-panel ${
-        stickyHeader ? "max-h-full" : ""
-      }`}
+      className={`overflow-auto ${
+        bare ? "" : "rounded-lg border border-border-default bg-surface-panel"
+      } ${stickyHeader ? "max-h-full" : ""}`}
     >
       <table className={`w-full border-collapse ${className}`}>{children}</table>
     </div>

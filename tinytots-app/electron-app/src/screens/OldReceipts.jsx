@@ -131,22 +131,18 @@ export default function OldReceipts() {
           </Button>
         </div>
 
-        {/* Table */}
+        {/* Table — open rows on the canvas, no enclosing box (§39) */}
         {loading && receipts.length === 0 ? (
-          <div className="rounded-lg border border-border-default bg-surface-panel">
-            <LoadingState label="Loading receipts…" />
-          </div>
+          <LoadingState label="Loading receipts…" />
         ) : receipts.length === 0 ? (
-          <div className="rounded-lg border border-border-default bg-surface-panel">
-            <EmptyState
-              icon={FileText}
-              title="No receipts found"
-              description="Try adjusting the search, date range or payment filter."
-            />
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="No receipts found"
+            description="Try adjusting the search, date range or payment filter."
+          />
         ) : (
           <>
-            <Table>
+            <Table bare>
               <THead>
                 <TR>
                   <TH>Receipt ID</TH>

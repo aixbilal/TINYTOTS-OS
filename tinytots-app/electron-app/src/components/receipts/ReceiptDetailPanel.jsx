@@ -40,7 +40,7 @@ export default function ReceiptDetailPanel({ receiptId, onClose }) {
   if (!receiptId) return null;
 
   return (
-    <div className="w-[360px] shrink-0 bg-surface-panel border border-border-default rounded-lg p-5 h-fit sticky top-2">
+    <div className="w-[360px] shrink-0 bg-surface-panel rounded-lg shadow-sm p-5 h-fit sticky top-2">
       <div className="flex items-center justify-between mb-5">
         <h3 className="type-section text-text-primary">Receipt Details</h3>
         <button onClick={onClose} className="text-text-muted hover:text-text-primary" aria-label="Close">

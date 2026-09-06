@@ -417,11 +417,12 @@ export default function POS() {
           </div>
         </div>
 
-        {/* RIGHT — cart + checkout. The one genuinely elevated surface. The item
+        {/* RIGHT — cart + checkout. Set apart by surface tone (warm white over
+            the canvas) and a whisper of lift, not a hard outline (§33). The item
             list scrolls internally while the payment/summary/checkout footer
             stays pinned; on a viewport too short for even header+footer, the
             whole panel scrolls as a unit rather than clipping the checkout. */}
-        <div className="w-full lg:w-[380px] shrink-0 flex flex-col rounded-xl border border-border-default bg-surface-panel shadow-sm overflow-y-auto lg:overflow-visible lg:min-h-0">
+        <div className="w-full lg:w-[380px] shrink-0 flex flex-col rounded-xl bg-surface-panel shadow-sm overflow-y-auto lg:overflow-visible lg:min-h-0">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border-default shrink-0">
             <h2 className="type-section text-text-primary">Cart ({cart.length})</h2>
             {cart.length > 0 && (
