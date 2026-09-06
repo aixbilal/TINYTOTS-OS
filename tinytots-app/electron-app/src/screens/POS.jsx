@@ -1,8 +1,20 @@
 // POS.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ScanBarcode, Search, Trash2, X, Minus, Plus,
-  Wallet, CreditCard, Smartphone, MoreHorizontal, Lock, Printer as PrinterIcon,
+  ScanBarcode,
+  Search,
+  Trash2,
+  X,
+  Minus,
+  Plus,
+  Wallet,
+  CreditCard,
+  Smartphone,
+  MoreHorizontal,
+  Lock,
+  Printer as PrinterIcon,
+  CheckCircle2,
+  PackageX,
 } from "lucide-react";
 import ScannerListener from "../components/ScannerListener";
 import SearchProductModal from "../components/pos/SearchProductModal";
@@ -33,9 +45,11 @@ const PAYMENT_METHODS = [
 
 const TAX_RATE = receiptConfig.taxRatePercent / 100;
 
+const formatPKR = (v) =>
+  `Rs. ${Number(v || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 })}`;
+
 export default function POS() {
-  // Dashboard/logout navigation now lives in AppShell's persistent Sidebar —
-  // POS no longer needs its own back/logout control.
+  // Dashboard/logout navigation now lives in AppShell's persistent Sidebar.
   const isOnline = useNetworkStatus();
 
   const [products, setProducts] = useState([]);
@@ -45,11 +59,17 @@ export default function POS() {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState("flat"); // "flat" | "percent"
+  const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [pendingSales, setPendingSales] = useState(getQueueCount());
   const [processing, setProcessing] = useState(false);
   const [failedSales, setFailedSales] = useState(getFailedSales());
   const [showPending, setShowPending] = useState(false);
+  // Reference-style post-checkout success panel. Presentation only — the sale
+  // is already committed by checkout() before this is set.
+  const [lastSale, setLastSale] = useState(null);
+
+  const searchRef = useRef(null);
 
   useEffect(() => {
     async function loadProducts() {
@@ -78,6 +98,20 @@ export default function POS() {
     }
     syncSales();
   }, [isOnline]);
+
+  // F2 focuses the product search. F2 is not a printable key, so it does not
+  // collide with the global keyboard-wedge ScannerListener (which only buffers
+  // single-character keys and Enter).
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "F2") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   function addToCart(product) {
     if (product.stock <= 0) {
@@ -136,6 +170,16 @@ export default function POS() {
   const taxableAmount = Math.max(subtotal - discountAmount, 0);
   const tax = taxableAmount * TAX_RATE;
   const total = taxableAmount + tax;
+
+  const filteredProducts = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter((p) =>
+      [p.name, p.sku, p.public_code, p.color, p.size]
+        .filter(Boolean)
+        .some((f) => String(f).toLowerCase().includes(q))
+    );
+  }, [products, query]);
 
   async function printViaElectron(sale) {
     try {
@@ -212,14 +256,16 @@ export default function POS() {
       });
 
       const printResult = await printViaElectron(sale);
-      alert(
-        printResult.printed
-          ? `Sale Completed!\nReceipt: ${result.receipt_number}`
-          : `Sale completed, but printing failed:\n${printResult.error}\n\nReceipt: ${result.receipt_number}`
-      );
+      setLastSale({
+        sale,
+        receiptNumber: result.receipt_number,
+        total: result.total ?? total,
+        offline: false,
+        printError: printResult.printed ? null : printResult.error,
+      });
 
       resetCart();
-    } catch (err) {
+    } catch {
       // Offline fallback (or the network genuinely dropped) — still print
       // locally and queue the sync, reusing the SAME clientSaleId. If the
       // original request actually reached the server before the connection
@@ -248,11 +294,13 @@ export default function POS() {
       setPendingSales(getQueueCount());
 
       const printResult = await printViaElectron(sale);
-      alert(
-        printResult.printed
-          ? `No internet connection.\n\nSale saved locally and receipt printed.\nTemporary Receipt: ${offlineReceiptNumber}\n\nIt will sync automatically once you're back online.`
-          : `No internet connection.\n\nSale saved locally, but printing failed:\n${printResult.error}`
-      );
+      setLastSale({
+        sale,
+        receiptNumber: offlineReceiptNumber,
+        total,
+        offline: true,
+        printError: printResult.printed ? null : printResult.error,
+      });
 
       resetCart();
     } finally {
@@ -267,37 +315,39 @@ export default function POS() {
   }
 
   const now = new Date();
-  const formatPKR = (v) => `Rs. ${Number(v || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 })}`;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 h-full min-h-0">
       <ScannerListener products={products} onScan={addToCart} />
 
       {/* Session / status bar */}
-      <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-2xl border border-gold-300/30 bg-white px-6 py-4 shrink-0">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border-default bg-surface-panel px-4 py-3 shrink-0">
         <SessionField label="Cashier">
           <input
             value={cashier}
             onChange={(e) => setCashier(e.target.value)}
             placeholder="Enter cashier name"
-            className="font-semibold text-ink-900 bg-transparent outline-none border-b border-dashed border-ink-900/30 focus:border-maroon-700 w-40"
+            className="type-input font-medium text-text-primary bg-transparent outline-none border-b border-dashed border-border-strong focus:border-brand w-40"
           />
         </SessionField>
         <SessionField label="Shop" value={receiptConfig.store.name} />
         <SessionField
           label="Date"
-          value={now.toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" })}
+          value={now.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}
         />
         <SessionField label="Day" value={now.toLocaleDateString(undefined, { weekday: "long" })} />
-        <SessionField label="Address" value={receiptConfig.store.address} wide />
 
         <div className="ml-auto flex items-center gap-3">
           <Badge variant={isOnline ? "success" : "warning"}>
+            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-success" : "bg-warning"}`} />
             {isOnline ? "Online" : "Offline"}
             {pendingSales > 0 && ` · ${pendingSales} pending`}
           </Badge>
           {(pendingSales > 0 || failedSales.length > 0) && (
-            <button onClick={() => setShowPending(true)} className="type-caption text-ink-700 hover:underline">
+            <button
+              onClick={() => setShowPending(true)}
+              className="type-caption text-text-secondary hover:text-text-primary hover:underline"
+            >
               View queue{failedSales.length > 0 ? ` (${failedSales.length} need attention)` : ""}
             </button>
           )}
@@ -307,102 +357,135 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Main workspace: scan/search + notes (left) / cart + checkout (right) */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        {/* LEFT — scan/search entry + order notes */}
-        <div className="flex flex-1 min-w-0 flex-col gap-4">
-          <div className="flex items-center gap-4 rounded-2xl border border-gold-300/30 bg-white px-6 py-5 shrink-0">
-            <div className="w-11 h-11 rounded-full bg-maroon-100 flex items-center justify-center text-maroon-700 shrink-0">
-              <ScanBarcode size={20} strokeWidth={1.6} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="type-card-title text-ink-900">Scan or search a product</p>
-              <p className="type-body-sm text-ink-700/70">
-                Scanner is active — scan a barcode any time, or search by name or SKU.
-              </p>
-            </div>
-            <Button variant="secondary" onClick={() => setSearchOpen(true)}>
-              <Search size={15} /> Search
+      {/* Main workspace: product grid (left) / cart + checkout (right) */}
+      <div className="flex flex-col lg:flex-row gap-3 flex-1 min-h-0">
+        {/* LEFT — product workspace */}
+        <div className="flex flex-1 min-w-0 flex-col gap-3">
+          <div className="flex items-center gap-2 rounded-xl border border-border-default bg-surface-panel px-3 py-2.5 shrink-0">
+            <ScanBarcode size={18} className="text-text-muted shrink-0" />
+            <input
+              ref={searchRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Scan a barcode, or search by product, SKU, colour or size…  (F2)"
+              className="type-input flex-1 min-w-0 bg-transparent outline-none text-text-primary placeholder:text-text-muted"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="text-text-muted hover:text-text-primary shrink-0"
+                aria-label="Clear search"
+              >
+                <X size={15} />
+              </button>
+            )}
+            <Button variant="secondary" size="sm" onClick={() => setSearchOpen(true)}>
+              <Search size={14} /> Advanced
             </Button>
           </div>
 
-          <div className="flex-1 min-h-[120px] rounded-2xl border border-gold-300/30 bg-white px-6 py-5 flex flex-col">
-            <h3 className="type-card-title text-ink-900 mb-3">Order Notes</h3>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add order notes…"
-              className="flex-1 w-full bg-transparent outline-none text-sm resize-none placeholder:text-ink-700/40 text-ink-900"
-            />
+          <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-border-default bg-surface-panel p-3">
+            <div className="flex items-center justify-between mb-2 px-1">
+              <p className="type-caption text-text-secondary">
+                {filteredProducts.length} product{filteredProducts.length === 1 ? "" : "s"}
+                {query ? ` matching “${query}”` : ""}
+              </p>
+              <p className="type-caption text-text-muted">Scanner active</p>
+            </div>
+
+            {products.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-text-secondary">
+                <PackageX size={26} className="text-text-muted" />
+                <p className="type-body-sm">
+                  No products loaded. Check the connection to the local server, then reload.
+                </p>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-text-secondary">
+                <Search size={22} className="text-text-muted" />
+                <p className="type-body-sm">No products match “{query}”.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5">
+                {filteredProducts.map((p) => (
+                  <ProductTile key={p.variant_id} product={p} onAdd={addToCart} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* RIGHT — cart + checkout. max-height (not a forced height) caps the panel on
-            tall viewports so the item list scrolls internally while payment/summary/
-            checkout stay put — on short viewports the panel just sizes to its content
-            instead of being stretched. overflow-y-auto (not -hidden) on the panel
-            itself is a last-resort fallback: if a viewport is so short that even the
-            header+footer alone can't fit, the whole panel scrolls as a unit rather
-            than silently clipping the checkout button. */}
-        <div className="w-full lg:w-[400px] shrink-0 flex flex-col rounded-2xl border border-gold-300/30 bg-white overflow-y-auto lg:max-h-[calc(100vh-230px)]">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gold-300/30 shrink-0">
-            <h2 className="type-section text-maroon-800">Cart ({cart.length})</h2>
+        {/* RIGHT — cart + checkout. The item list scrolls internally while the
+            payment/summary/checkout footer stays pinned; on a viewport too
+            short for even header+footer, the whole panel scrolls as a unit
+            rather than clipping the checkout button. */}
+        <div className="w-full lg:w-[380px] shrink-0 flex flex-col rounded-xl border border-border-default bg-surface-panel overflow-y-auto lg:overflow-visible lg:min-h-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border-default shrink-0">
+            <h2 className="type-section text-text-primary">Cart ({cart.length})</h2>
             {cart.length > 0 && (
               <button
                 onClick={() => setCart([])}
-                className="type-caption text-maroon-700 hover:underline inline-flex items-center gap-1.5"
+                className="type-caption text-brand hover:underline inline-flex items-center gap-1.5"
               >
                 <Trash2 size={13} /> Clear
               </button>
             )}
           </div>
 
-          {/* min-h-0 (not a fixed floor) so this area always yields to the payment/
-              summary/checkout footer below — the footer must never be clipped. */}
           <div className="flex-1 min-h-0 overflow-y-auto">
             {cart.length === 0 ? (
-              <p className="text-center text-ink-700/60 py-8 px-6 text-sm">
-                Cart is empty — scan an item or search to add one.
-              </p>
+              <div className="flex flex-col items-center justify-center text-center gap-2 py-12 px-6">
+                <div className="w-11 h-11 rounded-full bg-surface-elevated flex items-center justify-center text-text-muted">
+                  <ScanBarcode size={18} />
+                </div>
+                <p className="type-body-sm text-text-secondary">
+                  Your cart is empty — scan an item or tap a product to add it.
+                </p>
+              </div>
             ) : (
-              <div className="divide-y divide-gold-300/20">
+              <div className="divide-y divide-border-default">
                 {cart.map((item) => (
-                  <div key={item.variant_id} className="flex items-center gap-3 px-4 py-3">
-                    <div className="w-10 h-10 rounded-lg bg-cream-100 border border-gold-300/30 flex-shrink-0 overflow-hidden">
+                  <div key={item.variant_id} className="flex items-center gap-2.5 px-3 py-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-surface-elevated border border-border-default flex-shrink-0 overflow-hidden">
                       {item.image_url && (
                         <img src={item.image_url} alt="" className="w-full h-full object-cover" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="type-body-sm font-medium text-ink-900 truncate">{item.name}</p>
-                      <p className="type-caption text-ink-700/60 truncate">
+                      <p className="type-body-sm font-medium text-text-primary truncate">{item.name}</p>
+                      <p className="type-caption text-text-muted truncate">
                         {[item.size, item.color].filter(Boolean).join(" / ") || item.sku}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => changeQty(item.variant_id, -1)}
-                        className="w-6 h-6 rounded-md border border-gold-300/50 flex items-center justify-center hover:bg-cream-100 text-ink-700"
+                        className="w-6 h-6 rounded-md border border-border-strong flex items-center justify-center hover:bg-surface-elevated text-text-secondary"
+                        aria-label="Decrease quantity"
                       >
                         <Minus size={12} />
                       </button>
-                      <span className="w-5 text-center text-sm text-ink-900">{item.qty}</span>
+                      <span className="w-5 text-center type-body-sm text-text-primary">{item.qty}</span>
                       <button
                         onClick={() => changeQty(item.variant_id, 1)}
-                        className="w-6 h-6 rounded-md border border-gold-300/50 flex items-center justify-center hover:bg-cream-100 text-ink-700"
+                        className="w-6 h-6 rounded-md border border-border-strong flex items-center justify-center hover:bg-surface-elevated text-text-secondary"
+                        aria-label="Increase quantity"
                       >
                         <Plus size={12} />
                       </button>
                     </div>
                     <div className="w-16 shrink-0 text-right">
-                      <p className="text-sm font-medium text-ink-900">{formatPKR(item.price * item.qty)}</p>
+                      <p className="type-body-sm font-medium text-text-primary">
+                        {formatPKR(item.price * item.qty)}
+                      </p>
                       {Number(item.discount_percent) > 0 && (
-                        <p className="type-caption text-maroon-700">-{item.discount_percent}%</p>
+                        <p className="type-caption text-brand">-{item.discount_percent}%</p>
                       )}
                     </div>
                     <button
                       onClick={() => removeFromCart(item.variant_id)}
-                      className="text-ink-700/50 hover:text-maroon-700 shrink-0"
+                      className="text-text-muted hover:text-brand shrink-0"
+                      aria-label="Remove item"
                     >
                       <X size={15} />
                     </button>
@@ -412,9 +495,16 @@ export default function POS() {
             )}
           </div>
 
-          <div className="shrink-0 border-t border-gold-300/30 px-5 py-4 space-y-4">
+          <div className="shrink-0 border-t border-border-default px-4 py-3 space-y-3">
+            <input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add a note to this sale (optional)…"
+              className="type-body-sm w-full bg-surface-elevated border border-border-default rounded-lg px-2.5 py-1.5 text-text-primary outline-none placeholder:text-text-muted focus:border-brand"
+            />
+
             <div>
-              <p className="type-field-label text-ink-900 mb-2">Payment Method</p>
+              <p className="type-field-label text-text-secondary mb-1.5">Payment Method</p>
               <div className="grid grid-cols-5 gap-1.5">
                 {PAYMENT_METHODS.map((m) => {
                   const Icon = m.icon;
@@ -423,10 +513,10 @@ export default function POS() {
                     <button
                       key={m.key}
                       onClick={() => setPaymentMethod(m.key)}
-                      className={`flex flex-col items-center gap-1 py-2.5 rounded-lg border text-xs font-medium transition-colors ${
+                      className={`flex flex-col items-center gap-1 py-2 rounded-lg border type-label transition-colors ${
                         active
-                          ? "bg-maroon-700 border-maroon-700 text-cream-50"
-                          : "border-gold-300/50 text-ink-900 hover:bg-cream-100"
+                          ? "bg-brand border-brand text-pure-white"
+                          : "border-border-strong text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
                       }`}
                     >
                       <Icon size={14} />
@@ -439,33 +529,33 @@ export default function POS() {
 
             <div className="space-y-1">
               <Row label="Subtotal" value={formatPKR(subtotal)} />
-              <div className="flex items-center justify-between py-1 text-sm">
-                <span className="text-ink-700">Discount</span>
+              <div className="flex items-center justify-between py-0.5 type-body-sm">
+                <span className="text-text-secondary">Discount</span>
                 <div className="flex items-center gap-1.5">
                   <input
                     type="number"
                     min={0}
                     value={discount}
                     onChange={(e) => setDiscount(e.target.value)}
-                    className="w-14 border border-gold-300/50 rounded px-1.5 py-1 text-right text-sm text-ink-900"
+                    className="w-14 border border-border-strong bg-surface-elevated rounded px-1.5 py-1 text-right type-body-sm text-text-primary outline-none focus:border-brand"
                   />
                   <select
                     value={discountType}
                     onChange={(e) => setDiscountType(e.target.value)}
-                    className="border border-gold-300/50 rounded px-1 py-1 text-sm text-ink-900"
+                    className="border border-border-strong bg-surface-elevated rounded px-1 py-1 type-body-sm text-text-primary outline-none"
                   >
                     <option value="flat">Rs.</option>
                     <option value="percent">%</option>
                   </select>
-                  <span className="text-ink-900 w-16 text-right">-{formatPKR(discountAmount)}</span>
+                  <span className="text-text-primary w-16 text-right">-{formatPKR(discountAmount)}</span>
                 </div>
               </div>
-              {tax > 0 && <Row label="Tax" value={formatPKR(tax)} />}
+              {tax > 0 && <Row label={`Tax (${receiptConfig.taxRatePercent}%)`} value={formatPKR(tax)} />}
             </div>
 
-            <div className="border-t border-gold-300/30 pt-3 flex items-center justify-between">
-              <span className="type-card-title text-ink-900">Total</span>
-              <span className="type-stat text-maroon-800">{formatPKR(total)}</span>
+            <div className="border-t border-border-default pt-2.5 flex items-center justify-between">
+              <span className="type-card-title text-text-primary">Total</span>
+              <span className="type-stat text-brand">{formatPKR(total)}</span>
             </div>
 
             <Button
@@ -484,20 +574,28 @@ export default function POS() {
         <SearchProductModal onClose={() => setSearchOpen(false)} onPick={addToCart} />
       )}
 
+      {lastSale && (
+        <SaleSuccess
+          data={lastSale}
+          onNewSale={() => setLastSale(null)}
+          onPrintAgain={() => printViaElectron(lastSale.sale)}
+        />
+      )}
+
       {showPending && (
         <Dialog open onClose={() => setShowPending(false)} title="Pending & Failed Sales">
           {failedSales.length === 0 && pendingSales === 0 && (
-            <p className="type-body-sm text-ink-700/60">Nothing pending — everything's synced.</p>
+            <p className="type-body-sm text-text-secondary">Nothing pending — everything&apos;s synced.</p>
           )}
           <div className="space-y-2 max-h-[50vh] overflow-y-auto">
             {failedSales.map((s) => (
-              <div key={s.client_sale_id} className="border border-red-200 bg-red-50 rounded-lg p-3 text-sm">
-                <p className="font-medium text-red-800">{s.offlineReceiptNumber} — Rs. {s.total}</p>
-                <p className="text-red-700 text-xs mt-1">{s.failReason}</p>
+              <div key={s.client_sale_id} className="border border-error/30 bg-error/10 rounded-lg p-3 type-body-sm">
+                <p className="font-medium text-error-text">{s.offlineReceiptNumber} — Rs. {s.total}</p>
+                <p className="text-error-text/80 type-caption mt-1">{s.failReason}</p>
                 <div className="flex gap-3 mt-2">
                   <button
                     onClick={() => { retrySale(s.client_sale_id); setFailedSales(getFailedSales()); setPendingSales(getQueueCount()); }}
-                    className="text-xs underline text-ink-700"
+                    className="type-caption underline text-text-secondary"
                   >
                     Retry
                   </button>
@@ -508,7 +606,7 @@ export default function POS() {
                         setFailedSales(getFailedSales());
                       }
                     }}
-                    className="text-xs underline text-maroon-700"
+                    className="type-caption underline text-brand"
                   >
                     Discard
                   </button>
@@ -522,20 +620,99 @@ export default function POS() {
   );
 }
 
-function SessionField({ label, value, children, wide }) {
+function ProductTile({ product, onAdd }) {
+  const out = product.stock <= 0;
+  const low = !out && product.stock <= 5;
   return (
-    <div className={wide ? "min-w-[220px]" : ""}>
-      <p className="type-caption text-ink-700/70">{label}</p>
-      {children || <p className="font-semibold text-ink-900">{value}</p>}
+    <button
+      onClick={() => onAdd(product)}
+      disabled={out}
+      className="group flex flex-col rounded-lg border border-border-default bg-surface-elevated/40 p-2 text-left transition-colors hover:border-border-strong hover:bg-surface-elevated disabled:opacity-45 disabled:cursor-not-allowed"
+    >
+      <div className="aspect-square w-full rounded-md bg-surface-elevated border border-border-default overflow-hidden mb-2">
+        {product.image_url ? (
+          <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <span className="w-full h-full flex items-center justify-center text-text-muted">
+            <PackageX size={18} />
+          </span>
+        )}
+      </div>
+      <p className="type-body-sm font-medium text-text-primary leading-tight line-clamp-2">
+        {product.name}
+      </p>
+      <p className="type-caption text-text-muted truncate mt-0.5">
+        {[product.size, product.color].filter(Boolean).join(" / ") || product.sku}
+      </p>
+      <div className="mt-1.5 flex items-center justify-between gap-1">
+        <span className="type-body-sm font-semibold text-text-primary">
+          {formatPKR(product.price)}
+        </span>
+        <span
+          className={`type-label ${
+            out ? "text-error-text" : low ? "text-warning-text" : "text-text-muted"
+          }`}
+        >
+          {out ? "Out" : `${product.stock}`}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+function SaleSuccess({ data, onNewSale, onPrintAgain }) {
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-surface-overlay" onClick={onNewSale} />
+      <div className="relative w-full max-w-sm rounded-2xl bg-surface-panel border border-border-strong p-6 text-center shadow-[0_16px_48px_-12px_rgba(0,0,0,0.7)]">
+        <div className="w-14 h-14 rounded-full bg-success/12 text-success-text flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 size={30} />
+        </div>
+        <h2 className="type-heading-sm text-text-primary">
+          {data.offline ? "Sale saved offline" : "Payment successful"}
+        </h2>
+        <p className="type-body-sm text-text-secondary mt-1">
+          {data.offline
+            ? "The receipt printed locally and the sale will sync automatically once you're back online."
+            : "The sale is recorded and the receipt printed."}
+        </p>
+
+        <div className="mt-4 rounded-lg border border-border-default bg-surface-elevated/50 px-4 py-3 text-left space-y-1">
+          <Row label="Receipt No." value={data.receiptNumber} />
+          <Row label="Total Paid" value={formatPKR(data.total)} />
+        </div>
+
+        {data.printError && (
+          <p className="type-caption text-warning-text mt-3">
+            Printing failed: {data.printError}. Use “Print Again” or reprint from Receipts.
+          </p>
+        )}
+
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <Button variant="secondary" onClick={onPrintAgain}>
+            <PrinterIcon size={14} /> Print Again
+          </Button>
+          <Button onClick={onNewSale}>New Sale</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SessionField({ label, value, children }) {
+  return (
+    <div>
+      <p className="type-caption text-text-muted">{label}</p>
+      {children || <p className="type-body-sm font-medium text-text-primary">{value}</p>}
     </div>
   );
 }
 
 function Row({ label, value }) {
   return (
-    <div className="flex items-center justify-between py-1 text-sm">
-      <span className="text-ink-700">{label}</span>
-      <span className="text-ink-900">{value}</span>
+    <div className="flex items-center justify-between py-0.5 type-body-sm">
+      <span className="text-text-secondary">{label}</span>
+      <span className="text-text-primary">{value}</span>
     </div>
   );
 }
