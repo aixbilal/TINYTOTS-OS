@@ -791,7 +791,7 @@ app.get("/api/low-stock", async (req, res) => {
         color,
         stock,
         public_code,
-        product:products(name, supplier_id)
+        product:products(name, supplier_id, image_url)
       `)
       .lte("stock", LOW_STOCK_THRESHOLD)
       .order("stock", { ascending: true });
@@ -806,6 +806,10 @@ app.get("/api/low-stock", async (req, res) => {
       stock: v.stock,
       publicCode: v.public_code,
       supplierId: v.product?.supplier_id || null,
+      // Real primary product photo (products.image_url is kept in sync with the
+      // primary product_images row). Additive: the Low Stock page ignores it;
+      // the Dashboard low-stock list uses it as a thumbnail when present.
+      imageUrl: v.product?.image_url || null,
     }));
 
     res.json({ success: true, items });

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { getSession } from "../auth";
 import { getGreeting } from "../lib/greetings";
+import { timeAgoShort } from "../lib/time";
 import SalesOverviewChart from "../components/performance/SalesOverviewChart";
 import GoalSummaryCard from "../components/performance/GoalSummaryCard";
 import CategoryDonut from "../components/performance/CategoryDonut";
@@ -30,6 +31,15 @@ const ACTIVITY_ICONS = {
   employee: Users,
   system: Server,
   goal: Target,
+};
+
+// Restrained semantic icon wells — same tint language as the KPI tiles.
+const ACTIVITY_WELLS = {
+  inventory: "bg-warning/12 text-warning-text",
+  sales: "bg-success/12 text-success-text",
+  employee: "bg-info/12 text-info-text",
+  goal: "bg-brand-soft text-brand",
+  system: "bg-surface-elevated text-text-secondary",
 };
 
 const pkr = (v) => `Rs. ${Math.round(Number(v || 0)).toLocaleString("en-PK")}`;
@@ -150,12 +160,12 @@ export default function Dashboard() {
   ];
 
   const quickActions = [
-    { label: "New Sale", hint: "Open POS", icon: ShoppingCart, to: "/pos", show: true },
-    { label: "Add Product", hint: "Create new", icon: Package, to: "/inventory", show: isAdmin },
-    { label: "Manage Inventory", hint: "Stock & variants", icon: Boxes, to: "/inventory", show: isAdmin },
-    { label: "Generate Barcode", hint: "For products", icon: Barcode, to: "/inventory", show: isAdmin },
-    { label: "View Reports", hint: "Analytics", icon: TrendingUp, to: "/performance", show: isAdmin },
-    { label: "Old Receipts", hint: "All receipts", icon: ScrollText, to: "/receipts", show: isAdmin },
+    { label: "New Sale", hint: "Open POS", icon: ShoppingCart, to: "/pos", well: "bg-brand text-pure-white", show: true },
+    { label: "Add Product", hint: "Create new", icon: Package, to: "/inventory", well: "bg-success/12 text-success-text", show: isAdmin },
+    { label: "Manage Inventory", hint: "Stock & variants", icon: Boxes, to: "/inventory", well: "bg-brand-soft text-brand", show: isAdmin },
+    { label: "Generate Barcode", hint: "For products", icon: Barcode, to: "/inventory", well: "bg-surface-elevated text-text-secondary", show: isAdmin },
+    { label: "View Reports", hint: "Analytics", icon: TrendingUp, to: "/performance", well: "bg-info/12 text-info-text", show: isAdmin },
+    { label: "Old Receipts", hint: "All receipts", icon: ScrollText, to: "/receipts", well: "bg-accent/12 text-accent", show: isAdmin },
   ].filter((a) => a.show);
 
   return (
@@ -216,7 +226,7 @@ export default function Dashboard() {
         <ActivityPanel items={activity} />
       </div>
 
-      {/* Quick actions — open section, borderless tiles */}
+      {/* Quick actions — open section, borderless tiles with semantic wells */}
       <Section title="Quick Actions" divide>
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
           {quickActions.map((a) => {
@@ -225,17 +235,23 @@ export default function Dashboard() {
               <button
                 key={a.label}
                 onClick={() => navigate(a.to)}
-                className="flex items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-surface-elevated transition-colors"
+                className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-[background-color,transform] hover:bg-surface-elevated active:translate-y-px active:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/45"
               >
-                <span className="w-8 h-8 rounded-md bg-brand-soft text-brand flex items-center justify-center shrink-0">
-                  <Icon size={16} />
+                <span
+                  className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 transition-transform group-hover:scale-[1.06] ${a.well}`}
+                >
+                  <Icon size={16} strokeWidth={1.9} />
                 </span>
-                <span className="min-w-0">
-                  <span className="block type-body-sm font-medium text-text-primary truncate">
+                <span className="min-w-0 flex-1">
+                  <span className="block type-body-sm font-semibold text-text-primary truncate">
                     {a.label}
                   </span>
                   <span className="block type-caption text-text-muted truncate">{a.hint}</span>
                 </span>
+                <ChevronRight
+                  size={14}
+                  className="shrink-0 text-text-muted opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0"
+                />
               </button>
             );
           })}
@@ -273,12 +289,24 @@ function LowStockPanel({ items, onViewAll }) {
           className="py-8"
         />
       ) : (
-        <ul className="divide-y divide-border-default">
+        <ul className="divide-y divide-border-default/70">
           {items.slice(0, 5).map((it) => (
-            <li key={it.variantId} className="flex items-center gap-3 py-2.5">
-              <span className="w-9 h-9 rounded-md bg-surface-elevated flex items-center justify-center text-text-muted shrink-0">
-                <Package size={15} />
-              </span>
+            <li
+              key={it.variantId}
+              className="flex items-center gap-3 py-2.5 -mx-2 px-2 rounded-md hover:bg-surface-elevated/60 transition-colors"
+            >
+              {it.imageUrl ? (
+                <img
+                  src={it.imageUrl}
+                  alt=""
+                  loading="lazy"
+                  className="w-9 h-9 rounded-md object-cover shrink-0 bg-surface-elevated"
+                />
+              ) : (
+                <span className="w-9 h-9 rounded-md bg-surface-elevated flex items-center justify-center text-text-muted shrink-0">
+                  <Package size={15} />
+                </span>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="type-body-sm font-medium text-text-primary truncate">{it.name}</p>
                 <p className="type-caption text-text-muted truncate">
@@ -317,16 +345,29 @@ function ActivityPanel({ items }) {
           className="py-8"
         />
       ) : (
-        <ul className="divide-y divide-border-default">
+        <ul className="divide-y divide-border-default/70">
           {items.map((n) => {
             const Icon = ACTIVITY_ICONS[n.category] || Activity;
+            const well = ACTIVITY_WELLS[n.category] || ACTIVITY_WELLS.system;
             return (
-              <li key={n.id} className="flex items-start gap-3 py-2.5">
-                <span className="w-8 h-8 rounded-md bg-surface-elevated flex items-center justify-center text-text-secondary shrink-0">
-                  <Icon size={14} />
+              <li
+                key={n.id}
+                className="flex items-start gap-3 py-2.5 -mx-2 px-2 rounded-md hover:bg-surface-elevated/60 transition-colors"
+              >
+                <span
+                  className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${well}`}
+                >
+                  <Icon size={14} strokeWidth={1.9} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="type-body-sm text-text-primary truncate">{n.title}</p>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="type-body-sm font-medium text-text-primary truncate">{n.title}</p>
+                    {n.created_at && (
+                      <span className="type-tiny text-text-muted shrink-0 tabular-nums">
+                        {timeAgoShort(n.created_at)}
+                      </span>
+                    )}
+                  </div>
                   {n.description && (
                     <p className="type-caption text-text-muted truncate">{n.description}</p>
                   )}

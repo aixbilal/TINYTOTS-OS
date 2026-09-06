@@ -321,7 +321,7 @@ export default function POS() {
       <ScannerListener products={products} onScan={addToCart} />
 
       {/* Session / status strip — quiet, priority-6 chrome */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border-default pb-3 shrink-0">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border-default/60 pb-3 shrink-0">
         <SessionField label="Cashier">
           <input
             value={cashier}
@@ -423,7 +423,7 @@ export default function POS() {
             stays pinned; on a viewport too short for even header+footer, the
             whole panel scrolls as a unit rather than clipping the checkout. */}
         <div className="w-full lg:w-[380px] shrink-0 flex flex-col rounded-xl bg-surface-panel shadow-sm overflow-y-auto lg:overflow-visible lg:min-h-0">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border-default shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border-default/60 shrink-0">
             <h2 className="type-section text-text-primary">Cart ({cart.length})</h2>
             {cart.length > 0 && (
               <button
@@ -446,7 +446,7 @@ export default function POS() {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-border-default">
+              <div className="divide-y divide-border-default/50">
                 {cart.map((item) => (
                   <div
                     key={item.variant_id}
@@ -634,11 +634,16 @@ function ProductTile({ product, onAdd }) {
     <button
       onClick={() => onAdd(product)}
       disabled={out}
-      className="group flex flex-col rounded-md p-2 text-left transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-45 disabled:cursor-not-allowed"
+      className="group flex flex-col rounded-lg p-2 text-left transition-[background-color,transform] hover:bg-surface-sunken active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-45 disabled:cursor-not-allowed"
     >
       <div className="aspect-square w-full rounded-md bg-surface-elevated overflow-hidden mb-2">
         {product.image_url ? (
-          <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+          <img
+            src={product.image_url}
+            alt=""
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.04]"
+          />
         ) : (
           <span className="w-full h-full flex items-center justify-center text-text-muted">
             <PackageX size={18} />
