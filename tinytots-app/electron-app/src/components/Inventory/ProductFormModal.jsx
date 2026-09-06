@@ -119,6 +119,28 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
     mode === "edit" && initialProduct ? initialProduct.id : null
   );
 
+  // Store Assignment — optional catalog metadata (which verified store(s)
+  // carry this product). Real active public.locations only; never stock.
+  const [locations, setLocations] = useState([]);
+  const [locationIds, setLocationIds] = useState(
+    mode === "edit" && Array.isArray(initialProduct?.location_ids)
+      ? initialProduct.location_ids.map(Number)
+      : []
+  );
+
+  useEffect(() => {
+    fetch("http://localhost:3000/api/locations")
+      .then((r) => r.json())
+      .then((json) => setLocations(json.success ? json.locations : []))
+      .catch(() => setLocations([]));
+  }, []);
+
+  function toggleLocation(id) {
+    setLocationIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
+
   useEffect(() => {
     if (!createdProductId) return;
     fetch(`http://localhost:3000/api/products/${createdProductId}/images`)
@@ -222,8 +244,8 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
 
       const body =
         mode === "create"
-          ? { ...form, colors, sizes, variantStocks: stockOverrides }
-          : form;
+          ? { ...form, colors, sizes, variantStocks: stockOverrides, location_ids: locationIds }
+          : { ...form, location_ids: locationIds };
 
       const res = await apiFetch(url, {
         method,
@@ -232,6 +254,10 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || data.error);
+
+      if (data.location_warning) {
+        window.alert(data.location_warning);
+      }
 
       onSaved();
 
@@ -302,6 +328,49 @@ export default function ProductFormModal({ mode = "create", initialProduct, onCl
               <LabeledInput label="HSN Code" {...field("hsn_code")} />
               <LabeledInput label="Unit" {...field("unit")} />
             </div>
+          </Group>
+
+          <Group title="Store Assignment">
+            <p className="type-caption text-text-muted mb-2">
+              Which verified store(s) carry this product. Optional — this is catalogue
+              information, not stock.
+            </p>
+            {locations.length === 0 ? (
+              <p className="type-body-sm text-text-secondary">
+                No active store locations yet.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLocationIds([])}
+                  className={`type-caption px-3 py-1.5 rounded-full border transition-colors ${
+                    locationIds.length === 0
+                      ? "bg-brand border-brand text-pure-white"
+                      : "border-border-default text-text-secondary hover:border-brand hover:text-brand"
+                  }`}
+                >
+                  No store assignment
+                </button>
+                {locations.map((loc) => {
+                  const active = locationIds.includes(loc.id);
+                  return (
+                    <button
+                      key={loc.id}
+                      type="button"
+                      onClick={() => toggleLocation(loc.id)}
+                      className={`type-caption px-3 py-1.5 rounded-full border transition-colors ${
+                        active
+                          ? "bg-brand border-brand text-pure-white"
+                          : "border-border-default text-text-secondary hover:border-brand hover:text-brand"
+                      }`}
+                    >
+                      {loc.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </Group>
 
           {mode === "edit" && (

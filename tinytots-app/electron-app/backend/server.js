@@ -852,6 +852,19 @@ app.get("/api/inventory", async (req, res) => {
       .order("id", { ascending: true });
     if (varErr) throw varErr;
 
+    // Store-assignment tags (catalog metadata; never stock). Grouped per
+    // product so the inventory UI can show a subtle badge and preload the
+    // Edit Product picker.
+    const { data: locTags, error: tagErr } = await supabase
+      .from("product_location_tags")
+      .select("product_id, location_id");
+    if (tagErr) throw tagErr;
+    const tagsByProduct = new Map();
+    for (const t of locTags || []) {
+      if (!tagsByProduct.has(t.product_id)) tagsByProduct.set(t.product_id, []);
+      tagsByProduct.get(t.product_id).push(t.location_id);
+    }
+
     const result = products.map((p) => {
       const productVariants = variants.filter((v) => v.product_id === p.id);
 
@@ -860,6 +873,7 @@ app.get("/api/inventory", async (req, res) => {
         variants: productVariants,
         total_variants: productVariants.length,
         total_stock: productVariants.reduce((sum, v) => sum + (v.stock || 0), 0),
+        location_ids: tagsByProduct.get(p.id) || [],
       };
     });
 
@@ -869,6 +883,110 @@ app.get("/api/inventory", async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// ----------------------------------------------------
+// STORE ASSIGNMENT (product <-> location tags)
+//
+// Catalog/operational metadata only. A product may be assigned to zero, one,
+// or many rows of public.locations. This is NOT stock: it never reads or
+// writes variants.stock, variant_location_stock, sales.location_id or
+// orders.location_id. Writes go through this service (service_role); the
+// renderer never touches Supabase directly. See migration
+// product_location_tags.
+// ----------------------------------------------------
+
+// GET /api/locations — active store locations for the Store Assignment picker.
+app.get("/api/locations", async (_req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("locations")
+      .select("id, name, slug, city, region, is_active, display_order")
+      .eq("is_active", true)
+      .order("display_order", { ascending: true })
+      .order("name", { ascending: true });
+    if (error) throw error;
+
+    const locations = (data || []).map((l) => ({
+      id: l.id,
+      name: l.name,
+      slug: l.slug,
+      city: l.city,
+      region: l.region,
+      // A single display label the UI can show as-is, e.g. "Tiny Tots — Toba Tek Singh".
+      label: [l.name, l.city].filter(Boolean).join(" — "),
+    }));
+    res.json({ success: true, locations });
+  } catch (err) {
+    console.error("GET /api/locations error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Validate a client-supplied list of location ids for Store Assignment.
+ * Returns { ok, ids, message }. `ids` is a de-duplicated array of positive
+ * integers that all reference an existing, active public.locations row.
+ * An empty input array is valid and means "no store assignment".
+ */
+async function validateLocationIds(raw) {
+  if (raw === undefined || raw === null) return { ok: true, ids: undefined };
+  if (!Array.isArray(raw)) {
+    return { ok: false, message: "location_ids must be an array of location ids." };
+  }
+  const ids = [...new Set(raw.map((n) => Number(n)))];
+  if (ids.some((n) => !Number.isInteger(n) || n <= 0)) {
+    return { ok: false, message: "location_ids must be positive integers." };
+  }
+  if (ids.length === 0) return { ok: true, ids: [] };
+
+  const { data, error } = await supabase
+    .from("locations")
+    .select("id")
+    .in("id", ids)
+    .eq("is_active", true);
+  if (error) return { ok: false, message: error.message };
+
+  const found = new Set((data || []).map((r) => r.id));
+  const missing = ids.filter((n) => !found.has(n));
+  if (missing.length) {
+    return { ok: false, message: `Unknown or inactive location id(s): ${missing.join(", ")}.` };
+  }
+  return { ok: true, ids };
+}
+
+/**
+ * Replace a product's store-assignment tags with exactly `ids`. Deletes the
+ * rows that are no longer selected and inserts the new ones; untouched when
+ * `ids` is undefined. Never touches stock, variants, price or images.
+ */
+async function replaceProductLocationTags(productId, ids) {
+  if (ids === undefined) return;
+  const { data: current, error: readErr } = await supabase
+    .from("product_location_tags")
+    .select("location_id")
+    .eq("product_id", productId);
+  if (readErr) throw readErr;
+
+  const have = new Set((current || []).map((r) => r.location_id));
+  const want = new Set(ids);
+  const toAdd = [...want].filter((n) => !have.has(n));
+  const toRemove = [...have].filter((n) => !want.has(n));
+
+  if (toRemove.length) {
+    const { error } = await supabase
+      .from("product_location_tags")
+      .delete()
+      .eq("product_id", productId)
+      .in("location_id", toRemove);
+    if (error) throw error;
+  }
+  if (toAdd.length) {
+    const { error } = await supabase
+      .from("product_location_tags")
+      .insert(toAdd.map((location_id) => ({ product_id: productId, location_id })));
+    if (error) throw error;
+  }
+}
 
 // ----------------------------------------------------
 // AI PRODUCT DESCRIPTION (Groq primary -> one Gemini fallback)
@@ -931,7 +1049,7 @@ app.post("/api/products", async (req, res) => {
     const {
       name, brand, category, sku, hsn_code, unit, description, image_url,
       cost_price, selling_price, discount_percent, initialStock, stock, colors = [], sizes = [],
-      variantStocks = {},
+      variantStocks = {}, location_ids,
     } = req.body;
 
     // 1. Strict validation (No variantGroups references allowed here!)
@@ -940,6 +1058,13 @@ app.post("/api/products", async (req, res) => {
     }
     if (!colors || !colors.length || !sizes || !sizes.length) {
       return res.status(400).json({ success: false, message: "Add at least one color and one size." });
+    }
+
+    // Store Assignment (optional). Validate BEFORE any insert so a bad
+    // location id can never leave a half-created product behind.
+    const locCheck = await validateLocationIds(location_ids);
+    if (!locCheck.ok) {
+      return res.status(400).json({ success: false, message: locCheck.message });
     }
 
     const cleanSku = sku.trim().toUpperCase();
@@ -1044,7 +1169,29 @@ app.post("/api/products", async (req, res) => {
     );
     variants.forEach((v) => { v.public_code = `V-${v.id}`; });
 
-    res.json({ success: true, product, variants });
+    // Store Assignment tags. The product + variants are already committed and
+    // correct; a tag write failure here must NOT discard them. Report it so
+    // the operator can re-save the assignment from Edit Product.
+    let locationIds = locCheck.ids ?? [];
+    let locationWarning = null;
+    if (locCheck.ids && locCheck.ids.length) {
+      try {
+        await replaceProductLocationTags(product.id, locCheck.ids);
+      } catch (tagErr) {
+        console.error("Create product: store-assignment write failed:", tagErr);
+        locationIds = [];
+        locationWarning =
+          "The product was saved, but its store assignment could not be recorded. Re-apply it from Edit Product.";
+      }
+    }
+
+    res.json({
+      success: true,
+      product,
+      variants,
+      location_ids: locationIds,
+      ...(locationWarning ? { location_warning: locationWarning } : {}),
+    });
   } catch (err) {
     console.error("Create product error:", err);
     res.status(500).json({ success: false, error: err.message });
@@ -1128,8 +1275,17 @@ app.post("/api/products/:id/variants", async (req, res) => {
 app.put("/api/products/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, brand, category, hsn_code, unit, description, image_url, status, cost_price, selling_price } = req.body;
-    
+    const { name, brand, category, hsn_code, unit, description, image_url, status, cost_price, selling_price, location_ids } = req.body;
+
+    // Store Assignment is optional and independent of every other field:
+    // omitting location_ids leaves the existing assignment untouched; sending
+    // an array (including []) replaces it. It never affects stock, variants,
+    // price, SKU, barcode, images, description or category.
+    const locCheck = await validateLocationIds(location_ids);
+    if (!locCheck.ok) {
+      return res.status(400).json({ success: false, message: locCheck.message });
+    }
+
     const fieldsToUpdate = {
       name, brand, category, hsn_code, unit, description, image_url, status,
       cost_price: cost_price !== undefined ? Number(cost_price) : undefined,
@@ -1137,16 +1293,36 @@ app.put("/api/products/:id", async (req, res) => {
     };
     Object.keys(fieldsToUpdate).forEach((k) => fieldsToUpdate[k] === undefined && delete fieldsToUpdate[k]);
 
-    const { data, error } = await supabase
-      .from("products")
-      .update(fieldsToUpdate)
-      .eq("id", id)
-      .select()
-      .single();
-      
-    if (error) throw error;
+    let product = null;
+    if (Object.keys(fieldsToUpdate).length) {
+      const { data, error } = await supabase
+        .from("products")
+        .update(fieldsToUpdate)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      product = data;
+    } else {
+      const { data, error } = await supabase.from("products").select("*").eq("id", id).single();
+      if (error) throw error;
+      product = data;
+    }
 
-    res.json({ success: true, product: data });
+    if (locCheck.ids !== undefined) {
+      await replaceProductLocationTags(Number(id), locCheck.ids);
+    }
+
+    const { data: tags } = await supabase
+      .from("product_location_tags")
+      .select("location_id")
+      .eq("product_id", id);
+
+    res.json({
+      success: true,
+      product,
+      location_ids: (tags || []).map((t) => t.location_id),
+    });
   } catch (err) {
     console.error("Update product error:", err);
     res.status(500).json({ success: false, error: err.message });

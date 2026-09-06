@@ -8,6 +8,7 @@ import {
   SlidersHorizontal,
   LayoutGrid,
   List as ListIcon,
+  MapPin,
   Package,
   Trash2,
   X,
@@ -52,7 +53,9 @@ export default function Inventory() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all"); // all | in | low | out
+  const [storeFilter, setStoreFilter] = useState("all"); // all | unassigned | "<locationId>"
   const [sortBy, setSortBy] = useState("name"); // name | stock-asc | stock-desc | price
+  const [locations, setLocations] = useState([]);
   const [modal, setModal] = useState(null); // null | "create" | "edit"
   const [photosOpen, setPhotosOpen] = useState(false);
   const [productImages, setProductImages] = useState([]);
@@ -76,7 +79,24 @@ export default function Inventory() {
 
   useEffect(() => {
     loadInventory();
+    fetch("http://localhost:3000/api/locations")
+      .then((r) => r.json())
+      .then((json) => setLocations(json.success ? json.locations : []))
+      .catch(() => setLocations([]));
   }, []);
+
+  // id -> "Tiny Tots — Toba Tek Singh"
+  const locationLabelMap = useMemo(() => {
+    const m = new Map();
+    for (const l of locations) m.set(l.id, l.label);
+    return m;
+  }, [locations]);
+
+  function storeNamesFor(product) {
+    return (product.location_ids || [])
+      .map((id) => locationLabelMap.get(id))
+      .filter(Boolean);
+  }
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
 
@@ -101,6 +121,10 @@ export default function Inventory() {
         return false;
       }
       if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
+      if (storeFilter === "unassigned" && (p.location_ids || []).length > 0) return false;
+      if (storeFilter !== "all" && storeFilter !== "unassigned") {
+        if (!(p.location_ids || []).map(String).includes(String(storeFilter))) return false;
+      }
       const st = stockStatus(p.total_stock ?? 0).variant;
       if (statusFilter === "in" && st !== "success") return false;
       if (statusFilter === "low" && st !== "warning") return false;
@@ -116,11 +140,12 @@ export default function Inventory() {
       return 0;
     });
     return list;
-  }, [products, search, categoryFilter, statusFilter, sortBy]);
+  }, [products, search, categoryFilter, statusFilter, storeFilter, sortBy]);
 
   const activeFilterCount =
     (categoryFilter !== "all" ? 1 : 0) +
     (statusFilter !== "all" ? 1 : 0) +
+    (storeFilter !== "all" ? 1 : 0) +
     (sortBy !== "name" ? 1 : 0);
 
   function openDetail(id) {
@@ -203,6 +228,10 @@ export default function Inventory() {
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-x-5 gap-y-3.5 flex-1">
                   <Field label="Category" value={selectedProduct.category || "—"} />
+                  <Field
+                    label="Store assignment"
+                    value={storeNamesFor(selectedProduct).join(", ") || "None"}
+                  />
                   <Field label="Status" value={selectedProduct.status || "active"} pill />
                   <Field label="Brand" value={selectedProduct.brand || "—"} />
                   <Field label="Base SKU" value={selectedProduct.sku} mono />
@@ -341,11 +370,15 @@ export default function Inventory() {
               setCategoryFilter={setCategoryFilter}
               statusFilter={statusFilter}
               setStatusFilter={setStatusFilter}
+              storeFilter={storeFilter}
+              setStoreFilter={setStoreFilter}
+              locations={locations}
               sortBy={sortBy}
               setSortBy={setSortBy}
               onClear={() => {
                 setCategoryFilter("all");
                 setStatusFilter("all");
+                setStoreFilter("all");
                 setSortBy("name");
               }}
               onClose={() => setFiltersOpen(false)}
@@ -418,7 +451,12 @@ export default function Inventory() {
       ) : layout === "grid" ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
           {filteredProducts.map((p) => (
-            <ProductGridCard key={p.id} product={p} onOpen={() => openDetail(p.id)} />
+            <ProductGridCard
+              key={p.id}
+              product={p}
+              storeNames={storeNamesFor(p)}
+              onOpen={() => openDetail(p.id)}
+            />
           ))}
         </div>
       ) : (
@@ -448,7 +486,17 @@ export default function Inventory() {
                           <Package size={14} />
                         )}
                       </span>
-                      <span className="font-medium">{p.name}</span>
+                      <span className="min-w-0">
+                        <span className="font-medium block truncate">{p.name}</span>
+                        {storeNamesFor(p).length > 0 && (
+                          <span className="type-tiny text-text-muted inline-flex items-center gap-1">
+                            <MapPin size={10} className="shrink-0" />
+                            {storeNamesFor(p).length === 1
+                              ? storeNamesFor(p)[0]
+                              : `${storeNamesFor(p).length} stores`}
+                          </span>
+                        )}
+                      </span>
                     </div>
                   </TD>
                   <TD className="type-mono text-text-secondary">{p.sku}</TD>
@@ -486,7 +534,7 @@ export default function Inventory() {
   );
 }
 
-function ProductGridCard({ product, onOpen }) {
+function ProductGridCard({ product, storeNames = [], onOpen }) {
   const st = stockStatus(product.total_stock ?? 0);
   return (
     <button
@@ -504,6 +552,12 @@ function ProductGridCard({ product, onOpen }) {
       <p className="type-caption text-text-muted mt-0.5 truncate">
         {product.sku} · {product.total_variants} variant{product.total_variants === 1 ? "" : "s"}
       </p>
+      {storeNames.length > 0 && (
+        <p className="type-tiny text-text-muted mt-1 inline-flex items-center gap-1 truncate">
+          <MapPin size={11} className="shrink-0" />
+          {storeNames.length === 1 ? storeNames[0] : `${storeNames.length} stores`}
+        </p>
+      )}
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="type-body-sm font-semibold text-text-primary truncate">
           {priceLabel(product.variants)}
@@ -521,6 +575,9 @@ function FiltersPanel({
   setCategoryFilter,
   statusFilter,
   setStatusFilter,
+  storeFilter,
+  setStoreFilter,
+  locations = [],
   sortBy,
   setSortBy,
   onClear,
@@ -548,6 +605,25 @@ function FiltersPanel({
           </option>
         ))}
       </select>
+
+      {locations.length > 0 && (
+        <>
+          <label className="type-field-label text-text-secondary">Store</label>
+          <select
+            value={storeFilter}
+            onChange={(e) => setStoreFilter(e.target.value)}
+            className="type-input mt-1 mb-3 w-full rounded-md border border-border-default bg-surface-panel px-2.5 py-1.5 text-text-primary outline-none focus:border-brand"
+          >
+            <option value="all">All stores</option>
+            <option value="unassigned">Unassigned</option>
+            {locations.map((l) => (
+              <option key={l.id} value={String(l.id)}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
 
       <label className="type-field-label text-text-secondary">Stock status</label>
       <div className="mt-1 mb-3 grid grid-cols-2 gap-1.5">
