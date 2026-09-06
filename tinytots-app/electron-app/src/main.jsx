@@ -30,6 +30,9 @@ import Categories from "./screens/Categories.jsx";
 import Reports from "./screens/Reports.jsx";
 import Users from "./screens/Users.jsx";
 import Profile from "./screens/Profile.jsx";
+import Customers from "./screens/Customers.jsx";
+import CustomerDetail from "./screens/CustomerDetail.jsx";
+import PrinterSettings from "./screens/PrinterSettings.jsx";
 
 import RequireAuth from "./components/RequireAuth.jsx";
 import AppShell from "./components/shell/AppShell.jsx";
@@ -130,6 +133,37 @@ createRoot(document.getElementById("root")).render(
           <RequireAuth adminOnly>
             <AppShell warm>
               <Users />
+            </AppShell>
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/customers"
+        element={
+          <RequireAuth adminOnly>
+            <AppShell warm>
+              <Customers />
+            </AppShell>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/customers/:id"
+        element={
+          <RequireAuth adminOnly>
+            <AppShell warm>
+              <CustomerDetail />
+            </AppShell>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/settings/printer"
+        element={
+          <RequireAuth adminOnly>
+            <AppShell warm>
+              <PrinterSettings />
             </AppShell>
           </RequireAuth>
         }

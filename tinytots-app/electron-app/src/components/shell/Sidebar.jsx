@@ -10,6 +10,8 @@ import {
   FileBarChart,
   ScrollText,
   Users,
+  Contact,
+  Printer,
   LogOut,
   User,
   Shirt,
@@ -29,7 +31,9 @@ const NAV_ITEMS = [
   { label: "Performance", to: "/performance", icon: TrendingUp, adminOnly: true },
   { label: "Reports", to: "/reports", icon: FileBarChart, adminOnly: true },
   { label: "Receipts", to: "/receipts", icon: ScrollText, adminOnly: true },
+  { label: "Customers", to: "/customers", icon: Contact, adminOnly: true },
   { label: "Users", to: "/users", icon: Users, adminOnly: true },
+  { label: "Printer", to: "/settings/printer", icon: Printer, adminOnly: true },
 ];
 
 export default function Sidebar() {

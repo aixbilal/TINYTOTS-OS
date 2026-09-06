@@ -7,6 +7,7 @@ import Dialog from "../components/ui/Dialog";
 import { LoadingState, EmptyState, ErrorState } from "../components/ui/States";
 import { Table, THead, TBody, TR, TH, TD } from "../components/ui/Table";
 import { apiFetch } from "../services/api";
+import { getSession } from "../auth";
 
 /**
  * Admin-only user management, built on the existing contracts:
@@ -125,7 +126,14 @@ export default function Users() {
     }
     setDeletingId(user.id);
     try {
-      const res = await apiFetch(`/api/users/${user.id}`, { method: "DELETE" });
+      // acting_user_id lets the backend block self-deletion. It's a best-effort
+      // hint (the session model has no server-side identity); the backend still
+      // enforces the last-admin guard on its own.
+      const actingId = getSession()?.id;
+      const path = actingId
+        ? `/api/users/${user.id}?acting_user_id=${encodeURIComponent(actingId)}`
+        : `/api/users/${user.id}`;
+      const res = await apiFetch(path, { method: "DELETE" });
       const result = await res.json();
       if (result.success) {
         setUsers((prev) => (prev || []).filter((u) => u.id !== user.id));

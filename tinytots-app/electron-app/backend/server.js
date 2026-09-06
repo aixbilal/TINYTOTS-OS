@@ -121,6 +121,27 @@ if (!fs.existsSync(RECEIPT_FOLDER)) {
   fs.mkdirSync(RECEIPT_FOLDER, { recursive: true });
 }
 
+// Machine-local receipt-printer preference. Written by the Electron main
+// process (Printer Settings screen) into userData/printer-config.json and
+// read here so backend-side prints (receipt reprint) use the same printer
+// the operator selected. Falls back to the historical hardcoded name so
+// existing installs keep working until an admin picks a printer.
+const PRINTER_CONFIG_PATH = path.join(DATA_ROOT, "printer-config.json");
+const LEGACY_RECEIPT_PRINTER = "POS-80C";
+
+function resolveReceiptPrinter() {
+  try {
+    if (fs.existsSync(PRINTER_CONFIG_PATH)) {
+      const cfg = JSON.parse(fs.readFileSync(PRINTER_CONFIG_PATH, "utf-8"));
+      const name = (cfg?.receiptPrinter || "").trim();
+      if (name) return name;
+    }
+  } catch (err) {
+    console.error("Failed to read printer-config.json:", err.message);
+  }
+  return LEGACY_RECEIPT_PRINTER;
+}
+
 // ----------------------------------------------------
 // SUPABASE
 // ----------------------------------------------------
@@ -1716,7 +1737,7 @@ app.post("/api/receipts/:id/reprint", async (req, res) => {
       // Fall back to regenerating it on demand instead of failing
       await generateReceiptPDF(sale.id);
     }
-    await print(pdfPath, { printer: "POS-80C", scale: "noscale" });
+    await print(pdfPath, { printer: resolveReceiptPrinter(), scale: "noscale" });
     res.json({ success: true });
   } catch (err) {
     console.error("POST /api/receipts/:id/reprint error:", err);
@@ -2091,14 +2112,136 @@ app.get("/api/users", async (req, res) => {
 });
 
 // ---------- DELETE /api/users/:id (admin removes an employee) ----------
+// Safety guards (server-authoritative — never rely on client confirmation):
+//   1. The final remaining admin account can never be deleted.
+//   2. Best-effort self-deletion block when the client cooperatively sends
+//      acting_user_id (the current session model has no server-side user
+//      identity, so this is a UX safety net, not a security boundary).
 app.delete("/api/users/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    const actingUserId =
+      req.body?.acting_user_id ?? req.query?.acting_user_id ?? null;
+
+    const { data: target, error: targetErr } = await supabase
+      .from("users")
+      .select("id, role")
+      .eq("id", id)
+      .maybeSingle();
+    if (targetErr) throw targetErr;
+    if (!target) {
+      return res
+        .status(404)
+        .json({ success: false, message: "That user no longer exists." });
+    }
+
+    if (
+      actingUserId != null &&
+      String(actingUserId) === String(target.id)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "You can't delete your own account while signed in.",
+      });
+    }
+
+    if (target.role === "admin") {
+      const { count, error: countErr } = await supabase
+        .from("users")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "admin");
+      if (countErr) throw countErr;
+      if ((count ?? 0) <= 1) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Can't delete the last admin account. Create another admin first.",
+        });
+      }
+    }
+
     const { error } = await supabase.from("users").delete().eq("id", id);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) {
     console.error("DELETE /api/users/:id error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ============================================================
+// CUSTOMERS (read-only)
+// ------------------------------------------------------------
+// Reuses the website's canonical `public.customers` table — the same
+// identity the storefront populates via Supabase Auth signup. The POS
+// never creates/edits/deletes customers; it only needs to see them and
+// (later) associate a sale. auth_user_id is intentionally not exposed.
+// ============================================================
+
+// ---------- GET /api/customers?search=&limit= ----------
+app.get("/api/customers", async (req, res) => {
+  try {
+    const search = (req.query.search || "").trim();
+    const limit = Math.min(Number(req.query.limit) || 200, 500);
+
+    let q = supabase
+      .from("customers")
+      .select("id, full_name, phone, email, orders_count, created_at")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (search) {
+      const safe = search.replace(/[%,()]/g, " ");
+      q = q.or(
+        `full_name.ilike.%${safe}%,phone.ilike.%${safe}%,email.ilike.%${safe}%`
+      );
+    }
+
+    const { data, error } = await q;
+    if (error) throw error;
+    res.json({ success: true, customers: data || [] });
+  } catch (err) {
+    console.error("GET /api/customers error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ---------- GET /api/customers/:id ----------
+app.get("/api/customers/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data: customer, error } = await supabase
+      .from("customers")
+      .select("id, full_name, phone, email, orders_count, created_at")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found." });
+    }
+
+    // Best-effort online order history from the canonical web `orders`
+    // table. POS `sales` have no customer relationship yet, so only the
+    // storefront orders are shown. Never fails the request.
+    let recentOrders = [];
+    try {
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id, order_number, status, total, created_at")
+        .eq("customer_id", id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      recentOrders = orders || [];
+    } catch (histErr) {
+      console.error("customer order history lookup failed:", histErr);
+    }
+
+    res.json({ success: true, customer, recentOrders });
+  } catch (err) {
+    console.error("GET /api/customers/:id error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

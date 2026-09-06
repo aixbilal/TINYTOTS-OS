@@ -29,4 +29,13 @@ contextBridge.exposeInMainWorld("electron", {
   offlineLogin: (credentials) => ipcRenderer.invoke("auth:offlineLogin", credentials),
 
   removeCachedUser: (payload) => ipcRenderer.invoke("auth:removeCachedUser", payload),
+
+  /**
+   * Receipt-printer preference (machine-local, never synced to Supabase).
+   * listPrinters() enumerates installed Windows printers; get/setReceiptPrinter
+   * read and persist the operator's chosen receipt printer.
+   */
+  listPrinters: () => ipcRenderer.invoke("printer:list"),
+  getReceiptPrinter: () => ipcRenderer.invoke("printer:getPreference"),
+  setReceiptPrinter: (name) => ipcRenderer.invoke("printer:setPreference", name),
 });

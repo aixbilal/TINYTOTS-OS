@@ -10,7 +10,7 @@
 
   import { generateReceiptPDF } from "./generateReceiptPDF.js";
 
-  const { print } = pdfPrinterPkg;
+  const { print, getPrinters } = pdfPrinterPkg;
 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -19,8 +19,10 @@
   const API_HEALTH_URL = "http://127.0.0.1:3000/api/health";
   const API_PORT = "3000";
 
-  // Must match the exact printer name shown in Windows "Printers & Scanners".
-  const PRINTER_NAME = "POS-80C";
+  // Historical hardcoded receipt printer. Kept only as the fallback for
+  // installs that have never opened Printer Settings — the real, per-machine
+  // choice now lives in userData/printer-config.json (see resolvePrinterName).
+  const LEGACY_PRINTER_NAME = "POS-80C";
 
   let mainWindow = null;
   /** @type {import('node:child_process').ChildProcess | null} */
@@ -233,6 +235,47 @@
   }
 
   /* =======================================================
+    RECEIPT PRINTER PREFERENCE (machine-local)
+    Stored as { "receiptPrinter": "<windows printer name>" } under
+    userData. This is per-machine operational config and deliberately
+    never goes to Supabase. The backend reads the same file for its
+    reprint path (see resolveReceiptPrinter in backend/server.js).
+  ======================================================= */
+
+  const PRINTER_CONFIG_PATH = path.join(
+    app.getPath("userData"),
+    "printer-config.json"
+  );
+
+  function readPrinterConfig() {
+    try {
+      if (!fs.existsSync(PRINTER_CONFIG_PATH)) return {};
+      return JSON.parse(fs.readFileSync(PRINTER_CONFIG_PATH, "utf-8")) || {};
+    } catch (err) {
+      console.error("Failed to read printer config:", err);
+      return {};
+    }
+  }
+
+  function writePrinterConfig(config) {
+    fs.writeFileSync(PRINTER_CONFIG_PATH, JSON.stringify(config, null, 2));
+  }
+
+  /**
+   * Resolve the receipt printer to use:
+   *  - a non-empty saved preference wins
+   *  - if the operator explicitly saved an empty preference, return "" so
+   *    callers can raise a clear "pick a printer" error instead of guessing
+   *  - if no config file exists at all, fall back to the legacy hardcoded
+   *    name so existing installs keep printing until an admin visits Settings
+   */
+  function resolvePrinterName() {
+    if (!fs.existsSync(PRINTER_CONFIG_PATH)) return LEGACY_PRINTER_NAME;
+    const saved = (readPrinterConfig().receiptPrinter || "").trim();
+    return saved;
+  }
+
+  /* =======================================================
     MAIN WINDOW
   ======================================================= */
 
@@ -321,9 +364,18 @@
     IPC HANDLERS
   ======================================================= */
 
-  // 1) CASH DRAWER
+  // 1) CASH DRAWER — pulsed through the configured receipt printer.
   ipcMain.handle("cashdrawer:open", async () => {
     try {
+      const printerName = resolvePrinterName();
+      if (!printerName) {
+        return {
+          success: false,
+          error:
+            "No receipt printer is configured. Open Printer Settings and select your receipt printer.",
+        };
+      }
+
       // Standard ESC/POS "kick drawer pin 2" command.
       const kickCommand = Buffer.from([0x1b, 0x70, 0x00, 0x19, 0xfa]);
       const tempPath = path.join(os.tmpdir(), `drawer-kick-${Date.now()}.bin`);
@@ -331,7 +383,7 @@
 
       await new Promise((resolve, reject) => {
         // Sends the raw bytes straight to the printer's spool queue.
-        exec(`copy /b "${tempPath}" "\\\\localhost\\${PRINTER_NAME}"`, (err) => {
+        exec(`copy /b "${tempPath}" "\\\\localhost\\${printerName}"`, (err) => {
           fs.unlink(tempPath, () => {});
           if (err) reject(err);
           else resolve();
@@ -348,16 +400,70 @@
   // 2) PRINT OFFLINE CHECKOUT RECEIPT
   ipcMain.handle("receipt:print", async (_event, sale) => {
     try {
+      const printerName = resolvePrinterName();
+      if (!printerName) {
+        return {
+          success: false,
+          error:
+            "No receipt printer is configured. Open Printer Settings and select your receipt printer.",
+        };
+      }
+
       const pdfPath = await generateReceiptPDF(sale);
 
       await print(pdfPath, {
-        printer: PRINTER_NAME,
+        printer: printerName,
         scale: "noscale",
       });
 
       return { success: true };
     } catch (err) {
       console.error("Print error:", err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  // 2b) RECEIPT PRINTER PREFERENCE + DISCOVERY
+  ipcMain.handle("printer:list", async () => {
+    try {
+      const printers = await getPrinters();
+      return {
+        success: true,
+        printers: (printers || []).map((p) => ({
+          name: p.name,
+          isDefault: !!p.isDefault,
+        })),
+      };
+    } catch (err) {
+      console.error("printer:list error:", err);
+      return { success: false, error: err.message, printers: [] };
+    }
+  });
+
+  ipcMain.handle("printer:getPreference", async () => {
+    try {
+      const saved = (readPrinterConfig().receiptPrinter || "").trim();
+      return {
+        success: true,
+        receiptPrinter: saved || null,
+        usingLegacyFallback:
+          !fs.existsSync(PRINTER_CONFIG_PATH) ? LEGACY_PRINTER_NAME : null,
+      };
+    } catch (err) {
+      console.error("printer:getPreference error:", err);
+      return { success: false, error: err.message, receiptPrinter: null };
+    }
+  });
+
+  ipcMain.handle("printer:setPreference", async (_event, name) => {
+    try {
+      const receiptPrinter = typeof name === "string" ? name.trim() : "";
+      const config = readPrinterConfig();
+      config.receiptPrinter = receiptPrinter;
+      writePrinterConfig(config);
+      return { success: true, receiptPrinter: receiptPrinter || null };
+    } catch (err) {
+      console.error("printer:setPreference error:", err);
       return { success: false, error: err.message };
     }
   });
