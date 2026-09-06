@@ -425,7 +425,7 @@ export default function POS() {
             {cart.length > 0 && (
               <button
                 onClick={() => setCart([])}
-                className="type-caption text-brand hover:underline inline-flex items-center gap-1.5"
+                className="type-caption text-error-text hover:underline inline-flex items-center gap-1.5"
               >
                 <Trash2 size={13} /> Clear
               </button>
@@ -484,7 +484,7 @@ export default function POS() {
                     </div>
                     <button
                       onClick={() => removeFromCart(item.variant_id)}
-                      className="text-text-muted hover:text-brand shrink-0"
+                      className="text-text-muted hover:text-error-text shrink-0"
                       aria-label="Remove item"
                     >
                       <X size={15} />
@@ -606,7 +606,7 @@ export default function POS() {
                         setFailedSales(getFailedSales());
                       }
                     }}
-                    className="type-caption underline text-brand"
+                    className="type-caption underline text-error-text"
                   >
                     Discard
                   </button>
@@ -664,7 +664,7 @@ function SaleSuccess({ data, onNewSale, onPrintAgain }) {
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-surface-overlay" onClick={onNewSale} />
-      <div className="relative w-full max-w-sm rounded-2xl bg-surface-panel border border-border-strong p-6 text-center shadow-[0_16px_48px_-12px_rgba(0,0,0,0.7)]">
+      <div className="relative w-full max-w-sm rounded-2xl bg-surface-panel border border-border-strong p-6 text-center shadow-[0_16px_40px_-16px_rgba(42,38,33,0.28)]">
         <div className="w-14 h-14 rounded-full bg-success/12 text-success-text flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 size={30} />
         </div>

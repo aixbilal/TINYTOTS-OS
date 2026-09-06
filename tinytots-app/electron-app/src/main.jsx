@@ -52,7 +52,7 @@ createRoot(document.getElementById("root")).render(
         path="/pos"
         element={
           <RequireAuth>
-            <AppShell dense>
+            <AppShell dense warm>
               <POS />
             </AppShell>
           </RequireAuth>
