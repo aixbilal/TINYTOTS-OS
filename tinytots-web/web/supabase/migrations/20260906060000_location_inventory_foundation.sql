@@ -23,6 +23,7 @@ create table if not exists public.locations (
   country text not null default 'Pakistan',
   latitude numeric(9,6),
   longitude numeric(9,6),
+  google_place_id text,
   directions_url text,
   is_public boolean not null default false,
   is_active boolean not null default true,
@@ -39,6 +40,8 @@ comment on column public.locations.latitude is
   'Verified coordinate only. Leave null rather than estimate.';
 comment on column public.locations.longitude is
   'Verified coordinate only. Leave null rather than estimate.';
+comment on column public.locations.google_place_id is
+  'Verified Google Place ID (from Google Maps/Locator Builder), if known. Lets directions_url target the exact business listing via the documented destination_place_id parameter (https://developers.google.com/maps/documentation/urls/get-started#directions-action) with no Maps API key or billing. Leave null rather than guess.';
 
 alter table public.locations enable row level security;
 

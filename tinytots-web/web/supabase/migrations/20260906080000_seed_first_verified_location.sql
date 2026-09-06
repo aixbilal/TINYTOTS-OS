@@ -9,11 +9,18 @@
 -- 36050, Toba Tek Singh, Punjab, Pakistan" with the tail duplicated. Every
 -- verified fact is preserved exactly once; nothing added or dropped.
 --
--- No coordinates: none have been verified, and none are guessed here —
--- directions_url is deterministically derived from the complete verified
--- address text using Google's documented Maps Search URL scheme
--- (https://developers.google.com/maps/documentation/urls/get-started#search-action),
--- not from invented lat/lng.
+-- Coordinates + Place ID (verified 2026-09-06 via Google Maps/Locator
+-- Builder representation of the actual location, owner-approved):
+--   latitude  30.9714996
+--   longitude 72.4801063
+--   place_id  ChIJq3uXXhsPIzkRYglWOoG7h1Q
+-- directions_url is built from these verified values using Google's
+-- documented, key-free Maps URL scheme
+-- (https://developers.google.com/maps/documentation/urls/get-started#directions-action):
+-- `destination` carries the verified lat/lng as a guaranteed pin, and
+-- `destination_place_id` resolves it to the exact business listing. No
+-- Maps JavaScript API, Locator Plus, API key, or billing involved — this is
+-- a plain externally-opened URL.
 --
 -- No second store: no second address has been verified yet. No
 -- variant_location_stock rows: no branch inventory has been verified either.
@@ -27,6 +34,9 @@ insert into public.locations (
   city,
   region,
   country,
+  latitude,
+  longitude,
+  google_place_id,
   directions_url,
   is_public,
   is_active,
@@ -38,7 +48,10 @@ insert into public.locations (
   'Toba Tek Singh',
   'Punjab',
   'Pakistan',
-  'https://www.google.com/maps/search/?api=1&query=Tiny%20Tots%2C%20Shop%20No.%20169%2C%20Street%20Markazi%20Jamia%20Masjid%2C%20Toba%20Tek%20Singh%2C%20Punjab%2C%20Pakistan%2C%2036050',
+  30.9714996,
+  72.4801063,
+  'ChIJq3uXXhsPIzkRYglWOoG7h1Q',
+  'https://www.google.com/maps/dir/?api=1&destination=30.9714996%2C72.4801063&destination_place_id=ChIJq3uXXhsPIzkRYglWOoG7h1Q',
   true,
   true,
   0
