@@ -16,16 +16,28 @@ const revision =
  * and doesn't try to precache the entire catalog on every deploy.
  */
 async function getPrecacheRouteEntries() {
-  const [{ data: products }, { data: categories }, { data: posts }] = await Promise.all([
-    supabaseAdmin
-      .from("products")
-      .select("id")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(200),
-    supabaseAdmin.from("categories").select("slug"),
-    supabaseAdmin.from("blog_posts").select("slug").eq("is_published", true),
-  ]);
+  // Build-time only. If the service-role client is unavailable at build
+  // (the Cloudflare build keeps SUPABASE_SERVICE_ROLE_KEY as a runtime-only
+  // secret), skip the per-route precache list — the offline shell and
+  // top-level pages below are still precached, and product/collection/blog
+  // pages cache on first visit as before.
+  let products: { id: number }[] | null = null;
+  let categories: { slug: string | null }[] | null = null;
+  let posts: { slug: string }[] | null = null;
+  try {
+    [{ data: products }, { data: categories }, { data: posts }] = await Promise.all([
+      supabaseAdmin
+        .from("products")
+        .select("id")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabaseAdmin.from("categories").select("slug"),
+      supabaseAdmin.from("blog_posts").select("slug").eq("is_published", true),
+    ]);
+  } catch {
+    return [];
+  }
 
   const entries: { url: string; revision: string }[] = [];
   (products || []).forEach((p) => entries.push({ url: `/products/${p.id}`, revision }));

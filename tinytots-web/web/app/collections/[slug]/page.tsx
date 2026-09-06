@@ -17,12 +17,20 @@ const PRODUCT_SELECT = `
 `;
 
 export async function generateStaticParams() {
-  const { data } = await supabaseAdmin
-    .from("categories")
-    .select("slug")
-    .eq("is_active", true)
-    .order("slug", { ascending: true });
-  return (data || []).filter((c) => c.slug).map((c) => ({ slug: c.slug }));
+  // Build-time pre-render hint only. This page is force-dynamic, so if the
+  // service-role client is unavailable at build (e.g. the Cloudflare build,
+  // where SUPABASE_SERVICE_ROLE_KEY is a runtime-only secret) we degrade to
+  // [] and every /collections/[slug] simply renders on demand.
+  try {
+    const { data } = await supabaseAdmin
+      .from("categories")
+      .select("slug")
+      .eq("is_active", true)
+      .order("slug", { ascending: true });
+    return (data || []).filter((c) => c.slug).map((c) => ({ slug: c.slug }));
+  } catch {
+    return [];
+  }
 }
 
 async function getCategoryAndProducts(slug: string) {

@@ -14,12 +14,20 @@ import BlogSubscribeForm from "@/components/BlogSubscribeForm";
 export const dynamic = "force-dynamic";
 
 export async function generateStaticParams() {
-  const { data } = await supabaseAdmin
-    .from("blog_posts")
-    .select("slug")
-    .eq("is_published", true);
+  // Build-time pre-render hint only. This page is force-dynamic, so if the
+  // service-role client is unavailable at build (e.g. the Cloudflare build,
+  // where SUPABASE_SERVICE_ROLE_KEY is a runtime-only secret) we degrade to
+  // [] and every /blog/[slug] simply renders on demand.
+  try {
+    const { data } = await supabaseAdmin
+      .from("blog_posts")
+      .select("slug")
+      .eq("is_published", true);
 
-  return (data || []).map((p) => ({ slug: p.slug }));
+    return (data || []).map((p) => ({ slug: p.slug }));
+  } catch {
+    return [];
+  }
 }
 
 function sanitizePostHtml(html: string): string {
