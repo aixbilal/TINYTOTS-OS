@@ -8,8 +8,11 @@ import PageContainer from "./PageContainer";
  * screen's content in the shared PageContainer. Reuses the existing Header
  * component (profile menu, notifications, greeting) unmodified rather than
  * rebuilding that logic.
+ *
+ * `dense` forwards to PageContainer for operational screens (e.g. POS) that
+ * need tighter outer padding to preserve usable viewport space.
  */
-export default function AppShell({ children }) {
+export default function AppShell({ children, dense = false }) {
   return (
     <div className="min-h-screen flex bg-cream">
       <Sidebar />
@@ -17,7 +20,7 @@ export default function AppShell({ children }) {
         <div className="px-6 pt-6 md:px-10">
           <Header />
         </div>
-        <PageContainer>{children}</PageContainer>
+        <PageContainer dense={dense}>{children}</PageContainer>
       </div>
     </div>
   );

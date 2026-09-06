@@ -1,13 +1,14 @@
 // POS.jsx
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, LogOut, ScanBarcode, Search, Trash2, X, Minus, Plus,
+  ScanBarcode, Search, Trash2, X, Minus, Plus,
   Wallet, CreditCard, Smartphone, MoreHorizontal, Lock, Printer as PrinterIcon,
 } from "lucide-react";
-import FloralFlourish from "../components/FloralFlourish";
 import ScannerListener from "../components/ScannerListener";
 import SearchProductModal from "../components/pos/SearchProductModal";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
+import Dialog from "../components/ui/Dialog";
 import { receiptConfig } from "../receipts/receiptConfig";
 import { buildSale } from "../receipts/buildSale";
 import { printReceipt } from "../receipts/printReceipt";
@@ -21,8 +22,6 @@ import {
 } from "../services/offlineQueue";
 import { apiFetch } from "../services/api";
 import useNetworkStatus from "../hooks/useNetworkStatus";
-import { getSession, clearSession } from "../auth";
-import loginBg from "../assets/login-bg.png";
 
 const PAYMENT_METHODS = [
   { key: "cash", label: "Cash", icon: Wallet },
@@ -34,23 +33,10 @@ const PAYMENT_METHODS = [
 
 const TAX_RATE = receiptConfig.taxRatePercent / 100;
 
-const glassCard =
-  "rounded-2xl border border-white/40 backdrop-blur-xl transition-transform duration-300";
-const glassCardStyle = {
-  background: "linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.12) 100%)",
-  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
-};
-
 export default function POS() {
-  const navigate = useNavigate();
+  // Dashboard/logout navigation now lives in AppShell's persistent Sidebar —
+  // POS no longer needs its own back/logout control.
   const isOnline = useNetworkStatus();
-  const session = getSession();
-  const isAdmin = session?.role === "admin";
-
-  function handleLogout() {
-    clearSession();
-    navigate("/login");
-  }
 
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
@@ -134,17 +120,17 @@ export default function POS() {
   }
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  
+
   // 1. Calculate automatic database-driven discount per variant scanned
   const autoDiscountAmount = cart.reduce(
     (sum, item) => sum + item.price * item.qty * ((Number(item.discount_percent) || 0) / 100),
     0
   );
-  
+
   // 2. Calculate any manual discount applied by the cashier on top
   const manualDiscountAmount =
     discountType === "percent" ? (subtotal * (Number(discount) || 0)) / 100 : Number(discount) || 0;
-  
+
   // 3. Combine both discounts together
   const discountAmount = autoDiscountAmount + manualDiscountAmount;
   const taxableAmount = Math.max(subtotal - discountAmount, 0);
@@ -284,255 +270,213 @@ export default function POS() {
   const formatPKR = (v) => `Rs. ${Number(v || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 })}`;
 
   return (
-    <div
-      className="min-h-screen px-10 py-6 bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${loginBg})` }}
-    >
+    <div className="flex flex-col gap-4">
       <ScannerListener products={products} onScan={addToCart} />
 
-      {isAdmin ? (
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-maroon-700 mb-4"
-        >
-          <ArrowLeft size={15} /> Dashboard
-        </button>
-      ) : (
-        <button
-          onClick={handleLogout}
-          className="inline-flex items-center gap-2 text-sm text-ink-800 hover:text-maroon-700 mb-4"
-        >
-          <LogOut size={15} /> Logout
-        </button>
-      )}
-
-      {/* Header */}
-      <div className="relative flex items-start justify-between mb-6">
-        <FloralFlourish className="absolute -top-4 right-24 w-80 h-40 pointer-events-none hidden md:block" />
-        <div className="relative">
-          <h1 className="type-heading-lg text-maroon-800 flex items-baseline gap-3">
-            POS <span className="type-body font-normal text-ink-800">| Point of Sale</span>
-          </h1>
-          <p className="text-ink-800 mt-1">Scan product barcode or search to add to cart</p>
-        </div>
-
-        <div className="flex flex-col items-end gap-2">
-          <button
-            onClick={handleOpenDrawer}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-white/40 text-ink-900 text-sm font-medium hover:bg-white/20 backdrop-blur-sm"
-          >
-            <PrinterIcon size={16} /> Open Cash Drawer
-          </button>
-          <span className={`text-xs font-medium ${isOnline ? "text-green-700" : "text-maroon-700"}`}>
-            {isOnline ? "● Online" : "● Offline"}
-            {pendingSales > 0 && ` — ${pendingSales} pending sync`}
-          </span>
-          {(pendingSales > 0 || failedSales.length > 0) && (
-            <button
-              onClick={() => setShowPending(true)}
-              className="text-xs underline text-ink-800"
-            >
-              View queue{failedSales.length > 0 ? ` (${failedSales.length} need attention)` : ""}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Info bar */}
-      <div className={`px-6 py-4 flex flex-wrap gap-x-10 gap-y-3 mb-6 ${glassCard}`} style={glassCardStyle}>
-        <InfoField label="Cashier">
+      {/* Session / status bar */}
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-2xl border border-gold-300/30 bg-white px-6 py-4 shrink-0">
+        <SessionField label="Cashier">
           <input
             value={cashier}
             onChange={(e) => setCashier(e.target.value)}
             placeholder="Enter cashier name"
             className="font-semibold text-ink-900 bg-transparent outline-none border-b border-dashed border-ink-900/30 focus:border-maroon-700 w-40"
           />
-        </InfoField>
-        <InfoField label="Shop" value={receiptConfig.store.name} />
-        <InfoField
+        </SessionField>
+        <SessionField label="Shop" value={receiptConfig.store.name} />
+        <SessionField
           label="Date"
           value={now.toLocaleDateString(undefined, { day: "2-digit", month: "long", year: "numeric" })}
         />
-        <InfoField label="Day" value={now.toLocaleDateString(undefined, { weekday: "long" })} />
-        <InfoField label="Address" value={receiptConfig.store.address} wide />
+        <SessionField label="Day" value={now.toLocaleDateString(undefined, { weekday: "long" })} />
+        <SessionField label="Address" value={receiptConfig.store.address} wide />
+
+        <div className="ml-auto flex items-center gap-3">
+          <Badge variant={isOnline ? "success" : "warning"}>
+            {isOnline ? "Online" : "Offline"}
+            {pendingSales > 0 && ` · ${pendingSales} pending`}
+          </Badge>
+          {(pendingSales > 0 || failedSales.length > 0) && (
+            <button onClick={() => setShowPending(true)} className="type-caption text-ink-700 hover:underline">
+              View queue{failedSales.length > 0 ? ` (${failedSales.length} need attention)` : ""}
+            </button>
+          )}
+          <Button variant="secondary" size="sm" onClick={handleOpenDrawer}>
+            <PrinterIcon size={14} /> Cash Drawer
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Scan panel */}
-        <div className={`flex flex-col items-center justify-center py-16 px-6 text-center ${glassCard}`} style={glassCardStyle}>
-          <div className="w-24 h-24 rounded-full bg-white/25 border border-white/40 flex items-center justify-center mb-6">
-            <ScanBarcode size={34} className="text-maroon-800" strokeWidth={1.4} />
+      {/* Main workspace: scan/search + notes (left) / cart + checkout (right) */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* LEFT — scan/search entry + order notes */}
+        <div className="flex flex-1 min-w-0 flex-col gap-4">
+          <div className="flex items-center gap-4 rounded-2xl border border-gold-300/30 bg-white px-6 py-5 shrink-0">
+            <div className="w-11 h-11 rounded-full bg-maroon-100 flex items-center justify-center text-maroon-700 shrink-0">
+              <ScanBarcode size={20} strokeWidth={1.6} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="type-card-title text-ink-900">Scan or search a product</p>
+              <p className="type-body-sm text-ink-700/70">
+                Scanner is active — scan a barcode any time, or search by name or SKU.
+              </p>
+            </div>
+            <Button variant="secondary" onClick={() => setSearchOpen(true)}>
+              <Search size={15} /> Search
+            </Button>
           </div>
-          <h2 className="type-section text-maroon-800 mb-2">Scan Barcode / QR Code</h2>
-          <p className="text-sm text-ink-800 mb-6 max-w-[220px]">
-            Scan a product barcode or QR code to add it to the cart
-          </p>
-          <div className="flex items-center gap-3 w-full max-w-[220px] mb-6">
-            <span className="flex-1 h-px bg-white/40" />
-            <span className="text-xs text-ink-800/60">or</span>
-            <span className="flex-1 h-px bg-white/40" />
+
+          <div className="flex-1 min-h-[120px] rounded-2xl border border-gold-300/30 bg-white px-6 py-5 flex flex-col">
+            <h3 className="type-card-title text-ink-900 mb-3">Order Notes</h3>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add order notes…"
+              className="flex-1 w-full bg-transparent outline-none text-sm resize-none placeholder:text-ink-700/40 text-ink-900"
+            />
           </div>
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-white/40 text-ink-900 text-sm font-medium hover:bg-white/20 backdrop-blur-sm"
-          >
-            <Search size={15} /> Search Product
-          </button>
         </div>
 
-        {/* Cart */}
-        <div className={`lg:col-span-2 p-6 ${glassCard}`} style={glassCardStyle}>
-          <div className="flex items-center justify-between mb-4">
+        {/* RIGHT — cart + checkout. max-height (not a forced height) caps the panel on
+            tall viewports so the item list scrolls internally while payment/summary/
+            checkout stay put — on short viewports the panel just sizes to its content
+            instead of being stretched. overflow-y-auto (not -hidden) on the panel
+            itself is a last-resort fallback: if a viewport is so short that even the
+            header+footer alone can't fit, the whole panel scrolls as a unit rather
+            than silently clipping the checkout button. */}
+        <div className="w-full lg:w-[400px] shrink-0 flex flex-col rounded-2xl border border-gold-300/30 bg-white overflow-y-auto lg:max-h-[calc(100vh-230px)]">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gold-300/30 shrink-0">
             <h2 className="type-section text-maroon-800">Cart ({cart.length})</h2>
             {cart.length > 0 && (
               <button
                 onClick={() => setCart([])}
-                className="text-sm text-maroon-700 hover:underline inline-flex items-center gap-1.5"
+                className="type-caption text-maroon-700 hover:underline inline-flex items-center gap-1.5"
               >
-                <Trash2 size={14} /> Clear Cart
+                <Trash2 size={13} /> Clear
               </button>
             )}
           </div>
 
-          {cart.length === 0 ? (
-            <p className="text-center text-ink-800/60 py-16 text-sm">
-              Cart is empty — scan an item or search to add one.
-            </p>
-          ) : (
-            <div className="space-y-1">
-              <div className="grid grid-cols-[2fr_0.6fr_0.8fr_1fr_0.6fr_0.7fr_auto] gap-2 text-xs text-ink-800/70 px-2 pb-2 border-b border-white/30">
-                <span>Product</span>
-                <span>Size</span>
-                <span>Color</span>
-                <span>Qty</span>
-                <span>Price</span>
-                <span>Total</span>
-                <span></span>
+          {/* min-h-0 (not a fixed floor) so this area always yields to the payment/
+              summary/checkout footer below — the footer must never be clipped. */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {cart.length === 0 ? (
+              <p className="text-center text-ink-700/60 py-8 px-6 text-sm">
+                Cart is empty — scan an item or search to add one.
+              </p>
+            ) : (
+              <div className="divide-y divide-gold-300/20">
+                {cart.map((item) => (
+                  <div key={item.variant_id} className="flex items-center gap-3 px-4 py-3">
+                    <div className="w-10 h-10 rounded-lg bg-cream-100 border border-gold-300/30 flex-shrink-0 overflow-hidden">
+                      {item.image_url && (
+                        <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="type-body-sm font-medium text-ink-900 truncate">{item.name}</p>
+                      <p className="type-caption text-ink-700/60 truncate">
+                        {[item.size, item.color].filter(Boolean).join(" / ") || item.sku}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => changeQty(item.variant_id, -1)}
+                        className="w-6 h-6 rounded-md border border-gold-300/50 flex items-center justify-center hover:bg-cream-100 text-ink-700"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <span className="w-5 text-center text-sm text-ink-900">{item.qty}</span>
+                      <button
+                        onClick={() => changeQty(item.variant_id, 1)}
+                        className="w-6 h-6 rounded-md border border-gold-300/50 flex items-center justify-center hover:bg-cream-100 text-ink-700"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                    <div className="w-16 shrink-0 text-right">
+                      <p className="text-sm font-medium text-ink-900">{formatPKR(item.price * item.qty)}</p>
+                      {Number(item.discount_percent) > 0 && (
+                        <p className="type-caption text-maroon-700">-{item.discount_percent}%</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => removeFromCart(item.variant_id)}
+                      className="text-ink-700/50 hover:text-maroon-700 shrink-0"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+                ))}
               </div>
-              {cart.map((item) => (
-                <div
-                  key={item.variant_id}
-                  className="grid grid-cols-[2fr_0.6fr_0.8fr_1fr_0.6fr_0.7fr_auto] gap-2 items-center px-2 py-2.5 border-b border-white/30 last:border-0"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-white/20 border border-white/30 flex-shrink-0 overflow-hidden">
-                      {item.image_url && <img src={item.image_url} alt="" className="w-full h-full object-cover" />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="type-body-lg truncate text-ink-900">{item.name}</p>
-                      <p className="type-caption text-ink-800/60 font-mono type-mono truncate">{item.sku}</p>
-                    </div>
-                  </div>
-                  <span className="text-sm text-ink-900">{item.size || "—"}</span>
-                  <span className="text-sm text-ink-900">{item.color || "—"}</span>
-                  <div className="flex items-center gap-1.5">
+            )}
+          </div>
+
+          <div className="shrink-0 border-t border-gold-300/30 px-5 py-4 space-y-4">
+            <div>
+              <p className="type-field-label text-ink-900 mb-2">Payment Method</p>
+              <div className="grid grid-cols-5 gap-1.5">
+                {PAYMENT_METHODS.map((m) => {
+                  const Icon = m.icon;
+                  const active = paymentMethod === m.key;
+                  return (
                     <button
-                      onClick={() => changeQty(item.variant_id, -1)}
-                      className="w-6 h-6 rounded-md border border-white/40 flex items-center justify-center hover:bg-white/20"
+                      key={m.key}
+                      onClick={() => setPaymentMethod(m.key)}
+                      className={`flex flex-col items-center gap-1 py-2.5 rounded-lg border text-xs font-medium transition-colors ${
+                        active
+                          ? "bg-maroon-700 border-maroon-700 text-cream-50"
+                          : "border-gold-300/50 text-ink-900 hover:bg-cream-100"
+                      }`}
                     >
-                      <Minus size={12} />
+                      <Icon size={14} />
+                      {m.label}
                     </button>
-                    <span className="w-5 text-center text-sm">{item.qty}</span>
-                    <button
-                      onClick={() => changeQty(item.variant_id, 1)}
-                      className="w-6 h-6 rounded-md border border-white/40 flex items-center justify-center hover:bg-white/20"
-                    >
-                      <Plus size={12} />
-                    </button>
-                  </div>
-                  <span className="text-sm text-ink-900">
-                    {formatPKR(item.price)}
-                    {Number(item.discount_percent) > 0 && (
-                      <span className="text-xs text-maroon-700 ml-1">-{item.discount_percent}%</span>
-                    )}
-                  </span>
-                  <span className="text-sm font-medium text-ink-900">{formatPKR(item.price * item.qty)}</span>
-                  <button
-                    onClick={() => removeFromCart(item.variant_id)}
-                    className="text-ink-800/50 hover:text-maroon-700"
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Row label="Subtotal" value={formatPKR(subtotal)} />
+              <div className="flex items-center justify-between py-1 text-sm">
+                <span className="text-ink-700">Discount</span>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min={0}
+                    value={discount}
+                    onChange={(e) => setDiscount(e.target.value)}
+                    className="w-14 border border-gold-300/50 rounded px-1.5 py-1 text-right text-sm text-ink-900"
+                  />
+                  <select
+                    value={discountType}
+                    onChange={(e) => setDiscountType(e.target.value)}
+                    className="border border-gold-300/50 rounded px-1 py-1 text-sm text-ink-900"
                   >
-                    <X size={15} />
-                  </button>
+                    <option value="flat">Rs.</option>
+                    <option value="percent">%</option>
+                  </select>
+                  <span className="text-ink-900 w-16 text-right">-{formatPKR(discountAmount)}</span>
                 </div>
-              ))}
+              </div>
+              {tax > 0 && <Row label="Tax" value={formatPKR(tax)} />}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Bottom row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        <div className={`p-5 ${glassCard}`} style={glassCardStyle}>
-          <h3 className="font-medium text-maroon-800 mb-3">Notes</h3>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add order notes…"
-            rows={4}
-            className="w-full bg-transparent outline-none text-sm resize-none placeholder:text-ink-800/40 text-ink-900"
-          />
-        </div>
-
-        <div className={`p-5 ${glassCard}`} style={glassCardStyle}>
-          <h3 className="font-medium text-maroon-800 mb-3">Payment Method</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {PAYMENT_METHODS.map((m) => {
-              const Icon = m.icon;
-              const active = paymentMethod === m.key;
-              return (
-                <button
-                  key={m.key}
-                  onClick={() => setPaymentMethod(m.key)}
-                  className={`flex flex-col items-center gap-1 py-3 rounded-lg border text-xs font-medium transition-colors ${
-                    active
-                      ? "bg-maroon-700 border-maroon-700 text-cream-50"
-                      : "border-white/40 text-ink-900 hover:bg-white/20"
-                  }`}
-                >
-                  <Icon size={15} />
-                  {m.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className={`p-5 ${glassCard}`} style={glassCardStyle}>
-          <Row label="Subtotal" value={formatPKR(subtotal)} />
-          <div className="flex items-center justify-between py-1.5 text-sm">
-            <span className="text-ink-800">Discount</span>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={0}
-                value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
-                className="w-16 border border-white/40 bg-white/20 rounded px-2 py-1 text-right text-sm text-ink-900"
-              />
-              <select
-                value={discountType}
-                onChange={(e) => setDiscountType(e.target.value)}
-                className="border border-white/40 bg-white/20 rounded px-1.5 py-1 text-sm text-ink-900"
-              >
-                <option value="flat">Rs.</option>
-                <option value="percent">%</option>
-              </select>
-              <span className="text-ink-900 w-16 text-right">-{formatPKR(discountAmount)}</span>
+            <div className="border-t border-gold-300/30 pt-3 flex items-center justify-between">
+              <span className="type-card-title text-ink-900">Total</span>
+              <span className="type-stat text-maroon-800">{formatPKR(total)}</span>
             </div>
+
+            <Button
+              onClick={checkout}
+              disabled={processing || cart.length === 0}
+              size="lg"
+              className="w-full"
+            >
+              <Lock size={15} /> {processing ? "Processing…" : "Checkout"}
+            </Button>
           </div>
-          {tax > 0 && <Row label="Tax" value={formatPKR(tax)} />}
-          <div className="border-t border-white/40 my-2" />
-          <div className="flex items-center justify-between mb-4">
-            <span className="font-semibold text-ink-900">Total</span>
-            <span className="type-stat text-maroon-800">{formatPKR(total)}</span>
-          </div>
-          <button
-            onClick={checkout}
-            disabled={processing || cart.length === 0}
-            className="type-btn w-full flex items-center justify-center gap-2 bg-maroon-700 text-cream-50 py-3 rounded-lg hover:bg-maroon-800 disabled:opacity-50"
-          >
-            <Lock size={15} /> {processing ? "Processing…" : "Checkout"}
-          </button>
         </div>
       </div>
 
@@ -541,23 +485,19 @@ export default function POS() {
       )}
 
       {showPending && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="type-section text-maroon-800">Pending & Failed Sales</h3>
-              <button onClick={() => setShowPending(false)}><X size={18} /></button>
-            </div>
-            {failedSales.length === 0 && pendingSales === 0 && (
-              <p className="text-sm text-ink-800/60">Nothing pending — everything's synced.</p>
-            )}
+        <Dialog open onClose={() => setShowPending(false)} title="Pending & Failed Sales">
+          {failedSales.length === 0 && pendingSales === 0 && (
+            <p className="type-body-sm text-ink-700/60">Nothing pending — everything's synced.</p>
+          )}
+          <div className="space-y-2 max-h-[50vh] overflow-y-auto">
             {failedSales.map((s) => (
-              <div key={s.client_sale_id} className="border border-red-200 bg-red-50 rounded-lg p-3 mb-2 text-sm">
+              <div key={s.client_sale_id} className="border border-red-200 bg-red-50 rounded-lg p-3 text-sm">
                 <p className="font-medium text-red-800">{s.offlineReceiptNumber} — Rs. {s.total}</p>
                 <p className="text-red-700 text-xs mt-1">{s.failReason}</p>
                 <div className="flex gap-3 mt-2">
                   <button
                     onClick={() => { retrySale(s.client_sale_id); setFailedSales(getFailedSales()); setPendingSales(getQueueCount()); }}
-                    className="text-xs underline text-ink-800"
+                    className="text-xs underline text-ink-700"
                   >
                     Retry
                   </button>
@@ -576,16 +516,16 @@ export default function POS() {
               </div>
             ))}
           </div>
-        </div>
+        </Dialog>
       )}
     </div>
   );
 }
 
-function InfoField({ label, value, children, wide }) {
+function SessionField({ label, value, children, wide }) {
   return (
     <div className={wide ? "min-w-[220px]" : ""}>
-      <p className="text-xs text-ink-800/70">{label}</p>
+      <p className="type-caption text-ink-700/70">{label}</p>
       {children || <p className="font-semibold text-ink-900">{value}</p>}
     </div>
   );
@@ -593,8 +533,8 @@ function InfoField({ label, value, children, wide }) {
 
 function Row({ label, value }) {
   return (
-    <div className="flex items-center justify-between py-1.5 text-sm">
-      <span className="text-ink-800">{label}</span>
+    <div className="flex items-center justify-between py-1 text-sm">
+      <span className="text-ink-700">{label}</span>
       <span className="text-ink-900">{value}</span>
     </div>
   );
