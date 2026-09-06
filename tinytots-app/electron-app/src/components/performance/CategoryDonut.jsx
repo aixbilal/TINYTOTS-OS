@@ -1,40 +1,60 @@
 import { PieChart, Pie, Cell } from "recharts";
+import { EmptyState } from "../ui/States";
 
-const COLORS = ["#7a1f2b", "#c9a24b", "#1c1c1c", "#8a6a4a", "#e8ddd0"];
+// Coral-led categorical ramp on the dark surface.
+const COLORS = ["#f0483e", "#f0a13c", "#e8e8ea", "#8a8a93", "#5a5a63"];
 
-const glassCard =
-  "rounded-2xl border border-white/40 backdrop-blur-xl transition-transform duration-300";
-const glassCardStyle = {
-  background: "linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.12) 100%)",
-  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
-};
-
-export default function CategoryDonut({ data }) {
-  const chartData = data?.length ? data : [{ name: "No data", value: 100 }];
+/**
+ * Category share donut. `data` is the real breakdown
+ * ([{ name, value }] as percentages) from /api/performance/summary.
+ */
+export default function CategoryDonut({ data, title = "Top Selling Categories" }) {
+  const hasData = Array.isArray(data) && data.length > 0;
 
   return (
-    <div className={`p-6 hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
-      <h3 className="type-section text-ink-900 mb-5">Sales by Category</h3>
-      <div className="flex items-center gap-6">
-        <PieChart width={150} height={150}>
-          <Pie data={chartData} dataKey="value" innerRadius={45} outerRadius={70} stroke="none">
-            {chartData.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
+    <div className="rounded-xl border border-border-default bg-surface-panel p-5 h-full">
+      <h3 className="type-section text-text-primary mb-4">{title}</h3>
+      {!hasData ? (
+        <EmptyState
+          title="No category data yet"
+          description="Category performance appears once sales are recorded."
+          className="py-8"
+        />
+      ) : (
+        <div className="flex items-center gap-5">
+          <PieChart width={140} height={140}>
+            <Pie
+              data={data}
+              dataKey="value"
+              innerRadius={42}
+              outerRadius={66}
+              stroke="none"
+              isAnimationActive={false}
+            >
+              {data.map((_, i) => (
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              ))}
+            </Pie>
+          </PieChart>
+          <div className="flex-1 space-y-2">
+            {data.map((c, i) => (
+              <div
+                key={c.name}
+                className="flex items-center justify-between type-body-sm"
+              >
+                <span className="flex items-center gap-2 text-text-primary">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full inline-block"
+                    style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                  />
+                  {c.name}
+                </span>
+                <span className="text-text-secondary">{c.value}%</span>
+              </div>
             ))}
-          </Pie>
-        </PieChart>
-        <div className="flex-1 space-y-2.5">
-          {chartData.map((c, i) => (
-            <div key={c.name} className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-ink-900">
-                <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                {c.name}
-              </span>
-              <span className="text-ink-700">{c.value}%</span>
-            </div>
-          ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

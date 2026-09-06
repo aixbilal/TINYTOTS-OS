@@ -1,64 +1,75 @@
 import { PieChart, Pie, Cell } from "recharts";
 
-const glassCard =
-  "rounded-2xl border border-white/40 backdrop-blur-xl transition-transform duration-300";
-const glassCardStyle = {
-  background: "linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.12) 100%)",
-  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
-};
-
-export default function GoalSummaryCard({ goal }) {
+/**
+ * Monthly goal ring + figures. `goal` is the real object from
+ * /api/performance/summary ({ percent, target, achieved, remaining }).
+ * `onViewDetails` is optional.
+ */
+export default function GoalSummaryCard({ goal, onViewDetails }) {
   const percent = goal ? Math.min(goal.percent, 100) : 0;
   const ringData = [
     { name: "done", value: percent },
-    { name: "left", value: 100 - percent },
+    { name: "left", value: Math.max(100 - percent, 0) },
   ];
+  const pkr = (v) => `Rs. ${Number(v || 0).toLocaleString("en-PK")}`;
 
   return (
-    <div className={`p-6 flex flex-col hover:scale-[1.01] ${glassCard}`} style={glassCardStyle}>
-      <h3 className="type-section text-ink-900 mb-5">Goal Summary</h3>
+    <div className="rounded-xl border border-border-default bg-surface-panel p-5 flex flex-col h-full">
+      <h3 className="type-section text-text-primary mb-4">Goal Summary</h3>
 
-      <div className="flex items-center gap-6 mb-5">
-        <div className="relative w-[130px] h-[130px] flex-shrink-0">
-          <PieChart width={130} height={130}>
+      <div className="flex items-center gap-5 mb-4">
+        <div className="relative w-[120px] h-[120px] flex-shrink-0">
+          <PieChart width={120} height={120}>
             <Pie
               data={ringData}
               dataKey="value"
-              innerRadius={48}
-              outerRadius={62}
+              innerRadius={44}
+              outerRadius={58}
               startAngle={90}
               endAngle={-270}
               stroke="none"
+              isAnimationActive={false}
             >
-              <Cell fill="#c9a24b" />
-              <Cell fill="#f1e7d8" />
+              <Cell fill="#f0483e" />
+              <Cell fill="#26262b" />
             </Pie>
           </PieChart>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="type-stat text-ink-900">{goal ? `${goal.percent}%` : "—"}</p>
-            <p className="text-[11px] text-ink-700 text-center leading-tight">of monthly<br />goal</p>
+            <p className="type-heading-sm text-text-primary">
+              {goal ? `${goal.percent}%` : "—"}
+            </p>
+            <p className="type-caption text-text-muted text-center leading-tight">
+              of monthly
+              <br />
+              goal
+            </p>
           </div>
         </div>
 
-        <div className="flex-1 space-y-3">
-        <div>
-            <p className="text-xs text-ink-700">Monthly Sales Goal</p>
-            <p className="font-medium text-ink-900">Rs. {goal ? goal.target.toLocaleString("en-PK") : "0"}</p>
-          </div>
-          <div>
-            <p className="text-xs text-ink-700">Achieved</p>
-            <p className="font-medium text-ink-900">Rs. {goal ? goal.achieved.toLocaleString("en-PK") : "0"}</p>
-          </div>
-          <div>
-            <p className="text-xs text-ink-700">Remaining</p>
-            <p className="font-medium text-ink-900">Rs. {goal ? goal.remaining.toLocaleString("en-PK") : "0"}</p>
-          </div>
+        <div className="flex-1 space-y-2.5">
+          <Figure label="Monthly Sales Goal" value={pkr(goal?.target)} />
+          <Figure label="Achieved" value={pkr(goal?.achieved)} />
+          <Figure label="Remaining" value={pkr(goal?.remaining)} />
         </div>
       </div>
 
-      <button className="w-full flex items-center justify-center gap-2 border border-white/40 bg-white/20 rounded-lg py-2.5 text-sm text-ink-900 hover:bg-white/30 backdrop-blur-sm mt-auto">
-        View Goal Details
-      </button>
+      {onViewDetails && (
+        <button
+          onClick={onViewDetails}
+          className="type-btn mt-auto w-full flex items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface-elevated py-2 text-text-primary hover:bg-[#26262c] transition-colors"
+        >
+          View Goal Details
+        </button>
+      )}
     </div>
-  ); 
+  );
+}
+
+function Figure({ label, value }) {
+  return (
+    <div>
+      <p className="type-caption text-text-muted">{label}</p>
+      <p className="type-body-sm font-medium text-text-primary">{value}</p>
+    </div>
+  );
 }

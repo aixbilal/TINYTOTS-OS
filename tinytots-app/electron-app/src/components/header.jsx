@@ -1,18 +1,16 @@
-// src/components/Header.jsx
+// src/components/header.jsx
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Users } from "lucide-react";
+import { LogOut, Users, ChevronDown } from "lucide-react";
 import { getSession, clearSession } from "../auth";
 import NotificationBell from "./NotificationBell";
 import EmployeesModal from "./EmployeesModal";
 
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
-}
-
+/**
+ * Slim persistent top bar inside the AppShell. Notifications + profile menu.
+ * The greeting/date now lives in each screen's own header region, matching
+ * the reference dashboard composition.
+ */
 export default function Header() {
   const session = getSession();
   const navigate = useNavigate();
@@ -40,34 +38,35 @@ export default function Header() {
 
   return (
     <>
-     <div
-        className="relative z-50 flex items-center justify-end gap-4 rounded-2xl px-6 py-4 border border-white/40 backdrop-blur-xl"
-        style={{
-          background:
-            "linear-gradient(160deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.10) 100%)",
-          boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
-        }}
-      >
-        <div className="text-right hidden sm:block">
-          <p className="type-caption text-ink-800/80">{getGreeting()},</p>
-          <p className="type-body-lg text-maroon-700">{session?.name || "Guest"}</p>
-        </div>
-
+      <header className="h-14 shrink-0 border-b border-border-default bg-surface-app flex items-center justify-end gap-2 px-4 md:px-6">
         <NotificationBell />
 
         <div className="relative" ref={profileRef}>
           <button
             onClick={() => setProfileOpen((v) => !v)}
-            className="type-btn w-9 h-9 rounded-full bg-maroon-700 text-cream-50 flex items-center justify-center"
+            className="flex items-center gap-2 rounded-lg pl-1 pr-2 py-1 hover:bg-surface-elevated transition-colors"
           >
-            {initial}
+            <span className="w-8 h-8 rounded-full bg-brand text-pure-white text-[13px] font-semibold flex items-center justify-center">
+              {initial}
+            </span>
+            <span className="hidden sm:block text-left leading-tight">
+              <span className="block type-body-sm font-medium text-text-primary">
+                {session?.name || "Guest"}
+              </span>
+              <span className="block type-caption text-text-muted capitalize">
+                {session?.role || "—"}
+              </span>
+            </span>
+            <ChevronDown size={14} className="text-text-muted" />
           </button>
 
           {profileOpen && (
-         <div className="absolute right-0 top-11 z-[60] w-56 bg-white border border-gold-300/40 rounded-xl shadow-lg overflow-hidden">
-              <div className="px-4 py-3 border-b border-gold-300/30">
-                <p className="type-body-lg text-ink-900">{session?.name}</p>
-                <p className="type-caption text-ink-700/60 capitalize">
+            <div className="absolute right-0 top-12 z-[60] w-56 bg-surface-panel border border-border-strong rounded-xl shadow-[0_16px_48px_-12px_rgba(0,0,0,0.7)] overflow-hidden">
+              <div className="px-4 py-3 border-b border-border-default">
+                <p className="type-body-sm font-medium text-text-primary">
+                  {session?.name}
+                </p>
+                <p className="type-caption text-text-muted capitalize">
                   {session?.role} · @{session?.username}
                 </p>
               </div>
@@ -78,7 +77,7 @@ export default function Header() {
                     setEmployeesOpen(true);
                     setProfileOpen(false);
                   }}
-                  className="type-body w-full text-left px-4 py-2.5 text-ink-900 hover:bg-cream-100 inline-flex items-center gap-2"
+                  className="type-body-sm w-full text-left px-4 py-2.5 text-text-primary hover:bg-surface-elevated inline-flex items-center gap-2"
                 >
                   <Users size={14} /> Manage Employees
                 </button>
@@ -86,14 +85,14 @@ export default function Header() {
 
               <button
                 onClick={handleLogout}
-                className="type-body w-full text-left px-4 py-2.5 text-maroon-700 hover:bg-cream-100 inline-flex items-center gap-2"
+                className="type-body-sm w-full text-left px-4 py-2.5 text-brand hover:bg-surface-elevated inline-flex items-center gap-2"
               >
                 <LogOut size={14} /> Log Out
               </button>
             </div>
           )}
         </div>
-      </div>
+      </header>
 
       {employeesOpen && <EmployeesModal onClose={() => setEmployeesOpen(false)} />}
     </>

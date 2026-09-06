@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Boxes, AlertTriangle } from "lucide-react";
-import Header from "../components/Header";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 
 export default function LowStock() {
   const navigate = useNavigate();
@@ -23,9 +22,7 @@ export default function LowStock() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-cream px-10 py-6">
-      <Header onMenuClick={() => {}} />
-
+    <div className="mx-auto max-w-6xl">
       <div className="mb-8">
         <button
           onClick={() => navigate("/dashboard")}

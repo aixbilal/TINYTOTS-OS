@@ -1,19 +1,26 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowRight,
-  Package,
-  CreditCard,
-  TrendingUp,
-  ScrollText,
+  Banknote,
   ShoppingBag,
   ShoppingCart,
-  Boxes,
+  AlertTriangle,
   Target,
+  Package,
+  Barcode,
+  ScrollText,
+  TrendingUp,
+  ChevronRight,
+  Activity,
+  Users,
+  Server,
+  Boxes,
 } from "lucide-react";
-import FloralFlourish from "../components/FloralFlourish";
 import { getSession } from "../auth";
-import loginBg from "../assets/login-bg.png";
+import SalesOverviewChart from "../components/performance/SalesOverviewChart";
+import GoalSummaryCard from "../components/performance/GoalSummaryCard";
+import CategoryDonut from "../components/performance/CategoryDonut";
+import { EmptyState } from "../components/ui/States";
 
 function timeGreeting() {
   const hour = new Date().getHours();
@@ -22,245 +29,341 @@ function timeGreeting() {
   return "Good evening,";
 }
 
-const MODULES = [
-  {
-    key: "inventory",
-    title: "Dynamic\nInventory",
-    description: "Real-time stock updates and smart inventory control.",
-    icon: Package,
-    to: "/inventory",
-    tone: "maroon",
-  },
-  {
-    key: "pos",
-    title: "POS",
-    description: "Seamless billing, payments and in-store experience.",
-    icon: CreditCard,
-    to: "/pos",
-    tone: "gold",
-  },
-  {
-    key: "performance",
-    title: "Performance\nx Goals",
-    description: "Track performance, set goals and achieve more together.",
-    icon: TrendingUp,
-    to: "/performance",
-    tone: "charcoal",
-  },
-  {
-    key: "receipts",
-    title: "Old\nReceipts",
-    description: "View and manage all your previous transactions.",
-    icon: ScrollText,
-    to: "/receipts",
-    tone: "cream",
-  },
-];
-
-// Colored glassmorphism: each tone keeps its original hue but as a translucent,
-// blurred glass tint instead of a solid fill.
-const TONE_STYLES = {
-  maroon: {
-    card: "text-cream-50 border border-white/25 backdrop-blur-xl",
-    cardStyle: {
-      background: "linear-gradient(160deg, rgba(122,31,43,0.75) 0%, rgba(122,31,43,0.45) 100%)",
-      boxShadow: "inset 0 1px 1px rgba(255,255,255,0.25)",
-    },
-    desc: "text-maroon-100/80",
-    iconWrap: "border-gold-300/40 text-gold-300 bg-white/5",
-    arrowWrap: "border-gold-300/50 text-gold-300 group-hover:bg-gold-300 group-hover:text-maroon-800",
-  },
-  gold: {
-    card: "text-cream-50 border border-white/25 backdrop-blur-xl",
-    cardStyle: {
-      background: "linear-gradient(160deg, rgba(201,162,75,0.70) 0%, rgba(201,162,75,0.40) 100%)",
-      boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3)",
-    },
-    desc: "text-cream-50/85",
-    iconWrap: "border-cream-50/40 text-cream-50 bg-white/5",
-    arrowWrap: "border-cream-50/50 text-cream-50 group-hover:bg-cream-50 group-hover:text-gold-700",
-  },
-  charcoal: {
-    card: "text-cream-50 border border-white/20 backdrop-blur-xl",
-    cardStyle: {
-      background: "linear-gradient(160deg, rgba(28,28,28,0.70) 0%, rgba(28,28,28,0.42) 100%)",
-      boxShadow: "inset 0 1px 1px rgba(255,255,255,0.15)",
-    },
-    desc: "text-cream-100/70",
-    iconWrap: "border-gold-400/40 text-gold-400 bg-white/5",
-    arrowWrap: "border-gold-400/50 text-gold-400 group-hover:bg-gold-400 group-hover:text-charcoal-900",
-  },
-  cream: {
-    card: "text-ink-900 border border-white/50 backdrop-blur-xl",
-    cardStyle: {
-      background: "linear-gradient(160deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.20) 100%)",
-      boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
-    },
-    desc: "text-ink-700/80",
-    iconWrap: "border-maroon-700/30 text-maroon-700 bg-white/10",
-    arrowWrap: "border-maroon-700/40 text-maroon-700 group-hover:bg-maroon-700 group-hover:text-cream-50",
-  },
+const ACTIVITY_ICONS = {
+  inventory: Package,
+  sales: ShoppingBag,
+  employee: Users,
+  system: Server,
+  goal: Target,
 };
+
+const pkr = (v) => `Rs. ${Math.round(Number(v || 0)).toLocaleString("en-PK")}`;
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const session = getSession();
-  const [snapshot, setSnapshot] = useState(null);
-  const [loadError, setLoadError] = useState(false);
+  const isAdmin = session?.role === "admin";
+
+  const [summary, setSummary] = useState(null); // /api/dashboard-summary
+  const [summaryError, setSummaryError] = useState(false);
+  const [perf, setPerf] = useState(null); // /api/performance/summary
+  const [perfError, setPerfError] = useState(false);
+  const [lowStock, setLowStock] = useState(null);
+  const [activity, setActivity] = useState(session ? null : []);
 
   useEffect(() => {
-    async function loadSummary() {
-      try {
-        const res = await fetch("http://localhost:3000/api/dashboard-summary");
-        const data = await res.json();
-        if (data.success) setSnapshot(data);
-        else setLoadError(true);
-      } catch {
-        setLoadError(true);
-      }
+    let ignore = false;
+
+    fetch("http://localhost:3000/api/dashboard-summary")
+      .then((r) => r.json())
+      .then((d) => {
+        if (ignore) return;
+        if (d.success) setSummary(d);
+        else setSummaryError(true);
+      })
+      .catch(() => !ignore && setSummaryError(true));
+
+    fetch("http://localhost:3000/api/performance/summary?range=month")
+      .then((r) => r.json())
+      .then((d) => {
+        if (ignore) return;
+        if (d.success) setPerf(d);
+        else setPerfError(true);
+      })
+      .catch(() => !ignore && setPerfError(true));
+
+    fetch("http://localhost:3000/api/low-stock")
+      .then((r) => r.json())
+      .then((d) => !ignore && setLowStock(d.success ? d.items : []))
+      .catch(() => !ignore && setLowStock([]));
+
+    if (session) {
+      const params = new URLSearchParams({
+        role: session.role,
+        username: session.username,
+      });
+      fetch(`http://localhost:3000/api/notifications?${params.toString()}`)
+        .then((r) => r.json())
+        .then((d) => !ignore && setActivity(d.success ? d.notifications.slice(0, 5) : []))
+        .catch(() => !ignore && setActivity([]));
     }
-    loadSummary();
+
+    return () => {
+      ignore = true;
+    };
+    // session identity is stable for the life of this screen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const now = new Date();
-  const dateLabel = now.toLocaleDateString(undefined, {
-    month: "long",
+  const dateLabel = new Date().toLocaleDateString(undefined, {
+    weekday: "short",
     day: "numeric",
+    month: "short",
     year: "numeric",
   });
-  const timeLabel = now.toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+
+  const orders = summary?.transactionsToday ?? 0;
+  const aov = orders > 0 ? summary.totalSalesToday / orders : 0;
+
+  const kpis = [
+    {
+      label: "Total Sales",
+      icon: Banknote,
+      value: summary ? pkr(summary.totalSalesToday) : null,
+    },
+    {
+      label: "Orders",
+      icon: ShoppingBag,
+      value: summary ? String(summary.transactionsToday) : null,
+    },
+    {
+      label: "Avg Order Value",
+      icon: ShoppingCart,
+      value: summary ? pkr(aov) : null,
+    },
+    {
+      label: "Low Stock Items",
+      icon: AlertTriangle,
+      value: summary ? String(summary.lowStockCount) : null,
+      onClick: isAdmin ? () => navigate("/low-stock") : undefined,
+    },
+    {
+      label: "Goal Progress",
+      icon: Target,
+      value: summary
+        ? summary.goalProgressPct != null
+          ? `${summary.goalProgressPct}%`
+          : "No goal"
+        : null,
+      onClick: isAdmin ? () => navigate("/performance") : undefined,
+    },
+  ];
+
+  const quickActions = [
+    { label: "New Sale", hint: "Open POS", icon: ShoppingCart, to: "/pos", show: true },
+    { label: "Add Product", hint: "Create new", icon: Package, to: "/inventory", show: isAdmin },
+    { label: "Manage Inventory", hint: "Stock & variants", icon: Boxes, to: "/inventory", show: isAdmin },
+    { label: "Generate Barcode", hint: "For products", icon: Barcode, to: "/inventory", show: isAdmin },
+    { label: "View Reports", hint: "Analytics", icon: TrendingUp, to: "/performance", show: isAdmin },
+    { label: "Old Receipts", hint: "All receipts", icon: ScrollText, to: "/receipts", show: isAdmin },
+  ].filter((a) => a.show);
 
   return (
-    <div
-      className="-mx-6 -my-6 md:-mx-10 md:-my-8 px-10 py-6 min-h-[calc(100vh-88px)]"
-      style={{
-        backgroundImage: `url(${loginBg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
-      }}
-    >
-      {/* Headline — Playfair editorial welcome only */}
-      <div className="relative mb-10">
-        <FloralFlourish className="absolute -top-6 right-0 w-96 h-48 pointer-events-none hidden md:block" />
-        <h1 className="font-display text-heading-xl md:text-display-l text-ink-900 relative">
-          {timeGreeting()}
-          <br />
-          <span className="text-maroon-700">{session?.name || "Retailer"}</span>
-        </h1>
-        <p className="type-body-sm mt-3 text-ink-800 flex items-center gap-2">
-          <span className="inline-block w-6 h-px bg-gold-600" />
-          Here&apos;s what&apos;s happening with your store today.
-        </p>
-      </div>
-
-      {/* Module cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {MODULES.map((mod) => {
-          const tone = TONE_STYLES[mod.tone];
-          const Icon = mod.icon;
-          return (
-            <button
-              key={mod.key}
-              onClick={() => navigate(mod.to)}
-              className={`group text-left rounded-2xl p-7 h-64 flex flex-col justify-between shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5 ${tone.card}`}
-              style={tone.cardStyle}
-            >
-              <div>
-                <div
-                  className={`w-12 h-12 rounded-lg border flex items-center justify-center mb-5 ${tone.iconWrap}`}
-                >
-                  <Icon size={22} strokeWidth={1.6} />
-                </div>
-                <h2 className="type-card-title whitespace-pre-line">
-                  {mod.title}
-                </h2>
-              </div>
-
-              <div>
-                <p className={`type-body mb-4 ${tone.desc}`}>{mod.description}</p>
-                <span
-                  className={`inline-flex w-9 h-9 rounded-full border items-center justify-center transition-colors ${tone.arrowWrap}`}
-                >
-                  <ArrowRight size={16} />
-                </span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Today's Snapshot — glass bar */}
-      <div
-        className="mt-8 rounded-2xl px-8 py-5 flex flex-wrap items-center gap-x-10 gap-y-4 border border-white/40 backdrop-blur-xl"
-        style={{
-          background:
-            "linear-gradient(160deg, rgba(255,255,255,0.22) 0%, rgba(120,20,30,0.18) 100%)",
-          boxShadow: "inset 0 1px 1px rgba(255,255,255,0.4)",
-        }}
-      >
+    <div className="mx-auto max-w-[1600px] flex flex-col gap-5">
+      {/* Greeting */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="type-field-label text-maroon-800">Today&apos;s Snapshot</p>
-          <p className="type-caption text-ink-800">
-            {dateLabel} • {timeLabel}
+          <p className="type-body-sm text-text-secondary">{timeGreeting()}</p>
+          <h1 className="type-heading-lg text-text-primary mt-0.5">
+            {session?.name || "Retailer"} <span aria-hidden>👋</span>
+          </h1>
+          <p className="type-body-sm text-text-secondary mt-1">
+            Here&apos;s what&apos;s happening with your store today.
           </p>
         </div>
+        <span className="inline-flex items-center gap-2 rounded-lg border border-border-default bg-surface-panel px-3 py-1.5 type-body-sm text-text-secondary">
+          {dateLabel}
+        </span>
+      </div>
 
-        <SnapshotStat
-          icon={ShoppingBag}
-          label="Total Sales"
-          value={
-            snapshot ? `Rs ${snapshot.totalSalesToday.toLocaleString()}` : loadError ? "—" : "…"
-          }
+      {/* KPI row */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+        {kpis.map((k) => (
+          <Stat
+            key={k.label}
+            {...k}
+            error={summaryError}
+            loading={!summary && !summaryError}
+          />
+        ))}
+      </div>
+
+      {/* Sales overview + goal */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          {perfError ? (
+            <div className="rounded-xl border border-border-default bg-surface-panel p-5 h-full">
+              <h3 className="type-section text-text-primary mb-2">Sales Overview</h3>
+              <EmptyState
+                title="Sales trend unavailable"
+                description="Performance data couldn't be loaded right now."
+              />
+            </div>
+          ) : (
+            <SalesOverviewChart data={perf?.dailySeries || []} />
+          )}
+        </div>
+        <GoalSummaryCard
+          goal={perf?.goal}
+          onViewDetails={isAdmin ? () => navigate("/performance") : undefined}
         />
-        <SnapshotStat
-          icon={ShoppingCart}
-          label="Transactions"
-          value={snapshot ? snapshot.transactionsToday : loadError ? "—" : "…"}
-        />
-        <SnapshotStat
-          icon={Boxes}
-          label="Low Stock Items"
-          value={snapshot ? snapshot.lowStockCount : loadError ? "—" : "…"}
-          action={{ label: "View Now", onClick: () => navigate("/low-stock") }}
-        />
-        <SnapshotStat
-          icon={Target}
-          label="Goal Progress"
-          value={
-            snapshot?.goalProgressPct != null
-              ? `${snapshot.goalProgressPct}%`
-              : "No goal set"
-          }
-          action={{ label: "This Month", onClick: () => navigate("/performance") }}
-        />
+      </div>
+
+      {/* Low stock + categories + activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <LowStockPanel items={lowStock} onViewAll={() => navigate("/low-stock")} />
+        {perfError ? (
+          <div className="rounded-xl border border-border-default bg-surface-panel p-5">
+            <h3 className="type-section text-text-primary mb-2">Top Selling Categories</h3>
+            <EmptyState title="Unavailable" description="Category data couldn't be loaded." />
+          </div>
+        ) : (
+          <CategoryDonut data={perf?.categoryBreakdown} />
+        )}
+        <ActivityPanel items={activity} />
+      </div>
+
+      {/* Quick actions */}
+      <div className="rounded-xl border border-border-default bg-surface-panel p-4">
+        <p className="type-section text-text-primary mb-3">Quick Actions</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
+          {quickActions.map((a) => {
+            const Icon = a.icon;
+            return (
+              <button
+                key={a.label}
+                onClick={() => navigate(a.to)}
+                className="flex items-center gap-3 rounded-lg border border-border-default bg-surface-elevated/50 px-3 py-2.5 text-left hover:bg-surface-elevated hover:border-border-strong transition-colors"
+              >
+                <span className="w-8 h-8 rounded-lg bg-brand/12 text-brand flex items-center justify-center shrink-0">
+                  <Icon size={16} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block type-body-sm font-medium text-text-primary truncate">
+                    {a.label}
+                  </span>
+                  <span className="block type-caption text-text-muted truncate">
+                    {a.hint}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
 
-function SnapshotStat({ icon: Icon, label, value, action }) {
+function Stat({ label, icon: Icon, value, onClick, loading, error }) {
+  const display = value ?? (error ? "—" : null);
+  const Comp = onClick ? "button" : "div";
   return (
-    <div className="flex items-center gap-3">
-      <div className="w-10 h-10 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center text-maroon-700">
-        <Icon size={18} strokeWidth={1.7} />
+    <Comp
+      onClick={onClick}
+      className={`rounded-xl border border-border-default bg-surface-panel p-4 text-left ${
+        onClick ? "hover:border-border-strong transition-colors" : ""
+      }`}
+    >
+      <div className="flex items-center gap-2.5 mb-3">
+        <span className="w-8 h-8 rounded-lg bg-surface-elevated border border-border-default flex items-center justify-center text-text-secondary">
+          <Icon size={16} />
+        </span>
+        <p className="type-body-sm text-text-secondary">{label}</p>
       </div>
-      <div>
-        <p className="type-label text-ink-800">{label}</p>
-        <p className="type-body-lg text-ink-900">{value}</p>
-        {action && (
-          <button
-            onClick={action.onClick}
-            className="type-caption text-maroon-700 hover:underline"
-          >
-            {action.label} →
-          </button>
-        )}
+      {loading ? (
+        <span className="block h-6 w-24 rounded bg-surface-elevated animate-pulse" />
+      ) : (
+        <p className="type-stat text-text-primary">{display}</p>
+      )}
+    </Comp>
+  );
+}
+
+function LowStockPanel({ items, onViewAll }) {
+  return (
+    <div className="rounded-xl border border-border-default bg-surface-panel p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="type-section text-text-primary">Low Stock Items</h3>
+        <button
+          onClick={onViewAll}
+          className="type-caption text-brand hover:underline inline-flex items-center gap-0.5"
+        >
+          View All <ChevronRight size={12} />
+        </button>
       </div>
+      {items === null ? (
+        <div className="space-y-2">
+          {[0, 1, 2].map((i) => (
+            <span key={i} className="block h-10 rounded-lg bg-surface-elevated animate-pulse" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={Boxes}
+          title="Stock looks healthy"
+          description="Nothing is at or below the reorder threshold."
+          className="py-8"
+        />
+      ) : (
+        <ul className="divide-y divide-border-default -mt-1">
+          {items.slice(0, 5).map((it) => (
+            <li key={it.variantId} className="flex items-center gap-3 py-2.5">
+              <span className="w-9 h-9 rounded-lg bg-surface-elevated border border-border-default flex items-center justify-center text-text-muted shrink-0">
+                <Package size={15} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="type-body-sm font-medium text-text-primary truncate">
+                  {it.name}
+                </p>
+                <p className="type-caption text-text-muted truncate">
+                  {[it.size, it.color].filter(Boolean).join(" / ") || it.publicCode || "—"}
+                </p>
+              </div>
+              <span
+                className={`type-label shrink-0 ${
+                  it.stock <= 0 ? "text-error-text" : "text-warning-text"
+                }`}
+              >
+                {it.stock <= 0 ? "Out" : `Stock: ${it.stock}`}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function ActivityPanel({ items }) {
+  return (
+    <div className="rounded-xl border border-border-default bg-surface-panel p-5">
+      <h3 className="type-section text-text-primary mb-3">Recent Activity</h3>
+      {items === null ? (
+        <div className="space-y-2">
+          {[0, 1, 2, 3].map((i) => (
+            <span key={i} className="block h-9 rounded-lg bg-surface-elevated animate-pulse" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={Activity}
+          title="No recent activity"
+          description="Sales, stock changes and alerts show up here."
+          className="py-8"
+        />
+      ) : (
+        <ul className="space-y-1 -mt-0.5">
+          {items.map((n) => {
+            const Icon = ACTIVITY_ICONS[n.category] || Activity;
+            return (
+              <li key={n.id} className="flex items-start gap-3 py-1.5">
+                <span className="w-8 h-8 rounded-lg bg-surface-elevated border border-border-default flex items-center justify-center text-text-secondary shrink-0">
+                  <Icon size={14} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="type-body-sm text-text-primary truncate">{n.title}</p>
+                  {n.description && (
+                    <p className="type-caption text-text-muted truncate">
+                      {n.description}
+                    </p>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

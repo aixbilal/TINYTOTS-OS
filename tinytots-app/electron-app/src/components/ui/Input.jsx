@@ -1,9 +1,8 @@
 // src/components/ui/Input.jsx
 
 /**
- * Shared text input primitive with label/helper/error slots. Border and focus
- * colors reuse the existing gold/maroon tokens; sizing reuses `.type-input`
- * (already applied globally to <input> in styles/typography.css).
+ * Shared text input primitive with label/helper/error slots.
+ * Dark elevated field, hairline border, coral focus ring.
  */
 export default function Input({
   label,
@@ -18,24 +17,24 @@ export default function Input({
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="type-field-label text-ink-900">
+        <label htmlFor={inputId} className="type-field-label text-text-secondary">
           {label}
         </label>
       )}
       <input
         id={inputId}
-        className={`rounded-lg border bg-white px-3.5 py-2.5 text-ink-900 outline-none transition-colors placeholder:text-ink-700/40 focus:ring-2 focus:ring-maroon-700/30 ${
+        className={`type-input rounded-lg border bg-surface-elevated px-3 py-2 text-text-primary outline-none transition-colors placeholder:text-text-muted focus:ring-2 focus:ring-brand/50 ${
           error
-            ? "border-red-400 focus:border-red-500"
-            : "border-gold-300/50 focus:border-maroon-700"
+            ? "border-error focus:border-error"
+            : "border-border-strong focus:border-brand"
         } ${className}`}
         aria-invalid={!!error}
         {...rest}
       />
       {error ? (
-        <p className="type-caption text-red-600">{error}</p>
+        <p className="type-caption text-error-text">{error}</p>
       ) : helperText ? (
-        <p className="type-caption text-ink-700/70">{helperText}</p>
+        <p className="type-caption text-text-muted">{helperText}</p>
       ) : null}
     </div>
   );

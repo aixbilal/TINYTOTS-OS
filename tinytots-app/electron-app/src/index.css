@@ -4,31 +4,95 @@
 @import "./styles/fonts.css";
 @import "./styles/typography.css";
 
+/* ============================================================
+   TinyTots OS — Electron visual system
+   Reference-driven dark operational retail terminal.
+   Source of truth: 17 - Assets/Reference Library/01 - Application
+   Reference Images/Originals/*  (Dashboard / POS / Inventory / CSL sheets)
+
+   The legacy cream/maroon/gold token NAMES are kept and remapped onto
+   the dark reference palette so the whole app inherits the new system
+   coherently. New code should prefer the semantic names
+   (surface-*, text-*, border-*, brand-*).
+   ============================================================ */
+
 @theme {
-  /* Backgrounds */
-  --color-cream: #f5f1ea;
-  --color-cream-50: #faf8f4;
-  --color-cream-100: #efe9de;
+  /* --- Semantic surfaces --- */
+  --color-surface-app: #0a0a0b; /* application background (near-black) */
+  --color-surface-sidebar: #0f0f11; /* persistent left navigation */
+  --color-surface-panel: #151517; /* cards / panels / tables / dialogs */
+  --color-surface-elevated: #1c1c20; /* inputs, chips, row hover, nested */
+  --color-surface-overlay: rgba(0, 0, 0, 0.72); /* dialog scrim */
 
-  /* Maroon (primary brand) */
-  --color-maroon-900: #4a0a15;
-  --color-maroon-800: #5c0e1b;
-  --color-maroon-700: #6f0f1f;
-  --color-maroon-600: #821527;
-  --color-maroon-100: #f3e1e2;
+  /* --- Text --- */
+  --color-text-primary: #f4f4f5;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #6b6b73;
+  --color-text-inverse: #0a0a0b;
 
-  /* Gold / tan (secondary accent) */
-  --color-gold-700: #9c7b46;
-  --color-gold-600: #b08d57;
-  --color-gold-400: #cbab77;
-  --color-gold-300: #d9c7a3;
-  --color-gold-100: #f0e7d6;
+  /* --- Borders --- */
+  --color-border-default: #27272c;
+  --color-border-strong: #3a3a42;
 
-  /* Ink / charcoal */
-  --color-ink-900: #241512;
-  --color-ink-700: #4a3a35;
-  --color-charcoal-900: #1c1917;
-  --color-charcoal-800: #262220;
+  /* --- Brand accent (restrained coral-red for actions / active / emphasis) --- */
+  --color-brand: #f0483e;
+  --color-brand-hover: #d93a30;
+  --color-brand-active: #b92e26;
+  --color-brand-soft: #2a1613; /* tinted dark fill behind brand icons */
+
+  /* --- Semantic status --- */
+  --color-success: #34c759;
+  --color-success-text: #4ade80;
+  --color-warning: #e0a23c;
+  --color-warning-text: #fbbf5c;
+  --color-error: #f0483e;
+  --color-error-text: #f87171;
+  --color-info: #4a9dff;
+  --color-info-text: #83bbff;
+
+  /* A genuine white kept available for the few places that must stay white
+     (light text on a filled brand/danger button, print surfaces). */
+  --color-pure-white: #ffffff;
+
+  /* ------------------------------------------------------------------
+     Legacy name remap — every existing utility class across the app
+     (bg-white, bg-cream, text-ink-900, border-gold-300, bg-maroon-700 …)
+     resolves through these so the redesign lands app-wide at once.
+     ------------------------------------------------------------------ */
+
+  /* `white` is remapped so the many bg-white / border-white/40 glass
+     surfaces become dark panels instead of blinding white. Real white
+     lives on --color-pure-white. */
+  --color-white: #151517;
+
+  /* Backgrounds (cream → dark app/panel surfaces) */
+  --color-cream: #0a0a0b;
+  --color-cream-50: #151517;
+  --color-cream-100: #1c1c20;
+
+  /* Maroon (primary brand) → coral-red accent ramp */
+  --color-maroon-900: #b92e26;
+  --color-maroon-800: #d93a30;
+  --color-maroon-700: #f0483e;
+  --color-maroon-600: #f3625a;
+  --color-maroon-100: #2a1613;
+
+  /* Gold / tan (secondary accent) → neutral border / muted accent ramp */
+  --color-gold-800: #9a9aa3;
+  --color-gold-700: #8a8a93;
+  --color-gold-600: #7c7c85;
+  --color-gold-500: #6a6a73;
+  --color-gold-400: #55555d;
+  --color-gold-300: #565660; /* base for border-gold-300/30–60 hairlines */
+  --color-gold-100: #202024;
+
+  /* Ink / charcoal → light text + deep surfaces */
+  --color-ink-900: #f4f4f5;
+  --color-ink-800: #d4d4d8;
+  --color-ink-700: #a1a1aa;
+  --color-ink-400: #6b6b73;
+  --color-charcoal-900: #050506;
+  --color-charcoal-800: #151517;
 
   /* Font families */
   --font-display: "Playfair Display", "Georgia", "Times New Roman", serif;
@@ -46,116 +110,135 @@
   --text-display-xl--letter-spacing: -0.04em;
   --text-display-xl--font-weight: 700;
 
-  --text-display-l: 48px;
-  --text-display-l--line-height: 1;
-  --text-display-l--letter-spacing: -0.04em;
+  --text-display-l: 44px;
+  --text-display-l--line-height: 1.05;
+  --text-display-l--letter-spacing: -0.03em;
   --text-display-l--font-weight: 700;
 
-  --text-heading-xl: 40px;
+  --text-heading-xl: 34px;
   --text-heading-xl--line-height: 1.15;
-  --text-heading-xl--letter-spacing: -0.03em;
+  --text-heading-xl--letter-spacing: -0.02em;
   --text-heading-xl--font-weight: 700;
 
-  --text-heading-lg: 32px;
-  --text-heading-lg--line-height: 1.15;
-  --text-heading-lg--letter-spacing: -0.03em;
+  --text-heading-lg: 26px;
+  --text-heading-lg--line-height: 1.2;
+  --text-heading-lg--letter-spacing: -0.02em;
   --text-heading-lg--font-weight: 700;
 
-  --text-heading-md: 28px;
-  --text-heading-md--line-height: 1.15;
+  --text-heading-md: 22px;
+  --text-heading-md--line-height: 1.2;
   --text-heading-md--letter-spacing: -0.02em;
   --text-heading-md--font-weight: 700;
 
-  --text-heading-sm: 24px;
-  --text-heading-sm--line-height: 1.15;
-  --text-heading-sm--letter-spacing: -0.02em;
+  --text-heading-sm: 19px;
+  --text-heading-sm--line-height: 1.25;
+  --text-heading-sm--letter-spacing: -0.01em;
   --text-heading-sm--font-weight: 700;
 
-  --text-section: 20px;
-  --text-section--line-height: 1.15;
-  --text-section--letter-spacing: -0.02em;
+  --text-section: 16px;
+  --text-section--line-height: 1.3;
+  --text-section--letter-spacing: -0.01em;
   --text-section--font-weight: 700;
 
-  --text-card-title: 18px;
-  --text-card-title--line-height: 1.45;
-  --text-card-title--letter-spacing: -0.02em;
-  --text-card-title--font-weight: 700;
+  --text-card-title: 15px;
+  --text-card-title--line-height: 1.4;
+  --text-card-title--letter-spacing: -0.005em;
+  --text-card-title--font-weight: 600;
 
-  --text-body-lg: 16px;
-  --text-body-lg--line-height: 1.6;
+  --text-body-lg: 15px;
+  --text-body-lg--line-height: 1.55;
   --text-body-lg--letter-spacing: 0;
   --text-body-lg--font-weight: 500;
 
-  --text-body: 15px;
-  --text-body--line-height: 1.6;
+  --text-body: 14px;
+  --text-body--line-height: 1.55;
   --text-body--letter-spacing: 0;
   --text-body--font-weight: 400;
 
-  --text-body-sm: 14px;
-  --text-body-sm--line-height: 1.6;
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 1.5;
   --text-body-sm--letter-spacing: 0;
   --text-body-sm--font-weight: 400;
 
-  --text-caption: 13px;
-  --text-caption--line-height: 1.6;
+  --text-caption: 12px;
+  --text-caption--line-height: 1.45;
   --text-caption--letter-spacing: 0.01em;
   --text-caption--font-weight: 400;
 
-  --text-tiny: 12px;
-  --text-tiny--line-height: 1.6;
-  --text-tiny--letter-spacing: 0.01em;
+  --text-tiny: 11px;
+  --text-tiny--line-height: 1.4;
+  --text-tiny--letter-spacing: 0.02em;
   --text-tiny--font-weight: 500;
 }
 
-/* CSS custom properties for .type-* utilities (mirror of @theme scale) */
+/* CSS custom properties for .type-* utilities (mirror of the scale above,
+   tuned tighter for a dense desktop operational UI). */
 :root {
-  --type-display-xxl-size: 72px;
-  --type-display-xl-size: 60px;
-  --type-display-l-size: 48px;
-  --type-heading-xl-size: 40px;
-  --type-heading-lg-size: 32px;
-  --type-heading-md-size: 28px;
-  --type-heading-sm-size: 24px;
-  --type-section-size: 20px;
-  --type-card-title-size: 18px;
-  --type-stat-size: 32px;
-  --type-body-lg-size: 16px;
-  --type-body-size: 15px;
-  --type-body-sm-size: 14px;
-  --type-caption-size: 13px;
-  --type-tiny-size: 12px;
-  --type-btn-size: 15px;
-  --type-input-size: 15px;
-  --type-table-size: 14px;
-  --type-nav-size: 15px;
+  color-scheme: dark;
 
-  --type-display-lh: 1;
-  --type-heading-lh: 1.15;
-  --type-body-lh: 1.6;
-  --type-card-lh: 1.45;
-  --type-table-lh: 1.4;
+  --type-display-xxl-size: 64px;
+  --type-display-xl-size: 48px;
+  --type-display-l-size: 40px;
+  --type-heading-xl-size: 32px;
+  --type-heading-lg-size: 25px;
+  --type-heading-md-size: 21px;
+  --type-heading-sm-size: 18px;
+  --type-section-size: 16px;
+  --type-card-title-size: 15px;
+  --type-stat-size: 26px;
+  --type-body-lg-size: 15px;
+  --type-body-size: 14px;
+  --type-body-sm-size: 13px;
+  --type-caption-size: 12px;
+  --type-tiny-size: 11px;
+  --type-btn-size: 14px;
+  --type-input-size: 14px;
+  --type-table-size: 13px;
+  --type-nav-size: 14px;
 
-  --type-tracking-display: -0.04em;
-  --type-tracking-heading-lg: -0.03em;
-  --type-tracking-heading: -0.02em;
+  --type-display-lh: 1.05;
+  --type-heading-lh: 1.2;
+  --type-body-lh: 1.55;
+  --type-card-lh: 1.4;
+  --type-table-lh: 1.45;
+
+  --type-tracking-display: -0.03em;
+  --type-tracking-heading-lg: -0.02em;
+  --type-tracking-heading: -0.01em;
   --type-tracking-body: 0;
   --type-tracking-caption: 0.01em;
 }
 
+html,
 body {
-  background-color: var(--color-cream);
-  color: var(--color-ink-900);
+  background-color: var(--color-surface-app);
+  color: var(--color-text-primary);
 }
 
-/* soft ambient scrollbar to match the quiet aesthetic */
+::selection {
+  background: rgba(240, 72, 62, 0.28);
+}
+
+/* Quiet dark scrollbars to match the terminal aesthetic */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-gold-300);
+  background: #303036;
   border-radius: 999px;
+  border: 2px solid var(--color-surface-app);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3d3d44;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* Native controls (date inputs on the Receipts screen, selects) inherit dark */
+input[type="date"],
+input[type="datetime-local"],
+select {
+  color-scheme: dark;
 }

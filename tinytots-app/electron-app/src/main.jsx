@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { HashRouter, Routes, Route } from "react-router-dom";
 
-/* Fontsource — Playfair (display), JetBrains Mono (codes), Inter (Geist fallback) */
+/* Fontsource — Playfair (brand display), JetBrains Mono (codes), Inter (Geist fallback) */
 import "@fontsource/playfair-display/400.css";
 import "@fontsource/playfair-display/500.css";
 import "@fontsource/playfair-display/600.css";
@@ -59,12 +59,14 @@ createRoot(document.getElementById("root")).render(
         }
       />
 
-      {/* Admin-only screens */}
+      {/* Admin-only screens — all wrapped in the same persistent shell */}
       <Route
         path="/inventory"
         element={
           <RequireAuth adminOnly>
-            <Inventory />
+            <AppShell>
+              <Inventory />
+            </AppShell>
           </RequireAuth>
         }
       />
@@ -72,7 +74,9 @@ createRoot(document.getElementById("root")).render(
         path="/performance"
         element={
           <RequireAuth adminOnly>
-            <PerformanceGoals />
+            <AppShell>
+              <PerformanceGoals />
+            </AppShell>
           </RequireAuth>
         }
       />
@@ -80,7 +84,9 @@ createRoot(document.getElementById("root")).render(
         path="/receipts"
         element={
           <RequireAuth adminOnly>
-            <OldReceipts />
+            <AppShell>
+              <OldReceipts />
+            </AppShell>
           </RequireAuth>
         }
       />
@@ -88,7 +94,9 @@ createRoot(document.getElementById("root")).render(
         path="/low-stock"
         element={
           <RequireAuth adminOnly>
-            <LowStock />
+            <AppShell>
+              <LowStock />
+            </AppShell>
           </RequireAuth>
         }
       />
