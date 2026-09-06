@@ -30,6 +30,12 @@ export default defineConfig(({ mode }) => {
     base: "./",
     plugins: [react(), tailwindcss()],
     server: {
+      // Electron's dev loader hardcodes http://localhost:5173 (electron/main.js
+      // DEV_URL). Pin the port and fail loudly if it's taken, so a stale Vite
+      // from a previous run can never let Electron load a zombie module graph
+      // (the stale-renderer white-screen that cost us a session).
+      port: 5173,
+      strictPort: true,
       proxy: {
         "/api": {
           target: "http://localhost:3000",

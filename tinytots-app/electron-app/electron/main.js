@@ -359,15 +359,19 @@
     const useDev = shouldUseDevServer();
 
     if (useDev) {
-      mainWindow.loadURL(DEV_URL);
+      // Dev only: start each launch from a clean renderer cache so a changed
+      // module graph can never be served stale by Chromium's HTTP/code cache
+      // (the stale-renderer white screen). Paired with Vite `strictPort`, which
+      // stops a zombie dev server from squatting :5173. Never runs for a
+      // packaged build (loadFile path below).
+      const startDev = () => {
+        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.loadURL(DEV_URL);
+      };
+      mainWindow.webContents.session.clearCache().then(startDev, startDev);
       // Retry while Vite is still starting during `npm start`.
       mainWindow.webContents.on("did-fail-load", () => {
         if (!shouldUseDevServer()) return;
-        setTimeout(() => {
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.loadURL(DEV_URL);
-          }
-        }, 1000);
+        setTimeout(startDev, 1000);
       });
       return;
     }

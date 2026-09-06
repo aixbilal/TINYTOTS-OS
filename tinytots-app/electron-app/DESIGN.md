@@ -707,3 +707,72 @@ window reload). `timeAgo()` no longer prints "Today &lt;time&gt;" for older days
 Just now → `N min ago` → `N hr ago` (same day) → Yesterday → a plain date.
 Notifications group into **New / Earlier**; the redundant full-width Close row is
 removed (outside-click / bell toggle / Escape all close the panel).
+
+---
+
+## 19. Post-review polish — Splash, Sign-in motion, dashboard life (2026-09-06)
+
+A focused pass on top of §18 from live owner-review screenshots.
+
+### 19.1 Shared relative time
+
+`src/lib/time.js` owns both forms — `timeAgo()` (full: "5 min ago" / "Yesterday" /
+"12 Aug") for the notification panel and `timeAgoShort()` (compact: "5m" / "3h" /
+"2d") for the Dashboard activity meta line. One implementation → no drift, and
+the "Today &lt;time&gt;" bug can't come back.
+
+### 19.2 Dashboard life
+
+- **Low-stock thumbnails.** `/api/low-stock` now also returns `imageUrl`
+  (`products.image_url`, the primary photo already kept in sync — additive to the
+  existing response, no new contract, no schema change, no over-fetch). The
+  Dashboard low-stock list shows a real thumbnail when present and a Lucide
+  `Package` well when not. The Low Stock *page* ignores the new field, so its
+  approved composition is untouched.
+- **Quick Actions.** Each action carries its own restrained semantic icon well
+  (New Sale = olive fill; then success / brand-soft / elevated / info / accent at
+  12 % tint) with an icon-scale + slide-in chevron on hover and an `active`
+  press. Still compact rows, no borders.
+- **Recent Activity.** Category-tinted icon wells (warning / success / info /
+  brand / neutral), a right-aligned `timeAgoShort` meta, calmer `/70`–`/40`
+  dividers and a row hover.
+
+### 19.3 Motion primitives (extends §9 — still CSS-only, no library)
+
+| Class | Use |
+|---|---|
+| `.tt-flip-char` (`@keyframes tt-flip-char`) | One restrained per-character `rotateX` flip when a Flip-Text line changes |
+| `.tt-scatter-tile` (`@keyframes tt-scatter-in`) | Splash image tiles settling in, staggered by `--sd` |
+| `.tt-splash-leaving` / `.tt-signin-enter` | Splash fade-out handing off to a soft Sign-in morph (fade + slight scale + de-blur) |
+| `.tt-splash-bar` | One-shot splash progress fill |
+
+All collapse under `prefers-reduced-motion` via the existing global rule — the
+resting composition (tile rotation lives on the static slot) is always correct.
+
+### 19.4 Sign-in (supersedes the §15 Login note's proportions)
+
+~44/56 image / form split. No brand-mark chip, no "Store Console" / "Retail
+terminal" labels. Heading is a large Playfair **"TinyTots OS"**; beneath it a
+`FlipText` (`src/components/motion/FlipText.jsx`) rotates ~4 short operational
+lines. Form stays open and borderless (no auth card). The image is a real
+approved TinyTots website lifestyle photo bundled locally
+(`src/assets/lifestyle/kids-reading.webp`). Auth logic is byte-for-byte
+unchanged.
+
+### 19.5 Splash — Image Scatter (implements the deferred Splash)
+
+Adapted from the Vengeance UI Image Scatter grammar: five warm TinyTots editorial
+tiles (`src/assets/lifestyle/*.webp`, one photoshoot, coherent cream/olive
+palette) settle into a loose fan behind the wordmark, hold briefly, then the
+whole splash fades as Sign-in morphs in. Pure CSS + two timers, ≈ 1.9 s total. No
+video, no canvas, no render, no motion library. Splash → `/login` when logged
+out, `/dashboard` when a session already exists.
+
+### 19.6 Dev reliability
+
+`vite.config.js` pins `server.port: 5173` + `strictPort: true` (Electron's
+`DEV_URL` is hard-coded to 5173 — a stale dev server must now fail loudly, not
+silently drift to 5174 and let Electron load a zombie graph). `electron/main.js`
+clears the renderer cache once before the first dev `loadURL` so a changed module
+graph can't be served stale. Both are dev-only; the packaged `loadFile` path is
+untouched.
