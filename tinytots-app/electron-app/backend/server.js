@@ -130,16 +130,28 @@ if (!fs.existsSync(RECEIPT_FOLDER)) {
 // the caller must surface a clear error instead of guessing a printer.
 const PRINTER_CONFIG_PATH = path.join(DATA_ROOT, "printer-config.json");
 
-function resolveReceiptPrinter() {
+function readPrinterConfigFile() {
   try {
     if (fs.existsSync(PRINTER_CONFIG_PATH)) {
-      const cfg = JSON.parse(fs.readFileSync(PRINTER_CONFIG_PATH, "utf-8"));
-      return (cfg?.receiptPrinter || "").trim();
+      return JSON.parse(fs.readFileSync(PRINTER_CONFIG_PATH, "utf-8")) || {};
     }
   } catch (err) {
     console.error("Failed to read printer-config.json:", err.message);
   }
-  return "";
+  return {};
+}
+
+function resolveReceiptPrinter() {
+  return (readPrinterConfigFile().receiptPrinter || "").trim();
+}
+
+// Barcode / label printer ROLE. Written by the Electron main process
+// (Printer Settings screen) into the same printer-config.json. Same
+// no-fallback contract as resolveReceiptPrinter: "" means "not configured"
+// and callers must surface a clear error — never send labels to the
+// receipt printer or any other guessed device.
+function resolveBarcodePrinter() {
+  return (readPrinterConfigFile().barcodePrinter || "").trim();
 }
 
 // Enumerate installed Windows printers. Uses PowerShell + compact JSON over
@@ -1708,7 +1720,7 @@ app.get("/api/printers", async (req, res) => {
 app.post("/api/print-labels", async (req, res) => {
   try {
     const {
-      variantIds, codeType = "qr", printerName,
+      variantIds, codeType = "qr", printerName, download = false,
       labelWidthMm = 46, // Reduced from 50 to 46 to create a safety margin for the printer alignment
       labelHeightMm = 30,
       quantities = {},
@@ -1844,20 +1856,104 @@ const fileName = `labels-${Date.now()}.pdf`;
 const filePath = path.join(LABEL_FOLDER, fileName);
 fs.writeFileSync(filePath, pdfBytes);
 
-if (printerName) {
- await print(filePath, {
-   printer: printerName,
-   scale: "noscale",
- });
- return res.json({ success: true, printed: true, file: fileName });
+// Explicit "Download PDF" — hand back the file, never print.
+if (download) {
+ return res.download(filePath);
 }
 
-// No printer specified — return it for download instead
-res.download(filePath);
+// Otherwise print. Target = an explicit printerName override, else the
+// machine's configured BARCODE / LABEL printer role. There is deliberately
+// no fall-through to the receipt printer or a "first available" device.
+const targetPrinter = (typeof printerName === "string" && printerName.trim())
+ || resolveBarcodePrinter();
+
+if (!targetPrinter) {
+ return res.status(400).json({
+   success: false,
+   message:
+     "No barcode / label printer is configured. Open Printer Settings and " +
+     "choose one for the Barcode / Label role, or use Download PDF.",
+ });
+}
+
+await print(filePath, {
+ printer: targetPrinter,
+ scale: "noscale",
+});
+return res.json({ success: true, printed: true, file: fileName, printer: targetPrinter });
 } catch (err) {
 console.error("Label print error:", err);
 res.status(500).json({ success: false, error: err.message });
 }
+});
+
+// ----------------------------------------------------
+// TEST PRINT — BARCODE / LABEL PRINTER ROLE
+// A single harmless label routed to the configured barcode printer (or an
+// explicit ?printerName override). No product / stock / order data.
+// ----------------------------------------------------
+app.post("/api/print-labels/test", async (req, res) => {
+  try {
+    const override =
+      typeof req.body?.printerName === "string" && req.body.printerName.trim()
+        ? req.body.printerName.trim()
+        : "";
+    const targetPrinter = override || resolveBarcodePrinter();
+
+    if (!targetPrinter) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "No barcode / label printer is configured. Choose one for the " +
+          "Barcode / Label role first.",
+      });
+    }
+
+    const mmToPt = (mm) => (mm / 25.4) * 72;
+    const pageW = mmToPt(46);
+    const pageH = mmToPt(30);
+
+    const pdfDoc = await PDFDocument.create();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const page = pdfDoc.addPage([pageW, pageH]);
+
+    const barcodeBuffer = await bwipjs.toBuffer({
+      bcid: "code128",
+      text: "123456789012",
+      scale: 3,
+      height: 10,
+      includetext: false,
+    });
+    const codeImage = await pdfDoc.embedPng(barcodeBuffer);
+    const codeW = pageW * 0.8;
+    const codeH = pageH * 0.35;
+    page.drawImage(codeImage, {
+      x: (pageW - codeW) / 2,
+      y: pageH - codeH - mmToPt(3),
+      width: codeW,
+      height: codeH,
+    });
+
+    const centered = (text, size, f, y) => {
+      const w = f.widthOfTextAtSize(text, size);
+      page.drawText(text, { x: (pageW - w) / 2, y, size, font: f });
+    };
+    centered("TINYTOTS", 8, fontBold, pageH - codeH - mmToPt(3) - 11);
+    centered("PRINTER TEST", 6, font, pageH - codeH - mmToPt(3) - 20);
+    centered("123456789012", 7, fontBold, mmToPt(2));
+
+    const pdfBytes = await pdfDoc.save();
+    const fileName = `barcode-printer-test-${Date.now()}.pdf`;
+    const filePath = path.join(LABEL_FOLDER, fileName);
+    fs.writeFileSync(filePath, pdfBytes);
+
+    await print(filePath, { printer: targetPrinter, scale: "noscale" });
+    return res.json({ success: true, printed: true, printer: targetPrinter });
+  } catch (err) {
+    console.error("Barcode printer test error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // ============================================================

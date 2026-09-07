@@ -230,11 +230,18 @@
   }
 
   /* =======================================================
-    RECEIPT PRINTER PREFERENCE (machine-local)
-    Stored as { "receiptPrinter": "<windows printer name>" } under
-    userData. This is per-machine operational config and deliberately
-    never goes to Supabase. The backend reads the same file for its
-    reprint path (see resolveReceiptPrinter in backend/server.js).
+    PRINTER ROLE PREFERENCES (machine-local)
+    Stored as { "receiptPrinter": "<name>", "barcodePrinter": "<name>" }
+    under userData/printer-config.json. These are per-machine operational
+    config and deliberately never go to Supabase. The backend reads the
+    same file (resolveReceiptPrinter / resolveBarcodePrinter in
+    backend/server.js).
+
+    ROLE, not device identity: the owner picks which discovered installed
+    printer fulfils each role. Nothing here inspects the printer's brand,
+    model or Windows queue name — "barcode"/"XP"/"Zebra"/etc. in a name
+    mean nothing to this code. The same physical printer MAY be chosen for
+    both roles.
   ======================================================= */
 
   const PRINTER_CONFIG_PATH = path.join(
@@ -257,6 +264,16 @@
   }
 
   /**
+   * Merge a partial patch into printer-config.json without dropping the
+   * other role. Passing "" clears that role ("Not configured").
+   */
+  function updatePrinterConfig(patch) {
+    const next = { ...readPrinterConfig(), ...patch };
+    writePrinterConfig(next);
+    return next;
+  }
+
+  /**
    * Resolve the receipt printer to use. There is deliberately NO fallback:
    *  - a non-empty saved receiptPrinter → return that exact name
    *  - no config file / empty / invalid config → return ""
@@ -265,6 +282,15 @@
    */
   function resolvePrinterName() {
     return (readPrinterConfig().receiptPrinter || "").trim();
+  }
+
+  /**
+   * Resolve the barcode / label printer. Same no-fallback contract as
+   * resolvePrinterName(): "" means "not configured", never a guessed
+   * printer and never the receipt printer.
+   */
+  function resolveBarcodePrinterName() {
+    return (readPrinterConfig().barcodePrinter || "").trim();
   }
 
   /**
@@ -510,12 +536,33 @@
   ipcMain.handle("printer:setPreference", async (_event, name) => {
     try {
       const receiptPrinter = typeof name === "string" ? name.trim() : "";
-      const config = readPrinterConfig();
-      config.receiptPrinter = receiptPrinter;
-      writePrinterConfig(config);
+      updatePrinterConfig({ receiptPrinter });
       return { success: true, receiptPrinter: receiptPrinter || null };
     } catch (err) {
       console.error("printer:setPreference error:", err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Barcode / label printer role — independent of the receipt role, same
+  // no-fallback contract. Writing one role never disturbs the other.
+  ipcMain.handle("printer:getBarcodePreference", async () => {
+    try {
+      const saved = resolveBarcodePrinterName();
+      return { success: true, barcodePrinter: saved || null };
+    } catch (err) {
+      console.error("printer:getBarcodePreference error:", err);
+      return { success: false, error: err.message, barcodePrinter: null };
+    }
+  });
+
+  ipcMain.handle("printer:setBarcodePreference", async (_event, name) => {
+    try {
+      const barcodePrinter = typeof name === "string" ? name.trim() : "";
+      updatePrinterConfig({ barcodePrinter });
+      return { success: true, barcodePrinter: barcodePrinter || null };
+    } catch (err) {
+      console.error("printer:setBarcodePreference error:", err);
       return { success: false, error: err.message };
     }
   });

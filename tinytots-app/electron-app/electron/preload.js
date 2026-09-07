@@ -31,11 +31,16 @@ contextBridge.exposeInMainWorld("electron", {
   removeCachedUser: (payload) => ipcRenderer.invoke("auth:removeCachedUser", payload),
 
   /**
-   * Receipt-printer preference (machine-local, never synced to Supabase).
-   * listPrinters() enumerates installed Windows printers; get/setReceiptPrinter
-   * read and persist the operator's chosen receipt printer.
+   * Printer role preferences (machine-local, never synced to Supabase).
+   * listPrinters() enumerates installed Windows printers. Each role is
+   * persisted independently in userData/printer-config.json:
+   *   - receipt : receipts / cash-drawer kick
+   *   - barcode : product / variant labels (see /api/print-labels)
+   * Passing "" to a setter clears that role ("Not configured").
    */
   listPrinters: () => ipcRenderer.invoke("printer:list"),
   getReceiptPrinter: () => ipcRenderer.invoke("printer:getPreference"),
   setReceiptPrinter: (name) => ipcRenderer.invoke("printer:setPreference", name),
+  getBarcodePrinter: () => ipcRenderer.invoke("printer:getBarcodePreference"),
+  setBarcodePrinter: (name) => ipcRenderer.invoke("printer:setBarcodePreference", name),
 });

@@ -13,10 +13,6 @@ const LABEL_PRESETS = [
 export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
   const [selectionMode, setSelectionMode] = useState("all"); // "all" | "custom"
   const [codeType, setCodeType] = useState("qr");
-  const [printers, setPrinters] = useState([]);
-  const [printerName, setPrinterName] = useState(
-    () => localStorage.getItem("preferredPrinter") || ""
-  );
   const [labelPreset, setLabelPreset] = useState(0);
   const [quantities, setQuantities] = useState({}); // { [variantId]: qty }
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -37,24 +33,6 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveIds.join(",")]);
-
-  useEffect(() => {
-    fetch("http://localhost:3000/api/printers")
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const text = await response.text();
-        if (!text) throw new Error("Empty response from server");
-        return JSON.parse(text);
-      })
-      .then((data) => {
-        setPrinters(data.printers || data || []);
-      })
-      .catch((err) => console.error("Fetch Error:", err));
-  }, []);
-
-  useEffect(() => {
-    if (printerName) localStorage.setItem("preferredPrinter", printerName);
-  }, [printerName]);
 
   useEffect(() => {
     async function buildPreview() {
@@ -94,7 +72,10 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
         labelWidthMm: preset.w,
         labelHeightMm: preset.h,
         quantities,
-        ...(download ? {} : { printerName }),
+        // No printerName: the backend routes to the machine's configured
+        // Barcode / Label printer role (Printer Settings). download:true
+        // returns the PDF instead of printing.
+        ...(download ? { download: true } : {}),
       };
 
       const res = await apiFetch("/api/print-labels", {
@@ -114,8 +95,8 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
         setMessage("PDF downloaded.");
       } else {
         const data = await res.json();
-        if (!data.success) throw new Error(data.error || data.message);
-        setMessage(`Sent ${effectiveIds.length} label(s) to ${printerName}.`);
+        if (!data.success) throw new Error(data.message || data.error || "Print failed.");
+        setMessage(`Sent ${effectiveIds.length} label(s) to ${data.printer}.`);
       }
     } catch (err) {
       setMessage(`Failed: ${err.message}`);
@@ -215,23 +196,15 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
         ))}
       </select>
 
-      <p className={fieldLabel}>Printer</p>
-      <select
-        value={printerName}
-        onChange={(e) => setPrinterName(e.target.value)}
-        className={`${selectCls} mb-4`}
-      >
-        <option value="">Select a printer…</option>
-        {printers.map((p) => (
-          <option key={p.name} value={p.name}>
-            {p.name} {/3600/i.test(p.name) ? "(EML-200L (2inch))" : ""}{p.isDefault ? " — default" : ""}
-          </option>
-        ))}
-      </select>
+      <p className="type-caption text-text-muted mb-3">
+        Labels print to the printer assigned to the{" "}
+        <span className="text-text-secondary">Barcode / Label</span> role in
+        Printer Settings.
+      </p>
 
       <Button
         onClick={() => handlePrint(false)}
-        disabled={busy || !printerName}
+        disabled={busy}
         loading={busy}
         size="lg"
         className="w-full mb-2"
@@ -250,12 +223,6 @@ export default function BarcodeQrPanel({ product, allVariants, selectedIds }) {
       </Button>
 
       {message && <p className="type-caption text-text-secondary mt-3 text-center">{message}</p>}
-
-      {!printers.length && (
-        <p className="type-caption text-warning-text mt-3">
-          No label printer detected. Make sure your label printer's driver is installed and the printer is powered on.
-        </p>
-      )}
     </div>
   );
 }
