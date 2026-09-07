@@ -225,20 +225,30 @@ export default function ProductFinder({ hidden = false }: { hidden?: boolean }) 
 
   return (
     <>
+      {/* Mobile (< sm) keeps a compact, always-labelled pill — hover does not
+          exist there. From sm up the trigger rests as an icon-only circle and
+          expands leftward on hover or keyboard focus to reveal the label; it
+          stays fixed bottom-right, so nothing else on the page reflows. */}
       <button
         ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
+        aria-label="Find My Outfit"
+        title="Find My Outfit"
         aria-hidden={hidden || undefined}
         tabIndex={hidden ? -1 : undefined}
-        className={`fixed right-4 z-40 inline-flex items-center gap-2 rounded-full bg-brand-primary text-white shadow-lg px-4 py-3 font-button text-button hover:opacity-90 transition-[opacity,transform] duration-200 motion-reduce:transition-none ${
+        className={`group fixed right-4 z-40 inline-flex items-center rounded-full bg-brand-primary text-white shadow-lg px-4 py-3 sm:p-3.5 sm:hover:px-5 sm:focus-visible:px-5 font-button text-button hover:opacity-90 transition-[opacity,transform,padding] duration-200 ease-out motion-reduce:transition-none ${
           raisedForCart ? "bottom-28 md:bottom-24" : "bottom-4 md:bottom-6"
         } ${hidden ? "opacity-0 translate-y-2 pointer-events-none" : "opacity-100 translate-y-0"}`}
       >
-        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">auto_awesome</span>
-        <span className="hidden sm:inline">Find something for me</span>
-        <span className="sm:hidden">Find</span>
+        <span className="material-symbols-outlined text-[20px] shrink-0" aria-hidden="true">checkroom</span>
+        <span
+          aria-hidden="true"
+          className="ml-2 min-w-0 max-w-[12rem] overflow-hidden whitespace-nowrap opacity-100 transition-[max-width,opacity,margin] duration-200 ease-out motion-reduce:transition-none sm:ml-0 sm:max-w-0 sm:opacity-0 sm:group-hover:ml-2 sm:group-hover:max-w-[12rem] sm:group-hover:opacity-100 sm:group-focus-visible:ml-2 sm:group-focus-visible:max-w-[12rem] sm:group-focus-visible:opacity-100"
+        >
+          Find My Outfit
+        </span>
       </button>
 
       {open && (
@@ -257,7 +267,7 @@ export default function ProductFinder({ hidden = false }: { hidden?: boolean }) 
           >
             <div className="flex items-center justify-between mb-3">
               <h2 id={titleId} className="font-headline-md text-headline-md text-text-primary">
-                Find something for me
+                Find My Outfit
               </h2>
               <button
                 type="button"

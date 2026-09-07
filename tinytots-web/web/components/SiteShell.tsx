@@ -382,17 +382,32 @@ export default function SiteShell({
     return () => observer.disconnect();
   }, []);
 
-  // usePathname()'s app-router context can momentarily disagree with the real
-  // URL on the very first client hydration pass in dev (Fast Refresh/HMR
-  // timing) — that transient wrong value fell through to the storefront-chrome
-  // branch below and briefly wrapped /admin, /signage, /login in it before
-  // self-correcting (dev-only; absent in production builds — see
-  // ADMIN-UX-SIGNAGE-CLOSURE-20260903.md §22). window.location is the
-  // browser's own authoritative URL for the page actually requested, so it
-  // can't disagree with what the server rendered; the hook call is kept so
-  // route changes still trigger a re-render.
-  const routerPathname = usePathname();
-  const pathname = typeof window !== "undefined" ? window.location.pathname : routerPathname;
+  // Single authoritative pathname for every route-dependent branch in this
+  // component (homepage-vs-internal header, announcement fetch, admin /
+  // signage / auth-route detection, mobile-menu reset, ProductFinder
+  // eligibility below). usePathname() is reactive on the render a client-side
+  // navigation triggers; a window.location read is not, and gating on it
+  // left route-dependent state one render behind after a soft nav (e.g. the
+  // ProductFinder stayed mounted after "/" -> "/track-order" until an
+  // unrelated re-render corrected it — the header had the same bug for the
+  // same reason).
+  //
+  // A window.location-derived value was previously used here to route around
+  // a dev-only Fast Refresh/HMR timing artifact on the very first client
+  // hydration pass, where usePathname() briefly disagreed with the real URL
+  // and storefront chrome flashed around /admin, /signage, and /login before
+  // self-correcting (ADMIN-UX-SIGNAGE-CLOSURE-20260903.md §22 — confirmed
+  // absent in production builds at the time). Re-verified on the current
+  // Next.js version (2026-09-07): cold direct loads of /admin, /admin/*,
+  // /login, /signup, /signage/*, and repeated Fast Refresh saves while
+  // sitting on those routes, all with a MutationObserver armed for any
+  // storefront-chrome DOM node — no flash, no hydration-mismatch warning.
+  // The artifact no longer reproduces, so the workaround (and the second
+  // pathname source it required) has been removed rather than carried
+  // forward speculatively. If it resurfaces on a future Next.js upgrade,
+  // prefer a scoped initial-render guard over reintroducing a second
+  // pathname source for the whole component.
+  const pathname = usePathname();
 
   // Homepage-only: the admin announcement can only ever replace the fallback
   // on "/" (see hasActiveAnnouncement below), so only fetch it there. Internal
@@ -429,6 +444,18 @@ export default function SiteShell({
   // or /auth/callback. Auth provider is still required: both pages call
   // useAuth()/redirect an already-signed-in visitor.
   const isAuthRoute = pathname === "/login" || pathname === "/signup";
+
+  // The product finder is a clothing-shopping aid, not a site-wide assistant,
+  // so it only mounts on routes where the visitor is actually browsing product:
+  // the homepage, the products list + PDPs, and the collections index + detail.
+  // Every other storefront route (cart, checkout, account, track-order, help,
+  // legal, blog, …) renders the shell without it.
+  const isShoppingRoute =
+    pathname === "/" ||
+    pathname === "/products" ||
+    pathname === "/collections" ||
+    !!pathname?.startsWith("/products/") ||
+    !!pathname?.startsWith("/collections/");
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -496,7 +523,7 @@ export default function SiteShell({
             <SearchTakeover open={searchOpen} onClose={() => setSearchOpen(false)} />
             {!mobileMenuOpen && <MobileSubNav />}
             <CartStickyBar />
-            <ProductFinder hidden={finderNearFooter} />
+            {isShoppingRoute && <ProductFinder hidden={finderNearFooter} />}
 
             {/* MAIN CONTENT — no flex-grow (that created a huge empty gap above the footer) */}
             <MainContent>{children}</MainContent>
