@@ -376,3 +376,72 @@ async function warmImages(urls: string[]) {
     await new Promise((r) => setTimeout(r, 60));
   }
 }
+
+/* =======================================================
+   WEB PUSH (V1.1)
+   Admin/owner devices opt in from Admin > My account. The
+   only payload today is "new web order", dispatched from the
+   checkout route AFTER the order is persisted (lib/push.ts).
+   These listeners are additive and independent of the caching
+   strategies above.
+======================================================= */
+
+type OrderPushPayload = {
+  title?: string;
+  body?: string;
+  url?: string;
+  tag?: string;
+};
+
+self.addEventListener("push", (event: PushEvent) => {
+  let data: OrderPushPayload = {};
+  try {
+    data = (event.data?.json() as OrderPushPayload) ?? {};
+  } catch {
+    data = { body: event.data?.text() };
+  }
+
+  const title = data.title || "TinyTots";
+  const options: NotificationOptions = {
+    body: data.body || "You have a new notification.",
+    tag: data.tag || "tinytots",
+    icon: "/icon.png",
+    badge: "/icon.png",
+    data: { url: data.url || "/admin/orders" },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event: NotificationEvent) => {
+  event.notification.close();
+  const targetUrl =
+    (event.notification.data && (event.notification.data as { url?: string }).url) ||
+    "/admin/orders";
+
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      // Reuse an already-open admin tab if there is one.
+      for (const client of windows) {
+        try {
+          if (new URL(client.url).pathname.startsWith("/admin")) {
+            await client.focus();
+            if ("navigate" in client) {
+              await (client as WindowClient).navigate(targetUrl);
+            }
+            return;
+          }
+        } catch {
+          // ignore a client we can't inspect/navigate
+        }
+      }
+      if (self.clients.openWindow) {
+        await self.clients.openWindow(targetUrl);
+      }
+    })()
+  );
+});

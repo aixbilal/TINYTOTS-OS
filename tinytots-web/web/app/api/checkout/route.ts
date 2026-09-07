@@ -1,10 +1,11 @@
 import { apiErrorResponse } from "@/lib/api-error";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin as supabase } from "@/lib/supabase-admin";
 import { getSettingNumber, getSetting } from "@/lib/settings";
 import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { forceIpv4Outbound } from "@/lib/force-ipv4";
+import { sendOrderPush } from "@/lib/push";
 
 void forceIpv4Outbound();
 
@@ -457,6 +458,20 @@ export async function POST(request: NextRequest) {
           console.error("Referral link failed for order", order.id, referralInsertError.message);
         }
       }
+
+    // Best-effort new-order push to subscribed admin devices. The order is
+    // already fully persisted (order + items + coupon/voucher/referral) at
+    // this point. after() runs once the response is flushed, and
+    // sendOrderPush() never throws — a push provider outage, expired
+    // subscription or misconfig can never fail or roll back this order.
+    after(() =>
+      sendOrderPush({
+        orderId: order.id,
+        orderNumber: order.order_number,
+        total: order.total,
+        paymentMethod: payment_method,
+      })
+    );
 
     return NextResponse.json(
       {

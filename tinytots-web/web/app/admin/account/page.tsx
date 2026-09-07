@@ -5,6 +5,7 @@ import { useAdminAuth } from "@/lib/admin-auth-context";
 import { validatePassword } from "@/lib/validate-password";
 import PasswordRequirements from "@/components/auth/PasswordRequirements";
 import AdminMfaSettings from "@/components/admin/AdminMfaSettings";
+import AdminPushSettings from "@/components/admin/AdminPushSettings";
 import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
 import TurnstileChallenge from "@/components/TurnstileChallenge";
 import {
@@ -185,6 +186,8 @@ export default function AdminAccountPage() {
             </AdminButton>
           </form>
         </AdminCard>
+
+        <AdminPushSettings />
 
         <AdminMfaSettings />
       </div>
