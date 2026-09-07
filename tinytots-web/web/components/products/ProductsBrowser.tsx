@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import WishlistButton from "@/components/WishlistButton";
+import MobileFilterDrawer from "@/components/products/MobileFilterDrawer";
 import {
   CACHE_KEYS,
   isBrowserOffline,
@@ -269,6 +270,145 @@ function FilterSection({ title, children }: { title: string; children: React.Rea
   );
 }
 
+type FilterPanelProps = {
+  variant: "sidebar" | "drawer";
+  categories: Category[];
+  categoryFilter: string;
+  setCategoryFilter: (v: string) => void;
+  genderFilters: Set<string>;
+  setGenderFilters: (s: Set<string>) => void;
+  sizeGroups: { label: string; rawValues: string[] }[];
+  sizeFilters: Set<string>;
+  toggleSizeGroup: (rawValues: string[]) => void;
+  availableColors: [string, string][];
+  colorFilters: Set<string>;
+  setColorFilters: (s: Set<string>) => void;
+  priceBounds: [number, number];
+  effectivePriceRange: [number, number];
+  setPriceRange: (r: [number, number] | null) => void;
+  toggleSetValue: (set: Set<string>, value: string, setter: (s: Set<string>) => void) => void;
+  onClearAll: () => void;
+};
+
+/**
+ * The filter controls, rendered identically in the desktop sidebar and inside
+ * the mobile off-canvas drawer. All state stays in ProductsBrowser, so which
+ * surface it renders on never affects the selected filters.
+ */
+function FilterPanel({
+  variant,
+  categories,
+  categoryFilter,
+  setCategoryFilter,
+  genderFilters,
+  setGenderFilters,
+  sizeGroups,
+  sizeFilters,
+  toggleSizeGroup,
+  availableColors,
+  colorFilters,
+  setColorFilters,
+  priceBounds,
+  effectivePriceRange,
+  setPriceRange,
+  toggleSetValue,
+  onClearAll,
+}: FilterPanelProps) {
+  return (
+    <>
+      {variant === "sidebar" && (
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider">
+            Filters
+          </h2>
+          <button onClick={onClearAll} className="font-body-sm text-body-sm text-brand-primary hover:underline">
+            Clear all
+          </button>
+        </div>
+      )}
+
+      <FilterSection title="Category">
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => setCategoryFilter("all")}
+            className={`text-left font-body-sm text-body-sm ${categoryFilter === "all" ? "text-brand-primary font-semibold" : "text-text-secondary hover:text-text-primary"}`}
+          >
+            All Categories
+          </button>
+          {categories.map((c) => (
+            <button
+              key={c.slug}
+              onClick={() => setCategoryFilter(c.name)}
+              className={`text-left font-body-sm text-body-sm ${categoryFilter === c.name ? "text-brand-primary font-semibold" : "text-text-secondary hover:text-text-primary"}`}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      </FilterSection>
+
+      <FilterSection title="Gender">
+        <div className="flex flex-col gap-2">
+          {["girl", "boy", "unisex"].map((g) => (
+            <label key={g} className="flex items-center gap-2 font-body-sm text-body-sm text-text-secondary capitalize cursor-pointer">
+              <input
+                type="checkbox"
+                checked={genderFilters.has(g)}
+                onChange={() => toggleSetValue(genderFilters, g, setGenderFilters)}
+                className="accent-brand-primary"
+              />
+              {g === "unisex" ? "Unisex" : `${g}s`}
+            </label>
+          ))}
+        </div>
+      </FilterSection>
+
+      {sizeGroups.length > 0 && (
+        <FilterSection title="Size">
+          <SizeChipGrid groups={sizeGroups} sizeFilters={sizeFilters} onToggle={toggleSizeGroup} />
+        </FilterSection>
+      )}
+
+      {availableColors.length > 0 && (
+        <FilterSection title="Color">
+          <div className="flex flex-wrap gap-2">
+            {availableColors.map(([hex, name]) => (
+              <button
+                key={hex}
+                title={name}
+                onClick={() => toggleSetValue(colorFilters, hex, setColorFilters)}
+                className={`w-7 h-7 rounded-full border-2 transition-all ${
+                  colorFilters.has(hex) ? "border-brand-primary scale-110" : "border-border-default"
+                }`}
+                style={{ backgroundColor: hex }}
+              />
+            ))}
+          </div>
+        </FilterSection>
+      )}
+
+      {priceBounds[1] > 0 && (
+        <FilterSection title="Price">
+          <div className="px-1">
+            <input
+              type="range"
+              min={priceBounds[0]}
+              max={priceBounds[1]}
+              value={effectivePriceRange[1]}
+              onChange={(e) => setPriceRange([priceBounds[0], Number(e.target.value)])}
+              className="w-full accent-brand-primary"
+            />
+            <div className="flex justify-between font-body-sm text-body-sm text-text-secondary mt-1">
+              <span>Rs. {priceBounds[0].toLocaleString()}</span>
+              <span>Rs. {effectivePriceRange[1].toLocaleString()}</span>
+            </div>
+          </div>
+        </FilterSection>
+      )}
+    </>
+  );
+}
+
 export default function ProductsBrowser({
   initialProducts,
   initialCategories,
@@ -303,6 +443,7 @@ export default function ProductsBrowser({
   const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
   const [sort, setSort] = useState<SortKey>("newest");
   const [currentPage, setCurrentPage] = useState(1);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const gridTopRef = useRef<HTMLDivElement>(null);
 
   // Note: the server page keys this component by gender/ids, so a query-string
@@ -438,6 +579,17 @@ export default function ProductsBrowser({
 
   const effectivePriceRange = priceRange ?? priceBounds;
 
+  // Count of active filter facets — drives the mobile "Filter (N)" badge.
+  const priceNarrowed =
+    priceRange != null &&
+    (priceRange[0] > priceBounds[0] || priceRange[1] < priceBounds[1]);
+  const activeFilterCount =
+    (categoryFilter !== "all" ? 1 : 0) +
+    genderFilters.size +
+    sizeFilters.size +
+    colorFilters.size +
+    (priceNarrowed ? 1 : 0);
+
   const filtered = useMemo(() => {
     let list = products.filter((p) => {
       if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
@@ -509,22 +661,32 @@ export default function ProductsBrowser({
         </nav>
 
         <div className="flex items-center justify-between mb-stack-md gap-3">
-          <div />
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 font-body-sm text-body-sm text-text-secondary">
-              Sort by:
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as SortKey)}
-                className="border border-border-default rounded-full px-3 py-1.5 font-body-sm text-body-sm text-text-primary bg-surface-elevated"
-              >
-                <option value="newest">Newest</option>
-                <option value="price_asc">Price: Low to High</option>
-                <option value="price_desc">Price: High to Low</option>
-                <option value="name">Name</option>
-              </select>
-            </label>
-          </div>
+          {/* Mobile-only filter trigger — the sidebar covers this on md+ */}
+          <button
+            type="button"
+            onClick={() => setMobileFilterOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={mobileFilterOpen}
+            className="md:hidden inline-flex items-center gap-2 rounded-full border border-border-default px-4 py-1.5 font-body-sm text-body-sm text-text-primary"
+          >
+            <span className="material-symbols-outlined text-[18px]">tune</span>
+            Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+          </button>
+          <div className="hidden md:block" />
+          <label className="flex items-center gap-2 font-body-sm text-body-sm text-text-secondary">
+            <span className="hidden sm:inline">Sort by:</span>
+            <span className="sm:hidden">Sort</span>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className="border border-border-default rounded-full px-3 py-1.5 font-body-sm text-body-sm text-text-primary bg-surface-elevated"
+            >
+              <option value="newest">Newest</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="name">Name</option>
+            </select>
+          </label>
         </div>
 
         {softMessage && (
@@ -534,95 +696,27 @@ export default function ProductsBrowser({
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-8">
-          {/* Filters sidebar */}
-          <aside>
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="font-label-lg text-label-lg text-text-primary font-semibold uppercase tracking-wider">
-                Filters
-              </h2>
-              <button onClick={clearAllFilters} className="font-body-sm text-body-sm text-brand-primary hover:underline">
-                Clear all
-              </button>
-            </div>
-
-            <FilterSection title="Category">
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => setCategoryFilter("all")}
-                  className={`text-left font-body-sm text-body-sm ${categoryFilter === "all" ? "text-brand-primary font-semibold" : "text-text-secondary hover:text-text-primary"}`}
-                >
-                  All Categories
-                </button>
-                {categories.map((c) => (
-                  <button
-                    key={c.slug}
-                    onClick={() => setCategoryFilter(c.name)}
-                    className={`text-left font-body-sm text-body-sm ${categoryFilter === c.name ? "text-brand-primary font-semibold" : "text-text-secondary hover:text-text-primary"}`}
-                  >
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-            </FilterSection>
-
-            <FilterSection title="Gender">
-              <div className="flex flex-col gap-2">
-                {["girl", "boy", "unisex"].map((g) => (
-                  <label key={g} className="flex items-center gap-2 font-body-sm text-body-sm text-text-secondary capitalize cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={genderFilters.has(g)}
-                      onChange={() => toggleSetValue(genderFilters, g, setGenderFilters)}
-                      className="accent-brand-primary"
-                    />
-                    {g === "unisex" ? "Unisex" : `${g}s`}
-                  </label>
-                ))}
-              </div>
-            </FilterSection>
-
-            {sizeGroups.length > 0 && (
-              <FilterSection title="Size">
-                <SizeChipGrid groups={sizeGroups} sizeFilters={sizeFilters} onToggle={toggleSizeGroup} />
-              </FilterSection>
-            )}
-
-            {availableColors.length > 0 && (
-              <FilterSection title="Color">
-                <div className="flex flex-wrap gap-2">
-                  {availableColors.map(([hex, name]) => (
-                    <button
-                      key={hex}
-                      title={name}
-                      onClick={() => toggleSetValue(colorFilters, hex, setColorFilters)}
-                      className={`w-7 h-7 rounded-full border-2 transition-all ${
-                        colorFilters.has(hex) ? "border-brand-primary scale-110" : "border-border-default"
-                      }`}
-                      style={{ backgroundColor: hex }}
-                    />
-                  ))}
-                </div>
-              </FilterSection>
-            )}
-
-            {priceBounds[1] > 0 && (
-              <FilterSection title="Price">
-                <div className="px-1">
-                  <input
-                    type="range"
-                    min={priceBounds[0]}
-                    max={priceBounds[1]}
-                    value={effectivePriceRange[1]}
-                    onChange={(e) => setPriceRange([priceBounds[0], Number(e.target.value)])}
-                    className="w-full accent-brand-primary"
-                  />
-                  <div className="flex justify-between font-body-sm text-body-sm text-text-secondary mt-1">
-                    <span>Rs. {priceBounds[0].toLocaleString()}</span>
-                    <span>Rs. {effectivePriceRange[1].toLocaleString()}</span>
-                  </div>
-                </div>
-              </FilterSection>
-            )}
+          {/* Filters sidebar — desktop/tablet only; mobile uses the drawer below */}
+          <aside className="hidden md:block">
+            <FilterPanel
+              variant="sidebar"
+              categories={categories}
+              categoryFilter={categoryFilter}
+              setCategoryFilter={setCategoryFilter}
+              genderFilters={genderFilters}
+              setGenderFilters={setGenderFilters}
+              sizeGroups={sizeGroups}
+              sizeFilters={sizeFilters}
+              toggleSizeGroup={toggleSizeGroup}
+              availableColors={availableColors}
+              colorFilters={colorFilters}
+              setColorFilters={setColorFilters}
+              priceBounds={priceBounds}
+              effectivePriceRange={effectivePriceRange}
+              setPriceRange={setPriceRange}
+              toggleSetValue={toggleSetValue}
+              onClearAll={clearAllFilters}
+            />
           </aside>
 
           {/* Product grid */}
@@ -689,6 +783,34 @@ export default function ProductsBrowser({
           </div>
         </div>
       </main>
+
+      <MobileFilterDrawer
+        open={mobileFilterOpen}
+        onClose={() => setMobileFilterOpen(false)}
+        resultCount={filtered.length}
+        onClear={clearAllFilters}
+      >
+        <FilterPanel
+          variant="drawer"
+          categories={categories}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={setCategoryFilter}
+          genderFilters={genderFilters}
+          setGenderFilters={setGenderFilters}
+          sizeGroups={sizeGroups}
+          sizeFilters={sizeFilters}
+          toggleSizeGroup={toggleSizeGroup}
+          availableColors={availableColors}
+          colorFilters={colorFilters}
+          setColorFilters={setColorFilters}
+          priceBounds={priceBounds}
+          effectivePriceRange={effectivePriceRange}
+          setPriceRange={setPriceRange}
+          toggleSetValue={toggleSetValue}
+          onClearAll={clearAllFilters}
+        />
+      </MobileFilterDrawer>
+
       <InternalTrustStrip />
     </>
   );
