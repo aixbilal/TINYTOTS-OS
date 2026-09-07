@@ -2435,6 +2435,115 @@ app.delete("/api/users/:id", async (req, res) => {
 });
 
 // ============================================================
+// DAILY REPORT RECIPIENTS
+// ------------------------------------------------------------
+// The daily sales report (backend/services/reportService.js) is generated
+// once per day; delivery fans out to every is_active row in
+// public.daily_report_recipients (see emailService.resolveReportRecipients).
+// An empty list falls back to OWNER_EMAIL, so these endpoints are purely
+// additive config — the report keeps working with zero rows.
+// Mutations are already gated by the X-POS-Token middleware above.
+// ============================================================
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// ---------- GET /api/report-recipients ----------
+app.get("/api/report-recipients", async (_req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("daily_report_recipients")
+      .select("id, name, email, is_active, created_at, updated_at")
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    res.json({ success: true, recipients: data, fallbackEmail: process.env.OWNER_EMAIL || null });
+  } catch (err) {
+    console.error("GET /api/report-recipients error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ---------- POST /api/report-recipients ----------
+app.post("/api/report-recipients", async (req, res) => {
+  try {
+    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    const email =
+      typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+
+    if (!email || !EMAIL_RE.test(email)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "A valid email address is required." });
+    }
+
+    const { data, error } = await supabase
+      .from("daily_report_recipients")
+      .insert([{ name: name || null, email }])
+      .select("id, name, email, is_active, created_at, updated_at")
+      .single();
+
+    if (error) {
+      if (error.code === "23505") {
+        return res
+          .status(409)
+          .json({ success: false, message: "That email is already on the list." });
+      }
+      throw error;
+    }
+    res.json({ success: true, recipient: data });
+  } catch (err) {
+    console.error("POST /api/report-recipients error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ---------- PATCH /api/report-recipients/:id  (toggle active / rename) ----------
+app.patch("/api/report-recipients/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const patch = {};
+    if (typeof req.body?.is_active === "boolean") patch.is_active = req.body.is_active;
+    if (typeof req.body?.name === "string") patch.name = req.body.name.trim() || null;
+
+    if (Object.keys(patch).length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Nothing to update (is_active or name)." });
+    }
+
+    const { data, error } = await supabase
+      .from("daily_report_recipients")
+      .update(patch)
+      .eq("id", id)
+      .select("id, name, email, is_active, created_at, updated_at")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      return res.status(404).json({ success: false, message: "Recipient not found." });
+    }
+    res.json({ success: true, recipient: data });
+  } catch (err) {
+    console.error("PATCH /api/report-recipients/:id error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ---------- DELETE /api/report-recipients/:id ----------
+app.delete("/api/report-recipients/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabase
+      .from("daily_report_recipients")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    console.error("DELETE /api/report-recipients/:id error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ============================================================
 // CUSTOMERS (read-only)
 // ------------------------------------------------------------
 // Reuses the website's canonical `public.customers` table — the same

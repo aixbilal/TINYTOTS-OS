@@ -14,6 +14,7 @@ import { LoadingState, ErrorState, EmptyState } from "../components/ui/States";
 import { Table, THead, TBody, TR, TH, TD } from "../components/ui/Table";
 import { Select } from "../components/ui/Input";
 import { PageHeader, KpiGroup } from "../components/ui/Layout";
+import ReportRecipients from "../components/reports/ReportRecipients";
 
 /**
  * Consolidated business report surface. Built entirely from the existing
@@ -88,6 +89,8 @@ export default function Reports() {
           ))}
         </Select>
       </PageHeader>
+
+      <ReportRecipients />
 
       {error ? (
         <div className="rounded-lg border border-border-default bg-surface-panel">
