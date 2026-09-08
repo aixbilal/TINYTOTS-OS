@@ -2,6 +2,7 @@ import "dotenv/config";
 import cron from "node-cron";
 import { createClient } from "@supabase/supabase-js";
 import { generateDailyReport } from "./reportService.js";
+import { reportDateInKarachi } from "./historyService.js";
 import { createNotification } from "./notifications.js";
 import { sendMessage } from "../lib/sendMessage.js";
 import { OWNER_PHONE, restoreStockForSale } from "../lib/stockRestore.js";
@@ -11,22 +12,67 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+const REPORT_TZ = "Asia/Karachi";
+const DAILY_REPORT_TASK_NAME = "tinytots-daily-report";
+
+// Registered-once guard for THIS backend process, doubling as the cached task
+// handle. startDailyReportCron() may be called directly (embedded POS) and
+// again via startCronJobs() (standalone) — the cron must still be scheduled
+// exactly once.
+let dailyReportTask = null;
+
+/**
+ * The daily sales report scheduler — "59 23 * * *" in Asia/Karachi.
+ *
+ * Runs in EVERY backend mode:
+ *   - embedded packaged POS (POS_EMBEDDED=1): this IS the primary live
+ *     scheduler while the till stays open.
+ *   - standalone backend: same cron (plus the operational crons below).
+ *
+ * Idempotent to call (guarded). Duplicate FIRINGS are safe too:
+ * generateDailyReport() claims report_history for the date and works from
+ * per-recipient daily_report_deliveries rows, so a cron firing that races a
+ * startup recovery (or a second till) never double-sends.
+ */
+export function startDailyReportCron() {
+  if (dailyReportTask) {
+    console.log("[cron] Daily report cron already registered for this process — skipping.");
+    return dailyReportTask;
+  }
+
+  dailyReportTask = cron.schedule(
+    "59 23 * * *",
+    async () => {
+      const reportDate = reportDateInKarachi(0); // "today" on the Asia/Karachi clock
+      console.log(`🕛 Daily report cron firing for ${reportDate} (${REPORT_TZ})...`);
+      try {
+        const result = await generateDailyReport(reportDate);
+        console.log(
+          result.skipped
+            ? `ℹ️  Daily report ${reportDate}: ${result.skipped}.`
+            : `✅ Daily report ${reportDate}: ${result.sent} sent, ${result.failed} failed, ${result.unsent} unsent.`
+        );
+      } catch (err) {
+        console.error(`❌ Daily report job failed for ${reportDate}.`);
+        console.error(err);
+      }
+    },
+    { timezone: REPORT_TZ, name: DAILY_REPORT_TASK_NAME, noOverlap: true }
+  );
+
+  console.log(`✅ Daily report cron scheduled — 23:59 ${REPORT_TZ} (once per process).`);
+  return dailyReportTask;
+}
+
 export function startCronJobs() {
-  // ---------------- Midnight daily report (existing, unchanged) ----------------
-  cron.schedule("59 23 * * *", async () => {
-    console.log("🕛 Running daily report job...");
-    try {
-      const today = new Date().toISOString().split("T")[0];
-      await generateDailyReport(today);
-      console.log("✅ Daily report completed.");
-    } catch (err) {
-      console.error("❌ Daily report job failed.");
-      console.error(err);
-    }
-  });
-  console.log("✅ Daily report cron scheduled (23:59)");
+  // Daily report via the shared, guarded registration so standalone doesn't
+  // double-register it if startDailyReportCron() was also called.
+  startDailyReportCron();
 
   // ---------------- Aging Stock / Dead Capital — daily 9:00 AM ----------------
+  // NOTE: the crons below push WhatsApp messages / flip non-idempotent flags
+  // and are NOT safe to run from multiple POS tills — they stay standalone
+  // only (this function is only called in non-embedded mode). Unchanged.
   cron.schedule("0 9 * * *", async () => {
     console.log("📦 Running aging stock check...");
     try {

@@ -1,53 +1,34 @@
-import {
-  reportExists,
-  claimReport,
-  getReportStatus,
-} from "./historyService.js";
 import { generateDailyReport } from "./reportService.js";
+import { reportDateInKarachi } from "./historyService.js";
 
+/**
+ * On backend startup, make sure YESTERDAY's report (Asia/Karachi) went out.
+ *
+ * All the gating lives in generateDailyReport(): it claims report_history for
+ * the date, returns immediately if it's already fully sent or another run is
+ * generating it right now, and otherwise retries only the delivery rows that
+ * aren't 'sent'. So this is safe to run on every launch, and safe to run
+ * alongside the live 23:59 cron.
+ */
 export async function recoverMissedReport() {
+  const reportDate = reportDateInKarachi(1); // yesterday, Asia/Karachi
+  console.log(`🔍 Checking report recovery for ${reportDate}...`);
+
   try {
-    // Yesterday
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
+    const result = await generateDailyReport(reportDate);
 
-    const reportDate = yesterday.toISOString().split("T")[0];
-
-    console.log(`🔍 Checking report recovery for ${reportDate}...`);
-
-    const sent = await reportExists(reportDate);
-
-    if (sent) {
-      console.log("✅ Yesterday's report already sent.");
-      return;
+    if (result.skipped === "already-sent") {
+      console.log("✅ Yesterday's report was already fully delivered.");
+    } else if (result.skipped) {
+      console.log(`ℹ️  Recovery deferred (${result.skipped}) — will re-check next launch.`);
+    } else if (result.unsent === 0) {
+      console.log("✅ Missed report recovered — all recipients delivered.");
+    } else {
+      console.log(
+        `⚠️  Recovery ran: ${result.unsent} recipient delivery(ies) still unsent; ` +
+          "the 23:59 cron / next launch will retry them."
+      );
     }
-    
-    const claimed = await claimReport(reportDate);
-    
-    if (claimed) {
-      console.log("📧 Recovering missed report...");
-      await generateDailyReport(reportDate);
-      return;
-    }
-    
-    const status = await getReportStatus(reportDate);
-    
-    switch (status) {
-      case "pending":
-        console.log("⏳ Report recovery is already in progress.");
-        return;
-    
-      case "failed":
-        console.log("⚠️ Previous recovery failed.");
-        console.log("📧 Retrying report generation...");
-        await generateDailyReport(reportDate);
-        return;
-    
-      default:
-        console.log("ℹ️ No recovery action needed.");
-    }
-
-    console.log("✅ Missed report recovered successfully.");
   } catch (err) {
     console.error("❌ Report recovery failed.");
     console.error(err);

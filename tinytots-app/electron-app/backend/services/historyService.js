@@ -6,6 +6,21 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// The daily report is scheduled at 23:59 Asia/Karachi, so the report_date it
+// targets must be derived in that timezone — never the POS machine's local
+// zone and never UTC (which would drift the date around midnight). Both the
+// cron callback and missed-report recovery use this.
+const REPORT_TZ = "Asia/Karachi";
+
+/**
+ * YYYY-MM-DD for "now minus `daysAgo` whole days", as it reads on the clock
+ * in Asia/Karachi. `en-CA` formats dates as YYYY-MM-DD.
+ */
+export function reportDateInKarachi(daysAgo = 0) {
+  const t = Date.now() - daysAgo * 24 * 60 * 60 * 1000;
+  return new Date(t).toLocaleDateString("en-CA", { timeZone: REPORT_TZ });
+}
+
 /* =======================================================
    REPORT-LEVEL RECORD  (public.report_history)
    One row per report_date. status: pending | sent | failed.
@@ -95,6 +110,44 @@ export async function getReportStatus(reportDate) {
   if (error) throw error;
 
   return data?.status ?? null;
+}
+
+/**
+ * Atomically take over a 'failed' report for a retry. Flips status
+ * 'failed' -> 'pending' in a single conditional UPDATE, so if two processes
+ * both try to retry the same date, exactly one wins. Returns true iff THIS
+ * call claimed the retry.
+ */
+export async function claimReportForRetry(reportDate) {
+  const { data, error } = await supabase
+    .from("report_history")
+    .update({ status: "pending", error_message: null })
+    .eq("report_date", reportDate)
+    .eq("status", "failed")
+    .select("report_date");
+
+  if (error) throw error;
+  return (data?.length ?? 0) > 0;
+}
+
+/**
+ * Reclaim a report whose 'pending' lease is stale — i.e. a previous
+ * generation crashed after claiming but before finishing, leaving the row
+ * stuck at 'pending'. Refreshes generated_at (the lease) only if the row is
+ * still 'pending' AND older than `staleMinutes`. Returns true iff reclaimed.
+ */
+export async function reclaimStalePendingReport(reportDate, staleMinutes = 30) {
+  const cutoffIso = new Date(Date.now() - staleMinutes * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("report_history")
+    .update({ generated_at: new Date().toISOString() })
+    .eq("report_date", reportDate)
+    .eq("status", "pending")
+    .lt("generated_at", cutoffIso)
+    .select("report_date");
+
+  if (error) throw error;
+  return (data?.length ?? 0) > 0;
 }
 
 /* =======================================================

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { createNotification } from "./services/notifications.js";
 import { recoverMissedReport } from "./services/recoveryService.js";
-import { startCronJobs } from "./services/cronService.js";
+import { startCronJobs, startDailyReportCron } from "./services/cronService.js";
 import { generateDailyReport } from "./services/reportService.js";
 import bcrypt from "bcryptjs";
 process.on("exit", (code) => {
@@ -2864,33 +2864,34 @@ app.delete("/api/notifications", async (req, res) => {
   }
 });
 
-// Cron stays off in embedded mode (no 23:59 job inside the POS till).
-// Standalone backend: recover then schedule crons as before.
-if (!isEmbedded) {
-  await recoverMissedReport();
-  startCronJobs();
+// ---- Daily report scheduler ----
+// The 23:59 Asia/Karachi daily-report cron runs in EVERY backend mode:
+//   * embedded packaged POS (POS_EMBEDDED=1): startDailyReportCron() only —
+//     this is the primary live scheduler while the till stays open. The
+//     other operational crons (aging stock / goals / pickup expiry) stay
+//     off in embedded mode — they are not multi-till safe.
+//   * standalone backend: startCronJobs() — the same guarded report cron
+//     PLUS those operational crons.
+// Registration is guarded to happen exactly once per process; firing is
+// duplicate-safe (report_history claim + per-recipient delivery rows).
+if (isEmbedded) {
+  startDailyReportCron();
 } else {
-  console.log(
-    "[POS] Embedded mode: WhatsApp webhook + cron jobs disabled; " +
-      "missed daily report will be checked asynchronously after listen."
-  );
+  startCronJobs();
 }
 
 // Start Express server — localhost only (not reachable from the LAN/internet)
 app.listen(PORT, "127.0.0.1", () => {
   console.log(`Server running on http://127.0.0.1:${PORT}`);
 
-  // Packaged POS: on every launch, reuse recoverMissedReport() (report_history
-  // gated — no duplicate emails). Fire-and-forget so /api/health and the UI
-  // are not blocked while SMTP runs.
-  if (isEmbedded) {
-    void recoverMissedReport()
-      .then(() => {
-        console.log("[POS] Embedded missed-report check finished.");
-      })
-      .catch((err) => {
-        console.error("[POS] Embedded missed-report check failed (UI unaffected):");
-        console.error(err);
-      });
-  }
+  // Missed-report recovery — every mode, AFTER listen, fire-and-forget. It
+  // must NOT block startup or delay cron registration (already done above).
+  // Idempotent: generateDailyReport() skips an already-sent date and retries
+  // only the delivery rows that aren't 'sent' yet.
+  void recoverMissedReport()
+    .then(() => console.log("[POS] Missed-report check finished."))
+    .catch((err) => {
+      console.error("[POS] Missed-report check failed (UI / schedule unaffected):");
+      console.error(err);
+    });
 });

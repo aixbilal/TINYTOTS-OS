@@ -7,6 +7,10 @@ import { resolveReportRecipients, deliverReportTo } from "./emailService.js";
 import {
   saveSuccessfulReport,
   saveFailedReport,
+  claimReport,
+  getReportStatus,
+  claimReportForRetry,
+  reclaimStalePendingReport,
   ensureDeliverySet,
   getDeliveriesToAttempt,
   markDeliverySent,
@@ -37,8 +41,46 @@ const supabase = createClient(
  *
  * Throws only on a genuine generation failure (no summary data, disk, etc.).
  * A partial-delivery outcome is NOT thrown — report_history carries it.
+ *
+ * DUPLICATE SAFETY: the packaged POS cron, startup recovery, and a second
+ * till can all invoke this for the same date at once. report_history is the
+ * report-level lock — this function claims it before doing any work:
+ *   - won the INSERT ('pending')           -> this run owns generation
+ *   - lost, existing row is 'sent'         -> nothing to do, return
+ *   - lost, existing row is 'pending'      -> another run is generating now;
+ *                                             skip (unless its lease is stale)
+ *   - lost, existing row is 'failed'       -> claim the retry atomically;
+ *                                             skip if another run claimed it
+ * Combined with the per-recipient daily_report_deliveries rows (frozen
+ * audience + 'sent' rows never retried), no concurrent run double-sends.
  */
 export async function generateDailyReport(reportDate) {
+  // 0: acquire the report-level lock for reportDate.
+  const claimed = await claimReport(reportDate);
+  if (!claimed) {
+    const status = await getReportStatus(reportDate);
+    if (status === "sent") {
+      console.log(`ℹ️  Report ${reportDate} already fully delivered — nothing to do.`);
+      return { success: true, reportDate, skipped: "already-sent", attempted: 0, sent: 0, failed: 0, unsent: 0 };
+    }
+    if (status === "pending") {
+      const reclaimed = await reclaimStalePendingReport(reportDate);
+      if (!reclaimed) {
+        console.log(`ℹ️  Report ${reportDate} generation already in progress — skipping this run.`);
+        return { success: false, reportDate, skipped: "in-progress", attempted: 0, sent: 0, failed: 0, unsent: null };
+      }
+      console.warn(`⚠️  Report ${reportDate} had a stale 'pending' lease — reclaiming.`);
+    } else if (status === "failed") {
+      const gotRetry = await claimReportForRetry(reportDate);
+      if (!gotRetry) {
+        console.log(`ℹ️  Report ${reportDate} retry already claimed by another run — skipping.`);
+        return { success: false, reportDate, skipped: "retry-claimed", attempted: 0, sent: 0, failed: 0, unsent: null };
+      }
+    }
+    // status null (row vanished between calls) — fall through; the roll-up
+    // below re-establishes report_history.
+  }
+
   // 1 + 2: freeze the audience for this report_date.
   const recipients = await resolveReportRecipients();
   await ensureDeliverySet(reportDate, recipients);
