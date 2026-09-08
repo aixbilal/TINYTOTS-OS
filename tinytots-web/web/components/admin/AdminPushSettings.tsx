@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
 import { AdminCard, AdminButton, AdminAlert } from "@/components/admin/ui";
 
@@ -30,50 +30,65 @@ function urlBase64ToArrayBuffer(base64String: string): ArrayBuffer {
   return buffer;
 }
 
+function pushSupported(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window
+  );
+}
+
 export default function AdminPushSettings() {
-  const [status, setStatus] = useState<Status>("checking");
+  // Seed the unsupported state via the initializer so the mount effect never
+  // has to setState synchronously.
+  const [status, setStatus] = useState<Status>(() =>
+    pushSupported() ? "checking" : "unsupported"
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>("");
   const [vapidKey, setVapidKey] = useState<string | null>(null);
 
-  const supported =
-    typeof window !== "undefined" &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window &&
-    "Notification" in window;
-
-  const refresh = useCallback(async () => {
-    if (!supported) {
-      setStatus("unsupported");
-      return;
-    }
-    try {
-      const keyRes = await fetch("/api/push/public-key");
-      if (keyRes.status === 503) {
-        setStatus("unconfigured");
-        return;
-      }
-      if (!keyRes.ok) throw new Error("Could not reach the push service.");
-      const { publicKey } = await keyRes.json();
-      setVapidKey(publicKey);
-
-      if (Notification.permission === "denied") {
-        setStatus("denied");
-        return;
-      }
-
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      setStatus(sub ? "enabled" : "disabled");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-      setStatus("disabled");
-    }
-  }, [supported]);
-
+  // One-shot probe on mount: resolve VAPID config + current subscription.
+  // Every setState here runs only after an await, so it never triggers the
+  // synchronous cascading-render pattern.
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (!pushSupported()) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const keyRes = await fetch("/api/push/public-key");
+        if (cancelled) return;
+        if (keyRes.status === 503) {
+          setStatus("unconfigured");
+          return;
+        }
+        if (!keyRes.ok) throw new Error("Could not reach the push service.");
+        const { publicKey } = await keyRes.json();
+        if (cancelled) return;
+        setVapidKey(publicKey);
+
+        if (Notification.permission === "denied") {
+          setStatus("denied");
+          return;
+        }
+
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (cancelled) return;
+        setStatus(sub ? "enabled" : "disabled");
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Something went wrong.");
+        setStatus("disabled");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function enable() {
     if (!vapidKey || busy) return;

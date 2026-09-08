@@ -63,14 +63,15 @@ function PrinterRoleSection({
   onSave,
   extraAction,
 }) {
-  const [selected, setSelected] = useState(saved || "");
+  // `pick` is the operator's in-progress choice; null means "follow whatever
+  // is saved". This derives the selection from props without a sync effect,
+  // so `saved` loading in asynchronously (null -> a name) is reflected
+  // automatically, and a successful save clears `pick` to re-follow it.
+  const [pick, setPick] = useState(null);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
 
-  // Keep the local selection in sync when the saved value loads/changes.
-  useEffect(() => {
-    setSelected(saved || "");
-  }, [saved]);
+  const selected = pick ?? (saved || "");
 
   const canVerify = Array.isArray(printers) && !loadError;
   const savedAvailable =
@@ -92,6 +93,7 @@ function PrinterRoleSection({
     try {
       const ok = await onSave(selected);
       if (ok) {
+        setPick(null); // re-follow the freshly-saved value
         setSavedFlash(true);
         setTimeout(() => setSavedFlash(false), 2500);
       }
@@ -157,7 +159,7 @@ function PrinterRoleSection({
       ) : (
         <div className="rounded-lg bg-surface-panel shadow-sm divide-y divide-border-default overflow-hidden">
           <button
-            onClick={() => setSelected("")}
+            onClick={() => setPick("")}
             className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${
               selected === "" ? "bg-surface-elevated" : "hover:bg-surface-elevated/60"
             }`}
@@ -170,7 +172,7 @@ function PrinterRoleSection({
             return (
               <button
                 key={p.name}
-                onClick={() => setSelected(p.name)}
+                onClick={() => setPick(p.name)}
                 className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${
                   isSelected ? "bg-surface-elevated" : "hover:bg-surface-elevated/60"
                 }`}
