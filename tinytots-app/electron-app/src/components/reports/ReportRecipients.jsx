@@ -8,12 +8,14 @@ import { apiFetch } from "../../services/api";
 /**
  * Manage who receives the daily sales report email.
  *
- * The report itself is still generated once per day (backend
- * reportService.generateDailyReport); this list only controls delivery
- * fan-out. With no active rows the backend falls back to OWNER_EMAIL, so
- * this card is purely additive — it never breaks the existing report.
+ * Source of truth: public.daily_report_recipients. The WEBSITE Admin
+ * (Settings) is the primary place to manage this; this POS card operates on
+ * the SAME table and the SAME rules (name + email required, max 5 active,
+ * empty => OWNER_EMAIL fallback), so the two never diverge. The report is
+ * still generated once per day; this list only controls delivery fan-out.
  */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_ACTIVE = 5;
 
 export default function ReportRecipients() {
   const [recipients, setRecipients] = useState(null); // null = loading
@@ -43,9 +45,18 @@ export default function ReportRecipients() {
     load();
   }, [load]);
 
+  const activeCount = (recipients || []).filter((r) => r.is_active).length;
+  const atLimit = activeCount >= MAX_ACTIVE;
+  const usingFallback = recipients !== null && activeCount === 0;
+
   async function addRecipient(e) {
     e.preventDefault();
+    const name = newName.trim();
     const email = newEmail.trim().toLowerCase();
+    if (!name) {
+      setMessage("Enter a name.");
+      return;
+    }
     if (!EMAIL_RE.test(email)) {
       setMessage("Enter a valid email address.");
       return;
@@ -56,7 +67,7 @@ export default function ReportRecipients() {
       const res = await apiFetch("/api/report-recipients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName.trim(), email }),
+        body: JSON.stringify({ name, email }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || data.error || "Failed to add.");
@@ -106,19 +117,23 @@ export default function ReportRecipients() {
     }
   }
 
-  const activeCount = (recipients || []).filter((r) => r.is_active).length;
-  const usingFallback = recipients !== null && activeCount === 0;
-
   return (
     <div className="rounded-lg border border-border-default bg-surface-panel p-5">
-      <div className="flex items-center gap-2 mb-1">
-        <Mail size={16} className="text-text-secondary" />
-        <h3 className="type-section text-text-primary">Daily Report Recipients</h3>
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <div className="flex items-center gap-2">
+          <Mail size={16} className="text-text-secondary" />
+          <h3 className="type-section text-text-primary">Daily Report Recipients</h3>
+        </div>
+        {recipients !== null && (
+          <span className="type-caption text-text-muted">
+            {activeCount} / {MAX_ACTIVE} active
+          </span>
+        )}
       </div>
       <p className="type-body-sm text-text-secondary mb-4">
-        One report is generated each day and emailed to every active recipient
-        below. Disable a recipient to stop their delivery without losing the
-        record.
+        One report is generated each day and emailed to every active recipient.
+        Up to {MAX_ACTIVE} can be active. Also manageable from the website Admin
+        &rsaquo; Settings.
       </p>
 
       {loadError ? (
@@ -164,7 +179,12 @@ export default function ReportRecipients() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    disabled={busy}
+                    disabled={busy || (!r.is_active && atLimit)}
+                    title={
+                      !r.is_active && atLimit
+                        ? `${MAX_ACTIVE} recipients already active — disable one first.`
+                        : undefined
+                    }
                     onClick={() => toggleActive(r)}
                   >
                     {r.is_active ? "Disable" : "Enable"}
@@ -185,30 +205,43 @@ export default function ReportRecipients() {
 
           <form onSubmit={addRecipient} className="flex flex-wrap items-end gap-2">
             <label className="flex-1 min-w-[140px]">
-              <span className="type-field-label text-text-secondary block mb-1">
-                Name (optional)
-              </span>
+              <span className="type-field-label text-text-secondary block mb-1">Name</span>
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
+                maxLength={120}
                 placeholder="e.g. Store Manager"
               />
             </label>
             <label className="flex-1 min-w-[200px]">
-              <span className="type-field-label text-text-secondary block mb-1">
-                Email
-              </span>
+              <span className="type-field-label text-text-secondary block mb-1">Email</span>
               <Input
                 type="email"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
+                maxLength={200}
                 placeholder="name@example.com"
               />
             </label>
-            <Button type="submit" disabled={busy || !newEmail.trim()} loading={busy}>
+            <Button
+              type="submit"
+              disabled={busy || !newName.trim() || !newEmail.trim() || atLimit}
+              loading={busy}
+              title={
+                atLimit
+                  ? `${MAX_ACTIVE} recipients already active — disable one before adding another.`
+                  : undefined
+              }
+            >
               <Plus size={14} /> Add
             </Button>
           </form>
+          {atLimit && (
+            <p className="type-caption text-text-muted mt-2">
+              {MAX_ACTIVE} of {MAX_ACTIVE} recipients are active. Disable one to add or
+              enable another.
+            </p>
+          )}
 
           {message && (
             <p className="type-caption text-text-secondary mt-3 inline-flex items-center gap-1.5">

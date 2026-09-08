@@ -17,99 +17,74 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// TinyTots has ONE trusted report sender (SMTP_* env, server-side only).
+// Recipients supply only a destination email — never any credential. The
+// admin surfaces that manage public.daily_report_recipients store name +
+// email + is_active and nothing else.
+
+const MAX_ACTIVE_RECIPIENTS = 5;
+
 /**
- * Resolve who should receive the daily report.
+ * Resolve who should receive the daily report, as snapshot-ready objects.
  *
- * Source of truth is public.daily_report_recipients (is_active rows). If that
- * table is empty / has no active rows / can't be read, we fall back to the
- * single legacy address in process.env.OWNER_EMAIL so behaviour never
- * regresses from "the owner gets the report".
+ * Source of truth: ACTIVE rows in public.daily_report_recipients. If there
+ * are none (or the table can't be read), fall back to the single legacy
+ * address in process.env.OWNER_EMAIL so "the owner gets the report" never
+ * regresses. OWNER_EMAIL is NOT required to appear in the table.
  *
- * Returns a de-duplicated list of lower-cased email strings.
+ * @returns {Promise<{recipient_id: number|null, email: string, name: string|null}[]>}
  */
 export async function resolveReportRecipients() {
-  const fallback = (process.env.OWNER_EMAIL || "").trim().toLowerCase();
-
-  let configured = [];
   try {
     const { data, error } = await supabase
       .from("daily_report_recipients")
-      .select("email")
-      .eq("is_active", true);
+      .select("id, name, email")
+      .eq("is_active", true)
+      .order("created_at", { ascending: true });
     if (error) throw error;
-    configured = (data || [])
-      .map((r) => (r.email || "").trim().toLowerCase())
-      .filter(Boolean);
+
+    const seen = new Set();
+    const active = [];
+    for (const r of data || []) {
+      const email = (r.email || "").trim().toLowerCase();
+      if (!email || seen.has(email)) continue;
+      seen.add(email);
+      active.push({ recipient_id: r.id, email, name: r.name || null });
+    }
+
+    if (active.length > 0) {
+      // Defensive: the DB trigger already caps active rows at 5.
+      return active.slice(0, MAX_ACTIVE_RECIPIENTS);
+    }
   } catch (err) {
     console.error(
       "⚠️  Could not read daily_report_recipients — falling back to OWNER_EMAIL:",
       err.message
     );
-    return fallback ? [fallback] : [];
   }
 
-  const list = configured.length > 0 ? configured : fallback ? [fallback] : [];
-
-  // De-dupe defensively (the unique index already prevents this at write time).
-  return [...new Set(list)];
+  const fallback = (process.env.OWNER_EMAIL || "").trim().toLowerCase();
+  return fallback
+    ? [{ recipient_id: null, email: fallback, name: "Owner (fallback)" }]
+    : [];
 }
 
 /**
- * Sends the daily sales report email to every configured active recipient.
+ * Send ONE copy of the report to ONE destination. Throws on failure so the
+ * caller can mark that delivery row 'failed' and retry it later. One
+ * destination is never exposed to another (single-recipient `to`).
  *
- * ONE report file is generated (by reportService); this only fans out
- * delivery. Each recipient is a SEPARATE sendMail call — one address is never
- * exposed to another, and one failed send does not stop the rest.
- *
- * Resolves with a per-recipient summary when AT LEAST ONE send succeeds.
- * Throws only when there are recipients and every send failed (so
- * reportService records the report as "failed" and can retry), or when no
- * recipient is configured at all.
- *
- * @param {string} filePath - Absolute path of the CSV file.
- * @param {string} fileName - Name shown in the email attachment.
+ * @param {string} to        destination email
+ * @param {string} filePath  absolute path of the CSV
+ * @param {string} fileName  attachment filename
  */
-export async function sendReportEmail(filePath, fileName) {
-  const recipients = await resolveReportRecipients();
-
-  if (recipients.length === 0) {
-    throw new Error(
-      "No daily report recipients configured (daily_report_recipients is empty and OWNER_EMAIL is unset)."
-    );
-  }
-
-  const results = [];
-  for (const to of recipients) {
-    try {
-      const info = await transporter.sendMail({
-        from: `"Tiny Tots POS" <${process.env.SMTP_USER}>`,
-        to,
-        subject: "Daily Sales Report",
-        text: "Attached is your daily sales report.",
-        attachments: [{ filename: fileName, path: filePath }],
-      });
-      console.log(`✅ Report email sent to ${to}:`, info.messageId);
-      results.push({ email: to, ok: true, messageId: info.messageId });
-    } catch (error) {
-      console.error(`❌ Failed to send report email to ${to}`);
-      console.error(error);
-      results.push({ email: to, ok: false, error: error.message });
-    }
-  }
-
-  const sent = results.filter((r) => r.ok).length;
-  const failed = results.length - sent;
-
-  if (sent === 0) {
-    throw new Error(
-      `Daily report could not be delivered to any of ${results.length} recipient(s).`
-    );
-  }
-  if (failed > 0) {
-    console.warn(
-      `⚠️  Daily report delivered to ${sent}/${results.length} recipient(s); ${failed} failed.`
-    );
-  }
-
-  return { total: results.length, sent, failed, results };
+export async function deliverReportTo(to, filePath, fileName) {
+  const info = await transporter.sendMail({
+    from: `"Tiny Tots POS" <${process.env.SMTP_USER}>`,
+    to,
+    subject: "Daily Sales Report",
+    text: "Attached is your daily sales report.",
+    attachments: [{ filename: fileName, path: filePath }],
+  });
+  return info;
 }

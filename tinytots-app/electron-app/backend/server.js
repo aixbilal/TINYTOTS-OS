@@ -2533,15 +2533,50 @@ app.delete("/api/users/:id", async (req, res) => {
 // ============================================================
 // DAILY REPORT RECIPIENTS
 // ------------------------------------------------------------
-// The daily sales report (backend/services/reportService.js) is generated
-// once per day; delivery fans out to every is_active row in
-// public.daily_report_recipients (see emailService.resolveReportRecipients).
-// An empty list falls back to OWNER_EMAIL, so these endpoints are purely
-// additive config — the report keeps working with zero rows.
-// Mutations are already gated by the X-POS-Token middleware above.
+// Single source of truth: public.daily_report_recipients. The website Admin
+// is the PRIMARY management surface (app/api/admin/report-recipients); this
+// POS copy operates on the SAME table + the SAME rules so the two never
+// diverge. Business rules (identical on both surfaces):
+//   * name + email required; email stored lower-cased; case-insensitive
+//     unique; recipients supply a destination only, never a credential.
+//   * At most 5 ACTIVE recipients. Enforced here for a friendly message AND
+//     by the DB trigger enforce_max_active_report_recipients() as the real
+//     race-safe invariant.
+//   * Empty / no active rows => reportService falls back to OWNER_EMAIL.
+// Mutations are gated by the X-POS-Token middleware above.
 // ============================================================
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_ACTIVE_REPORT_RECIPIENTS = 5;
+const MAX_ACTIVE_MSG = `Maximum ${MAX_ACTIVE_REPORT_RECIPIENTS} active daily report recipients are allowed.`;
+
+/** Map a Supabase/Postgres error from a recipient mutation to a clean HTTP
+ *  response. Returns true if it handled `err`. Never leaks raw SQL. */
+function handleRecipientDbError(err, res) {
+  if (!err) return false;
+  if (err.code === "23505") {
+    res.status(409).json({ success: false, message: "That email is already on the list." });
+    return true;
+  }
+  // enforce_max_active_report_recipients() raises with errcode check_violation
+  // (23514) and this exact message.
+  if (err.code === "23514" || /maximum 5 active daily report recipients/i.test(err.message || "")) {
+    res.status(409).json({ success: false, message: MAX_ACTIVE_MSG });
+    return true;
+  }
+  return false;
+}
+
+async function countActiveRecipients(excludeId) {
+  let q = supabase
+    .from("daily_report_recipients")
+    .select("id", { count: "exact", head: true })
+    .eq("is_active", true);
+  if (excludeId != null) q = q.neq("id", excludeId);
+  const { count, error } = await q;
+  if (error) throw error;
+  return count ?? 0;
+}
 
 // ---------- GET /api/report-recipients ----------
 app.get("/api/report-recipients", async (_req, res) => {
@@ -2551,7 +2586,14 @@ app.get("/api/report-recipients", async (_req, res) => {
       .select("id, name, email, is_active, created_at, updated_at")
       .order("created_at", { ascending: true });
     if (error) throw error;
-    res.json({ success: true, recipients: data, fallbackEmail: process.env.OWNER_EMAIL || null });
+    const activeCount = (data || []).filter((r) => r.is_active).length;
+    res.json({
+      success: true,
+      recipients: data,
+      activeCount,
+      maxActive: MAX_ACTIVE_REPORT_RECIPIENTS,
+      fallbackEmail: process.env.OWNER_EMAIL || null,
+    });
   } catch (err) {
     console.error("GET /api/report-recipients error:", err);
     res.status(500).json({ success: false, error: err.message });
@@ -2565,26 +2607,30 @@ app.post("/api/report-recipients", async (req, res) => {
     const email =
       typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
 
-    if (!email || !EMAIL_RE.test(email)) {
+    if (!name || name.length > 120) {
+      return res
+        .status(400)
+        .json({ success: false, message: "A name (1–120 characters) is required." });
+    }
+    if (!email || email.length > 200 || !EMAIL_RE.test(email)) {
       return res
         .status(400)
         .json({ success: false, message: "A valid email address is required." });
     }
 
+    // New rows default is_active = true, so a friendly pre-check.
+    if ((await countActiveRecipients()) >= MAX_ACTIVE_REPORT_RECIPIENTS) {
+      return res.status(409).json({ success: false, message: MAX_ACTIVE_MSG });
+    }
+
     const { data, error } = await supabase
       .from("daily_report_recipients")
-      .insert([{ name: name || null, email }])
+      .insert([{ name, email }])
       .select("id, name, email, is_active, created_at, updated_at")
       .single();
 
-    if (error) {
-      if (error.code === "23505") {
-        return res
-          .status(409)
-          .json({ success: false, message: "That email is already on the list." });
-      }
-      throw error;
-    }
+    if (handleRecipientDbError(error, res)) return;
+    if (error) throw error;
     res.json({ success: true, recipient: data });
   } catch (err) {
     console.error("POST /api/report-recipients error:", err);
@@ -2592,18 +2638,33 @@ app.post("/api/report-recipients", async (req, res) => {
   }
 });
 
-// ---------- PATCH /api/report-recipients/:id  (toggle active / rename) ----------
+// ---------- PATCH /api/report-recipients/:id  (rename / enable / disable) ----------
 app.patch("/api/report-recipients/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const patch = {};
     if (typeof req.body?.is_active === "boolean") patch.is_active = req.body.is_active;
-    if (typeof req.body?.name === "string") patch.name = req.body.name.trim() || null;
+    if (typeof req.body?.name === "string") {
+      const nm = req.body.name.trim();
+      if (!nm || nm.length > 120) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Name must be 1–120 characters." });
+      }
+      patch.name = nm;
+    }
 
     if (Object.keys(patch).length === 0) {
       return res
         .status(400)
         .json({ success: false, message: "Nothing to update (is_active or name)." });
+    }
+
+    // Friendly pre-check when enabling.
+    if (patch.is_active === true) {
+      if ((await countActiveRecipients(Number(id))) >= MAX_ACTIVE_REPORT_RECIPIENTS) {
+        return res.status(409).json({ success: false, message: MAX_ACTIVE_MSG });
+      }
     }
 
     const { data, error } = await supabase
@@ -2612,6 +2673,8 @@ app.patch("/api/report-recipients/:id", async (req, res) => {
       .eq("id", id)
       .select("id, name, email, is_active, created_at, updated_at")
       .maybeSingle();
+
+    if (handleRecipientDbError(error, res)) return;
     if (error) throw error;
     if (!data) {
       return res.status(404).json({ success: false, message: "Recipient not found." });
@@ -2624,6 +2687,8 @@ app.patch("/api/report-recipients/:id", async (req, res) => {
 });
 
 // ---------- DELETE /api/report-recipients/:id ----------
+// Historical delivery evidence is preserved: daily_report_deliveries snapshots
+// the name/email, and its FK is ON DELETE SET NULL.
 app.delete("/api/report-recipients/:id", async (req, res) => {
   try {
     const { id } = req.params;

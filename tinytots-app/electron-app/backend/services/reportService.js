@@ -3,10 +3,15 @@ import { createClient } from "@supabase/supabase-js";
 import { Parser } from "json2csv";
 import fs from "fs";
 import path from "path";
-import { sendReportEmail } from "./emailService.js";
+import { resolveReportRecipients, deliverReportTo } from "./emailService.js";
 import {
   saveSuccessfulReport,
   saveFailedReport,
+  ensureDeliverySet,
+  getDeliveriesToAttempt,
+  markDeliverySent,
+  markDeliveryFailed,
+  countUnsentDeliveries,
 } from "./historyService.js";
 
 const supabase = createClient(
@@ -14,67 +19,111 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+/**
+ * Generate + deliver the daily sales report for `reportDate`.
+ *
+ * ONE report is generated. Delivery is per-recipient and idempotent:
+ *
+ *   1. resolve the ACTIVE recipient set (or OWNER_EMAIL fallback)
+ *   2. snapshot it into public.daily_report_deliveries — ONLY if no rows
+ *      exist yet for this date (frozen audience; recovery never rebuilds it
+ *      from today's config)
+ *   3. build the CSV once
+ *   4. attempt every delivery row whose status is pending/failed — 'sent'
+ *      rows are skipped, so a recovery run never emails A/C twice while
+ *      retrying B
+ *   5. report_history is 'sent' only when EVERY delivery for the date is
+ *      'sent'; otherwise 'failed' (recovery will retry the rest)
+ *
+ * Throws only on a genuine generation failure (no summary data, disk, etc.).
+ * A partial-delivery outcome is NOT thrown — report_history carries it.
+ */
 export async function generateDailyReport(reportDate) {
+  // 1 + 2: freeze the audience for this report_date.
+  const recipients = await resolveReportRecipients();
+  await ensureDeliverySet(reportDate, recipients);
+
+  let filePath;
+  let fileName;
   try {
-    // Fetch report data from PostgreSQL
+    // 3: build the CSV once.
     const { data, error } = await supabase.rpc("get_daily_summary", {
       p_report_date: reportDate,
     });
+    if (error) throw error;
+    if (!data || data.length === 0) throw new Error("No report data returned.");
 
-    if (error) {
-      throw error;
-    }
+    const csv = new Parser().parse(data);
 
-    if (!data || data.length === 0) {
-      throw new Error("No report data returned.");
-    }
-
-    // Convert JSON to CSV
-    const parser = new Parser();
-    const csv = parser.parse(data);
-
-    // Prefer POS_DATA_DIR (Electron userData) over CWD-relative reports/
     const reportsDir = process.env.POS_DATA_DIR
       ? path.join(path.resolve(process.env.POS_DATA_DIR), "reports")
       : path.resolve("reports");
+    if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
 
-    if (!fs.existsSync(reportsDir)) {
-      fs.mkdirSync(reportsDir, { recursive: true });
-    }
-
-    // Create file
-    const fileName = `report-${reportDate}.csv`;
-    const filePath = path.join(reportsDir, fileName);
-
+    fileName = `report-${reportDate}.csv`;
+    filePath = path.join(reportsDir, fileName);
     fs.writeFileSync(filePath, csv);
-
     console.log(`✅ CSV generated: ${filePath}`);
-
-    // Send email
-    await sendReportEmail(filePath, fileName);
-
-    // Mark report as successfully sent
-    await saveSuccessfulReport(reportDate);
-
-    console.log(`✅ Report history saved for ${reportDate}`);
-
-    return {
-      success: true,
-      filePath,
-      data,
-    };
   } catch (err) {
-    // Record failure in report history
+    // Generation itself failed — nothing to deliver. Record + rethrow.
     try {
-      await saveFailedReport(reportDate, err.message);
-    } catch (historyError) {
-      console.error("❌ Failed to save report failure history.");
-      console.error(historyError);
+      await saveFailedReport(reportDate, `Report generation failed: ${err.message}`);
+    } catch (historyErr) {
+      console.error("❌ Failed to save report failure history.", historyErr);
     }
-
     console.error(`❌ Daily report generation failed for ${reportDate}`);
     console.error(err);
-
     throw err;
   }
+
+  // 4: attempt each still-unsent delivery independently.
+  const pending = await getDeliveriesToAttempt(reportDate);
+  let sent = 0;
+  let failed = 0;
+
+  for (const d of pending) {
+    try {
+      const info = await deliverReportTo(d.recipient_email_snapshot, filePath, fileName);
+      await markDeliverySent(d.id, d.attempt_count);
+      sent += 1;
+      console.log(`✅ Report delivered to ${d.recipient_email_snapshot}:`, info.messageId);
+    } catch (err) {
+      await markDeliveryFailed(d.id, err.message, d.attempt_count);
+      failed += 1;
+      console.error(`❌ Report delivery failed for ${d.recipient_email_snapshot}: ${err.message}`);
+    }
+  }
+
+  // 5: roll up to the report-level record. 'sent' ONLY when every delivery
+  // row for this date is 'sent'.
+  const unsent = await countUnsentDeliveries(reportDate);
+
+  if (recipients.length === 0) {
+    await saveFailedReport(
+      reportDate,
+      "No daily report recipients configured (daily_report_recipients empty and OWNER_EMAIL unset)."
+    );
+    console.warn(`⚠️  Report ${reportDate}: nobody to deliver to.`);
+  } else if (unsent === 0) {
+    await saveSuccessfulReport(reportDate);
+    console.log(`✅ Report ${reportDate} fully delivered.`);
+  } else {
+    await saveFailedReport(
+      reportDate,
+      `${unsent} recipient delivery(ies) not yet sent (this run: ${sent} sent, ${failed} failed).`
+    );
+    console.warn(
+      `⚠️  Report ${reportDate}: ${unsent} delivery(ies) still unsent; recovery will retry.`
+    );
+  }
+
+  return {
+    success: recipients.length > 0 && unsent === 0,
+    reportDate,
+    attempted: pending.length,
+    sent,
+    failed,
+    unsent,
+    filePath,
+  };
 }
