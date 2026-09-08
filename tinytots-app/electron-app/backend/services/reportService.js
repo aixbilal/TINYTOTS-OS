@@ -143,7 +143,7 @@ export async function generateDailyReport(reportDate) {
   if (recipients.length === 0) {
     await saveFailedReport(
       reportDate,
-      "No daily report recipients configured (daily_report_recipients empty and OWNER_EMAIL unset)."
+      "No daily report recipients configured (daily_report_recipients empty and no REPORT_FALLBACK_EMAIL / OWNER_EMAIL set)."
     );
     console.warn(`⚠️  Report ${reportDate}: nobody to deliver to.`);
   } else if (unsent === 0) {
