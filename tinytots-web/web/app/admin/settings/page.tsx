@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
 import { metaFor, isAbsoluteHttpUrl, SETTINGS_SECTIONS } from "@/lib/admin-settings-meta";
 import { AdminPageHeader, AdminCard, AdminButton } from "@/components/admin/ui";
+import ReportRecipientsCard from "@/components/admin/ReportRecipientsCard";
 
 type Setting = { key: string; value: string; description: string | null; updated_at: string | null };
 
@@ -196,6 +197,8 @@ export default function SettingsPage() {
             </div>
           </AdminCard>
         ))}
+
+        <ReportRecipientsCard />
       </div>
     </div>
   );
