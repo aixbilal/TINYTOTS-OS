@@ -22,7 +22,9 @@ const DAILY_REPORT_TASK_NAME = "tinytots-daily-report";
 let dailyReportTask = null;
 
 /**
- * The daily sales report scheduler — "59 23 * * *" in Asia/Karachi.
+ * The daily sales report scheduler — "0 10 * * *" in Asia/Karachi (10:00 AM),
+ * covering the PREVIOUS day's activity (e.g. Monday's report sends Tuesday
+ * 10:00 AM).
  *
  * Runs in EVERY backend mode:
  *   - embedded packaged POS (POS_EMBEDDED=1): this IS the primary live
@@ -41,10 +43,10 @@ export function startDailyReportCron() {
   }
 
   dailyReportTask = cron.schedule(
-    "59 23 * * *",
+    "0 10 * * *",
     async () => {
-      const reportDate = reportDateInKarachi(0); // "today" on the Asia/Karachi clock
-      console.log(`🕛 Daily report cron firing for ${reportDate} (${REPORT_TZ})...`);
+      const reportDate = reportDateInKarachi(1); // YESTERDAY on the Asia/Karachi clock
+      console.log(`🕙 Daily report cron firing (10:00 ${REPORT_TZ}) for ${reportDate}...`);
       try {
         const result = await generateDailyReport(reportDate);
         console.log(
@@ -60,7 +62,7 @@ export function startDailyReportCron() {
     { timezone: REPORT_TZ, name: DAILY_REPORT_TASK_NAME, noOverlap: true }
   );
 
-  console.log(`✅ Daily report cron scheduled — 23:59 ${REPORT_TZ} (once per process).`);
+  console.log(`✅ Daily report cron scheduled — 10:00 ${REPORT_TZ} (prev-day report; once per process).`);
   return dailyReportTask;
 }
 

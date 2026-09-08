@@ -6,11 +6,15 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// The daily report is scheduled at 23:59 Asia/Karachi, so the report_date it
-// targets must be derived in that timezone — never the POS machine's local
-// zone and never UTC (which would drift the date around midnight). Both the
-// cron callback and missed-report recovery use this.
+// The daily report is scheduled at 10:00 Asia/Karachi and covers the PREVIOUS
+// day, so every date/time decision here is made on the Asia/Karachi clock —
+// never the POS machine's local zone and never UTC (which would drift the
+// date around midnight). Both the cron callback and missed-report recovery
+// use these helpers.
 const REPORT_TZ = "Asia/Karachi";
+
+/** Hour of day (0–23, Asia/Karachi) at which the daily report is sent. */
+export const REPORT_SEND_HOUR = 10;
 
 /**
  * YYYY-MM-DD for "now minus `daysAgo` whole days", as it reads on the clock
@@ -19,6 +23,16 @@ const REPORT_TZ = "Asia/Karachi";
 export function reportDateInKarachi(daysAgo = 0) {
   const t = Date.now() - daysAgo * 24 * 60 * 60 * 1000;
   return new Date(t).toLocaleDateString("en-CA", { timeZone: REPORT_TZ });
+}
+
+/** Current hour of day (0–23) on the Asia/Karachi clock. */
+export function reportHourInKarachi() {
+  const h = new Date().toLocaleString("en-US", {
+    timeZone: REPORT_TZ,
+    hour: "2-digit",
+    hour12: false,
+  });
+  return parseInt(h, 10) % 24;
 }
 
 /* =======================================================

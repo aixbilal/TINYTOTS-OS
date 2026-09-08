@@ -87,6 +87,7 @@ export async function generateDailyReport(reportDate) {
 
   let filePath;
   let fileName;
+  let summary; // the single get_daily_summary row — also used for the email body
   try {
     // 3: build the CSV once.
     const { data, error } = await supabase.rpc("get_daily_summary", {
@@ -95,6 +96,7 @@ export async function generateDailyReport(reportDate) {
     if (error) throw error;
     if (!data || data.length === 0) throw new Error("No report data returned.");
 
+    summary = data[0];
     const csv = new Parser().parse(data);
 
     const reportsDir = process.env.POS_DATA_DIR
@@ -125,7 +127,12 @@ export async function generateDailyReport(reportDate) {
 
   for (const d of pending) {
     try {
-      const info = await deliverReportTo(d.recipient_email_snapshot, filePath, fileName);
+      const info = await deliverReportTo(d.recipient_email_snapshot, {
+        filePath,
+        fileName,
+        reportDate,
+        summary,
+      });
       await markDeliverySent(d.id, d.attempt_count);
       sent += 1;
       console.log(`✅ Report delivered to ${d.recipient_email_snapshot}:`, info.messageId);

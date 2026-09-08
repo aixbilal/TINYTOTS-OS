@@ -119,21 +119,123 @@ export async function resolveReportRecipients() {
     : [];
 }
 
+/* =======================================================
+   EMAIL BODY — built from the SAME summary row the CSV uses
+   (public.get_daily_summary). Never invents a metric.
+======================================================= */
+
+/** "Rs. 42,500" — PKR, whole rupees, thousands-separated. */
+function pkr(value) {
+  const n = Math.round(Number(value) || 0);
+  return `Rs. ${n.toLocaleString("en-PK")}`;
+}
+
+/** Plain integer string for counts. */
+function intStr(value) {
+  return String(Math.trunc(Number(value) || 0));
+}
+
+/**
+ * Format a "YYYY-MM-DD" report date for humans, e.g.
+ *   withWeekday=false -> "7 September 2026"
+ *   withWeekday=true  -> "Monday, 7 September 2026"
+ * Parsed at UTC noon so the calendar date can't shift.
+ */
+export function formatReportDate(reportDate, withWeekday = false) {
+  const d = new Date(`${reportDate}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return reportDate;
+  return d.toLocaleDateString("en-GB", {
+    timeZone: "UTC",
+    ...(withWeekday ? { weekday: "long" } : {}),
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/**
+ * Build the subject + plain-text + HTML for the daily report email from the
+ * real summary object. A zero-sales day renders normally (Rs. 0 / 0), with no
+ * error language.
+ *
+ * @param {string} reportDate  "YYYY-MM-DD"
+ * @param {{gross_revenue,net_profit,atv,total_items_sold,total_transactions}|null|undefined} summary
+ */
+export function buildReportEmail(reportDate, summary) {
+  const s = summary || {};
+  const longDate = formatReportDate(reportDate, true);
+  const shortDate = formatReportDate(reportDate, false);
+
+  // label -> display value. Only the five metrics get_daily_summary provides.
+  const rows = [
+    ["Gross Revenue", pkr(s.gross_revenue)],
+    ["Net Profit", pkr(s.net_profit)],
+    ["Transactions", intStr(s.total_transactions)],
+    ["Items Sold", intStr(s.total_items_sold)],
+    ["Average Order Value", pkr(s.atv)],
+  ];
+
+  const subject = `TinyTots Daily Sales Report — ${shortDate}`;
+
+  const pad = Math.max(...rows.map(([l]) => l.length));
+  const text = [
+    "TinyTots",
+    "Daily Sales Summary",
+    longDate,
+    "",
+    ...rows.map(([l, v]) => `${l.padEnd(pad)}  ${v}`),
+    "",
+    "The detailed CSV report is attached for your records.",
+    "",
+    "This is an automated daily report from TinyTots OS.",
+  ].join("\n");
+
+  const rowHtml = rows
+    .map(
+      ([l, v], i) => `
+      <tr>
+        <td style="padding:9px 0;${i < rows.length - 1 ? "border-bottom:1px solid #ece5d9;" : ""}color:#675949;">${l}</td>
+        <td style="padding:9px 0;${i < rows.length - 1 ? "border-bottom:1px solid #ece5d9;" : ""}text-align:right;font-weight:600;color:#2a2621;">${v}</td>
+      </tr>`
+    )
+    .join("");
+
+  const html = `<!doctype html>
+<html>
+<body style="margin:0;padding:24px 16px;background:#f6f1e8;">
+  <div style="max-width:480px;margin:0 auto;background:#ffffff;border:1px solid #ece5d9;border-radius:10px;padding:24px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+    <h1 style="margin:0 0 2px;font-size:20px;color:#2a2621;">TinyTots</h1>
+    <p style="margin:0;font-size:15px;color:#675949;">Daily Sales Summary</p>
+    <p style="margin:2px 0 18px;font-size:13px;color:#8a7c6a;">${longDate}</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">${rowHtml}
+    </table>
+    <p style="margin:18px 0 4px;font-size:13px;color:#675949;">The detailed CSV report is attached for your records.</p>
+    <p style="margin:0;font-size:12px;color:#8a7c6a;">This is an automated daily report from TinyTots OS.</p>
+  </div>
+</body>
+</html>`;
+
+  return { subject, text, html };
+}
+
 /**
  * Send ONE copy of the report to ONE destination. Throws on failure so the
  * caller can mark that delivery row 'failed' and retry it later. One
  * destination is never exposed to another (single-recipient `to`).
  *
- * @param {string} to        destination email
- * @param {string} filePath  absolute path of the CSV
- * @param {string} fileName  attachment filename
+ * @param {string} to  destination email
+ * @param {{filePath: string, fileName: string, reportDate: string, summary?: object}} report
  */
-export async function deliverReportTo(to, filePath, fileName) {
+export async function deliverReportTo(to, report) {
+  const { filePath, fileName, reportDate, summary } = report;
+  const { subject, text, html } = buildReportEmail(reportDate, summary);
+
   const info = await transporter.sendMail({
     from: reportFromHeader(),
     to,
-    subject: "Daily Sales Report",
-    text: "Attached is your daily sales report.",
+    subject,
+    text,
+    html,
     attachments: [{ filename: fileName, path: filePath }],
   });
   return info;
