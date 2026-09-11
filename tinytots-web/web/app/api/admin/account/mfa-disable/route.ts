@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { apiErrorResponse } from "@/lib/api-error";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { clientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { forceIpv4Outbound } from "@/lib/force-ipv4";
 
 void forceIpv4Outbound();
@@ -16,6 +17,15 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
  * (e.g. lost authenticator but still knows the password).
  */
 export async function POST(request: NextRequest) {
+  // Throttle current-password guessing (this route calls signInWithPassword
+  // to verify the current password before deleting the MFA factor) — same
+  // policy as admin/account/change-password.
+  const ipLimited = await rateLimit(`admin-mfa-disable-ip:${clientIp(request)}`, {
+    limit: 10,
+    windowMs: 15 * 60_000,
+  });
+  if (!ipLimited.ok) return rateLimitResponse(ipLimited.retryAfterSec);
+
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.replace("Bearer ", "");
   if (!token) {
@@ -39,6 +49,13 @@ export async function POST(request: NextRequest) {
   if (!adminRow?.is_active) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
+
+  // Per-account throttle on top of the per-IP one above.
+  const userLimited = await rateLimit(`admin-mfa-disable:${userData.user.id}`, {
+    limit: 5,
+    windowMs: 15 * 60_000,
+  });
+  if (!userLimited.ok) return rateLimitResponse(userLimited.retryAfterSec);
 
   let body: { currentPassword?: string; factorId?: string; captchaToken?: string };
   try {
