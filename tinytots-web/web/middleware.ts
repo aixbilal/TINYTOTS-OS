@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { shouldForcePhoneOnboarding } from "@/lib/phone-gate";
 
 function hasSupabaseAuthCookie(request: NextRequest): boolean {
   // Skip Auth network round-trip for anonymous storefront traffic (biggest TTFB win on /).
@@ -148,21 +149,37 @@ export async function middleware(request: NextRequest) {
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  // Fail closed for storefront: if we can't read the row or phone is empty, gate.
+  // Admins are rows in admin_users, not customers — they never have a
+  // customers.phone to satisfy this gate. Only look them up when the
+  // customer check alone would otherwise gate (no customer row / no phone),
+  // so the common "customer with a phone on file" path stays at one query.
   const phone = customer?.phone?.trim() ?? "";
-  if (error || !phone) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/account/add-phone";
-    url.search = "";
-    const redirect = NextResponse.redirect(url);
-    // Preserve refreshed auth cookies on the redirect response.
-    for (const c of response.cookies.getAll()) {
-      redirect.cookies.set(c.name, c.value);
-    }
-    return redirect;
+  let isActiveAdmin = false;
+  if (!error && !phone) {
+    const { data: adminRow, error: adminError } = await supabase
+      .from("admin_users")
+      .select("is_active")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+    // Fail-open on a transient admin_users read error, same policy as
+    // guardAdmin, so a DB blip can't lock a real admin out — /api/admin/*
+    // requireAdmin stays authoritative either way.
+    isActiveAdmin = !adminError && adminRow?.is_active === true;
   }
 
-  return response;
+  if (!shouldForcePhoneOnboarding({ customerReadError: !!error, customerPhone: customer?.phone, isActiveAdmin })) {
+    return response;
+  }
+
+  const url = request.nextUrl.clone();
+  url.pathname = "/account/add-phone";
+  url.search = "";
+  const redirect = NextResponse.redirect(url);
+  // Preserve refreshed auth cookies on the redirect response.
+  for (const c of response.cookies.getAll()) {
+    redirect.cookies.set(c.name, c.value);
+  }
+  return redirect;
 }
 
 export const config = {

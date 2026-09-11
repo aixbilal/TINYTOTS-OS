@@ -27,9 +27,26 @@ export default function AddPhonePage() {
 
       if (customer?.phone) {
         router.replace("/account");
-      } else {
-        setChecking(false);
+        return;
       }
+
+      // Admins have no customers row by design — reaching this page (e.g. a
+      // stale bookmark) should send them back rather than show a form that
+      // can never succeed for them (see handleSubmit's zero-rows case).
+      // /account itself expects a customers row too, so send admins home
+      // instead of to another dead end.
+      const { data: adminRow } = await supabase
+        .from("admin_users")
+        .select("is_active")
+        .eq("auth_user_id", session.user.id)
+        .maybeSingle();
+
+      if (adminRow?.is_active === true) {
+        router.replace("/");
+        return;
+      }
+
+      setChecking(false);
     }
     checkExisting();
   }, [router]);

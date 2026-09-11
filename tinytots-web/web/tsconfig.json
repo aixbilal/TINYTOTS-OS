@@ -34,6 +34,7 @@
     "node_modules",
     "public/sw.js",
     "public/swe-worker-*.js",
-    "scripts/ai-resilience-tests.ts"
+    "scripts/ai-resilience-tests.ts",
+    "scripts/phone-gate-tests.ts"
   ]
 }
