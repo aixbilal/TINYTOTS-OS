@@ -98,6 +98,7 @@ export async function buildReceiptPdfBytes(rawSale) {
   center("Toddler-to-Tween Outfitters", 8);
   center("Shop No 169 Street Markazi Jamia", 7);
   center("Masjid Toba Tek Singh", 7);
+  center("0333-5268060", 7);
   center("0301-7278797", 7);
 
   y -= 4;
