@@ -1,6 +1,8 @@
 import path from "node:path";
 import { app } from "electron";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Builds a thermal receipt PDF from a sale object via the shared module and writes it
