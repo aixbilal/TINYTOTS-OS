@@ -84,10 +84,26 @@ export default function AccountPage() {
         .from("customers")
         .select("id, full_name, email, phone, orders_count, referral_code")
         .eq("auth_user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (customerError) {
         setError("Couldn't load your account details.");
+        setDataLoading(false);
+        return;
+      }
+
+      if (!customerData) {
+        // Admins have no customers row by design (see lib/phone-gate.ts) —
+        // an active admin lands here with nothing to show instead of an error.
+        const { data: adminRow } = await supabase
+          .from("admin_users")
+          .select("is_active")
+          .eq("auth_user_id", userId)
+          .maybeSingle();
+
+        if (adminRow?.is_active !== true) {
+          setError("Couldn't load your account details.");
+        }
         setDataLoading(false);
         return;
       }

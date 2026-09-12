@@ -31,7 +31,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       .from("customers")
       .select("id")
       .eq("auth_user_id", user.id)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
         if (!data) {
           setLoading(false);
